@@ -30,4 +30,4 @@ page =
 
 view : Element Msg
 view =
-    Ui.hero { title = "SR-espa1", description = "Follow guide and integrate sportrank-elm putbackinsrclater", buttons = [ ( "learn more", "/guide" ) ] }
+    Ui.hero { title = "SR-espa1", description = "Follow guide and integrate sportrank-elm putbackinsrclater", buttons = [ ( "learn more", "/docs/5c36f5422c87fa27306acb52" ) ] }

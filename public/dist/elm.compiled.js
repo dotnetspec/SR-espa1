@@ -18345,7 +18345,7 @@ var $author$project$Pages$Top$view = $author$project$Ui$hero(
 	{
 		buttons: _List_fromArray(
 			[
-				_Utils_Tuple2('learn more', '/guide')
+				_Utils_Tuple2('learn more', '/docs/5c36f5422c87fa27306acb52')
 			]),
 		description: 'Follow guide and integrate sportrank-elm putbackinsrclater',
 		title: 'SR-espa1'
