@@ -11,25 +11,32 @@ import Layout as Layout
 import Utils.Spa as Spa
 import Generated.Params as Params
 import Generated.Route as Route exposing (Route)
+import Pages.AboutUs
 import Pages.Guide
 import Pages.NotFound
 import Pages.Top
 import Generated.Docs.Route
+import Generated.Rankings.Route
 import Generated.Docs.Pages
+import Generated.Rankings.Pages
 
 
 type Model
-    = GuideModel Pages.Guide.Model
+    = AboutUsModel Pages.AboutUs.Model
+    | GuideModel Pages.Guide.Model
     | NotFoundModel Pages.NotFound.Model
     | TopModel Pages.Top.Model
     | Docs_Folder_Model Generated.Docs.Pages.Model
+    | Rankings_Folder_Model Generated.Rankings.Pages.Model
 
 
 type Msg
-    = GuideMsg Pages.Guide.Msg
+    = AboutUsMsg Pages.AboutUs.Msg
+    | GuideMsg Pages.Guide.Msg
     | NotFoundMsg Pages.NotFound.Msg
     | TopMsg Pages.Top.Msg
     | Docs_Folder_Msg Generated.Docs.Pages.Msg
+    | Rankings_Folder_Msg Generated.Rankings.Pages.Msg
 
 
 page : Spa.Page Route Model Msg layoutModel layoutMsg appMsg
@@ -58,16 +65,24 @@ type alias Recipe flags model msg appMsg =
 
 
 type alias Recipes msg =
-    { guide : Recipe Params.Guide Pages.Guide.Model Pages.Guide.Msg msg
+    { aboutUs : Recipe Params.AboutUs Pages.AboutUs.Model Pages.AboutUs.Msg msg
+    , guide : Recipe Params.Guide Pages.Guide.Model Pages.Guide.Msg msg
     , notFound : Recipe Params.NotFound Pages.NotFound.Model Pages.NotFound.Msg msg
     , top : Recipe Params.Top Pages.Top.Model Pages.Top.Msg msg
     , docs_folder : Recipe Generated.Docs.Route.Route Generated.Docs.Pages.Model Generated.Docs.Pages.Msg msg
+    , rankings_folder : Recipe Generated.Rankings.Route.Route Generated.Rankings.Pages.Model Generated.Rankings.Pages.Msg msg
     }
 
 
 recipes : Recipes msg
 recipes =
-    { guide =
+    { aboutUs =
+        Spa.recipe
+            { page = Pages.AboutUs.page
+            , toModel = AboutUsModel
+            , toMsg = AboutUsMsg
+            }
+    , guide =
         Spa.recipe
             { page = Pages.Guide.page
             , toModel = GuideModel
@@ -91,6 +106,12 @@ recipes =
             , toModel = Docs_Folder_Model
             , toMsg = Docs_Folder_Msg
             }
+    , rankings_folder =
+        Spa.recipe
+            { page = Generated.Rankings.Pages.page
+            , toModel = Rankings_Folder_Model
+            , toMsg = Rankings_Folder_Msg
+            }
     }
 
 
@@ -101,6 +122,9 @@ recipes =
 init : Route -> Spa.Init Model Msg
 init route_ =
     case route_ of
+        Route.AboutUs params ->
+            recipes.aboutUs.init params
+        
         Route.Guide params ->
             recipes.guide.init params
         
@@ -112,6 +136,9 @@ init route_ =
         
         Route.Docs_Folder route ->
             recipes.docs_folder.init route
+        
+        Route.Rankings_Folder route ->
+            recipes.rankings_folder.init route
 
 
 
@@ -121,6 +148,9 @@ init route_ =
 update : Msg -> Model -> Spa.Update Model Msg
 update bigMsg bigModel =
     case ( bigMsg, bigModel ) of
+        ( AboutUsMsg msg, AboutUsModel model ) ->
+            recipes.aboutUs.update msg model
+        
         ( GuideMsg msg, GuideModel model ) ->
             recipes.guide.update msg model
         
@@ -132,6 +162,9 @@ update bigMsg bigModel =
         
         ( Docs_Folder_Msg msg, Docs_Folder_Model model ) ->
             recipes.docs_folder.update msg model
+        
+        ( Rankings_Folder_Msg msg, Rankings_Folder_Model model ) ->
+            recipes.rankings_folder.update msg model
         _ ->
             Spa.Page.keep bigModel
 
@@ -142,6 +175,9 @@ update bigMsg bigModel =
 bundle : Model -> Spa.Bundle Msg msg
 bundle bigModel =
     case bigModel of
+        AboutUsModel model ->
+            recipes.aboutUs.bundle model
+        
         GuideModel model ->
             recipes.guide.bundle model
         
@@ -153,3 +189,6 @@ bundle bigModel =
         
         Docs_Folder_Model model ->
             recipes.docs_folder.bundle model
+        
+        Rankings_Folder_Model model ->
+            recipes.rankings_folder.bundle model

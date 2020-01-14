@@ -11585,6 +11585,12 @@ var $author$project$Global$init = F2(
 			$elm$core$Platform$Cmd$none,
 			$author$project$Ports$log('Hello!'));
 	});
+var $author$project$Generated$Pages$AboutUsModel = function (a) {
+	return {$: 'AboutUsModel', a: a};
+};
+var $author$project$Generated$Pages$AboutUsMsg = function (a) {
+	return {$: 'AboutUsMsg', a: a};
+};
 var $author$project$Generated$Pages$Docs_Folder_Model = function (a) {
 	return {$: 'Docs_Folder_Model', a: a};
 };
@@ -11602,6 +11608,12 @@ var $author$project$Generated$Pages$NotFoundModel = function (a) {
 };
 var $author$project$Generated$Pages$NotFoundMsg = function (a) {
 	return {$: 'NotFoundMsg', a: a};
+};
+var $author$project$Generated$Pages$Rankings_Folder_Model = function (a) {
+	return {$: 'Rankings_Folder_Model', a: a};
+};
+var $author$project$Generated$Pages$Rankings_Folder_Msg = function (a) {
+	return {$: 'Rankings_Folder_Msg', a: a};
 };
 var $author$project$Generated$Pages$TopModel = function (a) {
 	return {$: 'TopModel', a: a};
@@ -17757,6 +17769,124 @@ var $author$project$Generated$Docs$Pages$page = $author$project$Utils$Spa$layout
 		recipe: {bundle: $author$project$Generated$Docs$Pages$bundle, init: $author$project$Generated$Docs$Pages$init, update: $author$project$Generated$Docs$Pages$update},
 		view: $author$project$Layouts$Docs$view
 	});
+var $author$project$Generated$Rankings$Pages$Dynamic_Folder_Model = function (a) {
+	return {$: 'Dynamic_Folder_Model', a: a};
+};
+var $author$project$Generated$Rankings$Pages$Dynamic_Folder_Msg = function (a) {
+	return {$: 'Dynamic_Folder_Msg', a: a};
+};
+var $author$project$Generated$Rankings$Pages$TopModel = function (a) {
+	return {$: 'TopModel', a: a};
+};
+var $author$project$Generated$Rankings$Pages$TopMsg = function (a) {
+	return {$: 'TopMsg', a: a};
+};
+var $author$project$Pages$Rankings$Top$FetchedContent = function (a) {
+	return {$: 'FetchedContent', a: a};
+};
+var $author$project$Pages$Rankings$Top$init = function (_v0) {
+	return _Utils_Tuple2(
+		{content: ''},
+		$elm$http$Http$get(
+			{
+				expect: $elm$http$Http$expectString($author$project$Pages$Rankings$Top$FetchedContent),
+				url: 'https://api.jsonbin.io/b/5c36f5422c87fa27306acb52/latest'
+			}));
+};
+var $author$project$Pages$Rankings$Top$subscriptions = function (model) {
+	return $elm$core$Platform$Sub$none;
+};
+var $author$project$Pages$Rankings$Top$update = F2(
+	function (msg, model) {
+		if (msg.a.$ === 'Ok') {
+			var markdown = msg.a.a;
+			return _Utils_Tuple2(
+				_Utils_update(
+					model,
+					{content: markdown}),
+				$elm$core$Platform$Cmd$none);
+		} else {
+			return _Utils_Tuple2(
+				_Utils_update(
+					model,
+					{content: 'there was an error'}),
+				$elm$core$Platform$Cmd$none);
+		}
+	});
+var $author$project$Pages$Rankings$Top$view = function (model) {
+	return $author$project$Ui$markdown(model.content);
+};
+var $author$project$Pages$Rankings$Top$page = $ryannhg$elm_spa$Spa$Page$element(
+	{
+		init: $elm$core$Basics$always($author$project$Pages$Rankings$Top$init),
+		subscriptions: $elm$core$Basics$always($author$project$Pages$Rankings$Top$subscriptions),
+		title: $elm$core$Basics$always('Rankings.Top'),
+		update: $elm$core$Basics$always($author$project$Pages$Rankings$Top$update),
+		view: $elm$core$Basics$always($author$project$Pages$Rankings$Top$view)
+	});
+var $author$project$Generated$Rankings$Pages$recipes = {
+	dynamic_folder: $author$project$Utils$Spa$recipe(
+		{page: $author$project$Generated$Docs$Dynamic$Pages$page, toModel: $author$project$Generated$Rankings$Pages$Dynamic_Folder_Model, toMsg: $author$project$Generated$Rankings$Pages$Dynamic_Folder_Msg}),
+	top: $author$project$Utils$Spa$recipe(
+		{page: $author$project$Pages$Rankings$Top$page, toModel: $author$project$Generated$Rankings$Pages$TopModel, toMsg: $author$project$Generated$Rankings$Pages$TopMsg})
+};
+var $author$project$Generated$Rankings$Pages$bundle = function (bigModel) {
+	if (bigModel.$ === 'TopModel') {
+		var model = bigModel.a;
+		return $author$project$Generated$Rankings$Pages$recipes.top.bundle(model);
+	} else {
+		var model = bigModel.a;
+		return $author$project$Generated$Rankings$Pages$recipes.dynamic_folder.bundle(model);
+	}
+};
+var $author$project$Generated$Rankings$Pages$init = function (route_) {
+	if (route_.$ === 'Top') {
+		var params = route_.a;
+		return $author$project$Generated$Rankings$Pages$recipes.top.init(params);
+	} else {
+		var route = route_.b;
+		return $author$project$Generated$Rankings$Pages$recipes.dynamic_folder.init(route);
+	}
+};
+var $author$project$Generated$Rankings$Pages$path = _List_fromArray(
+	[
+		$ryannhg$elm_spa$Spa$Path$static('rankings')
+	]);
+var $author$project$Generated$Rankings$Pages$update = F2(
+	function (bigMsg, bigModel) {
+		var _v0 = _Utils_Tuple2(bigMsg, bigModel);
+		_v0$2:
+		while (true) {
+			if (_v0.a.$ === 'TopMsg') {
+				if (_v0.b.$ === 'TopModel') {
+					var msg = _v0.a.a;
+					var model = _v0.b.a;
+					return A2($author$project$Generated$Rankings$Pages$recipes.top.update, msg, model);
+				} else {
+					break _v0$2;
+				}
+			} else {
+				if (_v0.b.$ === 'Dynamic_Folder_Model') {
+					var msg = _v0.a.a;
+					var model = _v0.b.a;
+					return A2($author$project$Generated$Rankings$Pages$recipes.dynamic_folder.update, msg, model);
+				} else {
+					break _v0$2;
+				}
+			}
+		}
+		return $ryannhg$elm_spa$Spa$Page$keep(bigModel);
+	});
+var $author$project$Layouts$Rankings$view = function (_v0) {
+	var page = _v0.page;
+	return page;
+};
+var $author$project$Generated$Rankings$Pages$page = $author$project$Utils$Spa$layout(
+	{
+		path: $author$project$Generated$Rankings$Pages$path,
+		recipe: {bundle: $author$project$Generated$Rankings$Pages$bundle, init: $author$project$Generated$Rankings$Pages$init, update: $author$project$Generated$Rankings$Pages$update},
+		view: $author$project$Layouts$Rankings$view
+	});
 var $ryannhg$elm_spa$Spa$Page$static = function (page) {
 	return $ryannhg$elm_spa$Internals$Page$Page(
 		function (_v0) {
@@ -17796,6 +17926,12 @@ var $ryannhg$elm_spa$Spa$Page$static = function (page) {
 			};
 		});
 };
+var $author$project$Pages$AboutUs$view = $mdgriffith$elm_ui$Element$text('AboutUs');
+var $author$project$Pages$AboutUs$page = $ryannhg$elm_spa$Spa$Page$static(
+	{
+		title: $elm$core$Basics$always('AboutUs'),
+		view: $elm$core$Basics$always($author$project$Pages$AboutUs$view)
+	});
 var $mdgriffith$elm_ui$Internal$Model$Transparency = F2(
 	function (a, b) {
 		return {$: 'Transparency', a: a, b: b};
@@ -18210,6 +18346,9 @@ var $author$project$Pages$Guide$page = $ryannhg$elm_spa$Spa$Page$static(
 	});
 var $mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
 var $mdgriffith$elm_ui$Element$centerY = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$CenterY);
+var $author$project$Generated$Route$AboutUs = function (a) {
+	return {$: 'AboutUs', a: a};
+};
 var $author$project$Generated$Route$Docs_Folder = function (a) {
 	return {$: 'Docs_Folder', a: a};
 };
@@ -18231,13 +18370,21 @@ var $author$project$Generated$Route$Guide = function (a) {
 var $author$project$Generated$Route$NotFound = function (a) {
 	return {$: 'NotFound', a: a};
 };
+var $author$project$Generated$Route$Rankings_Folder = function (a) {
+	return {$: 'Rankings_Folder', a: a};
+};
 var $author$project$Generated$Docs$Route$Top = function (a) {
+	return {$: 'Top', a: a};
+};
+var $author$project$Generated$Rankings$Route$Top = function (a) {
 	return {$: 'Top', a: a};
 };
 var $author$project$Generated$Route$Top = function (a) {
 	return {$: 'Top', a: a};
 };
 var $author$project$Generated$Routes$routes = {
+	aboutUs: $author$project$Generated$Route$AboutUs(
+		{}),
 	docs_dynamic: function (param1) {
 		return $author$project$Generated$Route$Docs_Folder(
 			A2(
@@ -18263,6 +18410,9 @@ var $author$project$Generated$Routes$routes = {
 		{}),
 	notFound: $author$project$Generated$Route$NotFound(
 		{}),
+	rankings_top: $author$project$Generated$Route$Rankings_Folder(
+		$author$project$Generated$Rankings$Route$Top(
+			{})),
 	top: $author$project$Generated$Route$Top(
 		{})
 };
@@ -18283,17 +18433,31 @@ var $author$project$Generated$Docs$Route$toPath = function (route) {
 			return '/' + (value + $author$project$Generated$Docs$Dynamic$Route$toPath(subRoute));
 	}
 };
+var $author$project$Generated$Rankings$Route$toPath = function (route) {
+	if (route.$ === 'Top') {
+		return '/';
+	} else {
+		var value = route.a;
+		var subRoute = route.b;
+		return '/' + (value + $author$project$Generated$Docs$Dynamic$Route$toPath(subRoute));
+	}
+};
 var $author$project$Generated$Route$toPath = function (route) {
 	switch (route.$) {
+		case 'AboutUs':
+			return '/about-us';
 		case 'Guide':
 			return '/guide';
 		case 'NotFound':
 			return '/not-found';
 		case 'Top':
 			return '/';
-		default:
+		case 'Docs_Folder':
 			var subRoute = route.a;
 			return '/docs' + $author$project$Generated$Docs$Route$toPath(subRoute);
+		default:
+			var subRoute = route.a;
+			return '/rankings' + $author$project$Generated$Rankings$Route$toPath(subRoute);
 	}
 };
 var $author$project$Generated$Routes$toPath = $author$project$Generated$Route$toPath;
@@ -18345,7 +18509,7 @@ var $author$project$Pages$Top$view = $author$project$Ui$hero(
 	{
 		buttons: _List_fromArray(
 			[
-				_Utils_Tuple2('Continue ...', '/docs/5c36f5422c87fa27306acb52')
+				_Utils_Tuple2('Continue ...', '/rankings')
 			]),
 		description: 'Instant Rankings',
 		title: 'SPORTRANK'
@@ -18356,17 +18520,24 @@ var $author$project$Pages$Top$page = $ryannhg$elm_spa$Spa$Page$static(
 		view: $elm$core$Basics$always($author$project$Pages$Top$view)
 	});
 var $author$project$Generated$Pages$recipes = {
+	aboutUs: $author$project$Utils$Spa$recipe(
+		{page: $author$project$Pages$AboutUs$page, toModel: $author$project$Generated$Pages$AboutUsModel, toMsg: $author$project$Generated$Pages$AboutUsMsg}),
 	docs_folder: $author$project$Utils$Spa$recipe(
 		{page: $author$project$Generated$Docs$Pages$page, toModel: $author$project$Generated$Pages$Docs_Folder_Model, toMsg: $author$project$Generated$Pages$Docs_Folder_Msg}),
 	guide: $author$project$Utils$Spa$recipe(
 		{page: $author$project$Pages$Guide$page, toModel: $author$project$Generated$Pages$GuideModel, toMsg: $author$project$Generated$Pages$GuideMsg}),
 	notFound: $author$project$Utils$Spa$recipe(
 		{page: $author$project$Pages$NotFound$page, toModel: $author$project$Generated$Pages$NotFoundModel, toMsg: $author$project$Generated$Pages$NotFoundMsg}),
+	rankings_folder: $author$project$Utils$Spa$recipe(
+		{page: $author$project$Generated$Rankings$Pages$page, toModel: $author$project$Generated$Pages$Rankings_Folder_Model, toMsg: $author$project$Generated$Pages$Rankings_Folder_Msg}),
 	top: $author$project$Utils$Spa$recipe(
 		{page: $author$project$Pages$Top$page, toModel: $author$project$Generated$Pages$TopModel, toMsg: $author$project$Generated$Pages$TopMsg})
 };
 var $author$project$Generated$Pages$bundle = function (bigModel) {
 	switch (bigModel.$) {
+		case 'AboutUsModel':
+			var model = bigModel.a;
+			return $author$project$Generated$Pages$recipes.aboutUs.bundle(model);
 		case 'GuideModel':
 			var model = bigModel.a;
 			return $author$project$Generated$Pages$recipes.guide.bundle(model);
@@ -18376,13 +18547,19 @@ var $author$project$Generated$Pages$bundle = function (bigModel) {
 		case 'TopModel':
 			var model = bigModel.a;
 			return $author$project$Generated$Pages$recipes.top.bundle(model);
-		default:
+		case 'Docs_Folder_Model':
 			var model = bigModel.a;
 			return $author$project$Generated$Pages$recipes.docs_folder.bundle(model);
+		default:
+			var model = bigModel.a;
+			return $author$project$Generated$Pages$recipes.rankings_folder.bundle(model);
 	}
 };
 var $author$project$Generated$Pages$init = function (route_) {
 	switch (route_.$) {
+		case 'AboutUs':
+			var params = route_.a;
+			return $author$project$Generated$Pages$recipes.aboutUs.init(params);
 		case 'Guide':
 			var params = route_.a;
 			return $author$project$Generated$Pages$recipes.guide.init(params);
@@ -18392,25 +18569,36 @@ var $author$project$Generated$Pages$init = function (route_) {
 		case 'Top':
 			var params = route_.a;
 			return $author$project$Generated$Pages$recipes.top.init(params);
-		default:
+		case 'Docs_Folder':
 			var route = route_.a;
 			return $author$project$Generated$Pages$recipes.docs_folder.init(route);
+		default:
+			var route = route_.a;
+			return $author$project$Generated$Pages$recipes.rankings_folder.init(route);
 	}
 };
 var $author$project$Generated$Pages$path = _List_Nil;
 var $author$project$Generated$Pages$update = F2(
 	function (bigMsg, bigModel) {
 		var _v0 = _Utils_Tuple2(bigMsg, bigModel);
-		_v0$4:
+		_v0$6:
 		while (true) {
 			switch (_v0.a.$) {
+				case 'AboutUsMsg':
+					if (_v0.b.$ === 'AboutUsModel') {
+						var msg = _v0.a.a;
+						var model = _v0.b.a;
+						return A2($author$project$Generated$Pages$recipes.aboutUs.update, msg, model);
+					} else {
+						break _v0$6;
+					}
 				case 'GuideMsg':
 					if (_v0.b.$ === 'GuideModel') {
 						var msg = _v0.a.a;
 						var model = _v0.b.a;
 						return A2($author$project$Generated$Pages$recipes.guide.update, msg, model);
 					} else {
-						break _v0$4;
+						break _v0$6;
 					}
 				case 'NotFoundMsg':
 					if (_v0.b.$ === 'NotFoundModel') {
@@ -18418,7 +18606,7 @@ var $author$project$Generated$Pages$update = F2(
 						var model = _v0.b.a;
 						return A2($author$project$Generated$Pages$recipes.notFound.update, msg, model);
 					} else {
-						break _v0$4;
+						break _v0$6;
 					}
 				case 'TopMsg':
 					if (_v0.b.$ === 'TopModel') {
@@ -18426,15 +18614,23 @@ var $author$project$Generated$Pages$update = F2(
 						var model = _v0.b.a;
 						return A2($author$project$Generated$Pages$recipes.top.update, msg, model);
 					} else {
-						break _v0$4;
+						break _v0$6;
 					}
-				default:
+				case 'Docs_Folder_Msg':
 					if (_v0.b.$ === 'Docs_Folder_Model') {
 						var msg = _v0.a.a;
 						var model = _v0.b.a;
 						return A2($author$project$Generated$Pages$recipes.docs_folder.update, msg, model);
 					} else {
-						break _v0$4;
+						break _v0$6;
+					}
+				default:
+					if (_v0.b.$ === 'Rankings_Folder_Model') {
+						var msg = _v0.a.a;
+						var model = _v0.b.a;
+						return A2($author$project$Generated$Pages$recipes.rankings_folder.update, msg, model);
+					} else {
+						break _v0$6;
 					}
 			}
 		}
@@ -18717,6 +18913,10 @@ var $author$project$Generated$Routes$parsers = _List_fromArray(
 	[
 		A2(
 		$elm$url$Url$Parser$map,
+		$author$project$Generated$Routes$routes.aboutUs,
+		$elm$url$Url$Parser$s('about-us')),
+		A2(
+		$elm$url$Url$Parser$map,
 		$author$project$Generated$Routes$routes.guide,
 		$elm$url$Url$Parser$s('guide')),
 		A2(
@@ -18730,6 +18930,13 @@ var $author$project$Generated$Routes$parsers = _List_fromArray(
 		A2(
 			$elm$url$Url$Parser$slash,
 			$elm$url$Url$Parser$s('docs'),
+			$elm$url$Url$Parser$top)),
+		A2(
+		$elm$url$Url$Parser$map,
+		$author$project$Generated$Routes$routes.rankings_top,
+		A2(
+			$elm$url$Url$Parser$slash,
+			$elm$url$Url$Parser$s('rankings'),
 			$elm$url$Url$Parser$top)),
 		A2(
 		$elm$url$Url$Parser$map,
@@ -19019,4 +19226,4 @@ var $author$project$Main$main = $ryannhg$elm_spa$Spa$create(
 		ui: $ryannhg$elm_spa$Spa$usingElmUi
 	});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Spa.Msg Global.Msg Generated.Pages.Msg","aliases":{"Pages.Guide.Msg":{"args":[],"type":"Basics.Never"},"Pages.NotFound.Msg":{"args":[],"type":"Basics.Never"},"Pages.Top.Msg":{"args":[],"type":"Basics.Never"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"}},"unions":{"Generated.Pages.Msg":{"args":[],"tags":{"GuideMsg":["Pages.Guide.Msg"],"NotFoundMsg":["Pages.NotFound.Msg"],"TopMsg":["Pages.Top.Msg"],"Docs_Folder_Msg":["Generated.Docs.Pages.Msg"]}},"Global.Msg":{"args":[],"tags":{"Msg":[]}},"Spa.Msg":{"args":["globalMsg","msg"],"tags":{"ChangedUrl":["Url.Url"],"ClickedLink":["Browser.UrlRequest"],"Global":["globalMsg"],"Page":["msg"],"FadeInLayout":[],"FadeInPage":["Url.Url"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Generated.Docs.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Msg"],"TopMsg":["Pages.Docs.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Basics.Never":{"args":[],"tags":{"JustOneMore":["Basics.Never"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Generated.Docs.Dynamic.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Dynamic.Msg"]}},"Pages.Docs.Dynamic.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Docs.Top.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Pages.Docs.Dynamic.Dynamic.Msg":{"args":[],"tags":{"Msg":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Spa.Msg Global.Msg Generated.Pages.Msg","aliases":{"Pages.AboutUs.Msg":{"args":[],"type":"Basics.Never"},"Pages.Guide.Msg":{"args":[],"type":"Basics.Never"},"Pages.NotFound.Msg":{"args":[],"type":"Basics.Never"},"Pages.Top.Msg":{"args":[],"type":"Basics.Never"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"}},"unions":{"Generated.Pages.Msg":{"args":[],"tags":{"AboutUsMsg":["Pages.AboutUs.Msg"],"GuideMsg":["Pages.Guide.Msg"],"NotFoundMsg":["Pages.NotFound.Msg"],"TopMsg":["Pages.Top.Msg"],"Docs_Folder_Msg":["Generated.Docs.Pages.Msg"],"Rankings_Folder_Msg":["Generated.Rankings.Pages.Msg"]}},"Global.Msg":{"args":[],"tags":{"Msg":[]}},"Spa.Msg":{"args":["globalMsg","msg"],"tags":{"ChangedUrl":["Url.Url"],"ClickedLink":["Browser.UrlRequest"],"Global":["globalMsg"],"Page":["msg"],"FadeInLayout":[],"FadeInPage":["Url.Url"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Generated.Docs.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Msg"],"TopMsg":["Pages.Docs.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Generated.Rankings.Pages.Msg":{"args":[],"tags":{"TopMsg":["Pages.Rankings.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Basics.Never":{"args":[],"tags":{"JustOneMore":["Basics.Never"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Generated.Docs.Dynamic.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Dynamic.Msg"]}},"Pages.Docs.Dynamic.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Docs.Top.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Rankings.Top.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Pages.Docs.Dynamic.Dynamic.Msg":{"args":[],"tags":{"Msg":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}}}})}});}(this));

@@ -8,6 +8,7 @@ module Generated.Routes exposing
 import Generated.Route
 import Generated.Docs.Route
 import Generated.Docs.Dynamic.Route
+import Generated.Rankings.Route
 import Url.Parser as Parser exposing ((</>), Parser, map, s, string, top)
 
 
@@ -29,10 +30,12 @@ toPath =
 
 
 type alias Routes =
-    { guide : Route
+    { aboutUs : Route
+    , guide : Route
     , notFound : Route
     , top : Route
     , docs_top : Route
+    , rankings_top : Route
     , docs_dynamic : String -> Route
     , docs_dynamic_dynamic : String -> String -> Route
     }
@@ -40,7 +43,9 @@ type alias Routes =
 
 routes : Routes
 routes =
-    { guide =
+    { aboutUs =
+        Generated.Route.AboutUs {}
+    , guide =
         Generated.Route.Guide {}
     , notFound =
         Generated.Route.NotFound {}
@@ -49,6 +54,9 @@ routes =
     , docs_top =
         Generated.Route.Docs_Folder <|
             Generated.Docs.Route.Top {}
+    , rankings_top =
+        Generated.Route.Rankings_Folder <|
+            Generated.Rankings.Route.Top {}
     , docs_dynamic =
         \param1 ->
             Generated.Route.Docs_Folder <|
@@ -63,7 +71,9 @@ routes =
 
 parsers : List (Parser (Route -> a) a)
 parsers =
-    [ map routes.guide
+    [ map routes.aboutUs
+        (s "about-us")
+    , map routes.guide
         (s "guide")
     , map routes.notFound
         (s "not-found")
@@ -71,6 +81,8 @@ parsers =
         (top)
     , map routes.docs_top
         (s "docs" </> top)
+    , map routes.rankings_top
+        (s "rankings" </> top)
     , map routes.docs_dynamic
         (s "docs" </> string)
     , map routes.docs_dynamic_dynamic
