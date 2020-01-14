@@ -18345,10 +18345,10 @@ var $author$project$Pages$Top$view = $author$project$Ui$hero(
 	{
 		buttons: _List_fromArray(
 			[
-				_Utils_Tuple2('learn more', '/docs/5c36f5422c87fa27306acb52')
+				_Utils_Tuple2('Continue ...', '/docs/5c36f5422c87fa27306acb52')
 			]),
-		description: 'Follow guide and integrate sportrank-elm putbackinsrclater',
-		title: 'SR-espa1'
+		description: 'Instant Rankings',
+		title: 'SPORTRANK'
 	});
 var $author$project$Pages$Top$page = $ryannhg$elm_spa$Spa$Page$static(
 	{
