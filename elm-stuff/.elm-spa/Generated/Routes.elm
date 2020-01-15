@@ -35,8 +35,11 @@ type alias Routes =
     , notFound : Route
     , top : Route
     , docs_top : Route
+    , rankings_players : Route
+    , rankings_ranking : Route
     , rankings_top : Route
     , docs_dynamic : String -> Route
+    , rankings_dynamic : String -> Route
     , docs_dynamic_dynamic : String -> String -> Route
     }
 
@@ -54,6 +57,12 @@ routes =
     , docs_top =
         Generated.Route.Docs_Folder <|
             Generated.Docs.Route.Top {}
+    , rankings_players =
+        Generated.Route.Rankings_Folder <|
+            Generated.Rankings.Route.Players {}
+    , rankings_ranking =
+        Generated.Route.Rankings_Folder <|
+            Generated.Rankings.Route.Ranking {}
     , rankings_top =
         Generated.Route.Rankings_Folder <|
             Generated.Rankings.Route.Top {}
@@ -61,6 +70,10 @@ routes =
         \param1 ->
             Generated.Route.Docs_Folder <|
                 Generated.Docs.Route.Dynamic param1 { param1 = param1 }
+    , rankings_dynamic =
+        \param1 ->
+            Generated.Route.Rankings_Folder <|
+                Generated.Rankings.Route.Dynamic param1 { param1 = param1 }
     , docs_dynamic_dynamic =
         \param1 param2 ->
             Generated.Route.Docs_Folder <|
@@ -81,10 +94,16 @@ parsers =
         (top)
     , map routes.docs_top
         (s "docs" </> top)
+    , map routes.rankings_players
+        (s "rankings" </> s "players")
+    , map routes.rankings_ranking
+        (s "rankings" </> s "ranking")
     , map routes.rankings_top
         (s "rankings" </> top)
     , map routes.docs_dynamic
         (s "docs" </> string)
+    , map routes.rankings_dynamic
+        (s "rankings" </> string)
     , map routes.docs_dynamic_dynamic
         (s "docs" </> string </> string)
     ]

@@ -17769,11 +17769,29 @@ var $author$project$Generated$Docs$Pages$page = $author$project$Utils$Spa$layout
 		recipe: {bundle: $author$project$Generated$Docs$Pages$bundle, init: $author$project$Generated$Docs$Pages$init, update: $author$project$Generated$Docs$Pages$update},
 		view: $author$project$Layouts$Docs$view
 	});
+var $author$project$Generated$Rankings$Pages$DynamicModel = function (a) {
+	return {$: 'DynamicModel', a: a};
+};
+var $author$project$Generated$Rankings$Pages$DynamicMsg = function (a) {
+	return {$: 'DynamicMsg', a: a};
+};
 var $author$project$Generated$Rankings$Pages$Dynamic_Folder_Model = function (a) {
 	return {$: 'Dynamic_Folder_Model', a: a};
 };
 var $author$project$Generated$Rankings$Pages$Dynamic_Folder_Msg = function (a) {
 	return {$: 'Dynamic_Folder_Msg', a: a};
+};
+var $author$project$Generated$Rankings$Pages$PlayersModel = function (a) {
+	return {$: 'PlayersModel', a: a};
+};
+var $author$project$Generated$Rankings$Pages$PlayersMsg = function (a) {
+	return {$: 'PlayersMsg', a: a};
+};
+var $author$project$Generated$Rankings$Pages$RankingModel = function (a) {
+	return {$: 'RankingModel', a: a};
+};
+var $author$project$Generated$Rankings$Pages$RankingMsg = function (a) {
+	return {$: 'RankingMsg', a: a};
 };
 var $author$project$Generated$Rankings$Pages$TopModel = function (a) {
 	return {$: 'TopModel', a: a};
@@ -17781,6 +17799,458 @@ var $author$project$Generated$Rankings$Pages$TopModel = function (a) {
 var $author$project$Generated$Rankings$Pages$TopMsg = function (a) {
 	return {$: 'TopMsg', a: a};
 };
+var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
+var $author$project$Pages$Rankings$Dynamic$RankingId = function (a) {
+	return {$: 'RankingId', a: a};
+};
+var $author$project$Pages$Rankings$Dynamic$PostReceived = function (a) {
+	return {$: 'PostReceived', a: a};
+};
+var $elm$http$Http$expectJson = F2(
+	function (toMsg, decoder) {
+		return A2(
+			$elm$http$Http$expectStringResponse,
+			toMsg,
+			$elm$http$Http$resolve(
+				function (string) {
+					return A2(
+						$elm$core$Result$mapError,
+						$elm$json$Json$Decode$errorToString,
+						A2($elm$json$Json$Decode$decodeString, decoder, string));
+				}));
+	});
+var $krisajenkins$remotedata$RemoteData$Failure = function (a) {
+	return {$: 'Failure', a: a};
+};
+var $krisajenkins$remotedata$RemoteData$Success = function (a) {
+	return {$: 'Success', a: a};
+};
+var $krisajenkins$remotedata$RemoteData$fromResult = function (result) {
+	if (result.$ === 'Err') {
+		var e = result.a;
+		return $krisajenkins$remotedata$RemoteData$Failure(e);
+	} else {
+		var x = result.a;
+		return $krisajenkins$remotedata$RemoteData$Success(x);
+	}
+};
+var $elm$http$Http$Header = F2(
+	function (a, b) {
+		return {$: 'Header', a: a, b: b};
+	});
+var $elm$http$Http$header = $elm$http$Http$Header;
+var $elm$core$Debug$log = _Debug_log;
+var $author$project$Pages$Rankings$Players$Player = F9(
+	function (datestamp, active, currentchallengername, currentchallengerid, address, rank, name, id, currentchallengeraddress) {
+		return {active: active, address: address, currentchallengeraddress: currentchallengeraddress, currentchallengerid: currentchallengerid, currentchallengername: currentchallengername, datestamp: datestamp, id: id, name: name, rank: rank};
+	});
+var $elm$json$Json$Decode$bool = _Json_decodeBool;
+var $NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom = $elm$json$Json$Decode$map2($elm$core$Basics$apR);
+var $NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required = F3(
+	function (key, valDecoder, decoder) {
+		return A2(
+			$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+			A2($elm$json$Json$Decode$field, key, valDecoder),
+			decoder);
+	});
+var $author$project$Pages$Rankings$Players$playerDecoder = A3(
+	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+	'CURRENTCHALLENGERADDRESS',
+	$elm$json$Json$Decode$string,
+	A3(
+		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+		'id',
+		$elm$json$Json$Decode$int,
+		A3(
+			$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+			'NAME',
+			$elm$json$Json$Decode$string,
+			A3(
+				$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+				'RANK',
+				$elm$json$Json$Decode$int,
+				A3(
+					$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+					'ADDRESS',
+					$elm$json$Json$Decode$string,
+					A3(
+						$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+						'CURRENTCHALLENGERID',
+						$elm$json$Json$Decode$int,
+						A3(
+							$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+							'CURRENTCHALLENGERNAME',
+							$elm$json$Json$Decode$string,
+							A3(
+								$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+								'ACTIVE',
+								$elm$json$Json$Decode$bool,
+								A3(
+									$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+									'DATESTAMP',
+									$elm$json$Json$Decode$int,
+									$elm$json$Json$Decode$succeed($author$project$Pages$Rankings$Players$Player))))))))));
+var $author$project$Pages$Rankings$Players$ladderOfPlayersDecoder = function () {
+	var _v0 = A2($elm$core$Debug$log, 'in ladderDecoder', $author$project$Pages$Rankings$Players$playerDecoder);
+	return $elm$json$Json$Decode$list($author$project$Pages$Rankings$Players$playerDecoder);
+}();
+var $author$project$Pages$Rankings$Dynamic$fetchPost = function (_v0) {
+	var postId = _v0.a;
+	var headerKey = A2($elm$http$Http$header, 'secret-key', '$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i');
+	var _v1 = A2($elm$core$Debug$log, 'rankingid in fetchPost', postId);
+	return $elm$http$Http$request(
+		{
+			body: $elm$http$Http$emptyBody,
+			expect: A2(
+				$elm$http$Http$expectJson,
+				A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$Pages$Rankings$Dynamic$PostReceived),
+				$author$project$Pages$Rankings$Players$ladderOfPlayersDecoder),
+			headers: _List_fromArray(
+				[headerKey]),
+			method: 'GET',
+			timeout: $elm$core$Maybe$Nothing,
+			tracker: $elm$core$Maybe$Nothing,
+			url: 'https://api.jsonbin.io/b/' + (postId + '/latest')
+		});
+};
+var $author$project$Pages$Rankings$Dynamic$init = function (_v0) {
+	var param1 = _v0.param1;
+	return _Utils_Tuple2(
+		{players: $krisajenkins$remotedata$RemoteData$NotAsked},
+		$author$project$Pages$Rankings$Dynamic$fetchPost(
+			$author$project$Pages$Rankings$Dynamic$RankingId(param1)));
+};
+var $author$project$Pages$Rankings$Dynamic$subscriptions = function (model) {
+	return $elm$core$Platform$Sub$none;
+};
+var $author$project$Pages$Rankings$Dynamic$update = F2(
+	function (msg, model) {
+		var post = msg.a;
+		var _v1 = A2($elm$core$Debug$log, 'list of players', post);
+		return _Utils_Tuple2(
+			_Utils_update(
+				model,
+				{players: post}),
+			$elm$core$Platform$Cmd$none);
+	});
+var $mdgriffith$elm_ui$Element$InternalColumn = function (a) {
+	return {$: 'InternalColumn', a: a};
+};
+var $mdgriffith$elm_ui$Internal$Model$GridPosition = function (a) {
+	return {$: 'GridPosition', a: a};
+};
+var $mdgriffith$elm_ui$Internal$Model$GridTemplateStyle = function (a) {
+	return {$: 'GridTemplateStyle', a: a};
+};
+var $mdgriffith$elm_ui$Internal$Model$AsGrid = {$: 'AsGrid'};
+var $mdgriffith$elm_ui$Internal$Model$asGrid = $mdgriffith$elm_ui$Internal$Model$AsGrid;
+var $mdgriffith$elm_ui$Internal$Model$getSpacing = F2(
+	function (attrs, _default) {
+		return A2(
+			$elm$core$Maybe$withDefault,
+			_default,
+			A3(
+				$elm$core$List$foldr,
+				F2(
+					function (attr, acc) {
+						if (acc.$ === 'Just') {
+							var x = acc.a;
+							return $elm$core$Maybe$Just(x);
+						} else {
+							if ((attr.$ === 'StyleClass') && (attr.b.$ === 'SpacingStyle')) {
+								var _v2 = attr.b;
+								var x = _v2.b;
+								var y = _v2.c;
+								return $elm$core$Maybe$Just(
+									_Utils_Tuple2(x, y));
+							} else {
+								return $elm$core$Maybe$Nothing;
+							}
+						}
+					}),
+				$elm$core$Maybe$Nothing,
+				attrs));
+	});
+var $mdgriffith$elm_ui$Internal$Flag$gridPosition = $mdgriffith$elm_ui$Internal$Flag$flag(35);
+var $mdgriffith$elm_ui$Internal$Flag$gridTemplate = $mdgriffith$elm_ui$Internal$Flag$flag(34);
+var $mdgriffith$elm_ui$Internal$Model$Px = function (a) {
+	return {$: 'Px', a: a};
+};
+var $mdgriffith$elm_ui$Element$px = $mdgriffith$elm_ui$Internal$Model$Px;
+var $elm$core$List$repeatHelp = F3(
+	function (result, n, value) {
+		repeatHelp:
+		while (true) {
+			if (n <= 0) {
+				return result;
+			} else {
+				var $temp$result = A2($elm$core$List$cons, value, result),
+					$temp$n = n - 1,
+					$temp$value = value;
+				result = $temp$result;
+				n = $temp$n;
+				value = $temp$value;
+				continue repeatHelp;
+			}
+		}
+	});
+var $elm$core$List$repeat = F2(
+	function (n, value) {
+		return A3($elm$core$List$repeatHelp, _List_Nil, n, value);
+	});
+var $mdgriffith$elm_ui$Element$tableHelper = F2(
+	function (attrs, config) {
+		var onGrid = F3(
+			function (rowLevel, columnLevel, elem) {
+				return A4(
+					$mdgriffith$elm_ui$Internal$Model$element,
+					$mdgriffith$elm_ui$Internal$Model$asEl,
+					$mdgriffith$elm_ui$Internal$Model$div,
+					_List_fromArray(
+						[
+							A2(
+							$mdgriffith$elm_ui$Internal$Model$StyleClass,
+							$mdgriffith$elm_ui$Internal$Flag$gridPosition,
+							$mdgriffith$elm_ui$Internal$Model$GridPosition(
+								{col: columnLevel, height: 1, row: rowLevel, width: 1}))
+						]),
+					$mdgriffith$elm_ui$Internal$Model$Unkeyed(
+						_List_fromArray(
+							[elem])));
+			});
+		var columnWidth = function (col) {
+			if (col.$ === 'InternalIndexedColumn') {
+				var colConfig = col.a;
+				return colConfig.width;
+			} else {
+				var colConfig = col.a;
+				return colConfig.width;
+			}
+		};
+		var columnHeader = function (col) {
+			if (col.$ === 'InternalIndexedColumn') {
+				var colConfig = col.a;
+				return colConfig.header;
+			} else {
+				var colConfig = col.a;
+				return colConfig.header;
+			}
+		};
+		var maybeHeaders = function (headers) {
+			return A2(
+				$elm$core$List$all,
+				$elm$core$Basics$eq($mdgriffith$elm_ui$Internal$Model$Empty),
+				headers) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(
+				A2(
+					$elm$core$List$indexedMap,
+					F2(
+						function (col, header) {
+							return A3(onGrid, 1, col + 1, header);
+						}),
+					headers));
+		}(
+			A2($elm$core$List$map, columnHeader, config.columns));
+		var add = F3(
+			function (cell, columnConfig, cursor) {
+				if (columnConfig.$ === 'InternalIndexedColumn') {
+					var col = columnConfig.a;
+					return _Utils_update(
+						cursor,
+						{
+							column: cursor.column + 1,
+							elements: A2(
+								$elm$core$List$cons,
+								A3(
+									onGrid,
+									cursor.row,
+									cursor.column,
+									A2(
+										col.view,
+										_Utils_eq(maybeHeaders, $elm$core$Maybe$Nothing) ? (cursor.row - 1) : (cursor.row - 2),
+										cell)),
+								cursor.elements)
+						});
+				} else {
+					var col = columnConfig.a;
+					return {
+						column: cursor.column + 1,
+						elements: A2(
+							$elm$core$List$cons,
+							A3(
+								onGrid,
+								cursor.row,
+								cursor.column,
+								col.view(cell)),
+							cursor.elements),
+						row: cursor.row
+					};
+				}
+			});
+		var build = F3(
+			function (columns, rowData, cursor) {
+				var newCursor = A3(
+					$elm$core$List$foldl,
+					add(rowData),
+					cursor,
+					columns);
+				return {column: 1, elements: newCursor.elements, row: cursor.row + 1};
+			});
+		var children = A3(
+			$elm$core$List$foldl,
+			build(config.columns),
+			{
+				column: 1,
+				elements: _List_Nil,
+				row: _Utils_eq(maybeHeaders, $elm$core$Maybe$Nothing) ? 1 : 2
+			},
+			config.data);
+		var _v0 = A2(
+			$mdgriffith$elm_ui$Internal$Model$getSpacing,
+			attrs,
+			_Utils_Tuple2(0, 0));
+		var sX = _v0.a;
+		var sY = _v0.b;
+		var template = A2(
+			$mdgriffith$elm_ui$Internal$Model$StyleClass,
+			$mdgriffith$elm_ui$Internal$Flag$gridTemplate,
+			$mdgriffith$elm_ui$Internal$Model$GridTemplateStyle(
+				{
+					columns: A2($elm$core$List$map, columnWidth, config.columns),
+					rows: A2(
+						$elm$core$List$repeat,
+						$elm$core$List$length(config.data),
+						$mdgriffith$elm_ui$Internal$Model$Content),
+					spacing: _Utils_Tuple2(
+						$mdgriffith$elm_ui$Element$px(sX),
+						$mdgriffith$elm_ui$Element$px(sY))
+				}));
+		return A4(
+			$mdgriffith$elm_ui$Internal$Model$element,
+			$mdgriffith$elm_ui$Internal$Model$asGrid,
+			$mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				$elm$core$List$cons,
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				A2($elm$core$List$cons, template, attrs)),
+			$mdgriffith$elm_ui$Internal$Model$Unkeyed(
+				function () {
+					if (maybeHeaders.$ === 'Nothing') {
+						return children.elements;
+					} else {
+						var renderedHeaders = maybeHeaders.a;
+						return _Utils_ap(
+							renderedHeaders,
+							$elm$core$List$reverse(children.elements));
+					}
+				}()));
+	});
+var $mdgriffith$elm_ui$Element$table = F2(
+	function (attrs, config) {
+		return A2(
+			$mdgriffith$elm_ui$Element$tableHelper,
+			attrs,
+			{
+				columns: A2($elm$core$List$map, $mdgriffith$elm_ui$Element$InternalColumn, config.columns),
+				data: config.data
+			});
+	});
+var $author$project$Pages$Rankings$Dynamic$view = function (model) {
+	var _v0 = model.players;
+	switch (_v0.$) {
+		case 'NotAsked':
+			return $mdgriffith$elm_ui$Element$text('Initialising.');
+		case 'Loading':
+			return $mdgriffith$elm_ui$Element$text('Loading.');
+		case 'Failure':
+			var err = _v0.a;
+			return $mdgriffith$elm_ui$Element$text('Error');
+		default:
+			var players = _v0.a;
+			return A2(
+				$mdgriffith$elm_ui$Element$table,
+				_List_Nil,
+				{
+					columns: _List_fromArray(
+						[
+							{
+							header: $mdgriffith$elm_ui$Element$text('Name'),
+							view: function (player) {
+								return $mdgriffith$elm_ui$Element$text(player.name);
+							},
+							width: $mdgriffith$elm_ui$Element$fill
+						},
+							{
+							header: $mdgriffith$elm_ui$Element$text('Rank'),
+							view: function (player) {
+								return $mdgriffith$elm_ui$Element$text(
+									$elm$core$String$fromInt(player.rank));
+							},
+							width: $mdgriffith$elm_ui$Element$fill
+						}
+						]),
+					data: players
+				});
+	}
+};
+var $author$project$Pages$Rankings$Dynamic$page = $ryannhg$elm_spa$Spa$Page$element(
+	{
+		init: $elm$core$Basics$always($author$project$Pages$Rankings$Dynamic$init),
+		subscriptions: $elm$core$Basics$always($author$project$Pages$Rankings$Dynamic$subscriptions),
+		title: $elm$core$Basics$always('Rankings.Dynamic'),
+		update: $elm$core$Basics$always($author$project$Pages$Rankings$Dynamic$update),
+		view: $elm$core$Basics$always($author$project$Pages$Rankings$Dynamic$view)
+	});
+var $ryannhg$elm_spa$Spa$Page$static = function (page) {
+	return $ryannhg$elm_spa$Internals$Page$Page(
+		function (_v0) {
+			var toModel = _v0.toModel;
+			var toMsg = _v0.toMsg;
+			var map = _v0.map;
+			return {
+				bundle: F3(
+					function (_v1, _private, context) {
+						return {
+							subscriptions: $elm$core$Platform$Sub$none,
+							title: page.title(
+								{global: context.global}),
+							view: A2(
+								_private.map,
+								_private.fromPageMsg,
+								A2(
+									map,
+									toMsg,
+									page.view(context)))
+						};
+					}),
+				init: F2(
+					function (_v2, _v3) {
+						return _Utils_Tuple3(
+							toModel(_Utils_Tuple0),
+							$elm$core$Platform$Cmd$none,
+							$elm$core$Platform$Cmd$none);
+					}),
+				update: F3(
+					function (_v4, model, _v5) {
+						return _Utils_Tuple3(
+							toModel(model),
+							$elm$core$Platform$Cmd$none,
+							$elm$core$Platform$Cmd$none);
+					})
+			};
+		});
+};
+var $author$project$Pages$Rankings$Players$view = $mdgriffith$elm_ui$Element$text('Rankings.Players');
+var $author$project$Pages$Rankings$Players$page = $ryannhg$elm_spa$Spa$Page$static(
+	{
+		title: $elm$core$Basics$always('Rankings.Players'),
+		view: $elm$core$Basics$always($author$project$Pages$Rankings$Players$view)
+	});
+var $author$project$Pages$Rankings$Ranking$view = $mdgriffith$elm_ui$Element$text('Rankings.Ranking');
+var $author$project$Pages$Rankings$Ranking$page = $ryannhg$elm_spa$Spa$Page$static(
+	{
+		title: $elm$core$Basics$always('Rankings.Ranking'),
+		view: $elm$core$Basics$always($author$project$Pages$Rankings$Ranking$view)
+	});
 var $author$project$Pages$Rankings$Top$FetchedContent = function (a) {
 	return {$: 'FetchedContent', a: a};
 };
@@ -17825,27 +18295,53 @@ var $author$project$Pages$Rankings$Top$page = $ryannhg$elm_spa$Spa$Page$element(
 		view: $elm$core$Basics$always($author$project$Pages$Rankings$Top$view)
 	});
 var $author$project$Generated$Rankings$Pages$recipes = {
+	dynamic: $author$project$Utils$Spa$recipe(
+		{page: $author$project$Pages$Rankings$Dynamic$page, toModel: $author$project$Generated$Rankings$Pages$DynamicModel, toMsg: $author$project$Generated$Rankings$Pages$DynamicMsg}),
 	dynamic_folder: $author$project$Utils$Spa$recipe(
 		{page: $author$project$Generated$Docs$Dynamic$Pages$page, toModel: $author$project$Generated$Rankings$Pages$Dynamic_Folder_Model, toMsg: $author$project$Generated$Rankings$Pages$Dynamic_Folder_Msg}),
+	players: $author$project$Utils$Spa$recipe(
+		{page: $author$project$Pages$Rankings$Players$page, toModel: $author$project$Generated$Rankings$Pages$PlayersModel, toMsg: $author$project$Generated$Rankings$Pages$PlayersMsg}),
+	ranking: $author$project$Utils$Spa$recipe(
+		{page: $author$project$Pages$Rankings$Ranking$page, toModel: $author$project$Generated$Rankings$Pages$RankingModel, toMsg: $author$project$Generated$Rankings$Pages$RankingMsg}),
 	top: $author$project$Utils$Spa$recipe(
 		{page: $author$project$Pages$Rankings$Top$page, toModel: $author$project$Generated$Rankings$Pages$TopModel, toMsg: $author$project$Generated$Rankings$Pages$TopMsg})
 };
 var $author$project$Generated$Rankings$Pages$bundle = function (bigModel) {
-	if (bigModel.$ === 'TopModel') {
-		var model = bigModel.a;
-		return $author$project$Generated$Rankings$Pages$recipes.top.bundle(model);
-	} else {
-		var model = bigModel.a;
-		return $author$project$Generated$Rankings$Pages$recipes.dynamic_folder.bundle(model);
+	switch (bigModel.$) {
+		case 'PlayersModel':
+			var model = bigModel.a;
+			return $author$project$Generated$Rankings$Pages$recipes.players.bundle(model);
+		case 'RankingModel':
+			var model = bigModel.a;
+			return $author$project$Generated$Rankings$Pages$recipes.ranking.bundle(model);
+		case 'TopModel':
+			var model = bigModel.a;
+			return $author$project$Generated$Rankings$Pages$recipes.top.bundle(model);
+		case 'DynamicModel':
+			var model = bigModel.a;
+			return $author$project$Generated$Rankings$Pages$recipes.dynamic.bundle(model);
+		default:
+			var model = bigModel.a;
+			return $author$project$Generated$Rankings$Pages$recipes.dynamic_folder.bundle(model);
 	}
 };
 var $author$project$Generated$Rankings$Pages$init = function (route_) {
-	if (route_.$ === 'Top') {
-		var params = route_.a;
-		return $author$project$Generated$Rankings$Pages$recipes.top.init(params);
-	} else {
-		var route = route_.b;
-		return $author$project$Generated$Rankings$Pages$recipes.dynamic_folder.init(route);
+	switch (route_.$) {
+		case 'Players':
+			var params = route_.a;
+			return $author$project$Generated$Rankings$Pages$recipes.players.init(params);
+		case 'Ranking':
+			var params = route_.a;
+			return $author$project$Generated$Rankings$Pages$recipes.ranking.init(params);
+		case 'Top':
+			var params = route_.a;
+			return $author$project$Generated$Rankings$Pages$recipes.top.init(params);
+		case 'Dynamic':
+			var params = route_.b;
+			return $author$project$Generated$Rankings$Pages$recipes.dynamic.init(params);
+		default:
+			var route = route_.b;
+			return $author$project$Generated$Rankings$Pages$recipes.dynamic_folder.init(route);
 	}
 };
 var $author$project$Generated$Rankings$Pages$path = _List_fromArray(
@@ -17855,24 +18351,49 @@ var $author$project$Generated$Rankings$Pages$path = _List_fromArray(
 var $author$project$Generated$Rankings$Pages$update = F2(
 	function (bigMsg, bigModel) {
 		var _v0 = _Utils_Tuple2(bigMsg, bigModel);
-		_v0$2:
+		_v0$5:
 		while (true) {
-			if (_v0.a.$ === 'TopMsg') {
-				if (_v0.b.$ === 'TopModel') {
-					var msg = _v0.a.a;
-					var model = _v0.b.a;
-					return A2($author$project$Generated$Rankings$Pages$recipes.top.update, msg, model);
-				} else {
-					break _v0$2;
-				}
-			} else {
-				if (_v0.b.$ === 'Dynamic_Folder_Model') {
-					var msg = _v0.a.a;
-					var model = _v0.b.a;
-					return A2($author$project$Generated$Rankings$Pages$recipes.dynamic_folder.update, msg, model);
-				} else {
-					break _v0$2;
-				}
+			switch (_v0.a.$) {
+				case 'PlayersMsg':
+					if (_v0.b.$ === 'PlayersModel') {
+						var msg = _v0.a.a;
+						var model = _v0.b.a;
+						return A2($author$project$Generated$Rankings$Pages$recipes.players.update, msg, model);
+					} else {
+						break _v0$5;
+					}
+				case 'RankingMsg':
+					if (_v0.b.$ === 'RankingModel') {
+						var msg = _v0.a.a;
+						var model = _v0.b.a;
+						return A2($author$project$Generated$Rankings$Pages$recipes.ranking.update, msg, model);
+					} else {
+						break _v0$5;
+					}
+				case 'TopMsg':
+					if (_v0.b.$ === 'TopModel') {
+						var msg = _v0.a.a;
+						var model = _v0.b.a;
+						return A2($author$project$Generated$Rankings$Pages$recipes.top.update, msg, model);
+					} else {
+						break _v0$5;
+					}
+				case 'DynamicMsg':
+					if (_v0.b.$ === 'DynamicModel') {
+						var msg = _v0.a.a;
+						var model = _v0.b.a;
+						return A2($author$project$Generated$Rankings$Pages$recipes.dynamic.update, msg, model);
+					} else {
+						break _v0$5;
+					}
+				default:
+					if (_v0.b.$ === 'Dynamic_Folder_Model') {
+						var msg = _v0.a.a;
+						var model = _v0.b.a;
+						return A2($author$project$Generated$Rankings$Pages$recipes.dynamic_folder.update, msg, model);
+					} else {
+						break _v0$5;
+					}
 			}
 		}
 		return $ryannhg$elm_spa$Spa$Page$keep(bigModel);
@@ -17887,45 +18408,6 @@ var $author$project$Generated$Rankings$Pages$page = $author$project$Utils$Spa$la
 		recipe: {bundle: $author$project$Generated$Rankings$Pages$bundle, init: $author$project$Generated$Rankings$Pages$init, update: $author$project$Generated$Rankings$Pages$update},
 		view: $author$project$Layouts$Rankings$view
 	});
-var $ryannhg$elm_spa$Spa$Page$static = function (page) {
-	return $ryannhg$elm_spa$Internals$Page$Page(
-		function (_v0) {
-			var toModel = _v0.toModel;
-			var toMsg = _v0.toMsg;
-			var map = _v0.map;
-			return {
-				bundle: F3(
-					function (_v1, _private, context) {
-						return {
-							subscriptions: $elm$core$Platform$Sub$none,
-							title: page.title(
-								{global: context.global}),
-							view: A2(
-								_private.map,
-								_private.fromPageMsg,
-								A2(
-									map,
-									toMsg,
-									page.view(context)))
-						};
-					}),
-				init: F2(
-					function (_v2, _v3) {
-						return _Utils_Tuple3(
-							toModel(_Utils_Tuple0),
-							$elm$core$Platform$Cmd$none,
-							$elm$core$Platform$Cmd$none);
-					}),
-				update: F3(
-					function (_v4, model, _v5) {
-						return _Utils_Tuple3(
-							toModel(model),
-							$elm$core$Platform$Cmd$none,
-							$elm$core$Platform$Cmd$none);
-					})
-			};
-		});
-};
 var $author$project$Pages$AboutUs$view = $mdgriffith$elm_ui$Element$text('AboutUs');
 var $author$project$Pages$AboutUs$page = $ryannhg$elm_spa$Spa$Page$static(
 	{
@@ -18360,6 +18842,10 @@ var $author$project$Generated$Docs$Route$Dynamic = F2(
 	function (a, b) {
 		return {$: 'Dynamic', a: a, b: b};
 	});
+var $author$project$Generated$Rankings$Route$Dynamic = F2(
+	function (a, b) {
+		return {$: 'Dynamic', a: a, b: b};
+	});
 var $author$project$Generated$Docs$Route$Dynamic_Folder = F2(
 	function (a, b) {
 		return {$: 'Dynamic_Folder', a: a, b: b};
@@ -18369,6 +18855,12 @@ var $author$project$Generated$Route$Guide = function (a) {
 };
 var $author$project$Generated$Route$NotFound = function (a) {
 	return {$: 'NotFound', a: a};
+};
+var $author$project$Generated$Rankings$Route$Players = function (a) {
+	return {$: 'Players', a: a};
+};
+var $author$project$Generated$Rankings$Route$Ranking = function (a) {
+	return {$: 'Ranking', a: a};
 };
 var $author$project$Generated$Route$Rankings_Folder = function (a) {
 	return {$: 'Rankings_Folder', a: a};
@@ -18410,6 +18902,19 @@ var $author$project$Generated$Routes$routes = {
 		{}),
 	notFound: $author$project$Generated$Route$NotFound(
 		{}),
+	rankings_dynamic: function (param1) {
+		return $author$project$Generated$Route$Rankings_Folder(
+			A2(
+				$author$project$Generated$Rankings$Route$Dynamic,
+				param1,
+				{param1: param1}));
+	},
+	rankings_players: $author$project$Generated$Route$Rankings_Folder(
+		$author$project$Generated$Rankings$Route$Players(
+			{})),
+	rankings_ranking: $author$project$Generated$Route$Rankings_Folder(
+		$author$project$Generated$Rankings$Route$Ranking(
+			{})),
 	rankings_top: $author$project$Generated$Route$Rankings_Folder(
 		$author$project$Generated$Rankings$Route$Top(
 			{})),
@@ -18434,12 +18939,20 @@ var $author$project$Generated$Docs$Route$toPath = function (route) {
 	}
 };
 var $author$project$Generated$Rankings$Route$toPath = function (route) {
-	if (route.$ === 'Top') {
-		return '/';
-	} else {
-		var value = route.a;
-		var subRoute = route.b;
-		return '/' + (value + $author$project$Generated$Docs$Dynamic$Route$toPath(subRoute));
+	switch (route.$) {
+		case 'Players':
+			return '/players';
+		case 'Ranking':
+			return '/ranking';
+		case 'Top':
+			return '/';
+		case 'Dynamic':
+			var value = route.a;
+			return '/' + value;
+		default:
+			var value = route.a;
+			var subRoute = route.b;
+			return '/' + (value + $author$project$Generated$Docs$Dynamic$Route$toPath(subRoute));
 	}
 };
 var $author$project$Generated$Route$toPath = function (route) {
@@ -18933,6 +19446,20 @@ var $author$project$Generated$Routes$parsers = _List_fromArray(
 			$elm$url$Url$Parser$top)),
 		A2(
 		$elm$url$Url$Parser$map,
+		$author$project$Generated$Routes$routes.rankings_players,
+		A2(
+			$elm$url$Url$Parser$slash,
+			$elm$url$Url$Parser$s('rankings'),
+			$elm$url$Url$Parser$s('players'))),
+		A2(
+		$elm$url$Url$Parser$map,
+		$author$project$Generated$Routes$routes.rankings_ranking,
+		A2(
+			$elm$url$Url$Parser$slash,
+			$elm$url$Url$Parser$s('rankings'),
+			$elm$url$Url$Parser$s('ranking'))),
+		A2(
+		$elm$url$Url$Parser$map,
 		$author$project$Generated$Routes$routes.rankings_top,
 		A2(
 			$elm$url$Url$Parser$slash,
@@ -18944,6 +19471,13 @@ var $author$project$Generated$Routes$parsers = _List_fromArray(
 		A2(
 			$elm$url$Url$Parser$slash,
 			$elm$url$Url$Parser$s('docs'),
+			$elm$url$Url$Parser$string)),
+		A2(
+		$elm$url$Url$Parser$map,
+		$author$project$Generated$Routes$routes.rankings_dynamic,
+		A2(
+			$elm$url$Url$Parser$slash,
+			$elm$url$Url$Parser$s('rankings'),
 			$elm$url$Url$Parser$string)),
 		A2(
 		$elm$url$Url$Parser$map,
@@ -19226,4 +19760,4 @@ var $author$project$Main$main = $ryannhg$elm_spa$Spa$create(
 		ui: $ryannhg$elm_spa$Spa$usingElmUi
 	});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Spa.Msg Global.Msg Generated.Pages.Msg","aliases":{"Pages.AboutUs.Msg":{"args":[],"type":"Basics.Never"},"Pages.Guide.Msg":{"args":[],"type":"Basics.Never"},"Pages.NotFound.Msg":{"args":[],"type":"Basics.Never"},"Pages.Top.Msg":{"args":[],"type":"Basics.Never"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"}},"unions":{"Generated.Pages.Msg":{"args":[],"tags":{"AboutUsMsg":["Pages.AboutUs.Msg"],"GuideMsg":["Pages.Guide.Msg"],"NotFoundMsg":["Pages.NotFound.Msg"],"TopMsg":["Pages.Top.Msg"],"Docs_Folder_Msg":["Generated.Docs.Pages.Msg"],"Rankings_Folder_Msg":["Generated.Rankings.Pages.Msg"]}},"Global.Msg":{"args":[],"tags":{"Msg":[]}},"Spa.Msg":{"args":["globalMsg","msg"],"tags":{"ChangedUrl":["Url.Url"],"ClickedLink":["Browser.UrlRequest"],"Global":["globalMsg"],"Page":["msg"],"FadeInLayout":[],"FadeInPage":["Url.Url"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Generated.Docs.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Msg"],"TopMsg":["Pages.Docs.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Generated.Rankings.Pages.Msg":{"args":[],"tags":{"TopMsg":["Pages.Rankings.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Basics.Never":{"args":[],"tags":{"JustOneMore":["Basics.Never"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Generated.Docs.Dynamic.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Dynamic.Msg"]}},"Pages.Docs.Dynamic.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Docs.Top.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Rankings.Top.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Pages.Docs.Dynamic.Dynamic.Msg":{"args":[],"tags":{"Msg":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Spa.Msg Global.Msg Generated.Pages.Msg","aliases":{"Pages.AboutUs.Msg":{"args":[],"type":"Basics.Never"},"Pages.Guide.Msg":{"args":[],"type":"Basics.Never"},"Pages.NotFound.Msg":{"args":[],"type":"Basics.Never"},"Pages.Top.Msg":{"args":[],"type":"Basics.Never"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Pages.Rankings.Players.Msg":{"args":[],"type":"Basics.Never"},"Pages.Rankings.Ranking.Msg":{"args":[],"type":"Basics.Never"},"Pages.Rankings.Players.Player":{"args":[],"type":"{ datestamp : Basics.Int, active : Basics.Bool, currentchallengername : String.String, currentchallengerid : Basics.Int, address : String.String, rank : Basics.Int, name : String.String, id : Basics.Int, currentchallengeraddress : String.String }"},"RemoteData.WebData":{"args":["a"],"type":"RemoteData.RemoteData Http.Error a"}},"unions":{"Generated.Pages.Msg":{"args":[],"tags":{"AboutUsMsg":["Pages.AboutUs.Msg"],"GuideMsg":["Pages.Guide.Msg"],"NotFoundMsg":["Pages.NotFound.Msg"],"TopMsg":["Pages.Top.Msg"],"Docs_Folder_Msg":["Generated.Docs.Pages.Msg"],"Rankings_Folder_Msg":["Generated.Rankings.Pages.Msg"]}},"Global.Msg":{"args":[],"tags":{"Msg":[]}},"Spa.Msg":{"args":["globalMsg","msg"],"tags":{"ChangedUrl":["Url.Url"],"ClickedLink":["Browser.UrlRequest"],"Global":["globalMsg"],"Page":["msg"],"FadeInLayout":[],"FadeInPage":["Url.Url"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Generated.Docs.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Msg"],"TopMsg":["Pages.Docs.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Generated.Rankings.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Rankings.Dynamic.Msg"],"PlayersMsg":["Pages.Rankings.Players.Msg"],"RankingMsg":["Pages.Rankings.Ranking.Msg"],"TopMsg":["Pages.Rankings.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Basics.Never":{"args":[],"tags":{"JustOneMore":["Basics.Never"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Generated.Docs.Dynamic.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Dynamic.Msg"]}},"Pages.Docs.Dynamic.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Docs.Top.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Rankings.Dynamic.Msg":{"args":[],"tags":{"PostReceived":["RemoteData.WebData (List.List Pages.Rankings.Players.Player)"]}},"Pages.Rankings.Top.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Pages.Docs.Dynamic.Dynamic.Msg":{"args":[],"tags":{"Msg":[]}},"RemoteData.RemoteData":{"args":["e","a"],"tags":{"NotAsked":[],"Loading":[],"Failure":["e"],"Success":["a"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}}}})}});}(this));

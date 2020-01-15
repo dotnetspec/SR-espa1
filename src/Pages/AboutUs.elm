@@ -1,8 +1,8 @@
 module Pages.AboutUs exposing (Model, Msg, page)
 
-import Spa.Page
 import Element exposing (..)
 import Generated.Params as Params
+import Spa.Page
 import Utils.Spa exposing (Page)
 
 
