@@ -9,6 +9,7 @@ import Pages.Rankings.Ranking exposing (Ranking, RankingId(..), rankingDecoder, 
 import RemoteData exposing (RemoteData, WebData)
 import Spa.Page
 import Ui
+import Utils.MyUtils exposing (boolToString)
 import Utils.Spa exposing (Page)
 
 
@@ -129,16 +130,128 @@ subscriptions model =
 view : Model -> Element Msg
 view model =
     --Ui.markdown (WebData Ranking model.content)
-    let
-        --newContent = List { model | rankingid, rankingname }
-        _ =
-            Debug.log "made it to view" model.content
-    in
-    Element.text "hello"
+    --let
+    --newContent = List { model | rankingid, rankingname }
+    --newdata =
+    --    [ { active = True, desc = "lkjlkjklj", id = "5d8f5d00de0ab12e3d91df6e", name = "testrank0" }
+    --    , { active = True, desc = "lkjjjk", id = "5d8f5dcabfb1f70f0b11638b", name = "testranking2" }
+    --    , { active = True, desc = "kjlkjl", id = "5d9143cf2cefcd53be2171ad", name = "testrank1" }
+    --    ]
+    --_ =
+    --    Debug.log "newdata" newdata
+    --_ =
+    --    Debug.log model.content
+    --_ =
+    --    Debug.log "list map to extractRanking " List.map extractRanking (WebData model.content)
+    --in
+    --Element.text "hello"
+    viewPostsOrError model
+
+
+extractRanking : Ranking -> { id : String, active : Bool, name : String, desc : String }
+extractRanking ranking =
+    { id = ranking.id
+    , active = ranking.active
+    , name = ranking.name
+    , desc = ranking.desc
+    }
+
+
+viewPostsOrError : Model -> Element Msg
+viewPostsOrError model =
+    case model.content of
+        RemoteData.NotAsked ->
+            Element.text ""
+
+        RemoteData.Loading ->
+            Element.text "Loading..."
+
+        RemoteData.Success posts ->
+            viewPosts posts
+
+        RemoteData.Failure httpError ->
+            Element.text "Failure"
 
 
 
+--viewError (buildErrorMessage httpError)
+
+
+viewPosts : List Ranking -> Element Msg
+viewPosts posts =
+    --Element.text "Posts"
+    --let
+    --    newlist =
+    --        List.map viewPost posts
+    --    _ =
+    --        Debug.log "newlist" newlist
+    --in
+    --Element.text (String.fromInt (List.length newlist))
+    Element.table []
+        { data = posts
+        , columns =
+            [ { header = Element.text "Active"
+              , width = fill
+              , view =
+                    \ranking ->
+                        Element.text (boolToString ranking.active)
+              }
+            , { header = Element.text "Ranking Id"
+              , width = fill
+              , view =
+                    \ranking ->
+                        Element.text ranking.id
+              }
+            , { header = Element.text "Ranking Name"
+              , width = fill
+              , view =
+                    \ranking ->
+                        Element.text ranking.name
+              }
+            , { header = Element.text "Ranking Desc"
+              , width = fill
+              , view =
+                    \ranking ->
+                        Element.text ranking.desc
+              }
+            ]
+        }
+
+
+
+--Element.text newlist
+--viewPost : Ranking -> Element Msg
+--viewPost rankingdata =
+--    --Element.text post.id
 --    Element.table []
+--        { data = rankingdata
+--        , columns =
+--            [ { header = Element.text "Active"
+--              , width = fill
+--              , view =
+--                    \ranking ->
+--                        Element.text (boolToString ranking.active)
+--              }
+--            , { header = Element.text "Ranking Id"
+--              , width = fill
+--              , view =
+--                    \ranking ->
+--                        Element.text ranking.id
+--              }
+--            , { header = Element.text "Ranking Name"
+--              , width = fill
+--              , view =
+--                    \ranking ->
+--                        Element.text ranking.name
+--              }
+--            , { header = Element.text "Ranking Desc"
+--              , width = fill
+--              , view =
+--                    \ranking ->
+--                        Element.text ranking.desc
+--              }
+--            ]
+--        }
 --    { columns =
 --        [ { header = Element.text "Ranking"
 --          , width = fill
@@ -154,23 +267,4 @@ view model =
 --          }
 --        ]
 --        ,data = model.content
---}
-
-
-
---{ data = model.content
---, columns =
---    [ { header = Element.text "Ranking"
---      , width = fill
---      , view =
---            \ranking ->
---                Element.text ranking.rankingid
---      }
---    , { header = Element.text "Ranking Name"
---      , width = fill
---      , view =
---            \ranking ->
---                Element.text ranking.rankingname
---      }
---    ]
 --}

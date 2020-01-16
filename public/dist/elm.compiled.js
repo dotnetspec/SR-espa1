@@ -18337,9 +18337,70 @@ var $author$project$Pages$Rankings$Top$update = F2(
 				{content: post}),
 			$elm$core$Platform$Cmd$none);
 	});
+var $author$project$Utils$MyUtils$boolToString = function (bool) {
+	if (bool) {
+		return 'True';
+	} else {
+		return 'False';
+	}
+};
+var $author$project$Pages$Rankings$Top$viewPosts = function (posts) {
+	return A2(
+		$mdgriffith$elm_ui$Element$table,
+		_List_Nil,
+		{
+			columns: _List_fromArray(
+				[
+					{
+					header: $mdgriffith$elm_ui$Element$text('Active'),
+					view: function (ranking) {
+						return $mdgriffith$elm_ui$Element$text(
+							$author$project$Utils$MyUtils$boolToString(ranking.active));
+					},
+					width: $mdgriffith$elm_ui$Element$fill
+				},
+					{
+					header: $mdgriffith$elm_ui$Element$text('Ranking Id'),
+					view: function (ranking) {
+						return $mdgriffith$elm_ui$Element$text(ranking.id);
+					},
+					width: $mdgriffith$elm_ui$Element$fill
+				},
+					{
+					header: $mdgriffith$elm_ui$Element$text('Ranking Name'),
+					view: function (ranking) {
+						return $mdgriffith$elm_ui$Element$text(ranking.name);
+					},
+					width: $mdgriffith$elm_ui$Element$fill
+				},
+					{
+					header: $mdgriffith$elm_ui$Element$text('Ranking Desc'),
+					view: function (ranking) {
+						return $mdgriffith$elm_ui$Element$text(ranking.desc);
+					},
+					width: $mdgriffith$elm_ui$Element$fill
+				}
+				]),
+			data: posts
+		});
+};
+var $author$project$Pages$Rankings$Top$viewPostsOrError = function (model) {
+	var _v0 = model.content;
+	switch (_v0.$) {
+		case 'NotAsked':
+			return $mdgriffith$elm_ui$Element$text('');
+		case 'Loading':
+			return $mdgriffith$elm_ui$Element$text('Loading...');
+		case 'Success':
+			var posts = _v0.a;
+			return $author$project$Pages$Rankings$Top$viewPosts(posts);
+		default:
+			var httpError = _v0.a;
+			return $mdgriffith$elm_ui$Element$text('Failure');
+	}
+};
 var $author$project$Pages$Rankings$Top$view = function (model) {
-	var _v0 = A2($elm$core$Debug$log, 'made it to view', model.content);
-	return $mdgriffith$elm_ui$Element$text('hello');
+	return $author$project$Pages$Rankings$Top$viewPostsOrError(model);
 };
 var $author$project$Pages$Rankings$Top$page = $ryannhg$elm_spa$Spa$Page$element(
 	{
