@@ -3,6 +3,10 @@ module Pages.Rankings.Top exposing (Model, Msg, page)
 import Element exposing (..)
 import Generated.Rankings.Params as Params
 import Http
+import Json.Decode as Decode exposing (Decoder, bool, int, list, string)
+import Pages.Rankings.Players exposing (Player, PlayerId(..), emptyPlayer, emptyPlayerId, ladderOfPlayersDecoder, playerDecoder, playerEncoder)
+import Pages.Rankings.Ranking exposing (Ranking, RankingId(..), rankingDecoder, rankingEncoder, rankingsDecoder)
+import RemoteData exposing (RemoteData, WebData)
 import Spa.Page
 import Ui
 import Utils.Spa exposing (Page)
@@ -19,50 +23,93 @@ page =
         }
 
 
+type Msg
+    = RankingsReceived (WebData (List Ranking))
+
+
+
+--| FetchedContent (Result Http.Error String)
+
+
+type RemoteData e a
+    = NotAsked
+    | Loading
+    | Failure e
+    | Success a
+
+
+type alias Model =
+    { content : WebData (List Ranking) }
+
+
 
 -- INIT
 
 
 init : Params.Top -> ( Model, Cmd Msg )
 init _ =
-    ( { content = "" }
-    , Http.get
-        { expect = Http.expectString FetchedContent
-        , url = "https://api.jsonbin.io/b/5c36f5422c87fa27306acb52/latest"
+    ( { content = RemoteData.NotAsked }
+    , --Http.get
+      --{ expect = Http.expectString FetchedContent
+      --, url = "https://api.jsonbin.io/b/5c36f5422c87fa27306acb52/latest"
+      --}
+      Http.get
+        { url = "https://api.jsonbin.io/b/5c36f5422c87fa27306acb52/latest"
+        , expect =
+            rankingsDecoder
+                |> expectJson (RemoteData.fromResult >> RankingsReceived)
         }
     )
 
 
-type alias Model =
-    { content : String }
+expectJson : (Result Http.Error a -> msg) -> Decode.Decoder a -> Http.Expect msg
+expectJson toMsg decoder =
+    Http.expectStringResponse toMsg <|
+        \response ->
+            case response of
+                Http.BadUrl_ url ->
+                    Err (Http.BadUrl url)
+
+                Http.Timeout_ ->
+                    Err Http.Timeout
+
+                Http.NetworkError_ ->
+                    Err Http.NetworkError
+
+                Http.BadStatus_ metadata body ->
+                    Err (Http.BadStatus metadata.statusCode)
+
+                Http.GoodStatus_ metadata body ->
+                    case Decode.decodeString decoder body of
+                        Ok value ->
+                            Ok value
+
+                        Err err ->
+                            Err (Http.BadBody (Decode.errorToString err))
 
 
 
---Http.get
---   { url = "https://api.jsonbin.io/b/5c36f5422c87fa27306acb52/latest"
---   , expect =
---       rankingsDecoder
---           |> Http.expectJson (RemoteData.fromResult >> RankingsReceived)
---   }
 -- UPDATE
-
-
-type Msg
-    = FetchedContent (Result Http.Error String)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        FetchedContent (Ok markdown) ->
-            ( { model | content = markdown }
-            , Cmd.none
-            )
-
-        FetchedContent (Err _) ->
-            ( { model | content = "there was an error" }
-            , Cmd.none
-            )
+        --FetchedContent (Ok markdown) ->
+        --    ( { model | content = markdown }
+        --    , Cmd.none
+        --    )
+        --FetchedContent (Err _) ->
+        --    ( { model | content = "there was an error" }
+        --    , Cmd.none
+        --    )
+        RankingsReceived post ->
+            let
+                _ =
+                    Debug.log "list of rankings" post
+            in
+            --remove the first record (created on ranking creation with different format)
+            ( { model | content = post }, Cmd.none )
 
 
 
@@ -81,4 +128,49 @@ subscriptions model =
 
 view : Model -> Element Msg
 view model =
-    Ui.markdown model.content
+    --Ui.markdown (WebData Ranking model.content)
+    let
+        --newContent = List { model | rankingid, rankingname }
+        _ =
+            Debug.log "made it to view" model.content
+    in
+    Element.text "hello"
+
+
+
+--    Element.table []
+--    { columns =
+--        [ { header = Element.text "Ranking"
+--          , width = fill
+--          , view =
+--                \ranking ->
+--                    Element.text "ranking.rankingid"
+--          }
+--        , { header = Element.text "Ranking Name"
+--          , width = fill
+--          , view =
+--                \ranking ->
+--                    Element.text 'name here'
+--          }
+--        ]
+--        ,data = model.content
+--}
+
+
+
+--{ data = model.content
+--, columns =
+--    [ { header = Element.text "Ranking"
+--      , width = fill
+--      , view =
+--            \ranking ->
+--                Element.text ranking.rankingid
+--      }
+--    , { header = Element.text "Ranking Name"
+--      , width = fill
+--      , view =
+--            \ranking ->
+--                Element.text ranking.rankingname
+--      }
+--    ]
+--}

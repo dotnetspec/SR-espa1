@@ -18251,15 +18251,76 @@ var $author$project$Pages$Rankings$Ranking$page = $ryannhg$elm_spa$Spa$Page$stat
 		title: $elm$core$Basics$always('Rankings.Ranking'),
 		view: $elm$core$Basics$always($author$project$Pages$Rankings$Ranking$view)
 	});
-var $author$project$Pages$Rankings$Top$FetchedContent = function (a) {
-	return {$: 'FetchedContent', a: a};
+var $author$project$Pages$Rankings$Top$RankingsReceived = function (a) {
+	return {$: 'RankingsReceived', a: a};
 };
+var $author$project$Pages$Rankings$Top$expectJson = F2(
+	function (toMsg, decoder) {
+		return A2(
+			$elm$http$Http$expectStringResponse,
+			toMsg,
+			function (response) {
+				switch (response.$) {
+					case 'BadUrl_':
+						var url = response.a;
+						return $elm$core$Result$Err(
+							$elm$http$Http$BadUrl(url));
+					case 'Timeout_':
+						return $elm$core$Result$Err($elm$http$Http$Timeout);
+					case 'NetworkError_':
+						return $elm$core$Result$Err($elm$http$Http$NetworkError);
+					case 'BadStatus_':
+						var metadata = response.a;
+						var body = response.b;
+						return $elm$core$Result$Err(
+							$elm$http$Http$BadStatus(metadata.statusCode));
+					default:
+						var metadata = response.a;
+						var body = response.b;
+						var _v1 = A2($elm$json$Json$Decode$decodeString, decoder, body);
+						if (_v1.$ === 'Ok') {
+							var value = _v1.a;
+							return $elm$core$Result$Ok(value);
+						} else {
+							var err = _v1.a;
+							return $elm$core$Result$Err(
+								$elm$http$Http$BadBody(
+									$elm$json$Json$Decode$errorToString(err)));
+						}
+				}
+			});
+	});
+var $author$project$Pages$Rankings$Ranking$Ranking = F4(
+	function (id, active, name, desc) {
+		return {active: active, desc: desc, id: id, name: name};
+	});
+var $author$project$Pages$Rankings$Ranking$rankingDecoder = A3(
+	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+	'RANKINGDESC',
+	$elm$json$Json$Decode$string,
+	A3(
+		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+		'RANKINGNAME',
+		$elm$json$Json$Decode$string,
+		A3(
+			$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+			'ACTIVE',
+			$elm$json$Json$Decode$bool,
+			A3(
+				$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+				'RANKINGID',
+				$elm$json$Json$Decode$string,
+				$elm$json$Json$Decode$succeed($author$project$Pages$Rankings$Ranking$Ranking)))));
+var $author$project$Pages$Rankings$Ranking$rankingsDecoder = $elm$json$Json$Decode$list($author$project$Pages$Rankings$Ranking$rankingDecoder);
 var $author$project$Pages$Rankings$Top$init = function (_v0) {
 	return _Utils_Tuple2(
-		{content: ''},
+		{content: $krisajenkins$remotedata$RemoteData$NotAsked},
 		$elm$http$Http$get(
 			{
-				expect: $elm$http$Http$expectString($author$project$Pages$Rankings$Top$FetchedContent),
+				expect: A2(
+					$author$project$Pages$Rankings$Top$expectJson,
+					A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$Pages$Rankings$Top$RankingsReceived),
+					$author$project$Pages$Rankings$Ranking$rankingsDecoder),
 				url: 'https://api.jsonbin.io/b/5c36f5422c87fa27306acb52/latest'
 			}));
 };
@@ -18268,23 +18329,17 @@ var $author$project$Pages$Rankings$Top$subscriptions = function (model) {
 };
 var $author$project$Pages$Rankings$Top$update = F2(
 	function (msg, model) {
-		if (msg.a.$ === 'Ok') {
-			var markdown = msg.a.a;
-			return _Utils_Tuple2(
-				_Utils_update(
-					model,
-					{content: markdown}),
-				$elm$core$Platform$Cmd$none);
-		} else {
-			return _Utils_Tuple2(
-				_Utils_update(
-					model,
-					{content: 'there was an error'}),
-				$elm$core$Platform$Cmd$none);
-		}
+		var post = msg.a;
+		var _v1 = A2($elm$core$Debug$log, 'list of rankings', post);
+		return _Utils_Tuple2(
+			_Utils_update(
+				model,
+				{content: post}),
+			$elm$core$Platform$Cmd$none);
 	});
 var $author$project$Pages$Rankings$Top$view = function (model) {
-	return $author$project$Ui$markdown(model.content);
+	var _v0 = A2($elm$core$Debug$log, 'made it to view', model.content);
+	return $mdgriffith$elm_ui$Element$text('hello');
 };
 var $author$project$Pages$Rankings$Top$page = $ryannhg$elm_spa$Spa$Page$element(
 	{
@@ -19760,4 +19815,4 @@ var $author$project$Main$main = $ryannhg$elm_spa$Spa$create(
 		ui: $ryannhg$elm_spa$Spa$usingElmUi
 	});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Spa.Msg Global.Msg Generated.Pages.Msg","aliases":{"Pages.AboutUs.Msg":{"args":[],"type":"Basics.Never"},"Pages.Guide.Msg":{"args":[],"type":"Basics.Never"},"Pages.NotFound.Msg":{"args":[],"type":"Basics.Never"},"Pages.Top.Msg":{"args":[],"type":"Basics.Never"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Pages.Rankings.Players.Msg":{"args":[],"type":"Basics.Never"},"Pages.Rankings.Ranking.Msg":{"args":[],"type":"Basics.Never"},"Pages.Rankings.Players.Player":{"args":[],"type":"{ datestamp : Basics.Int, active : Basics.Bool, currentchallengername : String.String, currentchallengerid : Basics.Int, address : String.String, rank : Basics.Int, name : String.String, id : Basics.Int, currentchallengeraddress : String.String }"},"RemoteData.WebData":{"args":["a"],"type":"RemoteData.RemoteData Http.Error a"}},"unions":{"Generated.Pages.Msg":{"args":[],"tags":{"AboutUsMsg":["Pages.AboutUs.Msg"],"GuideMsg":["Pages.Guide.Msg"],"NotFoundMsg":["Pages.NotFound.Msg"],"TopMsg":["Pages.Top.Msg"],"Docs_Folder_Msg":["Generated.Docs.Pages.Msg"],"Rankings_Folder_Msg":["Generated.Rankings.Pages.Msg"]}},"Global.Msg":{"args":[],"tags":{"Msg":[]}},"Spa.Msg":{"args":["globalMsg","msg"],"tags":{"ChangedUrl":["Url.Url"],"ClickedLink":["Browser.UrlRequest"],"Global":["globalMsg"],"Page":["msg"],"FadeInLayout":[],"FadeInPage":["Url.Url"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Generated.Docs.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Msg"],"TopMsg":["Pages.Docs.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Generated.Rankings.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Rankings.Dynamic.Msg"],"PlayersMsg":["Pages.Rankings.Players.Msg"],"RankingMsg":["Pages.Rankings.Ranking.Msg"],"TopMsg":["Pages.Rankings.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Basics.Never":{"args":[],"tags":{"JustOneMore":["Basics.Never"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Generated.Docs.Dynamic.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Dynamic.Msg"]}},"Pages.Docs.Dynamic.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Docs.Top.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Rankings.Dynamic.Msg":{"args":[],"tags":{"PostReceived":["RemoteData.WebData (List.List Pages.Rankings.Players.Player)"]}},"Pages.Rankings.Top.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Pages.Docs.Dynamic.Dynamic.Msg":{"args":[],"tags":{"Msg":[]}},"RemoteData.RemoteData":{"args":["e","a"],"tags":{"NotAsked":[],"Loading":[],"Failure":["e"],"Success":["a"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Spa.Msg Global.Msg Generated.Pages.Msg","aliases":{"Pages.AboutUs.Msg":{"args":[],"type":"Basics.Never"},"Pages.Guide.Msg":{"args":[],"type":"Basics.Never"},"Pages.NotFound.Msg":{"args":[],"type":"Basics.Never"},"Pages.Top.Msg":{"args":[],"type":"Basics.Never"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Pages.Rankings.Players.Msg":{"args":[],"type":"Basics.Never"},"Pages.Rankings.Ranking.Msg":{"args":[],"type":"Basics.Never"},"Pages.Rankings.Players.Player":{"args":[],"type":"{ datestamp : Basics.Int, active : Basics.Bool, currentchallengername : String.String, currentchallengerid : Basics.Int, address : String.String, rank : Basics.Int, name : String.String, id : Basics.Int, currentchallengeraddress : String.String }"},"Pages.Rankings.Ranking.Ranking":{"args":[],"type":"{ id : String.String, active : Basics.Bool, name : String.String, desc : String.String }"},"RemoteData.WebData":{"args":["a"],"type":"RemoteData.RemoteData Http.Error a"}},"unions":{"Generated.Pages.Msg":{"args":[],"tags":{"AboutUsMsg":["Pages.AboutUs.Msg"],"GuideMsg":["Pages.Guide.Msg"],"NotFoundMsg":["Pages.NotFound.Msg"],"TopMsg":["Pages.Top.Msg"],"Docs_Folder_Msg":["Generated.Docs.Pages.Msg"],"Rankings_Folder_Msg":["Generated.Rankings.Pages.Msg"]}},"Global.Msg":{"args":[],"tags":{"Msg":[]}},"Spa.Msg":{"args":["globalMsg","msg"],"tags":{"ChangedUrl":["Url.Url"],"ClickedLink":["Browser.UrlRequest"],"Global":["globalMsg"],"Page":["msg"],"FadeInLayout":[],"FadeInPage":["Url.Url"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Generated.Docs.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Msg"],"TopMsg":["Pages.Docs.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Generated.Rankings.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Rankings.Dynamic.Msg"],"PlayersMsg":["Pages.Rankings.Players.Msg"],"RankingMsg":["Pages.Rankings.Ranking.Msg"],"TopMsg":["Pages.Rankings.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Basics.Never":{"args":[],"tags":{"JustOneMore":["Basics.Never"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Generated.Docs.Dynamic.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Dynamic.Msg"]}},"Pages.Docs.Dynamic.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Docs.Top.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Rankings.Dynamic.Msg":{"args":[],"tags":{"PostReceived":["RemoteData.WebData (List.List Pages.Rankings.Players.Player)"]}},"Pages.Rankings.Top.Msg":{"args":[],"tags":{"RankingsReceived":["RemoteData.WebData (List.List Pages.Rankings.Ranking.Ranking)"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Pages.Docs.Dynamic.Dynamic.Msg":{"args":[],"tags":{"Msg":[]}},"RemoteData.RemoteData":{"args":["e","a"],"tags":{"NotAsked":[],"Loading":[],"Failure":["e"],"Success":["a"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}}}})}});}(this));
