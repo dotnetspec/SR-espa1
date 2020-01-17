@@ -8,7 +8,8 @@ import Generated.Docs.Dynamic.Route
 
 
 type Route
-    = Top Params.Top
+    = Dynamic String Params.Dynamic
+    | Top Params.Top
     | Dynamic_Folder String Generated.Docs.Dynamic.Route.Route
 
 

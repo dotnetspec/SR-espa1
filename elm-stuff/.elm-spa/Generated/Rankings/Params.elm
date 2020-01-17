@@ -1,5 +1,10 @@
 module Generated.Rankings.Params exposing (..)
 
 
+type alias Dynamic =
+    { param1 : String
+    }
+
+
 type alias Top =
     {}

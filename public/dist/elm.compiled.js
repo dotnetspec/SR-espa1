@@ -17781,18 +17781,6 @@ var $author$project$Generated$Rankings$Pages$Dynamic_Folder_Model = function (a)
 var $author$project$Generated$Rankings$Pages$Dynamic_Folder_Msg = function (a) {
 	return {$: 'Dynamic_Folder_Msg', a: a};
 };
-var $author$project$Generated$Rankings$Pages$PlayersModel = function (a) {
-	return {$: 'PlayersModel', a: a};
-};
-var $author$project$Generated$Rankings$Pages$PlayersMsg = function (a) {
-	return {$: 'PlayersMsg', a: a};
-};
-var $author$project$Generated$Rankings$Pages$RankingModel = function (a) {
-	return {$: 'RankingModel', a: a};
-};
-var $author$project$Generated$Rankings$Pages$RankingMsg = function (a) {
-	return {$: 'RankingMsg', a: a};
-};
 var $author$project$Generated$Rankings$Pages$TopModel = function (a) {
 	return {$: 'TopModel', a: a};
 };
@@ -17800,24 +17788,44 @@ var $author$project$Generated$Rankings$Pages$TopMsg = function (a) {
 	return {$: 'TopMsg', a: a};
 };
 var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
-var $author$project$Pages$Rankings$Dynamic$RankingId = function (a) {
-	return {$: 'RankingId', a: a};
+var $author$project$Pages$Rankings$Dynamic$RankingsReceived = function (a) {
+	return {$: 'RankingsReceived', a: a};
 };
-var $author$project$Pages$Rankings$Dynamic$PostReceived = function (a) {
-	return {$: 'PostReceived', a: a};
-};
-var $elm$http$Http$expectJson = F2(
+var $author$project$Pages$Rankings$Dynamic$expectJson = F2(
 	function (toMsg, decoder) {
 		return A2(
 			$elm$http$Http$expectStringResponse,
 			toMsg,
-			$elm$http$Http$resolve(
-				function (string) {
-					return A2(
-						$elm$core$Result$mapError,
-						$elm$json$Json$Decode$errorToString,
-						A2($elm$json$Json$Decode$decodeString, decoder, string));
-				}));
+			function (response) {
+				switch (response.$) {
+					case 'BadUrl_':
+						var url = response.a;
+						return $elm$core$Result$Err(
+							$elm$http$Http$BadUrl(url));
+					case 'Timeout_':
+						return $elm$core$Result$Err($elm$http$Http$Timeout);
+					case 'NetworkError_':
+						return $elm$core$Result$Err($elm$http$Http$NetworkError);
+					case 'BadStatus_':
+						var metadata = response.a;
+						var body = response.b;
+						return $elm$core$Result$Err(
+							$elm$http$Http$BadStatus(metadata.statusCode));
+					default:
+						var metadata = response.a;
+						var body = response.b;
+						var _v1 = A2($elm$json$Json$Decode$decodeString, decoder, body);
+						if (_v1.$ === 'Ok') {
+							var value = _v1.a;
+							return $elm$core$Result$Ok(value);
+						} else {
+							var err = _v1.a;
+							return $elm$core$Result$Err(
+								$elm$http$Http$BadBody(
+									$elm$json$Json$Decode$errorToString(err)));
+						}
+				}
+			});
 	});
 var $krisajenkins$remotedata$RemoteData$Failure = function (a) {
 	return {$: 'Failure', a: a};
@@ -17834,15 +17842,9 @@ var $krisajenkins$remotedata$RemoteData$fromResult = function (result) {
 		return $krisajenkins$remotedata$RemoteData$Success(x);
 	}
 };
-var $elm$http$Http$Header = F2(
-	function (a, b) {
-		return {$: 'Header', a: a, b: b};
-	});
-var $elm$http$Http$header = $elm$http$Http$Header;
-var $elm$core$Debug$log = _Debug_log;
-var $author$project$Pages$Rankings$Players$Player = F9(
-	function (datestamp, active, currentchallengername, currentchallengerid, address, rank, name, id, currentchallengeraddress) {
-		return {active: active, address: address, currentchallengeraddress: currentchallengeraddress, currentchallengerid: currentchallengerid, currentchallengername: currentchallengername, datestamp: datestamp, id: id, name: name, rank: rank};
+var $author$project$Components$Ranking$Ranking = F4(
+	function (id, active, name, desc) {
+		return {active: active, desc: desc, id: id, name: name};
 	});
 var $elm$json$Json$Decode$bool = _Json_decodeBool;
 var $NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom = $elm$json$Json$Decode$map2($elm$core$Basics$apR);
@@ -17853,86 +17855,58 @@ var $NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required = F3(
 			A2($elm$json$Json$Decode$field, key, valDecoder),
 			decoder);
 	});
-var $author$project$Pages$Rankings$Players$playerDecoder = A3(
+var $author$project$Components$Ranking$rankingDecoder = A3(
 	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-	'CURRENTCHALLENGERADDRESS',
+	'RANKINGDESC',
 	$elm$json$Json$Decode$string,
 	A3(
 		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-		'id',
-		$elm$json$Json$Decode$int,
+		'RANKINGNAME',
+		$elm$json$Json$Decode$string,
 		A3(
 			$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-			'NAME',
-			$elm$json$Json$Decode$string,
+			'ACTIVE',
+			$elm$json$Json$Decode$bool,
 			A3(
 				$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-				'RANK',
-				$elm$json$Json$Decode$int,
-				A3(
-					$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-					'ADDRESS',
-					$elm$json$Json$Decode$string,
-					A3(
-						$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-						'CURRENTCHALLENGERID',
-						$elm$json$Json$Decode$int,
-						A3(
-							$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-							'CURRENTCHALLENGERNAME',
-							$elm$json$Json$Decode$string,
-							A3(
-								$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-								'ACTIVE',
-								$elm$json$Json$Decode$bool,
-								A3(
-									$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-									'DATESTAMP',
-									$elm$json$Json$Decode$int,
-									$elm$json$Json$Decode$succeed($author$project$Pages$Rankings$Players$Player))))))))));
-var $author$project$Pages$Rankings$Players$ladderOfPlayersDecoder = function () {
-	var _v0 = A2($elm$core$Debug$log, 'in ladderDecoder', $author$project$Pages$Rankings$Players$playerDecoder);
-	return $elm$json$Json$Decode$list($author$project$Pages$Rankings$Players$playerDecoder);
-}();
-var $author$project$Pages$Rankings$Dynamic$fetchPost = function (_v0) {
-	var postId = _v0.a;
-	var headerKey = A2($elm$http$Http$header, 'secret-key', '$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i');
-	var _v1 = A2($elm$core$Debug$log, 'rankingid in fetchPost', postId);
-	return $elm$http$Http$request(
-		{
-			body: $elm$http$Http$emptyBody,
-			expect: A2(
-				$elm$http$Http$expectJson,
-				A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$Pages$Rankings$Dynamic$PostReceived),
-				$author$project$Pages$Rankings$Players$ladderOfPlayersDecoder),
-			headers: _List_fromArray(
-				[headerKey]),
-			method: 'GET',
-			timeout: $elm$core$Maybe$Nothing,
-			tracker: $elm$core$Maybe$Nothing,
-			url: 'https://api.jsonbin.io/b/' + (postId + '/latest')
-		});
-};
+				'RANKINGID',
+				$elm$json$Json$Decode$string,
+				$elm$json$Json$Decode$succeed($author$project$Components$Ranking$Ranking)))));
+var $author$project$Components$Ranking$rankingsDecoder = $elm$json$Json$Decode$list($author$project$Components$Ranking$rankingDecoder);
 var $author$project$Pages$Rankings$Dynamic$init = function (_v0) {
 	var param1 = _v0.param1;
 	return _Utils_Tuple2(
-		{players: $krisajenkins$remotedata$RemoteData$NotAsked},
-		$author$project$Pages$Rankings$Dynamic$fetchPost(
-			$author$project$Pages$Rankings$Dynamic$RankingId(param1)));
+		{content: $krisajenkins$remotedata$RemoteData$NotAsked},
+		$elm$http$Http$get(
+			{
+				expect: A2(
+					$author$project$Pages$Rankings$Dynamic$expectJson,
+					A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$Pages$Rankings$Dynamic$RankingsReceived),
+					$author$project$Components$Ranking$rankingsDecoder),
+				url: 'https://api.jsonbin.io/b/' + (param1 + '/latest')
+			}));
 };
 var $author$project$Pages$Rankings$Dynamic$subscriptions = function (model) {
 	return $elm$core$Platform$Sub$none;
 };
+var $elm$core$Debug$log = _Debug_log;
 var $author$project$Pages$Rankings$Dynamic$update = F2(
 	function (msg, model) {
 		var post = msg.a;
-		var _v1 = A2($elm$core$Debug$log, 'list of players', post);
+		var _v1 = A2($elm$core$Debug$log, 'list of rankings', post);
 		return _Utils_Tuple2(
 			_Utils_update(
 				model,
-				{players: post}),
+				{content: post}),
 			$elm$core$Platform$Cmd$none);
 	});
+var $author$project$Utils$MyUtils$stringFromBool = function (bool) {
+	if (bool) {
+		return 'True';
+	} else {
+		return 'False';
+	}
+};
 var $mdgriffith$elm_ui$Element$InternalColumn = function (a) {
 	return {$: 'InternalColumn', a: a};
 };
@@ -18154,43 +18128,63 @@ var $mdgriffith$elm_ui$Element$table = F2(
 				data: config.data
 			});
 	});
-var $author$project$Pages$Rankings$Dynamic$view = function (model) {
-	var _v0 = model.players;
+var $author$project$Pages$Rankings$Dynamic$viewPosts = function (posts) {
+	return A2(
+		$mdgriffith$elm_ui$Element$table,
+		_List_Nil,
+		{
+			columns: _List_fromArray(
+				[
+					{
+					header: $mdgriffith$elm_ui$Element$text('Active'),
+					view: function (ranking) {
+						return $mdgriffith$elm_ui$Element$text(
+							$author$project$Utils$MyUtils$stringFromBool(ranking.active));
+					},
+					width: $mdgriffith$elm_ui$Element$fill
+				},
+					{
+					header: $mdgriffith$elm_ui$Element$text('Ranking Id'),
+					view: function (ranking) {
+						return $mdgriffith$elm_ui$Element$text(ranking.id);
+					},
+					width: $mdgriffith$elm_ui$Element$fill
+				},
+					{
+					header: $mdgriffith$elm_ui$Element$text('Ranking Name'),
+					view: function (ranking) {
+						return $mdgriffith$elm_ui$Element$text(ranking.name);
+					},
+					width: $mdgriffith$elm_ui$Element$fill
+				},
+					{
+					header: $mdgriffith$elm_ui$Element$text('Ranking Desc'),
+					view: function (ranking) {
+						return $mdgriffith$elm_ui$Element$text(ranking.desc);
+					},
+					width: $mdgriffith$elm_ui$Element$fill
+				}
+				]),
+			data: posts
+		});
+};
+var $author$project$Pages$Rankings$Dynamic$viewPostsOrError = function (model) {
+	var _v0 = model.content;
 	switch (_v0.$) {
 		case 'NotAsked':
-			return $mdgriffith$elm_ui$Element$text('Initialising.');
+			return $mdgriffith$elm_ui$Element$text('');
 		case 'Loading':
-			return $mdgriffith$elm_ui$Element$text('Loading.');
-		case 'Failure':
-			var err = _v0.a;
-			return $mdgriffith$elm_ui$Element$text('Error');
+			return $mdgriffith$elm_ui$Element$text('Loading...');
+		case 'Success':
+			var posts = _v0.a;
+			return $author$project$Pages$Rankings$Dynamic$viewPosts(posts);
 		default:
-			var players = _v0.a;
-			return A2(
-				$mdgriffith$elm_ui$Element$table,
-				_List_Nil,
-				{
-					columns: _List_fromArray(
-						[
-							{
-							header: $mdgriffith$elm_ui$Element$text('Name'),
-							view: function (player) {
-								return $mdgriffith$elm_ui$Element$text(player.name);
-							},
-							width: $mdgriffith$elm_ui$Element$fill
-						},
-							{
-							header: $mdgriffith$elm_ui$Element$text('Rank'),
-							view: function (player) {
-								return $mdgriffith$elm_ui$Element$text(
-									$elm$core$String$fromInt(player.rank));
-							},
-							width: $mdgriffith$elm_ui$Element$fill
-						}
-						]),
-					data: players
-				});
+			var httpError = _v0.a;
+			return $mdgriffith$elm_ui$Element$text('Failure');
 	}
+};
+var $author$project$Pages$Rankings$Dynamic$view = function (model) {
+	return $author$project$Pages$Rankings$Dynamic$viewPostsOrError(model);
 };
 var $author$project$Pages$Rankings$Dynamic$page = $ryannhg$elm_spa$Spa$Page$element(
 	{
@@ -18199,57 +18193,6 @@ var $author$project$Pages$Rankings$Dynamic$page = $ryannhg$elm_spa$Spa$Page$elem
 		title: $elm$core$Basics$always('Rankings.Dynamic'),
 		update: $elm$core$Basics$always($author$project$Pages$Rankings$Dynamic$update),
 		view: $elm$core$Basics$always($author$project$Pages$Rankings$Dynamic$view)
-	});
-var $ryannhg$elm_spa$Spa$Page$static = function (page) {
-	return $ryannhg$elm_spa$Internals$Page$Page(
-		function (_v0) {
-			var toModel = _v0.toModel;
-			var toMsg = _v0.toMsg;
-			var map = _v0.map;
-			return {
-				bundle: F3(
-					function (_v1, _private, context) {
-						return {
-							subscriptions: $elm$core$Platform$Sub$none,
-							title: page.title(
-								{global: context.global}),
-							view: A2(
-								_private.map,
-								_private.fromPageMsg,
-								A2(
-									map,
-									toMsg,
-									page.view(context)))
-						};
-					}),
-				init: F2(
-					function (_v2, _v3) {
-						return _Utils_Tuple3(
-							toModel(_Utils_Tuple0),
-							$elm$core$Platform$Cmd$none,
-							$elm$core$Platform$Cmd$none);
-					}),
-				update: F3(
-					function (_v4, model, _v5) {
-						return _Utils_Tuple3(
-							toModel(model),
-							$elm$core$Platform$Cmd$none,
-							$elm$core$Platform$Cmd$none);
-					})
-			};
-		});
-};
-var $author$project$Pages$Rankings$Players$view = $mdgriffith$elm_ui$Element$text('Rankings.Players');
-var $author$project$Pages$Rankings$Players$page = $ryannhg$elm_spa$Spa$Page$static(
-	{
-		title: $elm$core$Basics$always('Rankings.Players'),
-		view: $elm$core$Basics$always($author$project$Pages$Rankings$Players$view)
-	});
-var $author$project$Pages$Rankings$Ranking$view = $mdgriffith$elm_ui$Element$text('Rankings.Ranking');
-var $author$project$Pages$Rankings$Ranking$page = $ryannhg$elm_spa$Spa$Page$static(
-	{
-		title: $elm$core$Basics$always('Rankings.Ranking'),
-		view: $elm$core$Basics$always($author$project$Pages$Rankings$Ranking$view)
 	});
 var $author$project$Pages$Rankings$Top$RankingsReceived = function (a) {
 	return {$: 'RankingsReceived', a: a};
@@ -18290,28 +18233,6 @@ var $author$project$Pages$Rankings$Top$expectJson = F2(
 				}
 			});
 	});
-var $author$project$Pages$Rankings$Ranking$Ranking = F4(
-	function (id, active, name, desc) {
-		return {active: active, desc: desc, id: id, name: name};
-	});
-var $author$project$Pages$Rankings$Ranking$rankingDecoder = A3(
-	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-	'RANKINGDESC',
-	$elm$json$Json$Decode$string,
-	A3(
-		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-		'RANKINGNAME',
-		$elm$json$Json$Decode$string,
-		A3(
-			$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-			'ACTIVE',
-			$elm$json$Json$Decode$bool,
-			A3(
-				$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-				'RANKINGID',
-				$elm$json$Json$Decode$string,
-				$elm$json$Json$Decode$succeed($author$project$Pages$Rankings$Ranking$Ranking)))));
-var $author$project$Pages$Rankings$Ranking$rankingsDecoder = $elm$json$Json$Decode$list($author$project$Pages$Rankings$Ranking$rankingDecoder);
 var $author$project$Pages$Rankings$Top$init = function (_v0) {
 	return _Utils_Tuple2(
 		{content: $krisajenkins$remotedata$RemoteData$NotAsked},
@@ -18320,7 +18241,7 @@ var $author$project$Pages$Rankings$Top$init = function (_v0) {
 				expect: A2(
 					$author$project$Pages$Rankings$Top$expectJson,
 					A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$Pages$Rankings$Top$RankingsReceived),
-					$author$project$Pages$Rankings$Ranking$rankingsDecoder),
+					$author$project$Components$Ranking$rankingsDecoder),
 				url: 'https://api.jsonbin.io/b/5c36f5422c87fa27306acb52/latest'
 			}));
 };
@@ -18337,13 +18258,6 @@ var $author$project$Pages$Rankings$Top$update = F2(
 				{content: post}),
 			$elm$core$Platform$Cmd$none);
 	});
-var $author$project$Utils$MyUtils$boolToString = function (bool) {
-	if (bool) {
-		return 'True';
-	} else {
-		return 'False';
-	}
-};
 var $author$project$Pages$Rankings$Top$viewPosts = function (posts) {
 	return A2(
 		$mdgriffith$elm_ui$Element$table,
@@ -18355,7 +18269,7 @@ var $author$project$Pages$Rankings$Top$viewPosts = function (posts) {
 					header: $mdgriffith$elm_ui$Element$text('Active'),
 					view: function (ranking) {
 						return $mdgriffith$elm_ui$Element$text(
-							$author$project$Utils$MyUtils$boolToString(ranking.active));
+							$author$project$Utils$MyUtils$stringFromBool(ranking.active));
 					},
 					width: $mdgriffith$elm_ui$Element$fill
 				},
@@ -18415,21 +18329,11 @@ var $author$project$Generated$Rankings$Pages$recipes = {
 		{page: $author$project$Pages$Rankings$Dynamic$page, toModel: $author$project$Generated$Rankings$Pages$DynamicModel, toMsg: $author$project$Generated$Rankings$Pages$DynamicMsg}),
 	dynamic_folder: $author$project$Utils$Spa$recipe(
 		{page: $author$project$Generated$Docs$Dynamic$Pages$page, toModel: $author$project$Generated$Rankings$Pages$Dynamic_Folder_Model, toMsg: $author$project$Generated$Rankings$Pages$Dynamic_Folder_Msg}),
-	players: $author$project$Utils$Spa$recipe(
-		{page: $author$project$Pages$Rankings$Players$page, toModel: $author$project$Generated$Rankings$Pages$PlayersModel, toMsg: $author$project$Generated$Rankings$Pages$PlayersMsg}),
-	ranking: $author$project$Utils$Spa$recipe(
-		{page: $author$project$Pages$Rankings$Ranking$page, toModel: $author$project$Generated$Rankings$Pages$RankingModel, toMsg: $author$project$Generated$Rankings$Pages$RankingMsg}),
 	top: $author$project$Utils$Spa$recipe(
 		{page: $author$project$Pages$Rankings$Top$page, toModel: $author$project$Generated$Rankings$Pages$TopModel, toMsg: $author$project$Generated$Rankings$Pages$TopMsg})
 };
 var $author$project$Generated$Rankings$Pages$bundle = function (bigModel) {
 	switch (bigModel.$) {
-		case 'PlayersModel':
-			var model = bigModel.a;
-			return $author$project$Generated$Rankings$Pages$recipes.players.bundle(model);
-		case 'RankingModel':
-			var model = bigModel.a;
-			return $author$project$Generated$Rankings$Pages$recipes.ranking.bundle(model);
 		case 'TopModel':
 			var model = bigModel.a;
 			return $author$project$Generated$Rankings$Pages$recipes.top.bundle(model);
@@ -18443,12 +18347,6 @@ var $author$project$Generated$Rankings$Pages$bundle = function (bigModel) {
 };
 var $author$project$Generated$Rankings$Pages$init = function (route_) {
 	switch (route_.$) {
-		case 'Players':
-			var params = route_.a;
-			return $author$project$Generated$Rankings$Pages$recipes.players.init(params);
-		case 'Ranking':
-			var params = route_.a;
-			return $author$project$Generated$Rankings$Pages$recipes.ranking.init(params);
 		case 'Top':
 			var params = route_.a;
 			return $author$project$Generated$Rankings$Pages$recipes.top.init(params);
@@ -18467,32 +18365,16 @@ var $author$project$Generated$Rankings$Pages$path = _List_fromArray(
 var $author$project$Generated$Rankings$Pages$update = F2(
 	function (bigMsg, bigModel) {
 		var _v0 = _Utils_Tuple2(bigMsg, bigModel);
-		_v0$5:
+		_v0$3:
 		while (true) {
 			switch (_v0.a.$) {
-				case 'PlayersMsg':
-					if (_v0.b.$ === 'PlayersModel') {
-						var msg = _v0.a.a;
-						var model = _v0.b.a;
-						return A2($author$project$Generated$Rankings$Pages$recipes.players.update, msg, model);
-					} else {
-						break _v0$5;
-					}
-				case 'RankingMsg':
-					if (_v0.b.$ === 'RankingModel') {
-						var msg = _v0.a.a;
-						var model = _v0.b.a;
-						return A2($author$project$Generated$Rankings$Pages$recipes.ranking.update, msg, model);
-					} else {
-						break _v0$5;
-					}
 				case 'TopMsg':
 					if (_v0.b.$ === 'TopModel') {
 						var msg = _v0.a.a;
 						var model = _v0.b.a;
 						return A2($author$project$Generated$Rankings$Pages$recipes.top.update, msg, model);
 					} else {
-						break _v0$5;
+						break _v0$3;
 					}
 				case 'DynamicMsg':
 					if (_v0.b.$ === 'DynamicModel') {
@@ -18500,7 +18382,7 @@ var $author$project$Generated$Rankings$Pages$update = F2(
 						var model = _v0.b.a;
 						return A2($author$project$Generated$Rankings$Pages$recipes.dynamic.update, msg, model);
 					} else {
-						break _v0$5;
+						break _v0$3;
 					}
 				default:
 					if (_v0.b.$ === 'Dynamic_Folder_Model') {
@@ -18508,7 +18390,7 @@ var $author$project$Generated$Rankings$Pages$update = F2(
 						var model = _v0.b.a;
 						return A2($author$project$Generated$Rankings$Pages$recipes.dynamic_folder.update, msg, model);
 					} else {
-						break _v0$5;
+						break _v0$3;
 					}
 			}
 		}
@@ -18524,6 +18406,45 @@ var $author$project$Generated$Rankings$Pages$page = $author$project$Utils$Spa$la
 		recipe: {bundle: $author$project$Generated$Rankings$Pages$bundle, init: $author$project$Generated$Rankings$Pages$init, update: $author$project$Generated$Rankings$Pages$update},
 		view: $author$project$Layouts$Rankings$view
 	});
+var $ryannhg$elm_spa$Spa$Page$static = function (page) {
+	return $ryannhg$elm_spa$Internals$Page$Page(
+		function (_v0) {
+			var toModel = _v0.toModel;
+			var toMsg = _v0.toMsg;
+			var map = _v0.map;
+			return {
+				bundle: F3(
+					function (_v1, _private, context) {
+						return {
+							subscriptions: $elm$core$Platform$Sub$none,
+							title: page.title(
+								{global: context.global}),
+							view: A2(
+								_private.map,
+								_private.fromPageMsg,
+								A2(
+									map,
+									toMsg,
+									page.view(context)))
+						};
+					}),
+				init: F2(
+					function (_v2, _v3) {
+						return _Utils_Tuple3(
+							toModel(_Utils_Tuple0),
+							$elm$core$Platform$Cmd$none,
+							$elm$core$Platform$Cmd$none);
+					}),
+				update: F3(
+					function (_v4, model, _v5) {
+						return _Utils_Tuple3(
+							toModel(model),
+							$elm$core$Platform$Cmd$none,
+							$elm$core$Platform$Cmd$none);
+					})
+			};
+		});
+};
 var $author$project$Pages$AboutUs$view = $mdgriffith$elm_ui$Element$text('AboutUs');
 var $author$project$Pages$AboutUs$page = $ryannhg$elm_spa$Spa$Page$static(
 	{
@@ -18972,12 +18893,6 @@ var $author$project$Generated$Route$Guide = function (a) {
 var $author$project$Generated$Route$NotFound = function (a) {
 	return {$: 'NotFound', a: a};
 };
-var $author$project$Generated$Rankings$Route$Players = function (a) {
-	return {$: 'Players', a: a};
-};
-var $author$project$Generated$Rankings$Route$Ranking = function (a) {
-	return {$: 'Ranking', a: a};
-};
 var $author$project$Generated$Route$Rankings_Folder = function (a) {
 	return {$: 'Rankings_Folder', a: a};
 };
@@ -19025,12 +18940,6 @@ var $author$project$Generated$Routes$routes = {
 				param1,
 				{param1: param1}));
 	},
-	rankings_players: $author$project$Generated$Route$Rankings_Folder(
-		$author$project$Generated$Rankings$Route$Players(
-			{})),
-	rankings_ranking: $author$project$Generated$Route$Rankings_Folder(
-		$author$project$Generated$Rankings$Route$Ranking(
-			{})),
 	rankings_top: $author$project$Generated$Route$Rankings_Folder(
 		$author$project$Generated$Rankings$Route$Top(
 			{})),
@@ -19056,10 +18965,6 @@ var $author$project$Generated$Docs$Route$toPath = function (route) {
 };
 var $author$project$Generated$Rankings$Route$toPath = function (route) {
 	switch (route.$) {
-		case 'Players':
-			return '/players';
-		case 'Ranking':
-			return '/ranking';
 		case 'Top':
 			return '/';
 		case 'Dynamic':
@@ -19562,20 +19467,6 @@ var $author$project$Generated$Routes$parsers = _List_fromArray(
 			$elm$url$Url$Parser$top)),
 		A2(
 		$elm$url$Url$Parser$map,
-		$author$project$Generated$Routes$routes.rankings_players,
-		A2(
-			$elm$url$Url$Parser$slash,
-			$elm$url$Url$Parser$s('rankings'),
-			$elm$url$Url$Parser$s('players'))),
-		A2(
-		$elm$url$Url$Parser$map,
-		$author$project$Generated$Routes$routes.rankings_ranking,
-		A2(
-			$elm$url$Url$Parser$slash,
-			$elm$url$Url$Parser$s('rankings'),
-			$elm$url$Url$Parser$s('ranking'))),
-		A2(
-		$elm$url$Url$Parser$map,
 		$author$project$Generated$Routes$routes.rankings_top,
 		A2(
 			$elm$url$Url$Parser$slash,
@@ -19876,4 +19767,4 @@ var $author$project$Main$main = $ryannhg$elm_spa$Spa$create(
 		ui: $ryannhg$elm_spa$Spa$usingElmUi
 	});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Spa.Msg Global.Msg Generated.Pages.Msg","aliases":{"Pages.AboutUs.Msg":{"args":[],"type":"Basics.Never"},"Pages.Guide.Msg":{"args":[],"type":"Basics.Never"},"Pages.NotFound.Msg":{"args":[],"type":"Basics.Never"},"Pages.Top.Msg":{"args":[],"type":"Basics.Never"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Pages.Rankings.Players.Msg":{"args":[],"type":"Basics.Never"},"Pages.Rankings.Ranking.Msg":{"args":[],"type":"Basics.Never"},"Pages.Rankings.Players.Player":{"args":[],"type":"{ datestamp : Basics.Int, active : Basics.Bool, currentchallengername : String.String, currentchallengerid : Basics.Int, address : String.String, rank : Basics.Int, name : String.String, id : Basics.Int, currentchallengeraddress : String.String }"},"Pages.Rankings.Ranking.Ranking":{"args":[],"type":"{ id : String.String, active : Basics.Bool, name : String.String, desc : String.String }"},"RemoteData.WebData":{"args":["a"],"type":"RemoteData.RemoteData Http.Error a"}},"unions":{"Generated.Pages.Msg":{"args":[],"tags":{"AboutUsMsg":["Pages.AboutUs.Msg"],"GuideMsg":["Pages.Guide.Msg"],"NotFoundMsg":["Pages.NotFound.Msg"],"TopMsg":["Pages.Top.Msg"],"Docs_Folder_Msg":["Generated.Docs.Pages.Msg"],"Rankings_Folder_Msg":["Generated.Rankings.Pages.Msg"]}},"Global.Msg":{"args":[],"tags":{"Msg":[]}},"Spa.Msg":{"args":["globalMsg","msg"],"tags":{"ChangedUrl":["Url.Url"],"ClickedLink":["Browser.UrlRequest"],"Global":["globalMsg"],"Page":["msg"],"FadeInLayout":[],"FadeInPage":["Url.Url"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Generated.Docs.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Msg"],"TopMsg":["Pages.Docs.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Generated.Rankings.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Rankings.Dynamic.Msg"],"PlayersMsg":["Pages.Rankings.Players.Msg"],"RankingMsg":["Pages.Rankings.Ranking.Msg"],"TopMsg":["Pages.Rankings.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Basics.Never":{"args":[],"tags":{"JustOneMore":["Basics.Never"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Generated.Docs.Dynamic.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Dynamic.Msg"]}},"Pages.Docs.Dynamic.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Docs.Top.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Rankings.Dynamic.Msg":{"args":[],"tags":{"PostReceived":["RemoteData.WebData (List.List Pages.Rankings.Players.Player)"]}},"Pages.Rankings.Top.Msg":{"args":[],"tags":{"RankingsReceived":["RemoteData.WebData (List.List Pages.Rankings.Ranking.Ranking)"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Pages.Docs.Dynamic.Dynamic.Msg":{"args":[],"tags":{"Msg":[]}},"RemoteData.RemoteData":{"args":["e","a"],"tags":{"NotAsked":[],"Loading":[],"Failure":["e"],"Success":["a"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Spa.Msg Global.Msg Generated.Pages.Msg","aliases":{"Pages.AboutUs.Msg":{"args":[],"type":"Basics.Never"},"Pages.Guide.Msg":{"args":[],"type":"Basics.Never"},"Pages.NotFound.Msg":{"args":[],"type":"Basics.Never"},"Pages.Top.Msg":{"args":[],"type":"Basics.Never"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Components.Ranking.Ranking":{"args":[],"type":"{ id : String.String, active : Basics.Bool, name : String.String, desc : String.String }"},"RemoteData.WebData":{"args":["a"],"type":"RemoteData.RemoteData Http.Error a"}},"unions":{"Generated.Pages.Msg":{"args":[],"tags":{"AboutUsMsg":["Pages.AboutUs.Msg"],"GuideMsg":["Pages.Guide.Msg"],"NotFoundMsg":["Pages.NotFound.Msg"],"TopMsg":["Pages.Top.Msg"],"Docs_Folder_Msg":["Generated.Docs.Pages.Msg"],"Rankings_Folder_Msg":["Generated.Rankings.Pages.Msg"]}},"Global.Msg":{"args":[],"tags":{"Msg":[]}},"Spa.Msg":{"args":["globalMsg","msg"],"tags":{"ChangedUrl":["Url.Url"],"ClickedLink":["Browser.UrlRequest"],"Global":["globalMsg"],"Page":["msg"],"FadeInLayout":[],"FadeInPage":["Url.Url"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Generated.Docs.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Msg"],"TopMsg":["Pages.Docs.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Generated.Rankings.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Rankings.Dynamic.Msg"],"TopMsg":["Pages.Rankings.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Basics.Never":{"args":[],"tags":{"JustOneMore":["Basics.Never"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Generated.Docs.Dynamic.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Dynamic.Msg"]}},"Pages.Docs.Dynamic.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Docs.Top.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Rankings.Dynamic.Msg":{"args":[],"tags":{"RankingsReceived":["RemoteData.WebData (List.List Components.Ranking.Ranking)"]}},"Pages.Rankings.Top.Msg":{"args":[],"tags":{"RankingsReceived":["RemoteData.WebData (List.List Components.Ranking.Ranking)"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Pages.Docs.Dynamic.Dynamic.Msg":{"args":[],"tags":{"Msg":[]}},"RemoteData.RemoteData":{"args":["e","a"],"tags":{"NotAsked":[],"Loading":[],"Failure":["e"],"Success":["a"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}}}})}});}(this));
