@@ -24,11 +24,9 @@ page =
         }
 
 
-type Msg
-    = RankingsReceived (WebData (List Ranking))
 
-
-
+--type Msg
+--    = RankingsReceived (WebData (List Player))
 --| FetchedContent (Result Http.Error String)
 
 
@@ -40,27 +38,69 @@ type RemoteData e a
 
 
 type alias Model =
-    { content : WebData (List Ranking) }
+    { content : WebData (List Player) }
 
 
 
 -- INIT
+--init : Params.Dynamic -> ( Model, Cmd Msg )
+--init { param1 } =
+--    ( { content = RemoteData.NotAsked }
+--    , --Http.get
+--      --{ expect = Http.expectString FetchedContent
+--      --, url = "https://api.jsonbin.io/b/5c36f5422c87fa27306acb52/latest"
+--      --}
+--      Http.get
+--        { url = "https://api.jsonbin.io/b/" ++ param1 ++ "/latest"
+--        , expect =
+--            ladderOfPlayersDecoder
+--                |> expectJson (RemoteData.fromResult >> RankingsReceived)
+--        }
+--)
 
 
 init : Params.Dynamic -> ( Model, Cmd Msg )
 init { param1 } =
     ( { content = RemoteData.NotAsked }
-    , --Http.get
-      --{ expect = Http.expectString FetchedContent
-      --, url = "https://api.jsonbin.io/b/5c36f5422c87fa27306acb52/latest"
-      --}
-      Http.get
-        { url = "https://api.jsonbin.io/b/" ++ param1 ++ "/latest"
-        , expect =
-            rankingsDecoder
-                |> expectJson (RemoteData.fromResult >> RankingsReceived)
-        }
+    , fetchPost (RankingId param1)
     )
+
+
+fetchPost : RankingId -> Cmd Msg
+fetchPost (RankingId postId) =
+    -- Http.get
+    --     { url = "https://api.jsonbin.io/b/" ++ postId ++ "/latest"
+    --     , expect =
+    --         rankingDecoder
+    --             |> Http.expectJson (RemoteData.fromResult >> PostReceived)
+    --     }
+    let
+        _ =
+            Debug.log "rankingid in fetchPost" postId
+
+        headerKey =
+            Http.header
+                "secret-key"
+                "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
+    in
+    --PostReceived is the Msg handled by update whenever a request is made
+    --RemoteData is used throughout the module, including update
+    --all the json is sent to the ladderDecoder (in Ladder.elm)
+    Http.request
+        { body = Http.emptyBody
+        , expect =
+            ladderOfPlayersDecoder
+                |> Http.expectJson (RemoteData.fromResult >> PostReceived)
+        , headers = [ headerKey ]
+        , method = "GET"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = "https://api.jsonbin.io/b/" ++ postId ++ "/latest"
+        }
+
+
+type Msg
+    = PostReceived (WebData (List Player))
 
 
 expectJson : (Result Http.Error a -> msg) -> Decode.Decoder a -> Http.Expect msg
@@ -104,7 +144,7 @@ update msg model =
         --    ( { model | content = "there was an error" }
         --    , Cmd.none
         --    )
-        RankingsReceived post ->
+        PostReceived post ->
             let
                 _ =
                     Debug.log "list of rankings" post
@@ -148,13 +188,14 @@ view model =
     viewPostsOrError model
 
 
-extractRanking : Ranking -> { id : String, active : Bool, name : String, desc : String }
-extractRanking ranking =
-    { id = ranking.id
-    , active = ranking.active
-    , name = ranking.name
-    , desc = ranking.desc
-    }
+
+--extractRanking : Ranking -> { id : String, active : Bool, name : String, desc : String }
+--extractRanking ranking =
+--    { id = ranking.id
+--    , active = ranking.active
+--    , name = ranking.name
+--    , desc = ranking.desc
+--    }
 
 
 viewPostsOrError : Model -> Element Msg
@@ -175,36 +216,68 @@ viewPostsOrError model =
 
 
 --viewError (buildErrorMessage httpError)
+--[{"DATESTAMP":1569839363942,"ACTIVE":true,"CURRENTCHALLENGERNAME":"testuser1","CURRENTCHALLENGERID":3,"ADDRESS":"0xD99eB29299CEF8726fc688180B30E634827b3078","RANK":1,"NAME":"GanacheAcct2","id":2,"CURRENTCHALLENGERADDRESS":"0x48DF2ee04DFE67902B83a670281232867e5dC0Ca"},
+--{"DATESTAMP":1569840205597,"ACTIVE":true,"CURRENTCHALLENGERNAME":"GanacheAcct2","CURRENTCHALLENGERID":2,"ADDRESS":"0x48DF2ee04DFE67902B83a670281232867e5dC0Ca","RANK":2,"NAME":"testuser1","id":3,"CURRENTCHALLENGERADDRESS":"0xD99eB29299CEF8726fc688180B30E634827b3078"}]
 
 
-viewPosts : List Ranking -> Element Msg
+viewPosts : List Player -> Element Msg
 viewPosts posts =
     Element.table []
         { data = posts
         , columns =
-            [ { header = Element.text "Active"
+            [ { header = Element.text "DATESTAMP"
+              , width = fill
+              , view =
+                    \ranking ->
+                        Element.text (String.fromInt ranking.datestamp)
+              }
+            , { header = Element.text "Active"
               , width = fill
               , view =
                     \ranking ->
                         Element.text (stringFromBool ranking.active)
               }
-            , { header = Element.text "Ranking Id"
+            , { header = Element.text "CURRENTCHALLENGERNAME"
               , width = fill
               , view =
                     \ranking ->
-                        Element.text ranking.id
+                        Element.text ranking.currentchallengername
               }
-            , { header = Element.text "Ranking Name"
+            , { header = Element.text "CURRENTCHALLENGERID"
+              , width = fill
+              , view =
+                    \ranking ->
+                        Element.text (String.fromInt ranking.currentchallengerid)
+              }
+            , { header = Element.text "ADDRESS"
+              , width = fill
+              , view =
+                    \ranking ->
+                        Element.text ranking.address
+              }
+            , { header = Element.text "RANK"
+              , width = fill
+              , view =
+                    \ranking ->
+                        Element.text (String.fromInt ranking.rank)
+              }
+            , { header = Element.text "NAME"
               , width = fill
               , view =
                     \ranking ->
                         Element.text ranking.name
               }
-            , { header = Element.text "Ranking Desc"
+            , { header = Element.text "id"
               , width = fill
               , view =
                     \ranking ->
-                        Element.text ranking.desc
+                        Element.text (String.fromInt ranking.id)
+              }
+            , { header = Element.text "CURRENTCHALLENGERADDRESS"
+              , width = fill
+              , view =
+                    \ranking ->
+                        Element.text ranking.currentchallengeraddress
               }
             ]
         }
