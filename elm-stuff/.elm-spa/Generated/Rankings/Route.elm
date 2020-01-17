@@ -20,5 +20,9 @@ toPath route =
             "/"
         
         
+        Dynamic value _ ->
+            "/" ++ value
+        
+        
         Dynamic_Folder value subRoute ->
             "/" ++ value ++ Generated.Docs.Dynamic.Route.toPath subRoute
