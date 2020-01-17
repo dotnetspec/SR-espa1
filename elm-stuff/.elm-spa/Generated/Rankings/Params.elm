@@ -6,13 +6,5 @@ type alias Dynamic =
     }
 
 
-type alias Players =
-    {}
-
-
-type alias Ranking =
-    {}
-
-
 type alias Top =
     {}

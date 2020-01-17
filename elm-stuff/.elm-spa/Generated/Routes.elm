@@ -35,8 +35,6 @@ type alias Routes =
     , notFound : Route
     , top : Route
     , docs_top : Route
-    , rankings_players : Route
-    , rankings_ranking : Route
     , rankings_top : Route
     , docs_dynamic : String -> Route
     , rankings_dynamic : String -> Route
@@ -57,12 +55,6 @@ routes =
     , docs_top =
         Generated.Route.Docs_Folder <|
             Generated.Docs.Route.Top {}
-    , rankings_players =
-        Generated.Route.Rankings_Folder <|
-            Generated.Rankings.Route.Players {}
-    , rankings_ranking =
-        Generated.Route.Rankings_Folder <|
-            Generated.Rankings.Route.Ranking {}
     , rankings_top =
         Generated.Route.Rankings_Folder <|
             Generated.Rankings.Route.Top {}
@@ -94,10 +86,6 @@ parsers =
         (top)
     , map routes.docs_top
         (s "docs" </> top)
-    , map routes.rankings_players
-        (s "rankings" </> s "players")
-    , map routes.rankings_ranking
-        (s "rankings" </> s "ranking")
     , map routes.rankings_top
         (s "rankings" </> top)
     , map routes.docs_dynamic
