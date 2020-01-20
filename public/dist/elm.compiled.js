@@ -17791,8 +17791,8 @@ var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
 var $author$project$Components$Ranking$RankingId = function (a) {
 	return {$: 'RankingId', a: a};
 };
-var $author$project$Pages$Rankings$Dynamic$PostReceived = function (a) {
-	return {$: 'PostReceived', a: a};
+var $author$project$Pages$Rankings$Dynamic$RankingsReceived = function (a) {
+	return {$: 'RankingsReceived', a: a};
 };
 var $elm$http$Http$expectJson = F2(
 	function (toMsg, decoder) {
@@ -17891,7 +17891,7 @@ var $author$project$Pages$Rankings$Dynamic$fetchPost = function (_v0) {
 			body: $elm$http$Http$emptyBody,
 			expect: A2(
 				$elm$http$Http$expectJson,
-				A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$Pages$Rankings$Dynamic$PostReceived),
+				A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$Pages$Rankings$Dynamic$RankingsReceived),
 				$author$project$Components$Players$ladderOfPlayersDecoder),
 			headers: _List_fromArray(
 				[headerKey]),
@@ -17904,7 +17904,7 @@ var $author$project$Pages$Rankings$Dynamic$fetchPost = function (_v0) {
 var $author$project$Pages$Rankings$Dynamic$init = function (_v0) {
 	var param1 = _v0.param1;
 	return _Utils_Tuple2(
-		{content: $krisajenkins$remotedata$RemoteData$NotAsked},
+		{content: $krisajenkins$remotedata$RemoteData$NotAsked, error: '', fetchedContentNotPlayerList: ''},
 		$author$project$Pages$Rankings$Dynamic$fetchPost(
 			$author$project$Components$Ranking$RankingId(param1)));
 };
@@ -17913,13 +17913,30 @@ var $author$project$Pages$Rankings$Dynamic$subscriptions = function (model) {
 };
 var $author$project$Pages$Rankings$Dynamic$update = F2(
 	function (msg, model) {
-		var post = msg.a;
-		var _v1 = A2($elm$core$Debug$log, 'list of rankings', post);
-		return _Utils_Tuple2(
-			_Utils_update(
-				model,
-				{content: post}),
-			$elm$core$Platform$Cmd$none);
+		if (msg.$ === 'FetchedContent') {
+			if (msg.a.$ === 'Ok') {
+				var fetchedContentNotPlayerList = msg.a.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{fetchedContentNotPlayerList: fetchedContentNotPlayerList}),
+					$elm$core$Platform$Cmd$none);
+			} else {
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{error: 'there was an error'}),
+					$elm$core$Platform$Cmd$none);
+			}
+		} else {
+			var post = msg.a;
+			var _v1 = A2($elm$core$Debug$log, 'list of rankings', post);
+			return _Utils_Tuple2(
+				_Utils_update(
+					model,
+					{content: post}),
+				$elm$core$Platform$Cmd$none);
+		}
 	});
 var $author$project$Utils$MyUtils$stringFromBool = function (bool) {
 	if (bool) {
@@ -18317,7 +18334,7 @@ var $author$project$Components$Ranking$rankingDecoder = A3(
 var $author$project$Components$Ranking$rankingsDecoder = $elm$json$Json$Decode$list($author$project$Components$Ranking$rankingDecoder);
 var $author$project$Pages$Rankings$Top$init = function (_v0) {
 	return _Utils_Tuple2(
-		{content: $krisajenkins$remotedata$RemoteData$NotAsked},
+		{content: $krisajenkins$remotedata$RemoteData$NotAsked, error: '', fetchedContentNotPlayerList: ''},
 		$elm$http$Http$get(
 			{
 				expect: A2(
@@ -18332,13 +18349,29 @@ var $author$project$Pages$Rankings$Top$subscriptions = function (model) {
 };
 var $author$project$Pages$Rankings$Top$update = F2(
 	function (msg, model) {
-		var post = msg.a;
-		var _v1 = A2($elm$core$Debug$log, 'list of rankings', post);
-		return _Utils_Tuple2(
-			_Utils_update(
-				model,
-				{content: post}),
-			$elm$core$Platform$Cmd$none);
+		if (msg.$ === 'FetchedContent') {
+			if (msg.a.$ === 'Ok') {
+				var fetchedContentNotPlayerList = msg.a.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{fetchedContentNotPlayerList: fetchedContentNotPlayerList}),
+					$elm$core$Platform$Cmd$none);
+			} else {
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{error: 'there was an error'}),
+					$elm$core$Platform$Cmd$none);
+			}
+		} else {
+			var post = msg.a;
+			return _Utils_Tuple2(
+				_Utils_update(
+					model,
+					{content: post}),
+				$elm$core$Platform$Cmd$none);
+		}
 	});
 var $author$project$Pages$Rankings$Top$viewPosts = function (posts) {
 	return A2(
@@ -19849,4 +19882,4 @@ var $author$project$Main$main = $ryannhg$elm_spa$Spa$create(
 		ui: $ryannhg$elm_spa$Spa$usingElmUi
 	});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Spa.Msg Global.Msg Generated.Pages.Msg","aliases":{"Pages.AboutUs.Msg":{"args":[],"type":"Basics.Never"},"Pages.Guide.Msg":{"args":[],"type":"Basics.Never"},"Pages.NotFound.Msg":{"args":[],"type":"Basics.Never"},"Pages.Top.Msg":{"args":[],"type":"Basics.Never"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Components.Players.Player":{"args":[],"type":"{ datestamp : Basics.Int, active : Basics.Bool, currentchallengername : String.String, currentchallengerid : Basics.Int, address : String.String, rank : Basics.Int, name : String.String, id : Basics.Int, currentchallengeraddress : String.String }"},"Components.Ranking.Ranking":{"args":[],"type":"{ id : String.String, active : Basics.Bool, name : String.String, desc : String.String }"},"RemoteData.WebData":{"args":["a"],"type":"RemoteData.RemoteData Http.Error a"}},"unions":{"Generated.Pages.Msg":{"args":[],"tags":{"AboutUsMsg":["Pages.AboutUs.Msg"],"GuideMsg":["Pages.Guide.Msg"],"NotFoundMsg":["Pages.NotFound.Msg"],"TopMsg":["Pages.Top.Msg"],"Docs_Folder_Msg":["Generated.Docs.Pages.Msg"],"Rankings_Folder_Msg":["Generated.Rankings.Pages.Msg"]}},"Global.Msg":{"args":[],"tags":{"Msg":[]}},"Spa.Msg":{"args":["globalMsg","msg"],"tags":{"ChangedUrl":["Url.Url"],"ClickedLink":["Browser.UrlRequest"],"Global":["globalMsg"],"Page":["msg"],"FadeInLayout":[],"FadeInPage":["Url.Url"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Generated.Docs.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Msg"],"TopMsg":["Pages.Docs.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Generated.Rankings.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Rankings.Dynamic.Msg"],"TopMsg":["Pages.Rankings.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Basics.Never":{"args":[],"tags":{"JustOneMore":["Basics.Never"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Generated.Docs.Dynamic.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Dynamic.Msg"]}},"Pages.Docs.Dynamic.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Docs.Top.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Rankings.Dynamic.Msg":{"args":[],"tags":{"PostReceived":["RemoteData.WebData (List.List Components.Players.Player)"]}},"Pages.Rankings.Top.Msg":{"args":[],"tags":{"RankingsReceived":["RemoteData.WebData (List.List Components.Ranking.Ranking)"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Pages.Docs.Dynamic.Dynamic.Msg":{"args":[],"tags":{"Msg":[]}},"RemoteData.RemoteData":{"args":["e","a"],"tags":{"NotAsked":[],"Loading":[],"Failure":["e"],"Success":["a"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Spa.Msg Global.Msg Generated.Pages.Msg","aliases":{"Pages.AboutUs.Msg":{"args":[],"type":"Basics.Never"},"Pages.Guide.Msg":{"args":[],"type":"Basics.Never"},"Pages.NotFound.Msg":{"args":[],"type":"Basics.Never"},"Pages.Top.Msg":{"args":[],"type":"Basics.Never"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Components.Players.Player":{"args":[],"type":"{ datestamp : Basics.Int, active : Basics.Bool, currentchallengername : String.String, currentchallengerid : Basics.Int, address : String.String, rank : Basics.Int, name : String.String, id : Basics.Int, currentchallengeraddress : String.String }"},"Components.Ranking.Ranking":{"args":[],"type":"{ id : String.String, active : Basics.Bool, name : String.String, desc : String.String }"},"RemoteData.WebData":{"args":["a"],"type":"RemoteData.RemoteData Http.Error a"}},"unions":{"Generated.Pages.Msg":{"args":[],"tags":{"AboutUsMsg":["Pages.AboutUs.Msg"],"GuideMsg":["Pages.Guide.Msg"],"NotFoundMsg":["Pages.NotFound.Msg"],"TopMsg":["Pages.Top.Msg"],"Docs_Folder_Msg":["Generated.Docs.Pages.Msg"],"Rankings_Folder_Msg":["Generated.Rankings.Pages.Msg"]}},"Global.Msg":{"args":[],"tags":{"Msg":[]}},"Spa.Msg":{"args":["globalMsg","msg"],"tags":{"ChangedUrl":["Url.Url"],"ClickedLink":["Browser.UrlRequest"],"Global":["globalMsg"],"Page":["msg"],"FadeInLayout":[],"FadeInPage":["Url.Url"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Generated.Docs.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Msg"],"TopMsg":["Pages.Docs.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Generated.Rankings.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Rankings.Dynamic.Msg"],"TopMsg":["Pages.Rankings.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Basics.Never":{"args":[],"tags":{"JustOneMore":["Basics.Never"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Generated.Docs.Dynamic.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Dynamic.Msg"]}},"Pages.Docs.Dynamic.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Docs.Top.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Rankings.Dynamic.Msg":{"args":[],"tags":{"RankingsReceived":["RemoteData.WebData (List.List Components.Players.Player)"],"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Rankings.Top.Msg":{"args":[],"tags":{"RankingsReceived":["RemoteData.WebData (List.List Components.Ranking.Ranking)"],"FetchedContent":["Result.Result Http.Error String.String"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Pages.Docs.Dynamic.Dynamic.Msg":{"args":[],"tags":{"Msg":[]}},"RemoteData.RemoteData":{"args":["e","a"],"tags":{"NotAsked":[],"Loading":[],"Failure":["e"],"Success":["a"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}}}})}});}(this));

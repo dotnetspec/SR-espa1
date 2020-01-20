@@ -27,10 +27,7 @@ page =
 
 type Msg
     = RankingsReceived (WebData (List Ranking))
-
-
-
---| FetchedContent (Result Http.Error String)
+    | FetchedContent (Result Http.Error String)
 
 
 type RemoteData e a
@@ -41,7 +38,10 @@ type RemoteData e a
 
 
 type alias Model =
-    { content : WebData (List Ranking) }
+    { content : WebData (List Ranking)
+    , fetchedContentNotPlayerList : String
+    , error : String
+    }
 
 
 
@@ -50,12 +50,11 @@ type alias Model =
 
 init : Params.Top -> ( Model, Cmd Msg )
 init _ =
-    ( { content = RemoteData.NotAsked }
-    , --Http.get
-      --{ expect = Http.expectString FetchedContent
-      --, url = "https://api.jsonbin.io/b/5c36f5422c87fa27306acb52/latest"
-      --}
-      Http.get
+    ( { content = RemoteData.NotAsked
+      , error = ""
+      , fetchedContentNotPlayerList = ""
+      }
+    , Http.get
         { url = "https://api.jsonbin.io/b/5c36f5422c87fa27306acb52/latest"
         , expect =
             rankingsDecoder
@@ -92,24 +91,23 @@ expectJson toMsg decoder =
 
 
 -- UPDATE
+-- first update comes from init
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        --FetchedContent (Ok markdown) ->
-        --    ( { model | content = markdown }
-        --    , Cmd.none
-        --    )
-        --FetchedContent (Err _) ->
-        --    ( { model | content = "there was an error" }
-        --    , Cmd.none
-        --    )
+        FetchedContent (Ok fetchedContentNotPlayerList) ->
+            ( { model | fetchedContentNotPlayerList = fetchedContentNotPlayerList }
+            , Cmd.none
+            )
+
+        FetchedContent (Err _) ->
+            ( { model | error = "there was an error" }
+            , Cmd.none
+            )
+
         RankingsReceived post ->
-            let
-                _ =
-                    Debug.log "list of rankings" post
-            in
             --remove the first record (created on ranking creation with different format)
             ( { model | content = post }, Cmd.none )
 
@@ -130,22 +128,6 @@ subscriptions model =
 
 view : Model -> Element Msg
 view model =
-    --Ui.markdown (WebData Ranking model.content)
-    --let
-    --newContent = List { model | rankingid, rankingname }
-    --newdata =
-    --    [ { active = True, desc = "lkjlkjklj", id = "5d8f5d00de0ab12e3d91df6e", name = "testrank0" }
-    --    , { active = True, desc = "lkjjjk", id = "5d8f5dcabfb1f70f0b11638b", name = "testranking2" }
-    --    , { active = True, desc = "kjlkjl", id = "5d9143cf2cefcd53be2171ad", name = "testrank1" }
-    --    ]
-    --_ =
-    --    Debug.log "newdata" newdata
-    --_ =
-    --    Debug.log model.content
-    --_ =
-    --    Debug.log "list map to extractRanking " List.map extractRanking (WebData model.content)
-    --in
-    --Element.text "hello"
     viewPostsOrError model
 
 
@@ -180,14 +162,6 @@ viewPostsOrError model =
 
 viewPosts : List Ranking -> Element Msg
 viewPosts posts =
-    --Element.text "Posts"
-    --let
-    --    newlist =
-    --        List.map viewPost posts
-    --    _ =
-    --        Debug.log "newlist" newlist
-    --in
-    --Element.text (String.fromInt (List.length newlist))
     Element.table []
         { data = posts
         , columns =
@@ -217,55 +191,3 @@ viewPosts posts =
               }
             ]
         }
-
-
-
---Element.text newlist
---viewPost : Ranking -> Element Msg
---viewPost rankingdata =
---    --Element.text post.id
---    Element.table []
---        { data = rankingdata
---        , columns =
---            [ { header = Element.text "Active"
---              , width = fill
---              , view =
---                    \ranking ->
---                        Element.text (boolToString ranking.active)
---              }
---            , { header = Element.text "Ranking Id"
---              , width = fill
---              , view =
---                    \ranking ->
---                        Element.text ranking.id
---              }
---            , { header = Element.text "Ranking Name"
---              , width = fill
---              , view =
---                    \ranking ->
---                        Element.text ranking.name
---              }
---            , { header = Element.text "Ranking Desc"
---              , width = fill
---              , view =
---                    \ranking ->
---                        Element.text ranking.desc
---              }
---            ]
---        }
---    { columns =
---        [ { header = Element.text "Ranking"
---          , width = fill
---          , view =
---                \ranking ->
---                    Element.text "ranking.rankingid"
---          }
---        , { header = Element.text "Ranking Name"
---          , width = fill
---          , view =
---                \ranking ->
---                    Element.text 'name here'
---          }
---        ]
---        ,data = model.content
---}

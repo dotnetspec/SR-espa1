@@ -24,10 +24,9 @@ page =
         }
 
 
-
---type Msg
---    = RankingsReceived (WebData (List Player))
---| FetchedContent (Result Http.Error String)
+type Msg
+    = RankingsReceived (WebData (List Player))
+    | FetchedContent (Result Http.Error String)
 
 
 type RemoteData e a
@@ -38,42 +37,29 @@ type RemoteData e a
 
 
 type alias Model =
-    { content : WebData (List Player) }
+    { content : WebData (List Player)
+    , fetchedContentNotPlayerList : String
+    , error : String
+    }
 
 
 
 -- INIT
---init : Params.Dynamic -> ( Model, Cmd Msg )
---init { param1 } =
---    ( { content = RemoteData.NotAsked }
---    , --Http.get
---      --{ expect = Http.expectString FetchedContent
---      --, url = "https://api.jsonbin.io/b/5c36f5422c87fa27306acb52/latest"
---      --}
---      Http.get
---        { url = "https://api.jsonbin.io/b/" ++ param1 ++ "/latest"
---        , expect =
---            ladderOfPlayersDecoder
---                |> expectJson (RemoteData.fromResult >> RankingsReceived)
---        }
---)
+-- param1 (can add ,param2 etc. if nec.), is the RankingId
 
 
 init : Params.Dynamic -> ( Model, Cmd Msg )
 init { param1 } =
-    ( { content = RemoteData.NotAsked }
+    ( { content = RemoteData.NotAsked
+      , error = ""
+      , fetchedContentNotPlayerList = ""
+      }
     , fetchPost (RankingId param1)
     )
 
 
 fetchPost : RankingId -> Cmd Msg
 fetchPost (RankingId postId) =
-    -- Http.get
-    --     { url = "https://api.jsonbin.io/b/" ++ postId ++ "/latest"
-    --     , expect =
-    --         rankingDecoder
-    --             |> Http.expectJson (RemoteData.fromResult >> PostReceived)
-    --     }
     let
         _ =
             Debug.log "rankingid in fetchPost" postId
@@ -83,14 +69,14 @@ fetchPost (RankingId postId) =
                 "secret-key"
                 "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
     in
-    --PostReceived is the Msg handled by update whenever a request is made
+    --RankingsReceived is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
-    --all the json is sent to the ladderDecoder (in Ladder.elm)
+    --all the json is sent to the ladderDecoder (in Ladder(?).elm)
     Http.request
         { body = Http.emptyBody
         , expect =
             ladderOfPlayersDecoder
-                |> Http.expectJson (RemoteData.fromResult >> PostReceived)
+                |> Http.expectJson (RemoteData.fromResult >> RankingsReceived)
         , headers = [ headerKey ]
         , method = "GET"
         , timeout = Nothing
@@ -99,8 +85,9 @@ fetchPost (RankingId postId) =
         }
 
 
-type Msg
-    = PostReceived (WebData (List Player))
+
+--type Msg
+--    = RankingsReceived (WebData (List Player))
 
 
 expectJson : (Result Http.Error a -> msg) -> Decode.Decoder a -> Http.Expect msg
@@ -131,20 +118,23 @@ expectJson toMsg decoder =
 
 
 -- UPDATE
+--update the model before it gets passed to view
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        --FetchedContent (Ok markdown) ->
-        --    ( { model | content = markdown }
-        --    , Cmd.none
-        --    )
-        --FetchedContent (Err _) ->
-        --    ( { model | content = "there was an error" }
-        --    , Cmd.none
-        --    )
-        PostReceived post ->
+        FetchedContent (Ok fetchedContentNotPlayerList) ->
+            ( { model | fetchedContentNotPlayerList = fetchedContentNotPlayerList }
+            , Cmd.none
+            )
+
+        FetchedContent (Err _) ->
+            ( { model | error = "there was an error" }
+            , Cmd.none
+            )
+
+        RankingsReceived post ->
             let
                 _ =
                     Debug.log "list of rankings" post
@@ -169,33 +159,7 @@ subscriptions model =
 
 view : Model -> Element Msg
 view model =
-    --Ui.markdown (WebData Ranking model.content)
-    --let
-    --newContent = List { model | rankingid, rankingname }
-    --newdata =
-    --    [ { active = True, desc = "lkjlkjklj", id = "5d8f5d00de0ab12e3d91df6e", name = "testrank0" }
-    --    , { active = True, desc = "lkjjjk", id = "5d8f5dcabfb1f70f0b11638b", name = "testranking2" }
-    --    , { active = True, desc = "kjlkjl", id = "5d9143cf2cefcd53be2171ad", name = "testrank1" }
-    --    ]
-    --_ =
-    --    Debug.log "newdata" newdata
-    --_ =
-    --    Debug.log model.content
-    --_ =
-    --    Debug.log "list map to extractRanking " List.map extractRanking (WebData model.content)
-    --in
-    --Element.text "hello"
     viewPostsOrError model
-
-
-
---extractRanking : Ranking -> { id : String, active : Bool, name : String, desc : String }
---extractRanking ranking =
---    { id = ranking.id
---    , active = ranking.active
---    , name = ranking.name
---    , desc = ranking.desc
---    }
 
 
 viewPostsOrError : Model -> Element Msg
@@ -212,12 +176,6 @@ viewPostsOrError model =
 
         RemoteData.Failure httpError ->
             Element.text "Failure"
-
-
-
---viewError (buildErrorMessage httpError)
---[{"DATESTAMP":1569839363942,"ACTIVE":true,"CURRENTCHALLENGERNAME":"testuser1","CURRENTCHALLENGERID":3,"ADDRESS":"0xD99eB29299CEF8726fc688180B30E634827b3078","RANK":1,"NAME":"GanacheAcct2","id":2,"CURRENTCHALLENGERADDRESS":"0x48DF2ee04DFE67902B83a670281232867e5dC0Ca"},
---{"DATESTAMP":1569840205597,"ACTIVE":true,"CURRENTCHALLENGERNAME":"GanacheAcct2","CURRENTCHALLENGERID":2,"ADDRESS":"0x48DF2ee04DFE67902B83a670281232867e5dC0Ca","RANK":2,"NAME":"testuser1","id":3,"CURRENTCHALLENGERADDRESS":"0xD99eB29299CEF8726fc688180B30E634827b3078"}]
 
 
 viewPosts : List Player -> Element Msg
