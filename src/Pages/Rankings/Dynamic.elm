@@ -159,11 +159,11 @@ subscriptions model =
 
 view : Model -> Element Msg
 view model =
-    viewPostsOrError model
+    viewPlayersOrError model
 
 
-viewPostsOrError : Model -> Element Msg
-viewPostsOrError model =
+viewPlayersOrError : Model -> Element Msg
+viewPlayersOrError model =
     case model.content of
         RemoteData.NotAsked ->
             Element.text ""
@@ -171,71 +171,75 @@ viewPostsOrError model =
         RemoteData.Loading ->
             Element.text "Loading..."
 
-        RemoteData.Success posts ->
-            viewPosts posts
+        RemoteData.Success players ->
+            viewplayers players
 
         RemoteData.Failure httpError ->
             Element.text "Failure"
 
 
-viewPosts : List Player -> Element Msg
-viewPosts posts =
+
+--{ header = Element.text "Ranking Name"
+--              , width = fill
+--              , view =
+--                    \ranking ->
+--                        Element.link
+--                            [ Background.color (rgb255 255 255 255)
+--                            , Font.color (rgb255 0 128 255)
+--                            , Border.rounded 3
+--                            , padding 10
+--                            ]
+--                            { url = "/rankings/" ++ ranking.id
+--                            , label = Element.text ranking.name
+--                            }
+--              }
+--stringFromBool ranking.active
+--(String.fromInt ranking.currentchallengerid)
+-- (String.fromInt ranking.rank)
+-- String.fromInt ranking.datestamp)
+--player.address
+
+
+viewplayers : List Player -> Element Msg
+viewplayers players =
     Element.table []
-        { data = posts
+        { data = players
         , columns =
-            [ { header = Element.text "DATESTAMP"
+            [ { header = Element.text "Name"
               , width = fill
               , view =
-                    \ranking ->
-                        Element.text (String.fromInt ranking.datestamp)
-              }
-            , { header = Element.text "Active"
-              , width = fill
-              , view =
-                    \ranking ->
-                        Element.text (stringFromBool ranking.active)
-              }
-            , { header = Element.text "CURRENTCHALLENGERNAME"
-              , width = fill
-              , view =
-                    \ranking ->
-                        Element.text ranking.currentchallengername
-              }
-            , { header = Element.text "CURRENTCHALLENGERID"
-              , width = fill
-              , view =
-                    \ranking ->
-                        Element.text (String.fromInt ranking.currentchallengerid)
-              }
-            , { header = Element.text "ADDRESS"
-              , width = fill
-              , view =
-                    \ranking ->
-                        Element.text ranking.address
-              }
-            , { header = Element.text "RANK"
-              , width = fill
-              , view =
-                    \ranking ->
-                        Element.text (String.fromInt ranking.rank)
-              }
-            , { header = Element.text "NAME"
-              , width = fill
-              , view =
-                    \ranking ->
-                        Element.text ranking.name
+                    \player ->
+                        Element.text player.name
               }
             , { header = Element.text "id"
               , width = fill
               , view =
-                    \ranking ->
-                        Element.text (String.fromInt ranking.id)
+                    \player ->
+                        Element.text (String.fromInt player.id)
+              }
+            , { header = Element.text "Current Challenger"
+              , width = fill
+              , view =
+                    \player ->
+                        Element.text player.currentchallengername
+              }
+            , { header = Element.text "Current Challenger ID"
+              , width = fill
+              , view =
+                    \player ->
+                        Element.text (String.fromInt player.currentchallengerid)
+              }
+            , { header = Element.text "RANK"
+              , width = fill
+              , view =
+                    \player ->
+                        Element.text (String.fromInt player.rank)
               }
             , { header = Element.text "CURRENTCHALLENGERADDRESS"
               , width = fill
               , view =
-                    \ranking ->
-                        Element.text ranking.currentchallengeraddress
+                    \player ->
+                        Element.text player.currentchallengeraddress
               }
             ]
         }

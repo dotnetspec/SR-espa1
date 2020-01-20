@@ -1,9 +1,14 @@
 module Pages.Rankings.Top exposing (Model, Msg, page)
 
 --import Pages.Rankings.Players exposing (Player, PlayerId(..), emptyPlayer, emptyPlayerId, ladderOfPlayersDecoder, playerDecoder, playerEncoder)
+--import Text
+--import Element exposing (..)
 
 import Components.Ranking exposing (Ranking, RankingId(..), rankingDecoder, rankingEncoder, rankingsDecoder)
-import Element exposing (..)
+import Element exposing (Element, alignRight, alignTop, centerY, el, fill, padding, rgb255, row, spacing, text, width)
+import Element.Background as Background
+import Element.Border as Border
+import Element.Font as Font
 import Generated.Rankings.Params as Params
 import Http
 import Json.Decode as Decode exposing (Decoder, bool, int, list, string)
@@ -12,6 +17,10 @@ import Spa.Page
 import Ui
 import Utils.MyUtils exposing (stringFromBool)
 import Utils.Spa exposing (Page)
+
+
+
+--main = link "http://www.google.com" <| leftAligned <| Text.color red <| toText "Google"
 
 
 page : Page Params.Top Model Msg model msg appMsg
@@ -158,6 +167,8 @@ viewPostsOrError model =
 
 
 --viewError (buildErrorMessage httpError)
+--you might need this later
+-- (stringFromBool ranking.active)
 
 
 viewPosts : List Ranking -> Element Msg
@@ -165,23 +176,19 @@ viewPosts posts =
     Element.table []
         { data = posts
         , columns =
-            [ { header = Element.text "Active"
+            [ { header = Element.text "Ranking Name"
               , width = fill
               , view =
                     \ranking ->
-                        Element.text (stringFromBool ranking.active)
-              }
-            , { header = Element.text "Ranking Id"
-              , width = fill
-              , view =
-                    \ranking ->
-                        Element.text ranking.id
-              }
-            , { header = Element.text "Ranking Name"
-              , width = fill
-              , view =
-                    \ranking ->
-                        Element.text ranking.name
+                        Element.link
+                            [ Background.color (rgb255 255 255 255)
+                            , Font.color (rgb255 0 128 255)
+                            , Border.rounded 3
+                            , padding 10
+                            ]
+                            { url = "/rankings/" ++ ranking.id
+                            , label = Element.text ranking.name
+                            }
               }
             , { header = Element.text "Ranking Desc"
               , width = fill
