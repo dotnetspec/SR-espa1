@@ -19,10 +19,6 @@ import Utils.MyUtils exposing (stringFromBool)
 import Utils.Spa exposing (Page)
 
 
-
---main = link "http://www.google.com" <| leftAligned <| Text.color red <| toText "Google"
-
-
 page : Page Params.Top Model Msg model msg appMsg
 page =
     Spa.Page.element
@@ -47,8 +43,8 @@ type RemoteData e a
 
 
 type alias Model =
-    { content : WebData (List Ranking)
-    , fetchedContentNotPlayerList : String
+    { rankings : WebData (List Ranking)
+    , fetchedContentNotRankingList : String
     , error : String
     }
 
@@ -59,9 +55,9 @@ type alias Model =
 
 init : Params.Top -> ( Model, Cmd Msg )
 init _ =
-    ( { content = RemoteData.NotAsked
+    ( { rankings = RemoteData.NotAsked
       , error = ""
-      , fetchedContentNotPlayerList = ""
+      , fetchedContentNotRankingList = ""
       }
     , Http.get
         { url = "https://api.jsonbin.io/b/5c36f5422c87fa27306acb52/latest"
@@ -106,8 +102,8 @@ expectJson toMsg decoder =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        FetchedContent (Ok fetchedContentNotPlayerList) ->
-            ( { model | fetchedContentNotPlayerList = fetchedContentNotPlayerList }
+        FetchedContent (Ok fetchedContentNotRankingList) ->
+            ( { model | fetchedContentNotRankingList = fetchedContentNotRankingList }
             , Cmd.none
             )
 
@@ -116,9 +112,9 @@ update msg model =
             , Cmd.none
             )
 
-        RankingsReceived post ->
-            --remove the first record (created on ranking creation with different format)
-            ( { model | content = post }, Cmd.none )
+        RankingsReceived rankings ->
+            --removes[?] the first record (created on ranking creation with different format)
+            ( { model | rankings = rankings }, Cmd.none )
 
 
 
@@ -137,29 +133,20 @@ subscriptions model =
 
 view : Model -> Element Msg
 view model =
-    viewPostsOrError model
+    viewRankingsOrError model
 
 
-extractRanking : Ranking -> { id : String, active : Bool, name : String, desc : String }
-extractRanking ranking =
-    { id = ranking.id
-    , active = ranking.active
-    , name = ranking.name
-    , desc = ranking.desc
-    }
-
-
-viewPostsOrError : Model -> Element Msg
-viewPostsOrError model =
-    case model.content of
+viewRankingsOrError : Model -> Element Msg
+viewRankingsOrError model =
+    case model.rankings of
         RemoteData.NotAsked ->
             Element.text ""
 
         RemoteData.Loading ->
             Element.text "Loading..."
 
-        RemoteData.Success posts ->
-            viewPosts posts
+        RemoteData.Success rankings ->
+            viewRankings rankings
 
         RemoteData.Failure httpError ->
             Element.text "Failure"
@@ -171,10 +158,10 @@ viewPostsOrError model =
 -- (stringFromBool ranking.active)
 
 
-viewPosts : List Ranking -> Element Msg
-viewPosts posts =
+viewRankings : List Ranking -> Element Msg
+viewRankings rankings =
     Element.table []
-        { data = posts
+        { data = rankings
         , columns =
             [ { header = Element.text "Ranking Name"
               , width = fill

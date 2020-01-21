@@ -28,7 +28,7 @@ page =
 
 
 type Msg
-    = RankingsReceived (WebData (List Player))
+    = PlayersReceived (WebData (List Player))
     | FetchedContent (Result Http.Error String)
 
 
@@ -40,7 +40,7 @@ type RemoteData e a
 
 
 type alias Model =
-    { content : WebData (List Player)
+    { players : WebData (List Player)
     , fetchedContentNotPlayerList : String
     , error : String
     }
@@ -53,44 +53,44 @@ type alias Model =
 
 init : Params.Dynamic -> ( Model, Cmd Msg )
 init { param1 } =
-    ( { content = RemoteData.NotAsked
+    ( { players = RemoteData.NotAsked
       , error = ""
       , fetchedContentNotPlayerList = ""
       }
-    , fetchPost (RankingId param1)
+    , fetchRanking (RankingId param1)
     )
 
 
-fetchPost : RankingId -> Cmd Msg
-fetchPost (RankingId postId) =
+fetchRanking : RankingId -> Cmd Msg
+fetchRanking (RankingId rankingId) =
     let
         _ =
-            Debug.log "rankingid in fetchPost" postId
+            Debug.log "rankingid in fetchRanking" rankingId
 
         headerKey =
             Http.header
                 "secret-key"
                 "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
     in
-    --RankingsReceived is the Msg handled by update whenever a request is made
+    --PlayersReceived is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
     --all the json is sent to the ladderDecoder (in Ladder(?).elm)
     Http.request
         { body = Http.emptyBody
         , expect =
             ladderOfPlayersDecoder
-                |> Http.expectJson (RemoteData.fromResult >> RankingsReceived)
+                |> Http.expectJson (RemoteData.fromResult >> PlayersReceived)
         , headers = [ headerKey ]
         , method = "GET"
         , timeout = Nothing
         , tracker = Nothing
-        , url = "https://api.jsonbin.io/b/" ++ postId ++ "/latest"
+        , url = "https://api.jsonbin.io/b/" ++ rankingId ++ "/latest"
         }
 
 
 
 --type Msg
---    = RankingsReceived (WebData (List Player))
+--    = PlayersReceived (WebData (List Player))
 
 
 expectJson : (Result Http.Error a -> msg) -> Decode.Decoder a -> Http.Expect msg
@@ -137,13 +137,13 @@ update msg model =
             , Cmd.none
             )
 
-        RankingsReceived post ->
+        PlayersReceived players ->
             let
                 _ =
-                    Debug.log "list of rankings" post
+                    Debug.log "list of players" players
             in
             --remove the first record (created on ranking creation with different format)
-            ( { model | content = post }, Cmd.none )
+            ( { model | players = players }, Cmd.none )
 
 
 
@@ -167,7 +167,7 @@ view model =
 
 viewPlayersOrError : Model -> Element Msg
 viewPlayersOrError model =
-    case model.content of
+    case model.players of
         RemoteData.NotAsked ->
             Element.text ""
 
@@ -182,20 +182,7 @@ viewPlayersOrError model =
 
 
 
---{ header = Element.text "Ranking Name"
---              , width = fill
---              , view =
---                    \ranking ->
---                        Element.link
---                            [ Background.color (rgb255 255 255 255)
---                            , Font.color (rgb255 0 128 255)
---                            , Border.rounded 3
---                            , padding 10
---                            ]
---                            { url = "/rankings/" ++ ranking.id
---                            , label = Element.text ranking.name
---                            }
---              }
+--possibly useful ref:
 --stringFromBool ranking.active
 --(String.fromInt ranking.currentchallengerid)
 -- (String.fromInt ranking.rank)
@@ -254,7 +241,7 @@ viewplayers players =
                             , Border.rounded 3
                             , padding 10
                             ]
-                            { url = "/results/" ++ String.fromInt player.currentchallengerid
+                            { url = "/result/" ++ String.fromInt player.currentchallengerid
                             , label = Element.text "Result"
                             }
               }
