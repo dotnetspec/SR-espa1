@@ -3,6 +3,9 @@ module Pages.Rankings.Dynamic exposing (Model, Msg, page)
 import Components.Players exposing (Player, PlayerId(..), emptyPlayer, emptyPlayerId, ladderOfPlayersDecoder, playerDecoder, playerEncoder)
 import Components.Ranking exposing (Ranking, RankingId(..), rankingDecoder, rankingEncoder, rankingsDecoder)
 import Element exposing (..)
+import Element.Background as Background
+import Element.Border as Border
+import Element.Font as Font
 import Generated.Rankings.Params as Params
 import Http
 import Json.Decode as Decode exposing (Decoder, bool, int, list, string)
@@ -240,6 +243,20 @@ viewplayers players =
               , view =
                     \player ->
                         Element.text player.currentchallengeraddress
+              }
+            , { header = Element.text "Result"
+              , width = fill
+              , view =
+                    \player ->
+                        Element.link
+                            [ Background.color (rgb255 255 255 255)
+                            , Font.color (rgb255 0 128 255)
+                            , Border.rounded 3
+                            , padding 10
+                            ]
+                            { url = "/results/" ++ String.fromInt player.currentchallengerid
+                            , label = Element.text "Result"
+                            }
               }
             ]
         }
