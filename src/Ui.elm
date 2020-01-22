@@ -8,10 +8,13 @@ import Html.Attributes as Attr
 import Markdown
 
 
-colors : { coral : Element.Color, white : Element.Color }
+colors : { coral : Element.Color, white : Element.Color, blue : Element.Color, green : Element.Color, purple : Element.Color }
 colors =
     { coral = rgb255 204 75 75
     , white = rgb255 255 255 255
+    , blue = rgb255 238 238 238
+    , green = rgb255 0 153 0
+    , purple = rgb255 102 0 102
     }
 
 

@@ -17982,15 +17982,6 @@ var $mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
 var $author$project$Pages$Rankings$Dynamic$ModalEnabled = function (a) {
 	return {$: 'ModalEnabled', a: a};
 };
-var $mdgriffith$elm_ui$Internal$Model$Rgba = F4(
-	function (a, b, c, d) {
-		return {$: 'Rgba', a: a, b: b, c: c, d: d};
-	});
-var $mdgriffith$elm_ui$Element$rgb255 = F3(
-	function (red, green, blue) {
-		return A4($mdgriffith$elm_ui$Internal$Model$Rgba, red / 255, green / 255, blue / 255, 1);
-	});
-var $author$project$Pages$Rankings$Dynamic$blue = A3($mdgriffith$elm_ui$Element$rgb255, 238, 238, 238);
 var $mdgriffith$elm_ui$Internal$Model$Button = {$: 'Button'};
 var $elm$json$Json$Encode$bool = _Json_wrap;
 var $elm$html$Html$Attributes$boolProperty = F2(
@@ -18115,6 +18106,21 @@ var $mdgriffith$elm_ui$Element$Input$button = F2(
 				_List_fromArray(
 					[label])));
 	});
+var $mdgriffith$elm_ui$Internal$Model$Rgba = F4(
+	function (a, b, c, d) {
+		return {$: 'Rgba', a: a, b: b, c: c, d: d};
+	});
+var $mdgriffith$elm_ui$Element$rgb255 = F3(
+	function (red, green, blue) {
+		return A4($mdgriffith$elm_ui$Internal$Model$Rgba, red / 255, green / 255, blue / 255, 1);
+	});
+var $author$project$Ui$colors = {
+	blue: A3($mdgriffith$elm_ui$Element$rgb255, 238, 238, 238),
+	coral: A3($mdgriffith$elm_ui$Element$rgb255, 204, 75, 75),
+	green: A3($mdgriffith$elm_ui$Element$rgb255, 0, 153, 0),
+	purple: A3($mdgriffith$elm_ui$Element$rgb255, 102, 0, 102),
+	white: A3($mdgriffith$elm_ui$Element$rgb255, 255, 255, 255)
+};
 var $mdgriffith$elm_ui$Internal$Model$Focus = {$: 'Focus'};
 var $mdgriffith$elm_ui$Internal$Model$PseudoSelector = F2(
 	function (a, b) {
@@ -18221,7 +18227,6 @@ var $mdgriffith$elm_ui$Element$focused = function (decs) {
 			$mdgriffith$elm_ui$Internal$Model$Focus,
 			$mdgriffith$elm_ui$Internal$Model$unwrapDecorations(decs)));
 };
-var $author$project$Pages$Rankings$Dynamic$green = A3($mdgriffith$elm_ui$Element$rgb255, 0, 153, 0);
 var $mdgriffith$elm_ui$Internal$Model$Hover = {$: 'Hover'};
 var $mdgriffith$elm_ui$Internal$Flag$hover = $mdgriffith$elm_ui$Internal$Flag$flag(33);
 var $mdgriffith$elm_ui$Element$mouseOver = function (decs) {
@@ -18233,26 +18238,25 @@ var $mdgriffith$elm_ui$Element$mouseOver = function (decs) {
 			$mdgriffith$elm_ui$Internal$Model$Hover,
 			$mdgriffith$elm_ui$Internal$Model$unwrapDecorations(decs)));
 };
-var $author$project$Pages$Rankings$Dynamic$white = A3($mdgriffith$elm_ui$Element$rgb255, 255, 255, 255);
 var $author$project$Pages$Rankings$Dynamic$enabledButton = A2(
 	$mdgriffith$elm_ui$Element$Input$button,
 	_List_fromArray(
 		[
-			$mdgriffith$elm_ui$Element$Background$color($author$project$Pages$Rankings$Dynamic$green),
-			$mdgriffith$elm_ui$Element$Font$color($author$project$Pages$Rankings$Dynamic$white),
+			$mdgriffith$elm_ui$Element$Background$color($author$project$Ui$colors.green),
+			$mdgriffith$elm_ui$Element$Font$color($author$project$Ui$colors.white),
 			$mdgriffith$elm_ui$Element$focused(
 			_List_fromArray(
 				[
-					$mdgriffith$elm_ui$Element$Background$color($author$project$Pages$Rankings$Dynamic$blue)
+					$mdgriffith$elm_ui$Element$Background$color($author$project$Ui$colors.blue)
 				])),
 			$mdgriffith$elm_ui$Element$mouseOver(
 			_List_fromArray(
 				[
-					$mdgriffith$elm_ui$Element$Background$color($author$project$Pages$Rankings$Dynamic$blue)
+					$mdgriffith$elm_ui$Element$Background$color($author$project$Ui$colors.blue)
 				]))
 		]),
 	{
-		label: $mdgriffith$elm_ui$Element$text('Start Task'),
+		label: $mdgriffith$elm_ui$Element$text('Result'),
 		onPress: $elm$core$Maybe$Just(
 			$author$project$Pages$Rankings$Dynamic$ModalEnabled(true))
 	});
@@ -19020,10 +19024,6 @@ var $mdgriffith$elm_ui$Element$Border$color = function (clr) {
 			'bc-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
 			'border-color',
 			clr));
-};
-var $author$project$Ui$colors = {
-	coral: A3($mdgriffith$elm_ui$Element$rgb255, 204, 75, 75),
-	white: A3($mdgriffith$elm_ui$Element$rgb255, 255, 255, 255)
 };
 var $mdgriffith$elm_ui$Element$htmlAttribute = $mdgriffith$elm_ui$Internal$Model$Attr;
 var $author$project$Ui$transition = F2(

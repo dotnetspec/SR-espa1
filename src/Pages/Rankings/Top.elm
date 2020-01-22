@@ -136,6 +136,10 @@ view model =
     viewRankingsOrError model
 
 
+
+--consolidatedViews model
+
+
 viewRankingsOrError : Model -> Element Msg
 viewRankingsOrError model =
     case model.rankings of
@@ -160,7 +164,8 @@ viewRankingsOrError model =
 
 viewRankings : List Ranking -> Element Msg
 viewRankings rankings =
-    Element.table []
+    Element.table
+        []
         { data = rankings
         , columns =
             [ { header = Element.text "Ranking Name"

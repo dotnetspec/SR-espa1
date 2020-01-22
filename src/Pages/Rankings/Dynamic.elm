@@ -12,7 +12,7 @@ import Http
 import Json.Decode as Decode exposing (Decoder, bool, int, list, string)
 import RemoteData exposing (RemoteData, WebData)
 import Spa.Page
-import Ui
+import Ui exposing (colors)
 import Utils.MyUtils exposing (stringFromBool)
 import Utils.Spa exposing (Page)
 
@@ -195,53 +195,17 @@ view model =
     viewPlayersOrError model
 
 
-
---howdy
---type alias Button msg =
---    { onPress : Maybe msg
---    , label : Element msg
---    }
-
-
-blue =
-    Element.rgb255 238 238 238
-
-
-purple =
-    Element.rgb255 102 0 102
-
-
-green =
-    Element.rgb255 0 153 0
-
-
-white =
-    Element.rgb255 255 255 255
-
-
-
---myButton =
---    Input.button
---        [ Background.color blue
---        , Element.focused
---            [ Background.color purple ]
---        ]
---        { onPress = Just ClickMsg
---        , label = text "My Button"
---        }
-
-
 enabledButton =
     Input.button
-        [ Background.color green
-        , Font.color white
+        [ Background.color colors.green
+        , Font.color colors.white
         , Element.focused
-            [ Background.color blue ]
+            [ Background.color colors.blue ]
         , Element.mouseOver
-            [ Background.color blue ]
+            [ Background.color colors.blue ]
         ]
         { onPress = Just (ModalEnabled True)
-        , label = text "Start Task"
+        , label = text "Result"
         }
 
 
@@ -272,7 +236,9 @@ viewPlayersOrError model =
 
 viewplayers : List Player -> Element Msg
 viewplayers players =
-    Element.table []
+    --Element.text "hello"
+    Element.table
+        []
         { data = players
         , columns =
             [ { header = Element.text "Button"
