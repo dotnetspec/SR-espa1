@@ -12,7 +12,7 @@ import Http
 import Json.Decode as Decode exposing (Decoder, bool, int, list, string)
 import RemoteData exposing (RemoteData, WebData)
 import Spa.Page
-import Ui exposing (colors)
+import Ui exposing (colors, markdown)
 import Utils.MyUtils exposing (stringFromBool)
 import Utils.Spa exposing (Page)
 
@@ -56,6 +56,7 @@ type alias Model =
     , rankingid : String
     , modalStatus : Bool
     , playerid : Int
+    , player : Player
     }
 
 
@@ -72,6 +73,17 @@ init { param1 } =
       , rankingid = param1
       , modalStatus = False
       , playerid = 0
+      , player =
+            { datestamp = 12345
+            , active = False
+            , currentchallengername = ""
+            , currentchallengerid = 0
+            , address = ""
+            , rank = 0
+            , name = ""
+            , id = 0
+            , currentchallengeraddress = ""
+            }
       }
     , fetchRanking (RankingId param1)
     )
@@ -161,8 +173,12 @@ update msg model =
             --remove the first record (created on ranking creation with different format)
             ( { model | players = players }, Cmd.none )
 
-        ModalEnabled modalStatus playerid ->
-            ( { model | modalStatus = modalStatus, playerid = playerid }, Cmd.none )
+        ModalEnabled modalStatus newplayerid ->
+            let
+                _ =
+                    Debug.log "player id" newplayerid
+            in
+            ( { model | modalStatus = modalStatus, playerid = newplayerid }, Cmd.none )
 
 
 
@@ -195,18 +211,49 @@ controlledView model =
             viewPlayersOrError model
 
         True ->
-            Element.row
-                []
-                [ Element.el
-                    [ --Element.inFront (Element.text "I'm in front!")
-                      Element.inFront (enabledButton False model.playerid)
-                    ]
-                    (Element.text ("PlayerId is : " ++ String.fromInt model.playerid))
+            viewplayer [ retrieveSinglePlayer model.playerid (extractPlayersFromWebData model) ]
 
-                --(viewPlayersOrError
-                --    model
-                --)
-                ]
+
+retrieveSinglePlayer : Int -> List Player -> Player
+retrieveSinglePlayer id players =
+    let
+        x =
+            List.filter (\i -> i.id == id) players
+    in
+    case List.head x of
+        Nothing ->
+            { datestamp = 12345
+            , active = False
+            , currentchallengername = ""
+            , currentchallengerid = 0
+            , address = ""
+            , rank = 0
+            , name = ""
+            , id = 0
+            , currentchallengeraddress = ""
+            }
+
+        Just item ->
+            item
+
+
+
+--Element.row
+--    []
+--    --[ Element.el
+--    --[ --Element.inFront (Element.text "I'm in front!")
+--    --  Element.inFront (enabledButton False model.playerid)
+--    --]
+--    [ Element.text
+--        ("PlayerId is : " ++ String.fromInt model.playerid)
+--    ]
+--]
+-- markdown won't take dynmanic value insertions like rankingid unfortunately perhaps
+--                markdown
+--                """
+--### header 3
+--This is a paragraph. [Click me](/rankings/)!
+--                """
 
 
 enabledButton : Bool -> Int -> Element Msg
@@ -238,6 +285,22 @@ viewPlayersOrError model =
 
         RemoteData.Failure httpError ->
             Element.text "Failure"
+
+
+extractPlayersFromWebData : Model -> List Player
+extractPlayersFromWebData model =
+    case model.players of
+        RemoteData.NotAsked ->
+            []
+
+        RemoteData.Loading ->
+            []
+
+        RemoteData.Success players ->
+            players
+
+        RemoteData.Failure httpError ->
+            []
 
 
 
@@ -279,6 +342,45 @@ viewplayers players =
               , view =
                     \player ->
                         Element.text (String.fromInt player.rank)
+              }
+            ]
+        }
+
+
+
+--the 'List' is just a list of one player (for the table to work)
+
+
+viewplayer : List Player -> Element Msg
+viewplayer player =
+    --Element.text "hello"
+    Element.table
+        []
+        { data = player
+        , columns =
+            [ { header = Element.text "Button"
+              , width = fill
+              , view =
+                    \selectedplayer ->
+                        enabledButton True selectedplayer.id
+              }
+            , { header = Element.text "Name"
+              , width = fill
+              , view =
+                    \selectedplayer ->
+                        Element.text selectedplayer.name
+              }
+            , { header = Element.text "Current Challenger"
+              , width = fill
+              , view =
+                    \selectedplayer ->
+                        Element.text selectedplayer.currentchallengername
+              }
+            , { header = Element.text "RANK"
+              , width = fill
+              , view =
+                    \selectedplayer ->
+                        Element.text (String.fromInt selectedplayer.rank)
               }
             ]
         }

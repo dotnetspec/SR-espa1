@@ -17904,7 +17904,15 @@ var $author$project$Pages$Rankings$Dynamic$fetchRanking = function (_v0) {
 var $author$project$Pages$Rankings$Dynamic$init = function (_v0) {
 	var param1 = _v0.param1;
 	return _Utils_Tuple2(
-		{error: '', fetchedContentNotPlayerList: '', modalStatus: false, playerid: 0, players: $krisajenkins$remotedata$RemoteData$NotAsked, rankingid: param1},
+		{
+			error: '',
+			fetchedContentNotPlayerList: '',
+			modalStatus: false,
+			player: {active: false, address: '', currentchallengeraddress: '', currentchallengerid: 0, currentchallengername: '', datestamp: 12345, id: 0, name: '', rank: 0},
+			playerid: 0,
+			players: $krisajenkins$remotedata$RemoteData$NotAsked,
+			rankingid: param1
+		},
 		$author$project$Pages$Rankings$Dynamic$fetchRanking(
 			$author$project$Components$Ranking$RankingId(param1)));
 };
@@ -17939,12 +17947,44 @@ var $author$project$Pages$Rankings$Dynamic$update = F2(
 					$elm$core$Platform$Cmd$none);
 			default:
 				var modalStatus = msg.a;
-				var playerid = msg.b;
+				var newplayerid = msg.b;
+				var _v2 = A2($elm$core$Debug$log, 'player id', newplayerid);
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{modalStatus: modalStatus, playerid: playerid}),
+						{modalStatus: modalStatus, playerid: newplayerid}),
 					$elm$core$Platform$Cmd$none);
+		}
+	});
+var $author$project$Pages$Rankings$Dynamic$extractPlayersFromWebData = function (model) {
+	var _v0 = model.players;
+	switch (_v0.$) {
+		case 'NotAsked':
+			return _List_Nil;
+		case 'Loading':
+			return _List_Nil;
+		case 'Success':
+			var players = _v0.a;
+			return players;
+		default:
+			var httpError = _v0.a;
+			return _List_Nil;
+	}
+};
+var $author$project$Pages$Rankings$Dynamic$retrieveSinglePlayer = F2(
+	function (id, players) {
+		var x = A2(
+			$elm$core$List$filter,
+			function (i) {
+				return _Utils_eq(i.id, id);
+			},
+			players);
+		var _v0 = $elm$core$List$head(x);
+		if (_v0.$ === 'Nothing') {
+			return {active: false, address: '', currentchallengeraddress: '', currentchallengerid: 0, currentchallengername: '', datestamp: 12345, id: 0, name: '', rank: 0};
+		} else {
+			var item = _v0.a;
+			return item;
 		}
 	});
 var $author$project$Pages$Rankings$Dynamic$ModalEnabled = F2(
@@ -18266,18 +18306,6 @@ var $author$project$Pages$Rankings$Dynamic$enabledButton = F2(
 					A2($author$project$Pages$Rankings$Dynamic$ModalEnabled, hasClicked, playerid))
 			});
 	});
-var $mdgriffith$elm_ui$Internal$Model$InFront = {$: 'InFront'};
-var $mdgriffith$elm_ui$Element$createNearby = F2(
-	function (loc, element) {
-		if (element.$ === 'Empty') {
-			return $mdgriffith$elm_ui$Internal$Model$NoAttribute;
-		} else {
-			return A2($mdgriffith$elm_ui$Internal$Model$Nearby, loc, element);
-		}
-	});
-var $mdgriffith$elm_ui$Element$inFront = function (element) {
-	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$InFront, element);
-};
 var $mdgriffith$elm_ui$Element$InternalColumn = function (a) {
 	return {$: 'InternalColumn', a: a};
 };
@@ -18554,25 +18582,58 @@ var $author$project$Pages$Rankings$Dynamic$viewPlayersOrError = function (model)
 			return $mdgriffith$elm_ui$Element$text('Failure');
 	}
 };
+var $author$project$Pages$Rankings$Dynamic$viewplayer = function (player) {
+	return A2(
+		$mdgriffith$elm_ui$Element$table,
+		_List_Nil,
+		{
+			columns: _List_fromArray(
+				[
+					{
+					header: $mdgriffith$elm_ui$Element$text('Button'),
+					view: function (selectedplayer) {
+						return A2($author$project$Pages$Rankings$Dynamic$enabledButton, true, selectedplayer.id);
+					},
+					width: $mdgriffith$elm_ui$Element$fill
+				},
+					{
+					header: $mdgriffith$elm_ui$Element$text('Name'),
+					view: function (selectedplayer) {
+						return $mdgriffith$elm_ui$Element$text(selectedplayer.name);
+					},
+					width: $mdgriffith$elm_ui$Element$fill
+				},
+					{
+					header: $mdgriffith$elm_ui$Element$text('Current Challenger'),
+					view: function (selectedplayer) {
+						return $mdgriffith$elm_ui$Element$text(selectedplayer.currentchallengername);
+					},
+					width: $mdgriffith$elm_ui$Element$fill
+				},
+					{
+					header: $mdgriffith$elm_ui$Element$text('RANK'),
+					view: function (selectedplayer) {
+						return $mdgriffith$elm_ui$Element$text(
+							$elm$core$String$fromInt(selectedplayer.rank));
+					},
+					width: $mdgriffith$elm_ui$Element$fill
+				}
+				]),
+			data: player
+		});
+};
 var $author$project$Pages$Rankings$Dynamic$controlledView = function (model) {
 	var _v0 = model.modalStatus;
 	if (!_v0) {
 		return $author$project$Pages$Rankings$Dynamic$viewPlayersOrError(model);
 	} else {
-		return A2(
-			$mdgriffith$elm_ui$Element$row,
-			_List_Nil,
+		return $author$project$Pages$Rankings$Dynamic$viewplayer(
 			_List_fromArray(
 				[
 					A2(
-					$mdgriffith$elm_ui$Element$el,
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$inFront(
-							A2($author$project$Pages$Rankings$Dynamic$enabledButton, false, model.playerid))
-						]),
-					$mdgriffith$elm_ui$Element$text(
-						'PlayerId is : ' + $elm$core$String$fromInt(model.playerid)))
+					$author$project$Pages$Rankings$Dynamic$retrieveSinglePlayer,
+					model.playerid,
+					$author$project$Pages$Rankings$Dynamic$extractPlayersFromWebData(model))
 				]));
 	}
 };
