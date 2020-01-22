@@ -17904,7 +17904,7 @@ var $author$project$Pages$Rankings$Dynamic$fetchRanking = function (_v0) {
 var $author$project$Pages$Rankings$Dynamic$init = function (_v0) {
 	var param1 = _v0.param1;
 	return _Utils_Tuple2(
-		{error: '', fetchedContentNotPlayerList: '', modalStatus: false, players: $krisajenkins$remotedata$RemoteData$NotAsked, rankingid: param1},
+		{error: '', fetchedContentNotPlayerList: '', modalStatus: false, playerid: 0, players: $krisajenkins$remotedata$RemoteData$NotAsked, rankingid: param1},
 		$author$project$Pages$Rankings$Dynamic$fetchRanking(
 			$author$project$Components$Ranking$RankingId(param1)));
 };
@@ -17939,16 +17939,18 @@ var $author$project$Pages$Rankings$Dynamic$update = F2(
 					$elm$core$Platform$Cmd$none);
 			default:
 				var modalStatus = msg.a;
+				var playerid = msg.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{modalStatus: modalStatus}),
+						{modalStatus: modalStatus, playerid: playerid}),
 					$elm$core$Platform$Cmd$none);
 		}
 	});
-var $author$project$Pages$Rankings$Dynamic$ModalEnabled = function (a) {
-	return {$: 'ModalEnabled', a: a};
-};
+var $author$project$Pages$Rankings$Dynamic$ModalEnabled = F2(
+	function (a, b) {
+		return {$: 'ModalEnabled', a: a, b: b};
+	});
 var $mdgriffith$elm_ui$Internal$Model$Button = {$: 'Button'};
 var $elm$json$Json$Encode$bool = _Json_wrap;
 var $elm$html$Html$Attributes$boolProperty = F2(
@@ -18238,30 +18240,32 @@ var $mdgriffith$elm_ui$Element$mouseOver = function (decs) {
 			$mdgriffith$elm_ui$Internal$Model$Hover,
 			$mdgriffith$elm_ui$Internal$Model$unwrapDecorations(decs)));
 };
-var $author$project$Pages$Rankings$Dynamic$enabledButton = function (bool) {
-	return A2(
-		$mdgriffith$elm_ui$Element$Input$button,
-		_List_fromArray(
-			[
-				$mdgriffith$elm_ui$Element$Background$color($author$project$Ui$colors.green),
-				$mdgriffith$elm_ui$Element$Font$color($author$project$Ui$colors.white),
-				$mdgriffith$elm_ui$Element$focused(
-				_List_fromArray(
-					[
-						$mdgriffith$elm_ui$Element$Background$color($author$project$Ui$colors.blue)
-					])),
-				$mdgriffith$elm_ui$Element$mouseOver(
-				_List_fromArray(
-					[
-						$mdgriffith$elm_ui$Element$Background$color($author$project$Ui$colors.blue)
-					]))
-			]),
-		{
-			label: $mdgriffith$elm_ui$Element$text('Result'),
-			onPress: $elm$core$Maybe$Just(
-				$author$project$Pages$Rankings$Dynamic$ModalEnabled(bool))
-		});
-};
+var $author$project$Pages$Rankings$Dynamic$enabledButton = F2(
+	function (hasClicked, playerid) {
+		return A2(
+			$mdgriffith$elm_ui$Element$Input$button,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$Background$color($author$project$Ui$colors.green),
+					$mdgriffith$elm_ui$Element$Font$color($author$project$Ui$colors.white),
+					$mdgriffith$elm_ui$Element$focused(
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$Background$color($author$project$Ui$colors.blue)
+						])),
+					$mdgriffith$elm_ui$Element$mouseOver(
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$Background$color($author$project$Ui$colors.blue)
+						]))
+				]),
+			{
+				label: $mdgriffith$elm_ui$Element$text(
+					$elm$core$String$fromInt(playerid)),
+				onPress: $elm$core$Maybe$Just(
+					A2($author$project$Pages$Rankings$Dynamic$ModalEnabled, hasClicked, playerid))
+			});
+	});
 var $mdgriffith$elm_ui$Internal$Model$InFront = {$: 'InFront'};
 var $mdgriffith$elm_ui$Element$createNearby = F2(
 	function (loc, element) {
@@ -18273,60 +18277,6 @@ var $mdgriffith$elm_ui$Element$createNearby = F2(
 	});
 var $mdgriffith$elm_ui$Element$inFront = function (element) {
 	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$InFront, element);
-};
-var $elm$html$Html$Attributes$rel = _VirtualDom_attribute('rel');
-var $mdgriffith$elm_ui$Element$link = F2(
-	function (attrs, _v0) {
-		var url = _v0.url;
-		var label = _v0.label;
-		return A4(
-			$mdgriffith$elm_ui$Internal$Model$element,
-			$mdgriffith$elm_ui$Internal$Model$asEl,
-			$mdgriffith$elm_ui$Internal$Model$NodeName('a'),
-			A2(
-				$elm$core$List$cons,
-				$mdgriffith$elm_ui$Internal$Model$Attr(
-					$elm$html$Html$Attributes$href(url)),
-				A2(
-					$elm$core$List$cons,
-					$mdgriffith$elm_ui$Internal$Model$Attr(
-						$elm$html$Html$Attributes$rel('noopener noreferrer')),
-					A2(
-						$elm$core$List$cons,
-						$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$shrink),
-						A2(
-							$elm$core$List$cons,
-							$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$shrink),
-							A2(
-								$elm$core$List$cons,
-								$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.contentCenterX + (' ' + ($mdgriffith$elm_ui$Internal$Style$classes.contentCenterY + (' ' + $mdgriffith$elm_ui$Internal$Style$classes.link)))),
-								attrs))))),
-			$mdgriffith$elm_ui$Internal$Model$Unkeyed(
-				_List_fromArray(
-					[label])));
-	});
-var $mdgriffith$elm_ui$Element$padding = function (x) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$padding,
-		A5(
-			$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-			'p-' + $elm$core$String$fromInt(x),
-			x,
-			x,
-			x,
-			x));
-};
-var $mdgriffith$elm_ui$Internal$Flag$borderRound = $mdgriffith$elm_ui$Internal$Flag$flag(17);
-var $mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$borderRound,
-		A3(
-			$mdgriffith$elm_ui$Internal$Model$Single,
-			'br-' + $elm$core$String$fromInt(radius),
-			'border-radius',
-			$elm$core$String$fromInt(radius) + 'px'));
 };
 var $mdgriffith$elm_ui$Element$InternalColumn = function (a) {
 	return {$: 'InternalColumn', a: a};
@@ -18559,7 +18509,7 @@ var $author$project$Pages$Rankings$Dynamic$viewplayers = function (players) {
 					{
 					header: $mdgriffith$elm_ui$Element$text('Button'),
 					view: function (player) {
-						return $author$project$Pages$Rankings$Dynamic$enabledButton(true);
+						return A2($author$project$Pages$Rankings$Dynamic$enabledButton, true, player.id);
 					},
 					width: $mdgriffith$elm_ui$Element$fill
 				},
@@ -18571,25 +18521,9 @@ var $author$project$Pages$Rankings$Dynamic$viewplayers = function (players) {
 					width: $mdgriffith$elm_ui$Element$fill
 				},
 					{
-					header: $mdgriffith$elm_ui$Element$text('id'),
-					view: function (player) {
-						return $mdgriffith$elm_ui$Element$text(
-							$elm$core$String$fromInt(player.id));
-					},
-					width: $mdgriffith$elm_ui$Element$fill
-				},
-					{
 					header: $mdgriffith$elm_ui$Element$text('Current Challenger'),
 					view: function (player) {
 						return $mdgriffith$elm_ui$Element$text(player.currentchallengername);
-					},
-					width: $mdgriffith$elm_ui$Element$fill
-				},
-					{
-					header: $mdgriffith$elm_ui$Element$text('Current Challenger ID'),
-					view: function (player) {
-						return $mdgriffith$elm_ui$Element$text(
-							$elm$core$String$fromInt(player.currentchallengerid));
 					},
 					width: $mdgriffith$elm_ui$Element$fill
 				},
@@ -18598,34 +18532,6 @@ var $author$project$Pages$Rankings$Dynamic$viewplayers = function (players) {
 					view: function (player) {
 						return $mdgriffith$elm_ui$Element$text(
 							$elm$core$String$fromInt(player.rank));
-					},
-					width: $mdgriffith$elm_ui$Element$fill
-				},
-					{
-					header: $mdgriffith$elm_ui$Element$text('CURRENTCHALLENGERADDRESS'),
-					view: function (player) {
-						return $mdgriffith$elm_ui$Element$text(player.currentchallengeraddress);
-					},
-					width: $mdgriffith$elm_ui$Element$fill
-				},
-					{
-					header: $mdgriffith$elm_ui$Element$text('Result'),
-					view: function (player) {
-						return A2(
-							$mdgriffith$elm_ui$Element$link,
-							_List_fromArray(
-								[
-									$mdgriffith$elm_ui$Element$Background$color(
-									A3($mdgriffith$elm_ui$Element$rgb255, 255, 255, 255)),
-									$mdgriffith$elm_ui$Element$Font$color(
-									A3($mdgriffith$elm_ui$Element$rgb255, 0, 128, 255)),
-									$mdgriffith$elm_ui$Element$Border$rounded(3),
-									$mdgriffith$elm_ui$Element$padding(10)
-								]),
-							{
-								label: $mdgriffith$elm_ui$Element$text('Result'),
-								url: '/result/' + $elm$core$String$fromInt(player.currentchallengerid)
-							});
 					},
 					width: $mdgriffith$elm_ui$Element$fill
 				}
@@ -18663,9 +18569,10 @@ var $author$project$Pages$Rankings$Dynamic$controlledView = function (model) {
 					_List_fromArray(
 						[
 							$mdgriffith$elm_ui$Element$inFront(
-							$author$project$Pages$Rankings$Dynamic$enabledButton(false))
+							A2($author$project$Pages$Rankings$Dynamic$enabledButton, false, model.playerid))
 						]),
-					$mdgriffith$elm_ui$Element$text(''))
+					$mdgriffith$elm_ui$Element$text(
+						'PlayerId is : ' + $elm$core$String$fromInt(model.playerid)))
 				]));
 	}
 };
@@ -18782,6 +18689,60 @@ var $author$project$Pages$Rankings$Top$update = F2(
 				$elm$core$Platform$Cmd$none);
 		}
 	});
+var $elm$html$Html$Attributes$rel = _VirtualDom_attribute('rel');
+var $mdgriffith$elm_ui$Element$link = F2(
+	function (attrs, _v0) {
+		var url = _v0.url;
+		var label = _v0.label;
+		return A4(
+			$mdgriffith$elm_ui$Internal$Model$element,
+			$mdgriffith$elm_ui$Internal$Model$asEl,
+			$mdgriffith$elm_ui$Internal$Model$NodeName('a'),
+			A2(
+				$elm$core$List$cons,
+				$mdgriffith$elm_ui$Internal$Model$Attr(
+					$elm$html$Html$Attributes$href(url)),
+				A2(
+					$elm$core$List$cons,
+					$mdgriffith$elm_ui$Internal$Model$Attr(
+						$elm$html$Html$Attributes$rel('noopener noreferrer')),
+					A2(
+						$elm$core$List$cons,
+						$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$shrink),
+						A2(
+							$elm$core$List$cons,
+							$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$shrink),
+							A2(
+								$elm$core$List$cons,
+								$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.contentCenterX + (' ' + ($mdgriffith$elm_ui$Internal$Style$classes.contentCenterY + (' ' + $mdgriffith$elm_ui$Internal$Style$classes.link)))),
+								attrs))))),
+			$mdgriffith$elm_ui$Internal$Model$Unkeyed(
+				_List_fromArray(
+					[label])));
+	});
+var $mdgriffith$elm_ui$Element$padding = function (x) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$padding,
+		A5(
+			$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+			'p-' + $elm$core$String$fromInt(x),
+			x,
+			x,
+			x,
+			x));
+};
+var $mdgriffith$elm_ui$Internal$Flag$borderRound = $mdgriffith$elm_ui$Internal$Flag$flag(17);
+var $mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$borderRound,
+		A3(
+			$mdgriffith$elm_ui$Internal$Model$Single,
+			'br-' + $elm$core$String$fromInt(radius),
+			'border-radius',
+			$elm$core$String$fromInt(radius) + 'px'));
+};
 var $author$project$Pages$Rankings$Top$viewRankings = function (rankings) {
 	return A2(
 		$mdgriffith$elm_ui$Element$table,
@@ -20092,4 +20053,4 @@ var $author$project$Main$main = $ryannhg$elm_spa$Spa$create(
 		ui: $ryannhg$elm_spa$Spa$usingElmUi
 	});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Spa.Msg Global.Msg Generated.Pages.Msg","aliases":{"Pages.AboutUs.Msg":{"args":[],"type":"Basics.Never"},"Pages.Guide.Msg":{"args":[],"type":"Basics.Never"},"Pages.NotFound.Msg":{"args":[],"type":"Basics.Never"},"Pages.Top.Msg":{"args":[],"type":"Basics.Never"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Components.Players.Player":{"args":[],"type":"{ datestamp : Basics.Int, active : Basics.Bool, currentchallengername : String.String, currentchallengerid : Basics.Int, address : String.String, rank : Basics.Int, name : String.String, id : Basics.Int, currentchallengeraddress : String.String }"},"Components.Ranking.Ranking":{"args":[],"type":"{ id : String.String, active : Basics.Bool, name : String.String, desc : String.String }"},"RemoteData.WebData":{"args":["a"],"type":"RemoteData.RemoteData Http.Error a"}},"unions":{"Generated.Pages.Msg":{"args":[],"tags":{"AboutUsMsg":["Pages.AboutUs.Msg"],"GuideMsg":["Pages.Guide.Msg"],"NotFoundMsg":["Pages.NotFound.Msg"],"TopMsg":["Pages.Top.Msg"],"Docs_Folder_Msg":["Generated.Docs.Pages.Msg"],"Rankings_Folder_Msg":["Generated.Rankings.Pages.Msg"]}},"Global.Msg":{"args":[],"tags":{"Msg":[]}},"Spa.Msg":{"args":["globalMsg","msg"],"tags":{"ChangedUrl":["Url.Url"],"ClickedLink":["Browser.UrlRequest"],"Global":["globalMsg"],"Page":["msg"],"FadeInLayout":[],"FadeInPage":["Url.Url"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Generated.Docs.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Msg"],"TopMsg":["Pages.Docs.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Generated.Rankings.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Rankings.Dynamic.Msg"],"TopMsg":["Pages.Rankings.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Basics.Never":{"args":[],"tags":{"JustOneMore":["Basics.Never"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Generated.Docs.Dynamic.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Dynamic.Msg"]}},"Pages.Docs.Dynamic.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Docs.Top.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Rankings.Dynamic.Msg":{"args":[],"tags":{"PlayersReceived":["RemoteData.WebData (List.List Components.Players.Player)"],"FetchedContent":["Result.Result Http.Error String.String"],"ModalEnabled":["Basics.Bool"]}},"Pages.Rankings.Top.Msg":{"args":[],"tags":{"RankingsReceived":["RemoteData.WebData (List.List Components.Ranking.Ranking)"],"FetchedContent":["Result.Result Http.Error String.String"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Pages.Docs.Dynamic.Dynamic.Msg":{"args":[],"tags":{"Msg":[]}},"RemoteData.RemoteData":{"args":["e","a"],"tags":{"NotAsked":[],"Loading":[],"Failure":["e"],"Success":["a"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Spa.Msg Global.Msg Generated.Pages.Msg","aliases":{"Pages.AboutUs.Msg":{"args":[],"type":"Basics.Never"},"Pages.Guide.Msg":{"args":[],"type":"Basics.Never"},"Pages.NotFound.Msg":{"args":[],"type":"Basics.Never"},"Pages.Top.Msg":{"args":[],"type":"Basics.Never"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Components.Players.Player":{"args":[],"type":"{ datestamp : Basics.Int, active : Basics.Bool, currentchallengername : String.String, currentchallengerid : Basics.Int, address : String.String, rank : Basics.Int, name : String.String, id : Basics.Int, currentchallengeraddress : String.String }"},"Components.Ranking.Ranking":{"args":[],"type":"{ id : String.String, active : Basics.Bool, name : String.String, desc : String.String }"},"RemoteData.WebData":{"args":["a"],"type":"RemoteData.RemoteData Http.Error a"}},"unions":{"Generated.Pages.Msg":{"args":[],"tags":{"AboutUsMsg":["Pages.AboutUs.Msg"],"GuideMsg":["Pages.Guide.Msg"],"NotFoundMsg":["Pages.NotFound.Msg"],"TopMsg":["Pages.Top.Msg"],"Docs_Folder_Msg":["Generated.Docs.Pages.Msg"],"Rankings_Folder_Msg":["Generated.Rankings.Pages.Msg"]}},"Global.Msg":{"args":[],"tags":{"Msg":[]}},"Spa.Msg":{"args":["globalMsg","msg"],"tags":{"ChangedUrl":["Url.Url"],"ClickedLink":["Browser.UrlRequest"],"Global":["globalMsg"],"Page":["msg"],"FadeInLayout":[],"FadeInPage":["Url.Url"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Generated.Docs.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Msg"],"TopMsg":["Pages.Docs.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Generated.Rankings.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Rankings.Dynamic.Msg"],"TopMsg":["Pages.Rankings.Top.Msg"],"Dynamic_Folder_Msg":["Generated.Docs.Dynamic.Pages.Msg"]}},"Basics.Never":{"args":[],"tags":{"JustOneMore":["Basics.Never"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Generated.Docs.Dynamic.Pages.Msg":{"args":[],"tags":{"DynamicMsg":["Pages.Docs.Dynamic.Dynamic.Msg"]}},"Pages.Docs.Dynamic.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Docs.Top.Msg":{"args":[],"tags":{"FetchedContent":["Result.Result Http.Error String.String"]}},"Pages.Rankings.Dynamic.Msg":{"args":[],"tags":{"PlayersReceived":["RemoteData.WebData (List.List Components.Players.Player)"],"FetchedContent":["Result.Result Http.Error String.String"],"ModalEnabled":["Basics.Bool","Basics.Int"]}},"Pages.Rankings.Top.Msg":{"args":[],"tags":{"RankingsReceived":["RemoteData.WebData (List.List Components.Ranking.Ranking)"],"FetchedContent":["Result.Result Http.Error String.String"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Pages.Docs.Dynamic.Dynamic.Msg":{"args":[],"tags":{"Msg":[]}},"RemoteData.RemoteData":{"args":["e","a"],"tags":{"NotAsked":[],"Loading":[],"Failure":["e"],"Success":["a"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}}}})}});}(this));

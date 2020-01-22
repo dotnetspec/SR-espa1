@@ -35,7 +35,7 @@ page =
 type Msg
     = PlayersReceived (WebData (List Player))
     | FetchedContent (Result Http.Error String)
-    | ModalEnabled Bool
+    | ModalEnabled Bool Int
 
 
 type RemoteData e a
@@ -55,6 +55,7 @@ type alias Model =
     , error : String
     , rankingid : String
     , modalStatus : Bool
+    , playerid : Int
     }
 
 
@@ -70,6 +71,7 @@ init { param1 } =
       , error = ""
       , rankingid = param1
       , modalStatus = False
+      , playerid = 0
       }
     , fetchRanking (RankingId param1)
     )
@@ -159,11 +161,12 @@ update msg model =
             --remove the first record (created on ranking creation with different format)
             ( { model | players = players }, Cmd.none )
 
-        ModalEnabled modalStatus ->
-            ( { model | modalStatus = modalStatus }, Cmd.none )
+        ModalEnabled modalStatus playerid ->
+            ( { model | modalStatus = modalStatus, playerid = playerid }, Cmd.none )
 
 
 
+--{ model | price = new_price, productId = newProductId}
 -- SUBSCRIPTIONS
 
 
@@ -196,9 +199,9 @@ controlledView model =
                 []
                 [ Element.el
                     [ --Element.inFront (Element.text "I'm in front!")
-                      Element.inFront (enabledButton False)
+                      Element.inFront (enabledButton False model.playerid)
                     ]
-                    (Element.text "")
+                    (Element.text ("PlayerId is : " ++ String.fromInt model.playerid))
 
                 --(viewPlayersOrError
                 --    model
@@ -206,8 +209,8 @@ controlledView model =
                 ]
 
 
-enabledButton : Bool -> Element Msg
-enabledButton bool =
+enabledButton : Bool -> Int -> Element Msg
+enabledButton hasClicked playerid =
     Input.button
         [ Background.color colors.green
         , Font.color colors.white
@@ -216,8 +219,8 @@ enabledButton bool =
         , Element.mouseOver
             [ Background.color colors.blue ]
         ]
-        { onPress = Just (ModalEnabled bool)
-        , label = text "Result"
+        { onPress = Just (ModalEnabled hasClicked playerid)
+        , label = text (String.fromInt playerid)
         }
 
 
@@ -257,7 +260,7 @@ viewplayers players =
               , width = fill
               , view =
                     \player ->
-                        enabledButton True
+                        enabledButton True player.id
               }
             , { header = Element.text "Name"
               , width = fill
@@ -265,49 +268,17 @@ viewplayers players =
                     \player ->
                         Element.text player.name
               }
-            , { header = Element.text "id"
-              , width = fill
-              , view =
-                    \player ->
-                        Element.text (String.fromInt player.id)
-              }
             , { header = Element.text "Current Challenger"
               , width = fill
               , view =
                     \player ->
                         Element.text player.currentchallengername
               }
-            , { header = Element.text "Current Challenger ID"
-              , width = fill
-              , view =
-                    \player ->
-                        Element.text (String.fromInt player.currentchallengerid)
-              }
             , { header = Element.text "RANK"
               , width = fill
               , view =
                     \player ->
                         Element.text (String.fromInt player.rank)
-              }
-            , { header = Element.text "CURRENTCHALLENGERADDRESS"
-              , width = fill
-              , view =
-                    \player ->
-                        Element.text player.currentchallengeraddress
-              }
-            , { header = Element.text "Result"
-              , width = fill
-              , view =
-                    \player ->
-                        Element.link
-                            [ Background.color (rgb255 255 255 255)
-                            , Font.color (rgb255 0 128 255)
-                            , Border.rounded 3
-                            , padding 10
-                            ]
-                            { url = "/result/" ++ String.fromInt player.currentchallengerid
-                            , label = Element.text "Result"
-                            }
               }
             ]
         }
