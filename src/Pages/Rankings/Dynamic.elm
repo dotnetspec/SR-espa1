@@ -58,19 +58,6 @@ type alias Model =
     }
 
 
-howdy : Element msg
-howdy =
-    --Element.el [] (Element.text "Howdy!")
-    --Element.layout []
-    Element.row
-        []
-        [ Element.el
-            [ Element.inFront (Element.text "I'm in front!")
-            ]
-            (Element.text "I'm normal!")
-        ]
-
-
 
 -- INIT
 -- param1 (can add ,param2 etc. if nec.), is the RankingId
@@ -192,10 +179,35 @@ subscriptions model =
 
 view : Model -> Element Msg
 view model =
-    viewPlayersOrError model
+    --viewPlayersOrError model
+    controlledView model
 
 
-enabledButton =
+controlledView : Model -> Element Msg
+controlledView model =
+    --Element.el [] (Element.text "Howdy!")
+    --Element.layout []
+    case model.modalStatus of
+        False ->
+            viewPlayersOrError model
+
+        True ->
+            Element.row
+                []
+                [ Element.el
+                    [ --Element.inFront (Element.text "I'm in front!")
+                      Element.inFront (enabledButton False)
+                    ]
+                    (Element.text "")
+
+                --(viewPlayersOrError
+                --    model
+                --)
+                ]
+
+
+enabledButton : Bool -> Element Msg
+enabledButton bool =
     Input.button
         [ Background.color colors.green
         , Font.color colors.white
@@ -204,7 +216,7 @@ enabledButton =
         , Element.mouseOver
             [ Background.color colors.blue ]
         ]
-        { onPress = Just (ModalEnabled True)
+        { onPress = Just (ModalEnabled bool)
         , label = text "Result"
         }
 
@@ -245,7 +257,7 @@ viewplayers players =
               , width = fill
               , view =
                     \player ->
-                        enabledButton
+                        enabledButton True
               }
             , { header = Element.text "Name"
               , width = fill

@@ -17946,39 +17946,6 @@ var $author$project$Pages$Rankings$Dynamic$update = F2(
 					$elm$core$Platform$Cmd$none);
 		}
 	});
-var $mdgriffith$elm_ui$Internal$Model$Colored = F3(
-	function (a, b, c) {
-		return {$: 'Colored', a: a, b: b, c: c};
-	});
-var $mdgriffith$elm_ui$Internal$Flag$bgColor = $mdgriffith$elm_ui$Internal$Flag$flag(8);
-var $mdgriffith$elm_ui$Internal$Model$formatColorClass = function (_v0) {
-	var red = _v0.a;
-	var green = _v0.b;
-	var blue = _v0.c;
-	var alpha = _v0.d;
-	return $mdgriffith$elm_ui$Internal$Model$floatClass(red) + ('-' + ($mdgriffith$elm_ui$Internal$Model$floatClass(green) + ('-' + ($mdgriffith$elm_ui$Internal$Model$floatClass(blue) + ('-' + $mdgriffith$elm_ui$Internal$Model$floatClass(alpha))))));
-};
-var $mdgriffith$elm_ui$Element$Background$color = function (clr) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$bgColor,
-		A3(
-			$mdgriffith$elm_ui$Internal$Model$Colored,
-			'bg-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
-			'background-color',
-			clr));
-};
-var $mdgriffith$elm_ui$Internal$Flag$fontColor = $mdgriffith$elm_ui$Internal$Flag$flag(14);
-var $mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$fontColor,
-		A3(
-			$mdgriffith$elm_ui$Internal$Model$Colored,
-			'fc-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(fontColor),
-			'color',
-			fontColor));
-};
 var $author$project$Pages$Rankings$Dynamic$ModalEnabled = function (a) {
 	return {$: 'ModalEnabled', a: a};
 };
@@ -18106,6 +18073,39 @@ var $mdgriffith$elm_ui$Element$Input$button = F2(
 				_List_fromArray(
 					[label])));
 	});
+var $mdgriffith$elm_ui$Internal$Model$Colored = F3(
+	function (a, b, c) {
+		return {$: 'Colored', a: a, b: b, c: c};
+	});
+var $mdgriffith$elm_ui$Internal$Flag$bgColor = $mdgriffith$elm_ui$Internal$Flag$flag(8);
+var $mdgriffith$elm_ui$Internal$Model$formatColorClass = function (_v0) {
+	var red = _v0.a;
+	var green = _v0.b;
+	var blue = _v0.c;
+	var alpha = _v0.d;
+	return $mdgriffith$elm_ui$Internal$Model$floatClass(red) + ('-' + ($mdgriffith$elm_ui$Internal$Model$floatClass(green) + ('-' + ($mdgriffith$elm_ui$Internal$Model$floatClass(blue) + ('-' + $mdgriffith$elm_ui$Internal$Model$floatClass(alpha))))));
+};
+var $mdgriffith$elm_ui$Element$Background$color = function (clr) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$bgColor,
+		A3(
+			$mdgriffith$elm_ui$Internal$Model$Colored,
+			'bg-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
+			'background-color',
+			clr));
+};
+var $mdgriffith$elm_ui$Internal$Flag$fontColor = $mdgriffith$elm_ui$Internal$Flag$flag(14);
+var $mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$fontColor,
+		A3(
+			$mdgriffith$elm_ui$Internal$Model$Colored,
+			'fc-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(fontColor),
+			'color',
+			fontColor));
+};
 var $mdgriffith$elm_ui$Internal$Model$Rgba = F4(
 	function (a, b, c, d) {
 		return {$: 'Rgba', a: a, b: b, c: c, d: d};
@@ -18238,28 +18238,42 @@ var $mdgriffith$elm_ui$Element$mouseOver = function (decs) {
 			$mdgriffith$elm_ui$Internal$Model$Hover,
 			$mdgriffith$elm_ui$Internal$Model$unwrapDecorations(decs)));
 };
-var $author$project$Pages$Rankings$Dynamic$enabledButton = A2(
-	$mdgriffith$elm_ui$Element$Input$button,
-	_List_fromArray(
-		[
-			$mdgriffith$elm_ui$Element$Background$color($author$project$Ui$colors.green),
-			$mdgriffith$elm_ui$Element$Font$color($author$project$Ui$colors.white),
-			$mdgriffith$elm_ui$Element$focused(
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$Background$color($author$project$Ui$colors.blue)
-				])),
-			$mdgriffith$elm_ui$Element$mouseOver(
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$Background$color($author$project$Ui$colors.blue)
-				]))
-		]),
-	{
-		label: $mdgriffith$elm_ui$Element$text('Result'),
-		onPress: $elm$core$Maybe$Just(
-			$author$project$Pages$Rankings$Dynamic$ModalEnabled(true))
+var $author$project$Pages$Rankings$Dynamic$enabledButton = function (bool) {
+	return A2(
+		$mdgriffith$elm_ui$Element$Input$button,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$Background$color($author$project$Ui$colors.green),
+				$mdgriffith$elm_ui$Element$Font$color($author$project$Ui$colors.white),
+				$mdgriffith$elm_ui$Element$focused(
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$Background$color($author$project$Ui$colors.blue)
+					])),
+				$mdgriffith$elm_ui$Element$mouseOver(
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$Background$color($author$project$Ui$colors.blue)
+					]))
+			]),
+		{
+			label: $mdgriffith$elm_ui$Element$text('Result'),
+			onPress: $elm$core$Maybe$Just(
+				$author$project$Pages$Rankings$Dynamic$ModalEnabled(bool))
+		});
+};
+var $mdgriffith$elm_ui$Internal$Model$InFront = {$: 'InFront'};
+var $mdgriffith$elm_ui$Element$createNearby = F2(
+	function (loc, element) {
+		if (element.$ === 'Empty') {
+			return $mdgriffith$elm_ui$Internal$Model$NoAttribute;
+		} else {
+			return A2($mdgriffith$elm_ui$Internal$Model$Nearby, loc, element);
+		}
 	});
+var $mdgriffith$elm_ui$Element$inFront = function (element) {
+	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$InFront, element);
+};
 var $elm$html$Html$Attributes$rel = _VirtualDom_attribute('rel');
 var $mdgriffith$elm_ui$Element$link = F2(
 	function (attrs, _v0) {
@@ -18545,7 +18559,7 @@ var $author$project$Pages$Rankings$Dynamic$viewplayers = function (players) {
 					{
 					header: $mdgriffith$elm_ui$Element$text('Button'),
 					view: function (player) {
-						return $author$project$Pages$Rankings$Dynamic$enabledButton;
+						return $author$project$Pages$Rankings$Dynamic$enabledButton(true);
 					},
 					width: $mdgriffith$elm_ui$Element$fill
 				},
@@ -18634,8 +18648,29 @@ var $author$project$Pages$Rankings$Dynamic$viewPlayersOrError = function (model)
 			return $mdgriffith$elm_ui$Element$text('Failure');
 	}
 };
+var $author$project$Pages$Rankings$Dynamic$controlledView = function (model) {
+	var _v0 = model.modalStatus;
+	if (!_v0) {
+		return $author$project$Pages$Rankings$Dynamic$viewPlayersOrError(model);
+	} else {
+		return A2(
+			$mdgriffith$elm_ui$Element$row,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					$mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$inFront(
+							$author$project$Pages$Rankings$Dynamic$enabledButton(false))
+						]),
+					$mdgriffith$elm_ui$Element$text(''))
+				]));
+	}
+};
 var $author$project$Pages$Rankings$Dynamic$view = function (model) {
-	return $author$project$Pages$Rankings$Dynamic$viewPlayersOrError(model);
+	return $author$project$Pages$Rankings$Dynamic$controlledView(model);
 };
 var $author$project$Pages$Rankings$Dynamic$page = $ryannhg$elm_spa$Spa$Page$element(
 	{
