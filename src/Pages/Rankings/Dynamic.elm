@@ -6,6 +6,7 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
+import Element.Input as Input
 import Generated.Rankings.Params as Params
 import Http
 import Json.Decode as Decode exposing (Decoder, bool, int, list, string)
@@ -27,9 +28,14 @@ page =
         }
 
 
+
+-- Msg gets passed to update
+
+
 type Msg
     = PlayersReceived (WebData (List Player))
     | FetchedContent (Result Http.Error String)
+    | ModalEnabled Bool
 
 
 type RemoteData e a
@@ -39,11 +45,30 @@ type RemoteData e a
     | Success a
 
 
+
+--Model is updated in update
+
+
 type alias Model =
     { players : WebData (List Player)
     , fetchedContentNotPlayerList : String
     , error : String
+    , rankingid : String
+    , modalStatus : Bool
     }
+
+
+howdy : Element msg
+howdy =
+    --Element.el [] (Element.text "Howdy!")
+    --Element.layout []
+    Element.row
+        []
+        [ Element.el
+            [ Element.inFront (Element.text "I'm in front!")
+            ]
+            (Element.text "I'm normal!")
+        ]
 
 
 
@@ -54,8 +79,10 @@ type alias Model =
 init : Params.Dynamic -> ( Model, Cmd Msg )
 init { param1 } =
     ( { players = RemoteData.NotAsked
-      , error = ""
       , fetchedContentNotPlayerList = ""
+      , error = ""
+      , rankingid = param1
+      , modalStatus = False
       }
     , fetchRanking (RankingId param1)
     )
@@ -145,6 +172,9 @@ update msg model =
             --remove the first record (created on ranking creation with different format)
             ( { model | players = players }, Cmd.none )
 
+        ModalEnabled modalStatus ->
+            ( { model | modalStatus = modalStatus }, Cmd.none )
+
 
 
 -- SUBSCRIPTIONS
@@ -163,6 +193,56 @@ subscriptions model =
 view : Model -> Element Msg
 view model =
     viewPlayersOrError model
+
+
+
+--howdy
+--type alias Button msg =
+--    { onPress : Maybe msg
+--    , label : Element msg
+--    }
+
+
+blue =
+    Element.rgb255 238 238 238
+
+
+purple =
+    Element.rgb255 102 0 102
+
+
+green =
+    Element.rgb255 0 153 0
+
+
+white =
+    Element.rgb255 255 255 255
+
+
+
+--myButton =
+--    Input.button
+--        [ Background.color blue
+--        , Element.focused
+--            [ Background.color purple ]
+--        ]
+--        { onPress = Just ClickMsg
+--        , label = text "My Button"
+--        }
+
+
+enabledButton =
+    Input.button
+        [ Background.color green
+        , Font.color white
+        , Element.focused
+            [ Background.color blue ]
+        , Element.mouseOver
+            [ Background.color blue ]
+        ]
+        { onPress = Just (ModalEnabled True)
+        , label = text "Start Task"
+        }
 
 
 viewPlayersOrError : Model -> Element Msg
@@ -195,7 +275,13 @@ viewplayers players =
     Element.table []
         { data = players
         , columns =
-            [ { header = Element.text "Name"
+            [ { header = Element.text "Button"
+              , width = fill
+              , view =
+                    \player ->
+                        enabledButton
+              }
+            , { header = Element.text "Name"
               , width = fill
               , view =
                     \player ->
