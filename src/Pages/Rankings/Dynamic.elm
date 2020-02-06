@@ -87,6 +87,7 @@ type alias Model =
     , playerid : Int
     , player : Player
     , selectedRadio : ResultOptions
+    , tempMsg : String
     }
 
 
@@ -117,6 +118,7 @@ init pageContext { param1 } =
             , currentchallengeraddress = ""
             }
       , selectedRadio = Undecided
+      , tempMsg = "Not confirmed yet"
       }
     , fetchRanking (RankingId param1)
     )
@@ -186,6 +188,7 @@ type Msg
     | OpenModal Int
     | CloseModal
     | SetRadioOption ResultOptions
+    | InitTx String
 
 
 
@@ -222,6 +225,9 @@ update msg model =
 
         SetRadioOption val ->
             ( { model | selectedRadio = val }, Cmd.none )
+
+        InitTx tempmsg ->
+            ( { model | tempMsg = tempmsg }, Cmd.none )
 
 
 
@@ -281,6 +287,7 @@ viewWithModalReady model =
                     ]
                     [ el [ Font.color (rgb 0.2 0.2 0.2) ] (text modalString)
                     , el [] <| viewPlayersOrError model
+                    , el [ Font.color (rgb 0.2 0.2 0.2) ] (text model.tempMsg)
 
                     --below was the original 'Open' button from the ellie example (now handled by Result btn)
                     --, el [ centerX ] <| playeridbtn (rgb 0.25 0.75 0.75) (OpenModal model.player.id) "Opensadfa"
@@ -309,10 +316,11 @@ viewModal model =
                             ]
                         , row []
                             [ el []
-                                (closebutton
+                                (confirmbutton
                                     (rgb 0.95 0.6 0.25)
-                                    CloseModal
+                                    (InitTx "Transaction confirmed")
                                     "Confirm"
+                                 --div [] [ button [ onClick InitTx ] [ text "Yup Send 0 value Tx to yourself as a test yup" ] ]
                                 )
                             ]
                         , row []
@@ -347,6 +355,24 @@ viewModal model =
 
 closebutton : Color -> Msg -> String -> Element Msg
 closebutton color msg label =
+    Input.button
+        [ padding 20
+        , Background.color color
+        ]
+        { onPress = Just msg
+        , label =
+            el
+                [ centerX
+                , centerY
+                , Font.center
+                , Font.color (rgba 0.2 0.2 0.2 0.9)
+                ]
+                (text label)
+        }
+
+
+confirmbutton : Color -> Msg -> String -> Element Msg
+confirmbutton color msg label =
     Input.button
         [ padding 20
         , Background.color color
