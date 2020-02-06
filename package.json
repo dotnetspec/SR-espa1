@@ -2,15 +2,15 @@
   "name": "SportRank",
   "version": "1.0.0",
   "description": "learn more at https://elm-spa.dev",
-  "main": "index.js",
-  "scripts": {
-    "test": "elm-test",
-    "start": "npm run dev",
-    "dev": "webpack-dev-server --hot --colors --port 3000",
-    "build": "webpack",
-    "prod": "webpack -p",
-    "analyse": "elm-analyse -s -p 3001 -o"
-  },
+   "main": "index.js",
+    "scripts": {
+        "test": "elm-test",
+        "start": "npm run dev",
+        "dev": "webpack-dev-server --hot --colors --port 3000",
+        "build": "webpack",
+        "prod": "webpack -p",
+        "analyse": "elm-analyse -s -p 3001 -o"
+    },
   "keywords": [],
   "author": "",
   "license": "ISC",
