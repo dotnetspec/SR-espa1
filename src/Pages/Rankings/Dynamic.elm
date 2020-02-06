@@ -2,40 +2,51 @@ module Pages.Rankings.Dynamic exposing (Model, Msg, page)
 
 import Components.Players exposing (Player, PlayerId(..), emptyPlayer, emptyPlayerId, ladderOfPlayersDecoder, playerDecoder, playerEncoder)
 import Components.Ranking exposing (Ranking, RankingId(..), rankingDecoder, rankingEncoder, rankingsDecoder)
+import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
+import Element.Events as E
 import Element.Font as Font
 import Element.Input as Input
 import Generated.Rankings.Params as Params
+import Html exposing (Html)
 import Http
 import Json.Decode as Decode exposing (Decoder, bool, int, list, string)
 import RemoteData exposing (RemoteData, WebData)
 import Spa.Page
 import Ui exposing (colors, markdown)
 import Utils.MyUtils exposing (stringFromBool)
-import Utils.Spa exposing (Page)
+import Utils.Spa exposing (Page, PageContext)
+
+
+
+--import Utils.Spa exposing (Page)
+-- 'always' taken away from init so can access Global.Model
+-- 'Model' here is coming from the Model defined in this page
+-- not Global
+-- Currently is
+--Params.Dynamic -> ( Model, Cmd Msg )
+-- needs to be
+--Spa.Page.PageContext route globalModel
+--          -> pageParams
+--          -> ( Model, Cmd Msg )
+-- these are output types of page function (not input)
+--i.e. Spa.Page.element init now expects to output
+-- Spa.Page.PageContext route globalModel as an arg to init
 
 
 page : Page Params.Dynamic Model Msg model msg appMsg
 page =
     Spa.Page.element
         { title = always "Rankings.Dynamic"
-        , init = always init
+
+        --, init = \pageContext -> init pageContext.global.networkId
+        , init = init
         , update = always update
         , subscriptions = always subscriptions
         , view = always view
         }
-
-
-
--- Msg gets passed to update
-
-
-type Msg
-    = PlayersReceived (WebData (List Player))
-    | FetchedContent (Result Http.Error String)
-    | ModalEnabled Bool Int
 
 
 type RemoteData e a
@@ -46,44 +57,66 @@ type RemoteData e a
 
 
 
+-- these next 2 are used in the Model
+
+
+type ModalState
+    = Open
+    | Closed
+
+
+type ResultOptions
+    = Won
+    | Lost
+    | Undecided
+
+
+
 --Model is updated in update
 
 
 type alias Model =
-    { players : WebData (List Player)
+    { --browserEnv : BrowserEnv
+      --, settings : Maybe SettingsData
+      --,
+      players : WebData (List Player)
     , fetchedContentNotPlayerList : String
     , error : String
     , rankingid : String
-    , modalStatus : Bool
+    , modalState : ModalState
     , playerid : Int
     , player : Player
+    , selectedRadio : ResultOptions
     }
 
 
 
--- INIT
--- param1 (can add ,param2 etc. if nec.), is the RankingId
+-- this is where the types matter and are actually set to values ...
 
 
-init : Params.Dynamic -> ( Model, Cmd Msg )
-init { param1 } =
-    ( { players = RemoteData.NotAsked
+init : PageContext -> Params.Dynamic -> ( Model, Cmd Msg )
+init pageContext { param1 } =
+    ( { --  browserEnv = pageContext.global.browserEnv
+        --, settings = Nothing
+        --,
+        players = RemoteData.NotAsked
       , fetchedContentNotPlayerList = ""
       , error = ""
       , rankingid = param1
-      , modalStatus = False
+      , modalState = Closed
       , playerid = 0
       , player =
             { datestamp = 12345
             , active = False
-            , currentchallengername = ""
+            , currentchallengername = "Available"
             , currentchallengerid = 0
             , address = ""
             , rank = 0
-            , name = ""
+            , name = "Unidentified"
             , id = 0
             , currentchallengeraddress = ""
             }
+      , selectedRadio = Undecided
       }
     , fetchRanking (RankingId param1)
     )
@@ -102,7 +135,6 @@ fetchRanking (RankingId rankingId) =
     in
     --PlayersReceived is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
-    --all the json is sent to the ladderDecoder (in Ladder(?).elm)
     Http.request
         { body = Http.emptyBody
         , expect =
@@ -114,11 +146,6 @@ fetchRanking (RankingId rankingId) =
         , tracker = Nothing
         , url = "https://api.jsonbin.io/b/" ++ rankingId ++ "/latest"
         }
-
-
-
---type Msg
---    = PlayersReceived (WebData (List Player))
 
 
 expectJson : (Result Http.Error a -> msg) -> Decode.Decoder a -> Http.Expect msg
@@ -148,6 +175,20 @@ expectJson toMsg decoder =
 
 
 
+-- Use Msg types to pattern match and trigger different updates in update
+-- define according to variant. Pass the variant the nec. type (if nec.)
+-- if change here, change update, and change wherever the Msg is called from
+
+
+type Msg
+    = PlayersReceived (WebData (List Player))
+    | FetchedContent (Result Http.Error String)
+    | OpenModal Int
+    | CloseModal
+    | SetRadioOption ResultOptions
+
+
+
 -- UPDATE
 --update the model before it gets passed to view
 
@@ -173,16 +214,17 @@ update msg model =
             --remove the first record (created on ranking creation with different format)
             ( { model | players = players }, Cmd.none )
 
-        ModalEnabled modalStatus newplayerid ->
-            let
-                _ =
-                    Debug.log "player id" newplayerid
-            in
-            ( { model | modalStatus = modalStatus, playerid = newplayerid }, Cmd.none )
+        OpenModal playerid ->
+            ( { model | modalState = Open, playerid = playerid }, Cmd.none )
+
+        CloseModal ->
+            ( { model | modalState = Closed }, Cmd.none )
+
+        SetRadioOption val ->
+            ( { model | selectedRadio = val }, Cmd.none )
 
 
 
---{ model | price = new_price, productId = newProductId}
 -- SUBSCRIPTIONS
 
 
@@ -198,20 +240,206 @@ subscriptions model =
 
 view : Model -> Element Msg
 view model =
-    --viewPlayersOrError model
-    controlledView model
+    --  add any extra views on a new line eg.
+    --, el [ Font.bold ] (text "this is bold")
+    Element.row []
+        [ viewWithModalReady model
+        ]
 
 
-controlledView : Model -> Element Msg
-controlledView model =
-    --Element.el [] (Element.text "Howdy!")
-    --Element.layout []
-    case model.modalStatus of
-        False ->
-            viewPlayersOrError model
 
-        True ->
-            viewplayer [ retrieveSinglePlayer model.playerid (extractPlayersFromWebData model) ]
+--modal is being used to pick out a single player and his opponent
+--so that a result can be entered
+
+
+viewWithModalReady : Model -> Element Msg
+viewWithModalReady model =
+    let
+        modalString =
+            case model.modalState of
+                Open ->
+                    "Open"
+
+                Closed ->
+                    model.player.name ++ " you are currently ranked " ++ String.fromInt model.player.rank ++ " \nand your challenger is " ++ model.player.currentchallengername
+    in
+    -- html turns html Msg into Element Msg
+    html
+        (layout
+            [ inFront <| viewModal model ]
+         <|
+            el
+                [ width fill
+                , height fill
+                , padding 20
+                ]
+            <|
+                column
+                    [ width fill
+                    , height fill
+                    , spacing 50
+                    ]
+                    [ el [ Font.color (rgb 0.2 0.2 0.2) ] (text modalString)
+                    , el [] <| viewPlayersOrError model
+
+                    --below was the original 'Open' button from the ellie example (now handled by Result btn)
+                    --, el [ centerX ] <| playeridbtn (rgb 0.25 0.75 0.75) (OpenModal model.player.id) "Opensadfa"
+                    ]
+        )
+
+
+viewModal : Model -> Element Msg
+viewModal model =
+    let
+        box =
+            el
+                [ width (px 300)
+                , height (px 300)
+                , centerX
+                , centerY
+                , Background.color (rgb 1 1 1)
+                ]
+            <|
+                el [ centerX, centerY ] <|
+                    textColumn []
+                        [ row []
+                            [ el
+                                []
+                                (viewplayer model)
+                            ]
+                        , row []
+                            [ el []
+                                (closebutton
+                                    (rgb 0.95 0.6 0.25)
+                                    CloseModal
+                                    "Confirm"
+                                )
+                            ]
+                        , row []
+                            [ el []
+                                (closebutton
+                                    (rgb 0.95 0.6 0.25)
+                                    CloseModal
+                                    "Close"
+                                )
+                            ]
+                        ]
+    in
+    case model.modalState of
+        Open ->
+            el
+                [ width fill
+                , height fill
+                , behindContent <|
+                    el
+                        [ width fill
+                        , height fill
+                        , Background.color (rgba 0.5 0.5 0.5 0.7)
+                        , E.onClick CloseModal
+                        ]
+                        none
+                ]
+                box
+
+        Closed ->
+            el [] none
+
+
+closebutton : Color -> Msg -> String -> Element Msg
+closebutton color msg label =
+    Input.button
+        [ padding 20
+        , Background.color color
+        ]
+        { onPress = Just msg
+        , label =
+            el
+                [ centerX
+                , centerY
+                , Font.center
+                , Font.color (rgba 0.2 0.2 0.2 0.9)
+                ]
+                (text label)
+        }
+
+
+playersResultBtnCol : List Player -> String -> Column Player Msg
+playersResultBtnCol players str =
+    { header = Element.text str
+    , width = fill
+    , view =
+        \player ->
+            Element.row
+                [ Font.color Ui.colors.lightblue
+                , Border.widthXY 2 2
+                ]
+                [ playeridbtn colors.blue (OpenModal player.id) "Result"
+                ]
+    }
+
+
+playersNameCol : List Player -> String -> Column Player msg
+playersNameCol players str =
+    { header = Element.text str
+    , width = fill
+    , view =
+        \player ->
+            Element.row
+                [ Border.widthXY 2 2
+                , Font.color Ui.colors.green
+                ]
+                [ Element.text player.name
+                ]
+    }
+
+
+playersRankCol : List Player -> String -> Column Player msg
+playersRankCol players str =
+    { header = Element.text str
+    , width = fill
+    , view =
+        \player ->
+            Element.row
+                [ Border.widthXY 2 2
+                , Font.color Ui.colors.green
+                ]
+                [ Element.text (String.fromInt player.rank)
+                ]
+    }
+
+
+playersCurrentChallCol : List Player -> String -> Column Player msg
+playersCurrentChallCol players str =
+    { header = Element.text str
+    , width = fill
+    , view =
+        \player ->
+            Element.row
+                [ Border.widthXY 2 2
+                , Font.color Ui.colors.green
+                ]
+                [ Element.text player.currentchallengername
+                ]
+    }
+
+
+playeridbtn : Color -> Msg -> String -> Element Msg
+playeridbtn color selectedplayermsg label =
+    Input.button
+        [ Background.color color
+        , centerX
+        , centerY
+        ]
+        { onPress = Just selectedplayermsg
+        , label =
+            el
+                [ centerX
+                , centerY
+                , Font.center
+                , Font.color (rgba 0.2 0.2 0.2 0.9)
+                ]
+                (text label)
+        }
 
 
 retrieveSinglePlayer : Int -> List Player -> Player
@@ -235,40 +463,6 @@ retrieveSinglePlayer id players =
 
         Just item ->
             item
-
-
-
---Element.row
---    []
---    --[ Element.el
---    --[ --Element.inFront (Element.text "I'm in front!")
---    --  Element.inFront (enabledButton False model.playerid)
---    --]
---    [ Element.text
---        ("PlayerId is : " ++ String.fromInt model.playerid)
---    ]
---]
--- markdown won't take dynmanic value insertions like rankingid unfortunately perhaps
---                markdown
---                """
---### header 3
---This is a paragraph. [Click me](/rankings/)!
---                """
-
-
-enabledButton : Bool -> Int -> Element Msg
-enabledButton hasClicked playerid =
-    Input.button
-        [ Background.color colors.green
-        , Font.color colors.white
-        , Element.focused
-            [ Background.color colors.blue ]
-        , Element.mouseOver
-            [ Background.color colors.blue ]
-        ]
-        { onPress = Just (ModalEnabled hasClicked playerid)
-        , label = text (String.fromInt playerid)
-        }
 
 
 viewPlayersOrError : Model -> Element Msg
@@ -305,82 +499,69 @@ extractPlayersFromWebData model =
 
 
 --possibly useful ref:
---stringFromBool ranking.active
---(String.fromInt ranking.currentchallengerid)
--- (String.fromInt ranking.rank)
--- String.fromInt ranking.datestamp)
+--stringFromBool player.active
+--(String.fromInt player.currentchallengerid)
+-- (String.fromInt player.rank)
+-- String.fromInt player.datestamp)
 --player.address
 
 
 viewplayers : List Player -> Element Msg
 viewplayers players =
-    --Element.text "hello"
-    Element.table
-        []
-        { data = players
-        , columns =
-            [ { header = Element.text "Button"
-              , width = fill
-              , view =
-                    \player ->
-                        enabledButton True player.id
-              }
-            , { header = Element.text "Name"
-              , width = fill
-              , view =
-                    \player ->
-                        Element.text player.name
-              }
-            , { header = Element.text "Current Challenger"
-              , width = fill
-              , view =
-                    \player ->
-                        Element.text player.currentchallengername
-              }
-            , { header = Element.text "RANK"
-              , width = fill
-              , view =
-                    \player ->
-                        Element.text (String.fromInt player.rank)
-              }
+    html <|
+        Element.layout
+            [ Element.padding 25
+            , Background.color (rgba 0 0 0 1)
+            , Font.color (rgba 1 1 1 1)
+            , Font.size 22
+            , Font.family
+                [ Font.external
+                    { url = "https://fonts.googleapis.com/css?family=Roboto"
+                    , name = "Roboto"
+                    }
+                , Font.sansSerif
+                ]
             ]
-        }
+        <|
+            Element.table
+                [ Background.color Ui.colors.white
+                , Border.solid
+                , Border.color Ui.colors.black
+                , Border.widthXY 1 1
+                , Border.rounded 3
+                ]
+                { data = players
+                , columns =
+                    [ playersResultBtnCol players "Result"
+                    , playersNameCol players "Player Name"
+                    , playersRankCol players "Rank"
+                    , playersCurrentChallCol players "Current Challenger"
+                    ]
+                }
 
 
 
 --the 'List' is just a list of one player (for the table to work)
 
 
-viewplayer : List Player -> Element Msg
-viewplayer player =
-    --Element.text "hello"
-    Element.table
-        []
-        { data = player
-        , columns =
-            [ { header = Element.text "Button"
-              , width = fill
-              , view =
-                    \selectedplayer ->
-                        enabledButton True selectedplayer.id
-              }
-            , { header = Element.text "Name"
-              , width = fill
-              , view =
-                    \selectedplayer ->
-                        Element.text selectedplayer.name
-              }
-            , { header = Element.text "Current Challenger"
-              , width = fill
-              , view =
-                    \selectedplayer ->
-                        Element.text selectedplayer.currentchallengername
-              }
-            , { header = Element.text "RANK"
-              , width = fill
-              , view =
-                    \selectedplayer ->
-                        Element.text (String.fromInt selectedplayer.rank)
-              }
+viewplayer : Model -> Element Msg
+viewplayer model =
+    let
+        playerToView =
+            retrieveSinglePlayer model.playerid (extractPlayersFromWebData model)
+    in
+    Element.paragraph []
+        [ Input.radio
+            [ spacing 12
+            , Background.color Ui.colors.grey
             ]
-        }
+            { selected = Just model.selectedRadio
+            , onChange = SetRadioOption
+            , label = Input.labelAbove [ Font.size 22, paddingXY 0 12 ] (text (playerToView.name ++ " would you like to \nenter a result against " ++ playerToView.currentchallengername ++ "?"))
+            , options =
+                [ Input.option Won (text "Won")
+                , Input.option Lost (text "Lost")
+                , Input.option Undecided (text "Undecided")
+                ]
+            }
+        ]

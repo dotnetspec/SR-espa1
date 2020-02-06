@@ -1,15 +1,16 @@
 module Pages.Rankings.Top exposing (Model, Msg, page)
 
---import Pages.Rankings.Players exposing (Player, PlayerId(..), emptyPlayer, emptyPlayerId, ladderOfPlayersDecoder, playerDecoder, playerEncoder)
---import Text
---import Element exposing (..)
-
 import Components.Ranking exposing (Ranking, RankingId(..), rankingDecoder, rankingEncoder, rankingsDecoder)
-import Element exposing (Element, alignRight, alignTop, centerY, el, fill, padding, rgb255, row, spacing, text, width)
+import Dict exposing (Dict)
+import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
+import Element.Events as E
 import Element.Font as Font
+import Element.Input as I
+import Element.Lazy
 import Generated.Rankings.Params as Params
+import Html exposing (Html)
 import Http
 import Json.Decode as Decode exposing (Decoder, bool, int, list, string)
 import RemoteData exposing (RemoteData, WebData)
@@ -33,6 +34,8 @@ page =
 type Msg
     = RankingsReceived (WebData (List Ranking))
     | FetchedContent (Result Http.Error String)
+    | OpenModal
+    | CloseModal
 
 
 type RemoteData e a
@@ -42,10 +45,16 @@ type RemoteData e a
     | Success a
 
 
+type ModalState
+    = Open
+    | Closed
+
+
 type alias Model =
     { rankings : WebData (List Ranking)
     , fetchedContentNotRankingList : String
     , error : String
+    , modalState : ModalState
     }
 
 
@@ -58,9 +67,10 @@ init _ =
     ( { rankings = RemoteData.NotAsked
       , error = ""
       , fetchedContentNotRankingList = ""
+      , modalState = Closed
       }
     , Http.get
-        { url = "https://api.jsonbin.io/b/5c36f5422c87fa27306acb52/latest"
+        { url = "https://api.jsonbin.io/b/5e2a585f593fd741856f4b04/latest"
         , expect =
             rankingsDecoder
                 |> expectJson (RemoteData.fromResult >> RankingsReceived)
@@ -116,6 +126,12 @@ update msg model =
             --removes[?] the first record (created on ranking creation with different format)
             ( { model | rankings = rankings }, Cmd.none )
 
+        OpenModal ->
+            ( { model | modalState = Open }, Cmd.none )
+
+        CloseModal ->
+            ( { model | modalState = Closed }, Cmd.none )
+
 
 
 -- SUBSCRIPTIONS
@@ -133,11 +149,9 @@ subscriptions model =
 
 view : Model -> Element Msg
 view model =
-    viewRankingsOrError model
-
-
-
---consolidatedViews model
+    Element.paragraph []
+        [ viewRankingsOrError model
+        ]
 
 
 viewRankingsOrError : Model -> Element Msg
@@ -164,29 +178,73 @@ viewRankingsOrError model =
 
 viewRankings : List Ranking -> Element Msg
 viewRankings rankings =
-    Element.table
-        []
-        { data = rankings
-        , columns =
-            [ { header = Element.text "Ranking Name"
-              , width = fill
-              , view =
-                    \ranking ->
-                        Element.link
-                            [ Background.color (rgb255 255 255 255)
-                            , Font.color (rgb255 0 128 255)
-                            , Border.rounded 3
-                            , padding 10
-                            ]
-                            { url = "/rankings/" ++ ranking.id
-                            , label = Element.text ranking.name
-                            }
-              }
-            , { header = Element.text "Ranking Desc"
-              , width = fill
-              , view =
-                    \ranking ->
-                        Element.text ranking.desc
-              }
+    html <|
+        Element.layout
+            [ Element.padding 25
+            , Background.color (rgba 0 0 0 1)
+            , Font.color (rgba 1 1 1 1)
+
+            --, Font.italic
+            , Font.size 22
+            , Font.family
+                [ Font.external
+                    { url = "https://fonts.googleapis.com/css?family=Roboto"
+                    , name = "Roboto"
+                    }
+                , Font.sansSerif
+                ]
             ]
-        }
+        <|
+            Element.table
+                [ Element.padding 25
+                , Background.color Ui.colors.white
+                , Border.solid
+                , Border.color Ui.colors.black
+                , Border.widthXY 1 1
+                , Border.rounded 3
+                ]
+                { data = rankings
+                , columns =
+                    [ rankingNameCol rankings "Ranking Name"
+                    , rankingDescCol rankings "Ranking Desc"
+                    ]
+                }
+
+
+rankingNameCol : List Ranking -> String -> Column Ranking msg
+rankingNameCol rankings str =
+    { header = Element.text str
+    , width = fill
+    , view =
+        \ranking ->
+            Element.row
+                [ Font.color Ui.colors.lightblue
+                , Border.widthXY 2 2
+                ]
+                [ Element.link
+                    [ --Background.color Ui.colors.blue
+                      Font.color Ui.colors.lightblue
+
+                    --, padding 5
+                    --, Border.widthXY 2 2
+                    ]
+                    { url = "/rankings/" ++ ranking.id
+                    , label = Element.text ranking.name
+                    }
+                ]
+    }
+
+
+rankingDescCol : List Ranking -> String -> Column Ranking msg
+rankingDescCol rankings str =
+    { header = Element.text str
+    , width = fill
+    , view =
+        \ranking ->
+            Element.row
+                [ Border.widthXY 2 2
+                , Font.color Ui.colors.green
+                ]
+                [ Element.text ranking.desc
+                ]
+    }

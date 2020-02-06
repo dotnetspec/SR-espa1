@@ -8,13 +8,36 @@ import Html.Attributes as Attr
 import Markdown
 
 
-colors : { coral : Element.Color, white : Element.Color, blue : Element.Color, green : Element.Color, purple : Element.Color }
+type alias Colors =
+    { coral : Element.Color
+    , white : Element.Color
+    , lightblue : Element.Color
+    , blue : Element.Color
+    , green : Element.Color
+    , purple : Element.Color
+    , black : Element.Color
+    , red : Element.Color
+    , darkBlue : Element.Color
+    , grey : Element.Color
+    }
+
+
+
+-- some are plain rgb!
+
+
+colors : Colors
 colors =
     { coral = rgb255 204 75 75
     , white = rgb255 255 255 255
-    , blue = rgb255 238 238 238
+    , lightblue = rgb255 0 128 255
+    , blue = rgb255 2 7 239
     , green = rgb255 0 153 0
     , purple = rgb255 102 0 102
+    , black = rgb255 0 0 0
+    , red = rgb 0.8 0 0
+    , darkBlue = rgb 0 0 0.9
+    , grey = rgb 0.9 0.9 0.9
     }
 
 

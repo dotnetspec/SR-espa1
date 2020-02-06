@@ -13,20 +13,18 @@ import Generated.Rankings.Params as Params
 import Generated.Rankings.Route as Route exposing (Route)
 import Pages.Rankings.Dynamic
 import Pages.Rankings.Top
-import Generated.Docs.Dynamic.Route
-import Generated.Docs.Dynamic.Pages
+
+
 
 
 type Model
     = DynamicModel Pages.Rankings.Dynamic.Model
     | TopModel Pages.Rankings.Top.Model
-    | Dynamic_Folder_Model Generated.Docs.Dynamic.Pages.Model
 
 
 type Msg
     = DynamicMsg Pages.Rankings.Dynamic.Msg
     | TopMsg Pages.Rankings.Top.Msg
-    | Dynamic_Folder_Msg Generated.Docs.Dynamic.Pages.Msg
 
 
 page : Spa.Page Route Model Msg layoutModel layoutMsg appMsg
@@ -57,7 +55,6 @@ type alias Recipe flags model msg appMsg =
 type alias Recipes msg =
     { dynamic : Recipe Params.Dynamic Pages.Rankings.Dynamic.Model Pages.Rankings.Dynamic.Msg msg
     , top : Recipe Params.Top Pages.Rankings.Top.Model Pages.Rankings.Top.Msg msg
-    , dynamic_folder : Recipe Generated.Docs.Dynamic.Route.Route Generated.Docs.Dynamic.Pages.Model Generated.Docs.Dynamic.Pages.Msg msg
     }
 
 
@@ -75,12 +72,6 @@ recipes =
             , toModel = TopModel
             , toMsg = TopMsg
             }
-    , dynamic_folder =
-        Spa.recipe
-            { page = Generated.Docs.Dynamic.Pages.page
-            , toModel = Dynamic_Folder_Model
-            , toMsg = Dynamic_Folder_Msg
-            }
     }
 
 
@@ -96,9 +87,6 @@ init route_ =
         
         Route.Dynamic _ params ->
             recipes.dynamic.init params
-        
-        Route.Dynamic_Folder _ route ->
-            recipes.dynamic_folder.init route
 
 
 
@@ -113,9 +101,6 @@ update bigMsg bigModel =
         
         ( DynamicMsg msg, DynamicModel model ) ->
             recipes.dynamic.update msg model
-        
-        ( Dynamic_Folder_Msg msg, Dynamic_Folder_Model model ) ->
-            recipes.dynamic_folder.update msg model
         _ ->
             Spa.Page.keep bigModel
 
@@ -131,6 +116,3 @@ bundle bigModel =
         
         DynamicModel model ->
             recipes.dynamic.bundle model
-        
-        Dynamic_Folder_Model model ->
-            recipes.dynamic_folder.bundle model
