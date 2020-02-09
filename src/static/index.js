@@ -18,14 +18,20 @@ window.addEventListener('load', function () {
 });
 
 window.ports = {
-
                 init: (app) =>
-                  app.ports.outgoing.subscribe(({ action, data }) =>
+                  (app.ports.outgoing.subscribe(({ action, data }) =>
 
                     actions[action]
                       ? actions[action](data)
                       : console.warn(`I didn't recognize action "${action}".`)
                   )
+                ,
+                  app.ports.outgoing.subscribe(({ action, data }) =>
+
+                    actions[action]
+                      ? actions[action](data)
+                      : console.warn(`I didn't recognize action "${action}".`)
+                  ))
               }
 
 // maps actions to functions!

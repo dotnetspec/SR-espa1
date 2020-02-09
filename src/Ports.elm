@@ -32,6 +32,10 @@ port output : Value -> Cmd msg
 port input : (Value -> msg) -> Sub msg
 
 
+
+--port input : { action : String, data : Json.Value } -> Sub msg
+
+
 port txOut : Value -> Cmd msg
 
 
