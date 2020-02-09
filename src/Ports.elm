@@ -5,6 +5,14 @@ import Json.Encode as Json
 
 
 
+-- this Model is just to get test incoming working
+
+
+type alias Model =
+    String
+
+
+
 --elm-spa example port
 
 
@@ -17,6 +25,13 @@ log message =
         { action = "LOG"
         , data = Json.string message
         }
+
+
+
+-- test incoming port
+
+
+port incoming : (Model -> msg) -> Sub msg
 
 
 
@@ -33,6 +48,7 @@ port input : (Value -> msg) -> Sub msg
 
 
 
+--port input : (Model -> Msg) -> Sub msg
 --port input : { action : String, data : Json.Value } -> Sub msg
 
 

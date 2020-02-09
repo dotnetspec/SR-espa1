@@ -17,22 +17,29 @@ window.addEventListener('load', function () {
     }
 });
 
+//multi-port initialize (outgoing at least) works below ...
 window.ports = {
                 init: (app) =>
-                  (app.ports.outgoing.subscribe(({ action, data }) =>
+                  (
+                        app.ports.outgoing.subscribe(({ action, data }) =>
 
-                    actions[action]
-                      ? actions[action](data)
-                      : console.warn(`I didn't recognize action "${action}".`)
+                        actions[action]
+                          ? actions[action](data)
+                          : console.warn(`I didn't recognize action "${action}".`)
+                      )
+                    //,
+                        //app.ports.incoming.send("Hey Elm!")
+                      // app.ports.incoming.send((data) =>
+                      //       ("hellow from js!!")
+                        // actions[action]
+                        //   ? actions[action](data)
+                        //   : console.warn(`I didn't recognize action "${action}".`)
+                      //)
                   )
-                ,
-                  app.ports.outgoing.subscribe(({ action, data }) =>
-
-                    actions[action]
-                      ? actions[action](data)
-                      : console.warn(`I didn't recognize action "${action}".`)
-                  ))
               }
+
+//simple version from docs
+//app.ports.incoming.send("Hey Elm!")
 
 // maps actions to functions!
 const actions = {
