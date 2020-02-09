@@ -31,6 +31,7 @@ var common = {
     plugins: [
         new HTMLWebpackPlugin({
             // Use this template to get basic responsive meta tags
+            // Template defines the INPUT html folder/file
             template: "src/static/index.html",
             // inject details of output file at end of body
             inject: "body"
