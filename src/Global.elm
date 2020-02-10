@@ -51,8 +51,7 @@ type alias Model =
     , txReceipt : Maybe TxReceipt
     , blockDepth : Maybe TxTracker
     , errors : List String
-
-    --, incomingData : String
+    , incomingData : String
     }
 
 
@@ -105,6 +104,7 @@ init _ _ =
       , txReceipt = Nothing
       , blockDepth = Nothing
       , errors = []
+      , incomingData = ""
       }
     , Cmd.none
     , Ports.log "Hello there!"
@@ -145,8 +145,7 @@ ethNode networkId =
 
 
 type Msg
-    = Msg
-    | TxSentryMsg TxSentry.Msg
+    = TxSentryMsg TxSentry.Msg
       --| EventSentryMsg EventSentry.Msg
     | WalletStatus WalletSentry
     | PollBlock (Result Http.Error Int)
@@ -157,10 +156,10 @@ type Msg
     | TrackTx TxTracker
     | Fail String
     | NoOp
+    | ReceivedDataFromJS Ports.Model
 
 
 
---| ReceivedDataFromJS Model
 --update : Commands msg -> Msg -> Model -> ( Model, Cmd Msg, Cmd msg )
 --update _ _ model =
 --    ( model
@@ -252,18 +251,28 @@ update _ msg model =
         NoOp ->
             ( model, Cmd.none, Cmd.none )
 
+        --update will update whatever needs to be updated
+        --in this case, a port
         --ReceivedDataFromJS data ->
-        --( data, Cmd.none, Cmd.none )
-        Msg ->
-            ( model, Cmd.none, Cmd.none )
+        --    ( data, Cmd.none, Cmd.none )
+        ReceivedDataFromJS data ->
+            let
+                _ =
+                    Debug.log "data is: " data
+            in
+            ( { model | incomingData = data }, Cmd.none, Cmd.none )
+
+
+
+--Msg ->
+--    ( model, Cmd.none, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ --Ports.incoming ReceivedDataFromJS
-          --,
-          walletSentry (WalletSentry.decodeToMsg Fail WalletStatus)
+        [ Ports.incoming ReceivedDataFromJS
+        , walletSentry (WalletSentry.decodeToMsg Fail WalletStatus)
         , TxSentry.listen model.txSentry
         ]
 

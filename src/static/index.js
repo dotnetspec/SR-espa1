@@ -27,8 +27,8 @@ window.ports = {
                           ? actions[action](data)
                           : console.warn(`I didn't recognize action "${action}".`)
                       )
-                    //,
-                        //app.ports.incoming.send("Hey Elm!")
+                    ,
+                        app.ports.incoming.send("Hey Elm!")
                       // app.ports.incoming.send((data) =>
                       //       ("hellow from js!!")
                         // actions[action]
