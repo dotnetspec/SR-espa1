@@ -1,7 +1,7 @@
 port module Ports exposing (..)
 
 import Json.Decode exposing (Value)
-import Json.Encode as Json
+import Json.Encode as Json exposing (Value)
 
 
 
@@ -31,7 +31,9 @@ log message =
 -- test incoming port
 
 
-port incoming : (Model -> msg) -> Sub msg
+--port incoming : (Model -> msg) -> Sub msg
+port incoming : (Value -> msg) -> Sub msg
+
 
 
 

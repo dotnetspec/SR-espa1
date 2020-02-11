@@ -28,7 +28,7 @@ window.ports = {
                           : console.warn(`I didn't recognize action "${action}".`)
                       )
                     ,
-                        app.ports.incoming.send("Hey Elm!")
+                        app.ports.incoming.send("String and ONLY str from JS")
                       // app.ports.incoming.send((data) =>
                       //       ("hellow from js!!")
                         // actions[action]

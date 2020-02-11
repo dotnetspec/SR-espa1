@@ -156,7 +156,7 @@ type Msg
     | TrackTx TxTracker
     | Fail String
     | NoOp
-    | ReceivedDataFromJS Ports.Model
+    | ReceivedDataFromJS String
 
 
 
@@ -271,10 +271,22 @@ update _ msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Ports.incoming ReceivedDataFromJS
+        [ Ports.incoming (decodeValue)
         , walletSentry (WalletSentry.decodeToMsg Fail WalletStatus)
         , TxSentry.listen model.txSentry
         ]
+    
+decodeValue : Value -> Msg
+decodeValue x =
+    let
+        result =
+            Decode.decodeValue Decode.string x
+    in
+        case result of
+            Ok string ->
+                ReceivedDataFromJS string            
+            Err _ -> 
+                ReceivedDataFromJS "Silly JavaScript, you can't kill me!"
 
 
 maybeToString : (a -> String) -> String -> Maybe a -> String
