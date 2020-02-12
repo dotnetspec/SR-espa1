@@ -1,6 +1,7 @@
 var elm_ethereum_ports = require('elm-ethereum-ports');
 const {Elm} = require('Main');
 var node = document.getElementById("elmapp")
+var dataFromJS = "Data from JS";
 
 window.addEventListener('load', function () {
 
@@ -17,7 +18,7 @@ window.addEventListener('load', function () {
     }
 });
 
-//multi-port initialize (outgoing at least) works below ...
+//multi-port initialize
 window.ports = {
                 init: (app) =>
                   (
@@ -28,20 +29,14 @@ window.ports = {
                           : console.warn(`I didn't recognize action "${action}".`)
                       )
                     ,
-                        app.ports.incoming.send("String and ONLY str from JS")
-                      // app.ports.incoming.send((data) =>
-                      //       ("hellow from js!!")
-                        // actions[action]
-                        //   ? actions[action](data)
-                        //   : console.warn(`I didn't recognize action "${action}".`)
-                      //)
+                        app.ports.incoming.send(dataFromJS)
+                    // , elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, web3)
+                    // , elm_ethereum_ports.walletSentry(app.ports.walletSentry, web3)
                   )
               }
 
-//simple version from docs
-//app.ports.incoming.send("Hey Elm!")
 
-// maps actions to functions!
+// maps outgoing actions to functions!
 const actions = {
   'LOG': (message) =>
     console.log(`From Elm:`, message)

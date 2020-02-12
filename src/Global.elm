@@ -271,11 +271,14 @@ update _ msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Ports.incoming (decodeValue)
+        [ 
+        Ports.incoming (decodeValue)
         , walletSentry (WalletSentry.decodeToMsg Fail WalletStatus)
         , TxSentry.listen model.txSentry
         ]
-    
+
+
+--decodeValue just used to help understanding of incoming port functionality
 decodeValue : Value -> Msg
 decodeValue x =
     let

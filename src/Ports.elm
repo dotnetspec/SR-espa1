@@ -30,7 +30,6 @@ log message =
 
 -- test incoming port
 
-
 --port incoming : (Model -> msg) -> Sub msg
 port incoming : (Value -> msg) -> Sub msg
 
