@@ -1,6 +1,5 @@
 port module Ports exposing (..)
 
-import Json.Decode exposing (Value)
 import Json.Encode as Json exposing (Value)
     -- ( EthNode
     -- , Model
@@ -17,54 +16,18 @@ import Json.Encode as Json exposing (Value)
     -- , walletSentry
     -- )
 
---import Browser exposing (document)
 import Eth
 import Eth.Net as Net exposing (NetworkId(..))
 import Eth.Sentry.Tx as TxSentry exposing (..)
 import Eth.Sentry.Wallet as WalletSentry exposing (WalletSentry)
 import Eth.Types exposing (..)
 import Eth.Units exposing (gwei)
-import Eth.Utils
 import Html exposing (..)
-import Html.Events exposing (onClick)
 import Http
 import Json.Decode as Decode exposing (Value)
 import Process
 import Task
 
-
-
-
-
--- this Model is just to get test incoming working
-
-
--- type alias Model =
---     String
-
-
-
---elm-spa example port
-
-
-
-log : String -> Cmd msg
-log message =
-    outgoing
-        { action = "LOG"
-        , data = Json.string message
-        }
-
-
-
--- main : Program Int Model Msg
--- main =
---     Browser.element
---         { init = init
---         , view = view
---         , update = update
---         , subscriptions = subscriptions
---         }
 
 
 type alias Model =
@@ -125,38 +88,6 @@ ethNode networkId =
 
         _ ->
             EthNode "UnknownEthNetwork" "UnknownEthNetwork"
-
-
-
--- View
-
-
--- view : Model -> Html Msg
--- view model =
---     div []
---         [ div []
---             (List.map viewThing
---                 [ ( "Current Block", maybeToString String.fromInt "No blocknumber found yet" model.blockNumber )
---                 , ( "--------------------", "" )
---                 , ( "TxHash", maybeToString Eth.Utils.txHashToString "No TxHash yet" model.txHash )
---                 ]
---             )
---         , viewTxTracker model.blockDepth
---         , div [] [ button [ onClick InitTx ] [ text "Send 0 value Tx to yourself as a test" ] ]
---         , div [] (List.map (\e -> div [] [ text e ]) model.errors)
---         ]
-
-
--- viewThing : ( String, String ) -> Html Msg
--- viewThing ( name, val ) =
---     div []
---         [ div [] [ text name ]
---         , div [] [ text val ]
---         ]
-
-
-
--- Update
 
 
 type Msg
@@ -266,7 +197,7 @@ update msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ incoming (decodeValue)
+        [ incoming decodeValue
         , walletSentry (WalletSentry.decodeToMsg Fail WalletStatus)
         , TxSentry.listen model.txSentry
         ]
@@ -287,9 +218,8 @@ decodeValue x =
 
 
 -- Ports
--- test incoming port
+-- Test ports
 
---port incoming : (Model -> msg) -> Sub msg
 port incoming : (Value -> msg) -> Sub msg
 
 port outgoing : { action : String, data : Json.Value } -> Cmd msg
@@ -297,25 +227,15 @@ port outgoing : { action : String, data : Json.Value } -> Cmd msg
 
 --web3 ports
 
-
 port walletSentry : (Value -> msg) -> Sub msg
-
 
 port output : Value -> Cmd msg
 
-
 port input : (Value -> msg) -> Sub msg
-
-
---port input : (Model -> Msg) -> Sub msg
---port input : { action : String, data : Json.Value } -> Sub msg
-
 
 port txOut : Value -> Cmd msg
 
-
 port txIn : (Value -> msg) -> Sub msg
-
 
 
 
@@ -332,33 +252,21 @@ maybeToString toString onNothing mVal =
             toString a
 
 
--- viewTxTracker : Maybe TxTracker -> Html msg
--- viewTxTracker mTxTracker =
---     case mTxTracker of
---         Nothing ->
---             text "Waiting for tx to be sent or mined...."
-
---         Just txTracker ->
---             [ " TxTracker"
---             , "    { currentDepth : " ++ String.fromInt txTracker.currentDepth
---             , "    , minedInBlock : " ++ String.fromInt txTracker.minedInBlock
---             , "    , stopWatchingAtBlock : " ++ String.fromInt txTracker.stopWatchingAtBlock
---             , "    , lastCheckedBlock : " ++ String.fromInt txTracker.lastCheckedBlock
---             , "    , txHash : " ++ Eth.Utils.txHashToString txTracker.txHash
---             , "    , doneWatching : " ++ boolToString txTracker.doneWatching
---             , "    , reOrg : " ++ boolToString txTracker.reOrg
---             , "    }"
---             , ""
---             ]
---                 |> List.map (\n -> div [] [ text n ])
---                 |> div []
-
-
 boolToString : Bool -> String
 boolToString b =
-    case b of
-        True ->
-            "True"
+ if b == True then
+      "True"
 
-        False ->
-            "False"
+  else if b == False then
+      "False"
+
+  else
+      "False"
+
+
+log : String -> Cmd msg
+log message =
+    outgoing
+        { action = "LOG"
+        , data = Json.string message
+        }
