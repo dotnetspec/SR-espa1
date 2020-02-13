@@ -10,14 +10,32 @@ import Element.Events as E
 import Element.Font as Font
 import Element.Input as Input
 import Generated.Rankings.Params as Params
-import Html exposing (Html)
+--import Html exposing (Html)
 import Http
-import Json.Decode as Decode exposing (Decoder, bool, int, list, string)
+--import Json.Decode as Decode exposing (Decoder, bool, int, list, string)
 import RemoteData exposing (RemoteData, WebData)
 import Spa.Page
 import Ui exposing (colors, markdown)
 import Utils.MyUtils exposing (stringFromBool)
 import Utils.Spa exposing (Page, PageContext)
+
+--import Eth.Units exposing (gwei)
+
+import Eth
+import Eth.Net as Net exposing (NetworkId(..))
+import Eth.Sentry.Tx as TxSentry exposing (..)
+import Eth.Sentry.Wallet as WalletSentry exposing (WalletSentry)
+import Eth.Types exposing (..)
+import Eth.Units exposing (gwei)
+--import Eth.Utils
+--import Html exposing (..)
+import Html.Events exposing (onClick)
+import Json.Decode as Decode exposing (Value)
+import Process
+import Task
+
+--import Global exposing (EthNode, ethNode)
+import Ports exposing (..)
 
 
 
@@ -88,19 +106,86 @@ type alias Model =
     , player : Player
     , selectedRadio : ResultOptions
     , tempMsg : String
+    , txSentry : TxSentry Msg
+    , account : Maybe Address
+    , node : EthNode
+    , blockNumber : Maybe Int
+    , txHash : Maybe TxHash
+    , tx : Maybe Tx
+    , txReceipt : Maybe TxReceipt
+    , blockDepth : Maybe TxTracker
+    , errors : List String
     }
 
 
+type Msg
+    = TxSentryMsg TxSentry.Msg
+    | WalletStatus WalletSentry
+    | PollBlock (Result Http.Error Int)
+    | InitTx
+    | WatchTxHash (Result String TxHash)
+    | WatchTx (Result String Tx)
+    | WatchTxReceipt (Result String TxReceipt)
+    | TrackTx TxTracker
+    | Fail String
+    | NoOp
+    | PlayersReceived (WebData (List Player))
+    | FetchedContent (Result Http.Error String)
+    | OpenModal Int
+    | CloseModal
+    | SetRadioOption ResultOptions
 
 -- this is where the types matter and are actually set to values ...
 
 
+-- init : PageContext -> Params.Dynamic -> ( Model, Cmd Msg )
+-- init pageContext { param1 } =
+--     ( { --  browserEnv = pageContext.global.browserEnv
+--         --, settings = Nothing
+--         --,
+--         players = RemoteData.NotAsked
+--       , fetchedContentNotPlayerList = ""
+--       , error = ""
+--       , rankingid = param1
+--       , modalState = Closed
+--       , playerid = 0
+--       , player =
+--             { datestamp = 12345
+--             , active = False
+--             , currentchallengername = "Available"
+--             , currentchallengerid = 0
+--             , address = ""
+--             , rank = 0
+--             , name = "Unidentified"
+--             , id = 0
+--             , currentchallengeraddress = ""
+--             }
+--       , selectedRadio = Undecided
+--       , tempMsg = "Not confirmed yet"
+--       }
+--     , fetchRanking (RankingId param1)
+--     )
+
+--init : Int -> ( Model, Cmd Msg )
 init : PageContext -> Params.Dynamic -> ( Model, Cmd Msg )
 init pageContext { param1 } =
-    ( { --  browserEnv = pageContext.global.browserEnv
-        --, settings = Nothing
-        --,
-        players = RemoteData.NotAsked
+--init networkId =
+    let
+        node =
+            --Net.toNetworkId networkId
+            Net.toNetworkId 4
+                |> ethNode
+    in
+    ( { txSentry = TxSentry.init ( txOut, txIn ) TxSentryMsg node.http
+      , account = Nothing
+      , node = node
+      , blockNumber = Nothing
+      , txHash = Nothing
+      , tx = Nothing
+      , txReceipt = Nothing
+      , blockDepth = Nothing
+      , errors = []
+      , players = RemoteData.NotAsked
       , fetchedContentNotPlayerList = ""
       , error = ""
       , rankingid = param1
@@ -120,7 +205,7 @@ init pageContext { param1 } =
       , selectedRadio = Undecided
       , tempMsg = "Not confirmed yet"
       }
-    , fetchRanking (RankingId param1)
+    , Cmd.batch [Ports.log "Hello!", fetchRanking (RankingId param1), Task.attempt PollBlock (Eth.getBlockNumber node.http)]
     )
 
 
@@ -182,13 +267,7 @@ expectJson toMsg decoder =
 -- if change here, change update, and change wherever the Msg is called from
 
 
-type Msg
-    = PlayersReceived (WebData (List Player))
-    | FetchedContent (Result Http.Error String)
-    | OpenModal Int
-    | CloseModal
-    | SetRadioOption ResultOptions
-    | InitTx String
+
 
 
 
@@ -226,8 +305,85 @@ update msg model =
         SetRadioOption val ->
             ( { model | selectedRadio = val }, Cmd.none )
 
-        InitTx tempmsg ->
-            ( { model | tempMsg = tempmsg }, Cmd.none )
+        TxSentryMsg subMsg ->
+            let
+                ( subModel, subCmd ) =
+                    TxSentry.update subMsg model.txSentry
+            in
+            ( { model | txSentry = subModel }, subCmd )
+
+        WalletStatus walletSentry_ ->
+            ( { model
+                | account = walletSentry_.account
+                , node = ethNode walletSentry_.networkId
+              }
+            , Cmd.none
+            )
+
+        PollBlock (Ok blockNumber) ->
+            ( { model | blockNumber = Just blockNumber }
+            , Task.attempt PollBlock <|
+                Task.andThen (\_ -> Eth.getBlockNumber model.node.http) (Process.sleep 1000)
+            )
+
+        PollBlock (Err error) ->
+            ( model, Cmd.none )
+
+        InitTx ->
+            let
+                _ =
+                    Debug.log "list of players" model.players
+                txParams =
+                    { to = model.account
+                    , from = model.account
+                    , gas = Nothing
+                    , gasPrice = Just <| gwei 4
+                    , value = Just <| gwei 1
+                    , data = Nothing
+                    , nonce = Nothing
+                    }
+
+                ( newSentry, sentryCmd ) =
+                    TxSentry.customSend
+                        model.txSentry
+                        { onSign = Just WatchTxHash
+                        , onBroadcast = Just WatchTx
+                        , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                        }
+                        txParams
+            in
+            ( { model | txSentry = newSentry }, sentryCmd )
+
+        WatchTxHash (Ok txHash) ->
+            ( { model | txHash = Just txHash }, Cmd.none )
+
+        WatchTxHash (Err err) ->
+            ( { model | errors = ("Error Retrieving TxHash: " ++ err) :: model.errors }, Cmd.none )
+
+        WatchTx (Ok tx) ->
+            ( { model | tx = Just tx }, Cmd.none )
+
+        WatchTx (Err err) ->
+            ( { model | errors = ("Error Retrieving Tx: " ++ err) :: model.errors }, Cmd.none )
+
+        WatchTxReceipt (Ok txReceipt) ->
+            ( { model | txReceipt = Just txReceipt }, Cmd.none )
+
+        WatchTxReceipt (Err err) ->
+            ( { model | errors = ("Error Retrieving TxReceipt: " ++ err) :: model.errors }, Cmd.none )
+
+        TrackTx blockDepth ->
+            ( { model | blockDepth = Just blockDepth }, Cmd.none )
+
+        Fail str ->
+            let
+                _ =
+                    Debug.log str
+            in
+            ( model, Cmd.none )
+
+        NoOp ->
+            ( model, Cmd.none )
 
 
 
@@ -318,7 +474,7 @@ viewModal model =
                             [ el []
                                 (confirmbutton
                                     (rgb 0.95 0.6 0.25)
-                                    (InitTx "Transaction confirmed")
+                                    InitTx
                                     "Confirm"
                                  --div [] [ button [ onClick InitTx ] [ text "Yup Send 0 value Tx to yourself as a test yup" ] ]
                                 )
@@ -387,6 +543,11 @@ confirmbutton color msg label =
                 ]
                 (text label)
         }
+
+-- dothisOnPress : String -> Msg -> Msg
+-- dothisOnPress  str msg = 
+--     -- this is going to run and update with InitTx 
+--     msg str
 
 
 playersResultBtnCol : List Player -> String -> Column Player Msg
