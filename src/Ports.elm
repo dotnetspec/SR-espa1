@@ -261,7 +261,7 @@ boolToString b =
       "False"
 
   else
-      "False"
+      "There was a problem converting this string!!"
 
 
 log : String -> Cmd msg
