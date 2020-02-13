@@ -30,8 +30,8 @@ window.ports = {
                       )
                     ,
                         app.ports.incoming.send(dataFromJS)
-                    // , elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, web3)
-                    // , elm_ethereum_ports.walletSentry(app.ports.walletSentry, web3)
+                     , elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, web3)
+                     //, elm_ethereum_ports.walletSentry(app.ports.walletSentry, web3)
                   )
               }
 

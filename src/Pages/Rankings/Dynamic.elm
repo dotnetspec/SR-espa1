@@ -12,14 +12,14 @@ import Element.Input as Input
 import Generated.Rankings.Params as Params
 --import Html exposing (Html)
 import Http
-import Json.Decode as Decode exposing (Decoder, bool, int, list, string)
+--import Json.Decode as Decode exposing (Decoder, bool, int, list, string)
 import RemoteData exposing (RemoteData, WebData)
 import Spa.Page
 import Ui exposing (colors, markdown)
 import Utils.MyUtils exposing (stringFromBool)
 import Utils.Spa exposing (Page, PageContext)
 
-import Eth.Units exposing (gwei)
+--import Eth.Units exposing (gwei)
 
 import Eth
 import Eth.Net as Net exposing (NetworkId(..))
@@ -27,14 +27,14 @@ import Eth.Sentry.Tx as TxSentry exposing (..)
 import Eth.Sentry.Wallet as WalletSentry exposing (WalletSentry)
 import Eth.Types exposing (..)
 import Eth.Units exposing (gwei)
-import Eth.Utils
+--import Eth.Utils
 --import Html exposing (..)
 import Html.Events exposing (onClick)
 import Json.Decode as Decode exposing (Value)
 import Process
 import Task
 
-import Global exposing (EthNode, ethNode)
+--import Global exposing (EthNode, ethNode)
 import Ports exposing (..)
 
 
@@ -205,7 +205,7 @@ init pageContext { param1 } =
       , selectedRadio = Undecided
       , tempMsg = "Not confirmed yet"
       }
-    , Cmd.batch [fetchRanking (RankingId param1), Task.attempt PollBlock (Eth.getBlockNumber node.http)]
+    , Cmd.batch [Ports.log "Hello!", fetchRanking (RankingId param1), Task.attempt PollBlock (Eth.getBlockNumber node.http)]
     )
 
 
