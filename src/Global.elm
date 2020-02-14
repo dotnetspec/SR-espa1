@@ -1,3 +1,4 @@
+--standard elm-spa file + handle js messages
 module Global exposing
     ( Flags
     , Model
