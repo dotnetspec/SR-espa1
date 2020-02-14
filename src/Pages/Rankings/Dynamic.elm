@@ -1,8 +1,8 @@
 --standard elm-spa dynamic file. For this app where most of the functionality is implemented
 module Pages.Rankings.Dynamic exposing (Model, Msg, page)
 
-import Components.Players exposing (Player, PlayerId(..), emptyPlayer, emptyPlayerId, ladderOfPlayersDecoder, playerDecoder, playerEncoder)
-import Components.Ranking exposing (Ranking, RankingId(..), rankingDecoder, rankingEncoder, rankingsDecoder)
+--import Components.Players exposing (Player, PlayerId(..), emptyPlayer, emptyPlayerId, ladderOfPlayersDecoder, playerDecoder, playerEncoder)
+--import Components.Ranking exposing (Ranking, RankingId(..), rankingDecoder, rankingEncoder, rankingsDecoder)
 import Element
 import Element.Background as Background
 import Element.Border as Border
@@ -23,6 +23,8 @@ import Eth.Types
 import Eth.Units
 import Eth.Utils
 import Json.Decode
+import Json.Decode.Pipeline
+import Json.Encode
 import Process
 import Task
 import Ports
@@ -750,3 +752,197 @@ viewplayer model =
                 ]
             }
         ]
+
+
+type alias Player =
+    { datestamp : Int
+    , active : Bool
+    , currentchallengername : String
+    , currentchallengerid : Int
+    , address : String
+    , rank : Int
+    , name : String
+    , id : Int
+    , currentchallengeraddress : String
+    }
+
+
+type PlayerId
+    = PlayerId Int
+
+
+
+-- TODO: make an opaque type?
+-- rankingIdToString: RankingId -> String
+-- rankingIdToString rankingid =
+--   rankingid
+
+
+ladderOfPlayersDecoder : Json.Decode.Decoder (List Player)
+ladderOfPlayersDecoder =
+    let
+        _ =
+            Debug.log "in ladderDecoder" playerDecoder
+    in
+        Json.Decode.list playerDecoder
+
+
+playerDecoder : Json.Decode.Decoder Player
+playerDecoder =
+    Json.Decode.succeed Player
+        |> Json.Decode.Pipeline.required "DATESTAMP" Json.Decode.int
+        |> Json.Decode.Pipeline.required "ACTIVE" Json.Decode.bool
+        |> Json.Decode.Pipeline.required "CURRENTCHALLENGERNAME" Json.Decode.string
+        |> Json.Decode.Pipeline.required "CURRENTCHALLENGERID" Json.Decode.int
+        |> Json.Decode.Pipeline.required "ADDRESS" Json.Decode.string
+        |> Json.Decode.Pipeline.required "RANK" Json.Decode.int
+        |> Json.Decode.Pipeline.required "NAME" Json.Decode.string
+        |> Json.Decode.Pipeline.required "id" Json.Decode.int
+        |> Json.Decode.Pipeline.required "CURRENTCHALLENGERADDRESS" Json.Decode.string
+
+
+
+-- {
+--    "DATESTAMP": 1569839363942,
+--    "ACTIVE": true,
+--    "CURRENTCHALLENGERNAME": "testuser1",
+--    "CURRENTCHALLENGERID": 3,
+--    "ADDRESS": "0xD99eB29299CEF8726fc688180B30E634827b3078",
+--    "RANK": 1,
+--    "NAME": "GanacheAcct2",
+--    "id": 2,
+--    "CURRENTCHALLENGERADDRESS": "0x48DF2ee04DFE67902B83a670281232867e5dC0Ca"
+--  },
+
+
+playerEncoder : Player -> Json.Encode.Value
+playerEncoder player =
+    Json.Encode.object
+        [ ( "DATESTAMP", Json.Encode.int player.datestamp )
+        , ( "ACTIVE"
+          , Json.Encode.bool player.active
+          )
+        , ( "CURRENTCHALLENGERNAME"
+          , Json.Encode.string player.currentchallengername
+          )
+        , ( "CURRENTCHALLENGERID"
+          , Json.Encode.int player.currentchallengerid
+          )
+        , ( "ADDRESS"
+          , Json.Encode.string player.address
+          )
+        , ( "RANK"
+          , Json.Encode.int player.rank
+          )
+        , ( "NAME"
+          , Json.Encode.string player.name
+          )
+        , ( "id"
+          , Json.Encode.int player.id
+          )
+        , ( "CURRENTCHALLENGERADDRESS"
+          , Json.Encode.string player.currentchallengeraddress
+          )
+        ]
+
+
+
+--
+--
+-- newPostEncoder : Ranking -> Encode.Value
+-- newPostEncoder ranking =
+--     Encode.object
+--         [ ( "ACTIVE", Encode.bool ranking.active )
+--         , ( "RANKINGNAME", Encode.string ranking.name )
+--         , ( "RANKINGDESC", Encode.string ranking.desc )
+--         ]
+--
+--
+
+
+emptyPlayer : Player
+emptyPlayer =
+    { datestamp = 1
+    , active = False
+    , currentchallengername = ""
+    , currentchallengerid = 0
+    , address = ""
+    , rank = 0
+    , name = ""
+    , id = 0
+    , currentchallengeraddress = ""
+    }
+
+
+emptyPlayerId : PlayerId
+emptyPlayerId =
+    PlayerId -1
+
+
+-- import Json.Decode as Decode exposing (Decoder, bool, int, list, string)
+-- import Json.Decode.Pipeline exposing (required)
+-- import Json.Encode as Encode
+-- import Url.Parser exposing (Parser, custom)
+
+
+
+type alias Ranking =
+    { id : String
+    , active : Bool
+    , name : String
+    , desc : String
+    }
+
+
+type RankingId
+    = RankingId String
+
+
+
+-- TODO: make an opaque type?
+-- rankingIdToString: RankingId -> String
+-- rankingIdToString rankingid =
+--   rankingid
+
+
+rankingsDecoder : Json.Decode.Decoder (List Ranking)
+rankingsDecoder =
+    Json.Decode.list rankingDecoder
+
+
+rankingDecoder : Json.Decode.Decoder Ranking
+rankingDecoder =
+    Json.Decode.succeed Ranking
+        |> Json.Decode.Pipeline.required "RANKINGID" Json.Decode.string
+        |> Json.Decode.Pipeline.required "ACTIVE" Json.Decode.bool
+        |> Json.Decode.Pipeline.required "RANKINGNAME" Json.Decode.string
+        |> Json.Decode.Pipeline.required "RANKINGDESC" Json.Decode.string
+
+
+rankingEncoder : Ranking -> Json.Encode.Value
+rankingEncoder ranking =
+    Json.Encode.object
+        [ ( "RANKINGID", Json.Encode.string ranking.id )
+        , ( "ACTIVE", Json.Encode.bool ranking.active )
+        , ( "RANKINGNAME", Json.Encode.string ranking.name )
+        , ( "RANKINGDESC", Json.Encode.string ranking.desc )
+        ]
+
+
+emptyRanking : Ranking
+emptyRanking =
+    { id = ""
+    , active = False
+    , name = ""
+    , desc = ""
+    }
+
+
+emptyRankingId : RankingId
+emptyRankingId =
+    RankingId "-1"
+
+
+rankingIdToString : RankingId -> String
+rankingIdToString (RankingId rankingid) =
+    rankingid

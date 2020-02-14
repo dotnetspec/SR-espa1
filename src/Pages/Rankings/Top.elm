@@ -1,22 +1,16 @@
 module Pages.Rankings.Top exposing (Model, Msg, page)
 
-import Components.Ranking exposing (Ranking, RankingId(..), rankingDecoder, rankingEncoder, rankingsDecoder)
-import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Element.Events as E
 import Element.Font as Font
-import Element.Input as I
-import Element.Lazy
 import Generated.Rankings.Params as Params
-import Html exposing (Html)
 import Http
-import Json.Decode as Decode exposing (Decoder, bool, int, list, string)
-import RemoteData exposing (RemoteData, WebData)
+import Json.Decode
+import Json.Decode.Pipeline
+import RemoteData
 import Spa.Page
 import Ui
-import Utils.MyUtils exposing (stringFromBool)
 import Utils.Spa exposing (Page)
 
 
@@ -32,10 +26,8 @@ page =
 
 
 type Msg
-    = RankingsReceived (WebData (List Ranking))
+    = RankingsReceived (RemoteData.WebData (List Ranking))
     | FetchedContent (Result Http.Error String)
-    | OpenModal
-    | CloseModal
 
 
 type RemoteData e a
@@ -45,16 +37,10 @@ type RemoteData e a
     | Success a
 
 
-type ModalState
-    = Open
-    | Closed
-
-
 type alias Model =
-    { rankings : WebData (List Ranking)
+    { rankings : RemoteData.WebData (List Ranking)
     , fetchedContentNotRankingList : String
     , error : String
-    , modalState : ModalState
     }
 
 
@@ -67,7 +53,6 @@ init _ =
     ( { rankings = RemoteData.NotAsked
       , error = ""
       , fetchedContentNotRankingList = ""
-      , modalState = Closed
       }
     , Http.get
         { url = "https://api.jsonbin.io/b/5e2a585f593fd741856f4b04/latest"
@@ -78,7 +63,7 @@ init _ =
     )
 
 
-expectJson : (Result Http.Error a -> msg) -> Decode.Decoder a -> Http.Expect msg
+expectJson : (Result Http.Error a -> msg) -> Json.Decode.Decoder a -> Http.Expect msg
 expectJson toMsg decoder =
     Http.expectStringResponse toMsg <|
         \response ->
@@ -96,12 +81,12 @@ expectJson toMsg decoder =
                     Err (Http.BadStatus metadata.statusCode)
 
                 Http.GoodStatus_ metadata body ->
-                    case Decode.decodeString decoder body of
+                    case Json.Decode.decodeString decoder body of
                         Ok value ->
                             Ok value
 
                         Err err ->
-                            Err (Http.BadBody (Decode.errorToString err))
+                            Err (Http.BadBody (Json.Decode.errorToString err))
 
 
 
@@ -125,12 +110,6 @@ update msg model =
         RankingsReceived rankings ->
             --removes[?] the first record (created on ranking creation with different format)
             ( { model | rankings = rankings }, Cmd.none )
-
-        OpenModal ->
-            ( { model | modalState = Open }, Cmd.none )
-
-        CloseModal ->
-            ( { model | modalState = Closed }, Cmd.none )
 
 
 
@@ -212,7 +191,7 @@ viewRankings rankings =
 
 
 rankingNameCol : List Ranking -> String -> Column Ranking msg
-rankingNameCol rankings str =
+rankingNameCol _ str =
     { header = Element.text str
     , width = fill
     , view =
@@ -236,7 +215,7 @@ rankingNameCol rankings str =
 
 
 rankingDescCol : List Ranking -> String -> Column Ranking msg
-rankingDescCol rankings str =
+rankingDescCol _ str =
     { header = Element.text str
     , width = fill
     , view =
@@ -248,3 +227,24 @@ rankingDescCol rankings str =
                 [ Element.text ranking.desc
                 ]
     }
+
+type alias Ranking =
+    { id : String
+    , active : Bool
+    , name : String
+    , desc : String
+    }
+
+rankingsDecoder : Json.Decode.Decoder (List Ranking)
+rankingsDecoder =
+    Json.Decode.list rankingDecoder
+
+
+rankingDecoder : Json.Decode.Decoder Ranking
+rankingDecoder =
+    Json.Decode.succeed Ranking
+        |> Json.Decode.Pipeline.required "RANKINGID" Json.Decode.string
+        |> Json.Decode.Pipeline.required "ACTIVE" Json.Decode.bool
+        |> Json.Decode.Pipeline.required "RANKINGNAME" Json.Decode.string
+        |> Json.Decode.Pipeline.required "RANKINGDESC" Json.Decode.string
+
