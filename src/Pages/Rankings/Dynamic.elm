@@ -27,7 +27,7 @@ import Eth.Sentry.Tx as TxSentry exposing (..)
 import Eth.Sentry.Wallet as WalletSentry exposing (WalletSentry)
 import Eth.Types exposing (..)
 import Eth.Units exposing (gwei)
---import Eth.Utils
+import Eth.Utils exposing (addressToString)
 --import Html exposing (..)
 import Html.Events exposing (onClick)
 import Json.Decode as Decode exposing (Value)
@@ -392,7 +392,10 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Sub.batch
+        [ walletSentry (WalletSentry.decodeToMsg Fail WalletStatus)
+        , TxSentry.listen model.txSentry
+        ]
 
 
 
@@ -423,7 +426,7 @@ viewWithModalReady model =
                     "Open"
 
                 Closed ->
-                    model.player.name ++ " you are currently ranked " ++ String.fromInt model.player.rank ++ " \nand your challenger is " ++ model.player.currentchallengername
+                    validateAddress model.account ++ " you are currently ranked " ++ String.fromInt model.player.rank ++ " \nand your challenger is " ++ model.player.currentchallengername
     in
     -- html turns html Msg into Element Msg
     html
@@ -449,6 +452,16 @@ viewWithModalReady model =
                     --, el [ centerX ] <| playeridbtn (rgb 0.25 0.75 0.75) (OpenModal model.player.id) "Opensadfa"
                     ]
         )
+
+
+validateAddress : Maybe Address -> String
+validateAddress addr =
+  case addr of
+    Nothing ->
+      "No address"
+
+    Just a ->
+       addressToString a 
 
 
 viewModal : Model -> Element Msg
