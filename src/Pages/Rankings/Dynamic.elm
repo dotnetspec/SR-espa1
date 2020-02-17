@@ -1,8 +1,6 @@
 --standard elm-spa dynamic file. For this app where most of the functionality is implemented
 module Pages.Rankings.Dynamic exposing (Model, Msg, page)
 
---import Components.Players exposing (Player, PlayerId(..), emptyPlayer, emptyPlayerId, ladderOfPlayersDecoder, playerDecoder, playerEncoder)
---import Components.Ranking exposing (Ranking, RankingId(..), rankingDecoder, rankingEncoder, rankingsDecoder)
 import Element
 import Element.Background as Background
 import Element.Border as Border
@@ -28,6 +26,20 @@ import Json.Encode
 import Process
 import Task
 import Ports
+
+
+-- {
+--    "DATESTAMP": 1569839363942,
+--    "ACTIVE": true,
+--    "CURRENTCHALLENGERNAME": "testuser1",
+--    "CURRENTCHALLENGERID": 3,
+--    "ADDRESS": "0xD99eB29299CEF8726fc688180B30E634827b3078",
+--    "RANK": 1,
+--    "NAME": "GanacheAcct2",
+--    "id": 2,
+--    "CURRENTCHALLENGERADDRESS": "0x48DF2ee04DFE67902B83a670281232867e5dC0Ca"
+--  },
+
 
 
 
@@ -126,38 +138,9 @@ type Msg
     | OpenModal Int
     | CloseModal
     | SetRadioOption ResultOptions
+    | ChangePlayerRank Player
 
 -- this is where the types matter and are actually set to values ...
-
-
--- init : PageContext -> Params.Dynamic -> ( Model, Cmd Msg )
--- init pageContext { param1 } =
---     ( { --  browserEnv = pageContext.global.browserEnv
---         --, settings = Nothing
---         --,
---         players = RemoteData.NotAsked
---       , fetchedContentNotPlayerList = ""
---       , error = ""
---       , rankingid = param1
---       , modalState = Closed
---       , playerid = 0
---       , player =
---             { datestamp = 12345
---             , active = False
---             , currentchallengername = "Available"
---             , currentchallengerid = 0
---             , address = ""
---             , rank = 0
---             , name = "Unidentified"
---             , id = 0
---             , currentchallengeraddress = ""
---             }
---       , selectedRadio = Undecided
---       , tempMsg = "Not confirmed yet"
---       }
---     , fetchRanking (RankingId param1)
---     )
-
 --init : Int -> ( Model, Cmd Msg )
 init : Utils.Spa.PageContext -> Generated.Rankings.Params.Dynamic -> ( Model, Cmd Msg )
 init pageContext { param1 } =
@@ -210,6 +193,7 @@ subscriptions model =
         , Eth.Sentry.Tx.listen model.txSentry
         ]
 
+--Http and assoc Json en/decoders
 fetchRanking : RankingId -> Cmd Msg
 fetchRanking (RankingId rankingId) =
     let
@@ -262,14 +246,35 @@ expectJson toMsg decoder =
                             Err (Http.BadBody (Json.Decode.errorToString err))
 
 
+-- this put on hold 16 Feb 2020 until create new player functionality in place
+--updateRanking : RemoteData.WebData Ranking -> Cmd Msg
+-- updateRanking: Model -> Cmd Msg
+-- updateRanking model =
+--      let
+--         _ =
+--             Debug.log "rankingid in model" model.rankingid
+
+--         headerKey =
+--             Http.header
+--                 "secret-key"
+--                 "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
+--     in
+--             Http.request
+--                 { method = "PATCH"
+--                 , headers = [headerKey]
+--                 , url = "https://api.jsonbin.io/b/" ++ model.rankingid
+--                 , body = Http.jsonBody (postEncoder rankingData)
+--                 , expect = Http.expectJson PostSaved postDecoder
+--                 , timeout = Nothing
+--                 , tracker = Nothing
+--                 }
+
+        -- _ ->
+        --     Cmd.none
 
 -- Use Msg types to pattern match and trigger different updates in update
 -- define according to variant. Pass the variant the nec. type (if nec.)
 -- if change here, change update, and change wherever the Msg is called from
-
-
-
-
 
 
 -- UPDATE
@@ -302,6 +307,9 @@ update msg model =
 
         CloseModal ->
             ( { model | modalState = Closed }, Cmd.none )
+
+        ChangePlayerRank newPlayer ->
+             ( { model | player = newPlayer }, Cmd.none )
 
         SetRadioOption val ->
             ( { model | selectedRadio = val }, Cmd.none )
@@ -560,7 +568,10 @@ playersResultBtnCol players str =
                 [ Font.color Ui.colors.lightblue
                 , Border.widthXY 2 2
                 ]
-                [ playeridbtn Ui.colors.blue (OpenModal player.id) "Result"
+                [ 
+                    playeridbtn Ui.colors.blue (OpenModal player.id) "Result"
+                   -- playeridbtn Ui.colors.blue (ChangePlayerRank (updatedPlayerRank player 5)) "Result"
+                    
                 ]
     }
 
@@ -637,16 +648,7 @@ retrieveSinglePlayer id players =
     in
     case List.head x of
         Nothing ->
-            { datestamp = 12345
-            , active = False
-            , currentchallengername = ""
-            , currentchallengerid = 0
-            , address = ""
-            , rank = 0
-            , name = ""
-            , id = 0
-            , currentchallengeraddress = ""
-            }
+         emptyPlayer
 
         Just item ->
             item
@@ -802,19 +804,6 @@ playerDecoder =
 
 
 
--- {
---    "DATESTAMP": 1569839363942,
---    "ACTIVE": true,
---    "CURRENTCHALLENGERNAME": "testuser1",
---    "CURRENTCHALLENGERID": 3,
---    "ADDRESS": "0xD99eB29299CEF8726fc688180B30E634827b3078",
---    "RANK": 1,
---    "NAME": "GanacheAcct2",
---    "id": 2,
---    "CURRENTCHALLENGERADDRESS": "0x48DF2ee04DFE67902B83a670281232867e5dC0Ca"
---  },
-
-
 playerEncoder : Player -> Json.Encode.Value
 playerEncoder player =
     Json.Encode.object
@@ -846,44 +835,36 @@ playerEncoder player =
         ]
 
 
-
---
---
--- newPostEncoder : Ranking -> Encode.Value
--- newPostEncoder ranking =
---     Encode.object
---         [ ( "ACTIVE", Encode.bool ranking.active )
---         , ( "RANKINGNAME", Encode.string ranking.name )
---         , ( "RANKINGDESC", Encode.string ranking.desc )
---         ]
---
---
-
-
 emptyPlayer : Player
 emptyPlayer =
-    { datestamp = 1
+    {    datestamp = 12345
     , active = False
-    , currentchallengername = ""
+    , currentchallengername = "Available"
     , currentchallengerid = 0
     , address = ""
     , rank = 0
-    , name = ""
+    , name = "Unidentified"
     , id = 0
     , currentchallengeraddress = ""
+    }
+
+updatedPlayerRank : Player -> Int -> Player
+updatedPlayerRank player rank =
+    {    datestamp = player.datestamp
+    , active = player.active
+    , currentchallengername = player.currentchallengername
+    , currentchallengerid = player.currentchallengerid
+    , address = player.address
+    , rank = rank
+    , name = player.name
+    , id = player.id
+    , currentchallengeraddress = player.currentchallengeraddress
     }
 
 
 emptyPlayerId : PlayerId
 emptyPlayerId =
     PlayerId -1
-
-
--- import Json.Decode as Decode exposing (Decoder, bool, int, list, string)
--- import Json.Decode.Pipeline exposing (required)
--- import Json.Encode as Encode
--- import Url.Parser exposing (Parser, custom)
-
 
 
 type alias Ranking =
