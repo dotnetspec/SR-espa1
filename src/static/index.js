@@ -12,8 +12,6 @@ window.addEventListener('load', function () {
             setOfFlags.networkid = parseInt(networkId);
             setOfFlags.comment = " new flags can be added to the setOfFlags record in index.js";
             app = window.ports.init(Elm.Main.init({flags: setOfFlags, node: node}));
-            //elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, web3);
-            //elm_ethereum_ports.walletSentry(app.ports.walletSentry, web3);
             ethereum.enable();
         });
     } else {

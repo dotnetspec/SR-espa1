@@ -1,4 +1,5 @@
 --standard elm-spa file + handle js messages
+-- currently using both flags and port to receive data from js
 module Global exposing
     ( Flags
     , Model
@@ -12,7 +13,6 @@ import Generated.Routes as Routes exposing (Route)
 import Ports exposing (..)
 import Debug
 import Json.Decode as Decode exposing (Value)
---import Http
 
 
 type alias Flags =
