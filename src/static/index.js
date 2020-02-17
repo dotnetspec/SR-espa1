@@ -2,18 +2,25 @@ var elm_ethereum_ports = require('elm-ethereum-ports');
 const {Elm} = require('Main');
 var node = document.getElementById("elmapp")
 var dataFromJS = "Data from JS";
+var setOfFlags = {networkid : Int16Array, comment : String};
 
 window.addEventListener('load', function () {
 
     if (typeof web3 !== 'undefined') {
         web3.version.getNetwork(function (e, networkId) {
-            app = window.ports.init(Elm.Main.init({flags: parseInt(networkId), node: node}));
+            //app = window.ports.init(Elm.Main.init({flags: parseInt(networkId), node: node}));
+            setOfFlags.networkid = parseInt(networkId);
+            setOfFlags.comment = " new flags can be added to the setOfFlags record in index.js";
+            app = window.ports.init(Elm.Main.init({flags: setOfFlags, node: node}));
             //elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, web3);
             //elm_ethereum_ports.walletSentry(app.ports.walletSentry, web3);
             ethereum.enable();
         });
     } else {
-        app = window.ports.init(Elm.Main.init({flags: parseInt(networkId), node: node}));
+        //app = window.ports.init(Elm.Main.init({flags: parseInt(networkId), node: node}));
+        setOfFlags.networkid = 0;
+        setOfFlags.comment = " Metamask must be installed before this app can be used";
+        app = window.ports.init(Elm.Main.init({flags: setOfFlags, node: node}));
         console.log("Metamask not detected.");
     }
 });

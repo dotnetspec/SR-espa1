@@ -16,7 +16,7 @@ import Json.Decode as Decode exposing (Value)
 
 
 type alias Flags =
-    ()
+      {networkid : Int, comment : String}
 
 
 type alias Model =
@@ -33,11 +33,17 @@ type alias Commands msg =
 
 
 init : Commands msg -> Flags -> ( Model, Cmd Msg, Cmd msg )
-init _ _ =
-    ( {incomingData = ""}
-    , Cmd.none
-    , Cmd.none
-    )
+init _ flags =
+            let
+                dataStrVal = String.fromInt flags.networkid ++ flags.comment
+
+                _ =
+                    Debug.log "flag data is : " dataStrVal
+            in
+            ( {incomingData = ""}
+            , Cmd.none
+            , Cmd.none
+            )
 
 
 update : Commands msg -> Msg -> Model -> ( Model, Cmd Msg, Cmd msg )
