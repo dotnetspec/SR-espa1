@@ -53,8 +53,10 @@ update _ msg model =
             let
                 _ =
                     Debug.log "data is: " data
+
+                networkName = if data == "4" then "I see you are using Rinkeby" else "Not sure which network you are on"
             in
-            ( { model | incomingData = data }, Cmd.none, Cmd.none)
+            ( { model | incomingData = networkName }, Cmd.none, Cmd.none)
 
 
 subscriptions : Model -> Sub Msg

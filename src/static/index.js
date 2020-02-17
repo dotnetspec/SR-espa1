@@ -34,7 +34,7 @@ window.ports = {
                           : console.warn(`I didn't recognize action "${action}".`)
                       )
                     ,
-                        app.ports.incoming.send(dataFromJS)
+                        app.ports.incoming.send(setOfFlags.networkid.toString())
                      , elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, web3)
                      , elm_ethereum_ports.walletSentry(app.ports.walletSentry, web3)
                   )
