@@ -46,7 +46,7 @@ type alias Model =
 
 
 -- INIT
-
+-- this accesses COLLECTION RECORDS - GLOBAL - public bin
 
 init : Params.Top -> ( Model, Cmd Msg )
 init _ =
