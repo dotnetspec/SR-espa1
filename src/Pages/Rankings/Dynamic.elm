@@ -67,7 +67,7 @@ page =
         , init = init
         , update = always update
         , subscriptions = always subscriptions
-        , view = always view
+        , view = view
         }
 
 
@@ -398,12 +398,12 @@ update msg model =
 -- display whatever is in the model
 
 
-view : Model -> Element.Element Msg
-view model =
+view : Utils.Spa.PageContext -> Model -> Element.Element Msg
+view context model =
     --  add any extra views on a new line eg.
     --, element.el [ Font.bold ] (text "this is bold")
     Element.row []
-        [ viewWithModalReady model
+        [ viewWithModalReady context model
         ]
 
 
@@ -412,8 +412,8 @@ view model =
 --so that a result can be entered
 
 
-viewWithModalReady : Model -> Element.Element Msg
-viewWithModalReady model =
+viewWithModalReady : Utils.Spa.PageContext -> Model -> Element.Element Msg
+viewWithModalReady context model =
     let
         modalString =
             case model.modalState of
@@ -421,7 +421,12 @@ viewWithModalReady model =
                     "Open"
 
                 Closed ->
-                    validateAddress model.account ++ " you are currently ranked " ++ String.fromInt model.player.rank ++ " \nand your challenger is " ++ model.player.currentchallengername
+                    --validateAddress model.account ++ " you are currently ranked " ++ String.fromInt model.player.rank ++ " \nand your challenger is " ++ model.player.currentchallengername
+    
+                    context.global.username ++ " you are currently ranked " ++ String.fromInt model.player.rank ++ " \nand your challenger is " ++ model.player.currentchallengername
+   
+
+    
     in
     -- html turns html Msg into Element Msg
     Element.html

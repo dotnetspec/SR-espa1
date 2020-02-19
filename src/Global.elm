@@ -10,21 +10,37 @@ module Global exposing
     )
 
 import Generated.Routes as Routes exposing (Route)
-import Ports exposing (..)
+import Ports
 import Debug
 import Json.Decode as Decode exposing (Value)
+import Eth.Sentry.Wallet
+import Eth.Types
+import Eth.Utils
+import Eth.Net as Net exposing (NetworkId(..))
+import List
+import Utils.MyUtils
 
 
 type alias Flags =
-      {networkid : Int, comment : String}
+      {networkid : Int
+      , useraccounts: List String
+      , comment : String}
 
 
 type alias Model =
-    {incomingData : String}
+    {
+    username : String
+    , accountForUserLookup : String
+    , account : Maybe Eth.Types.Address
+    , node : Ports.EthNode
+    , incomingData : String}
 
 
 type Msg =  
     ReceivedDataFromJS String
+    | WalletStatus Eth.Sentry.Wallet.WalletSentry
+    | Fail String
+    --| GotJSAddress (Result String Eth.Types.Address)
 
 
 type alias Commands msg =
@@ -35,12 +51,27 @@ type alias Commands msg =
 init : Commands msg -> Flags -> ( Model, Cmd Msg, Cmd msg )
 init _ flags =
             let
-                dataStrVal = String.fromInt flags.networkid ++ flags.comment
+                --dataStrVal = String.fromInt flags.networkid ++ flags.comment
+                -- have to take this as a flag from js - global.context is too slow for Top init
+                dataStrVal = Utils.MyUtils.stringFromMaybeString (List.head flags.useraccounts) 
 
                 _ =
                     Debug.log "flag data is : " dataStrVal
+                node =
+                    --Net.toNetworkId networkId
+                    Net.toNetworkId 4
+                        |> Ports.ethNode
+
+                --accountNumber = Utils.MyUtils.stringFromMaybeString (List.head flags.useraccounts) 
+                --     Ports.retrieveAddress Ports.Model
             in
-            ( {incomingData = ""}
+        ( { 
+            username = tempAddressToNameLookup  dataStrVal
+        , accountForUserLookup = dataStrVal
+        , account = Nothing
+        , node = node
+        , incomingData = String.fromInt flags.networkid
+        }
             , Cmd.none
             , Cmd.none
             )
@@ -58,10 +89,33 @@ update _ msg model =
             in
             ( { model | incomingData = networkName }, Cmd.none, Cmd.none)
 
+    WalletStatus walletSentry_ ->
+        ( { model
+            | account = walletSentry_.account
+            , node = Ports.ethNode walletSentry_.networkId
+            }
+        , Cmd.none, Cmd.none
+        )
+
+
+    Fail str ->
+                    let
+                        _ =
+                            Debug.log str
+                    in
+                    ( model, Cmd.none, Cmd.none )
+
+
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    incoming decodeValue
+    Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+    --incoming decodeValue
+    --   Sub.batch
+    --     [ incoming decodeValue
+    --     , Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+    --     --, Eth.Sentry.Tx.listen model.txSentry
+    --     ]
 
 --decodeValue just used to help understanding of incoming port functionality
 decodeValue : Value -> Msg
@@ -75,3 +129,30 @@ decodeValue x =
                 ReceivedDataFromJS string            
             Err _ -> 
                 ReceivedDataFromJS "Silly JavaScript, you can't kill me!"
+
+
+
+tempAddressToNameLookup : String -> String 
+tempAddressToNameLookup str = 
+    if str == "0x847700b781667abdd98e1393420754e503dca5b7" then "Philip" else "New User"
+
+-- gotResultFromJSAddress : Result error value -> Msg 
+-- gotResultFromJSAddress result = 
+--     case result of 
+--         Err error -> 
+--              GotJSAddress error
+--         Ok string ->
+--             GotJSAddress string
+
+-- just used below to help to understand Result type and it's args
+-- isReasonableAge : Maybe String -> Result String String
+-- --isReasonableAge : Result String String
+-- isReasonableAge str =
+--   case str of
+--     Nothing ->
+--         Err "error"
+
+--     Just addr ->
+--         Ok addr
+            
+

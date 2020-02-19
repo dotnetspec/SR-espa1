@@ -19,7 +19,7 @@ page : Page Params.Top Model Msg model msg appMsg
 page =
     Spa.Page.component
         { title = always "Top"
-        , init = always init
+        , init = init
         , update = always update
         , subscriptions = always subscriptions
         , view = view
@@ -29,18 +29,26 @@ page =
 
 -- INIT
 
+type UserAccountConnection = 
+    NoConnection
+    | NoAccountNumber
+    | NoUserDetails
+    | Success
+
 
 type alias Model =
-    { account : Maybe Eth.Types.Address
+    {  
+    account : Maybe Eth.Types.Address
     , node : Ports.EthNode
     , user : User
-    , showDialog : Bool 
+    , showDialog : Bool
     }
 
+--until can figure a better way to return account to Address type
+--use string so can do a lookup
 type alias User = 
-    { 
-    account : Maybe Eth.Types.Address
-    , name : String
+    {  
+    name : String
     , description : String
     , contact : String 
     , email : String 
@@ -58,19 +66,23 @@ type alias Config msg =
     , footer : Maybe (Element msg)
     }
 
-init : Params.Top -> ( Model, Cmd Msg, Cmd Global.Msg )
-init _ =
+init : Utils.Spa.PageContext -> Params.Top -> ( Model, Cmd Msg, Cmd Global.Msg )
+init context _ =
   let
         node =
             --Net.toNetworkId networkId
             Net.toNetworkId 4
                 |> Ports.ethNode
+        _ = 
+            Debug.log "global context" context.global.accountForUserLookup
+        -- the account number has to come through as a js value as update or [?] is too slow in global.elm
+        -- for init
     in
-    ( { account = Nothing
+    ( { 
+    account = Nothing
     , node = node
-    , user =  { 
-            account = Nothing
-            , name = ""
+    , user =  {  
+            name = ""
             , description = ""
             , contact = "" 
             , email = "" 
@@ -87,19 +99,43 @@ init _ =
 
 
 type Msg
-    = WalletStatus Eth.Sentry.Wallet.WalletSentry
-    | Fail String
+    = 
+    --WalletStatus Eth.Sentry.Wallet.WalletSentry
+     Fail String
     | NoOp
     | CloseDialog
+    | GotUserStatus UserAccountConnection
 
 
 update : Msg -> Model -> ( Model, Cmd Msg, Cmd Global.Msg )
 update msg model =
             case msg of
-                WalletStatus walletSentry_ ->
+                GotUserStatus acctconn ->
+                     case acctconn of
+                        NoConnection ->
                             ( { model
-                                | account = walletSentry_.account
-                                , node = Ports.ethNode walletSentry_.networkId
+                                    | showDialog = True
+                                }
+                                , Cmd.none, Cmd.none
+                                )
+
+                        NoAccountNumber ->
+                            ( { model
+                                | showDialog = True
+                            }
+                            , Cmd.none, Cmd.none
+                            )
+
+                        NoUserDetails ->
+                            ( { model
+                                | showDialog = True
+                            }
+                            , Cmd.none, Cmd.none
+                            )
+
+                        Success -> 
+                            ( { model
+                                | showDialog = False
                             }
                             , Cmd.none, Cmd.none
                             )
@@ -124,9 +160,16 @@ update msg model =
                             ( model, Cmd.none, Cmd.none )
            
 
+-- determineUserStatus: Model -> Msg 
+-- determineUserStatus model = 
+--     if model.account == Nothing then 
+--         GotUserStatus NoAccountNumber
+--     else
+--         GotUserStatus Success
+
 --TODO: re-factor - repeated code - to MyUtils?
-validateAddress : Maybe Eth.Types.Address -> String
-validateAddress addr =
+addressToString : Maybe Eth.Types.Address -> String
+addressToString addr =
   case addr of
     Nothing ->
       "No address"
@@ -138,7 +181,8 @@ validateAddress addr =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-        Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+        Sub.none
+        --Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
   
 
 view : Utils.Spa.PageContext -> Model -> Element Msg
@@ -162,12 +206,12 @@ view context model =
 
                 else
                     Nothing
+
+            descTxt = "Welcome " ++ context.global.username
         in
-    --Element.layout
-        
-        Element.el [ inFront (Dialog.view dialogConfig)] 
-        --(Element.text "hello")
-       (Ui.hero {  title = "SPORTRANK", description = "Context " ++ context.global.incomingData ++ validateAddress model.account, buttons = [ ( "Continue ...", "/rankings" ) ] })
+    
+        Element.el [ inFront (Dialog.view dialogConfig)]
+            (Ui.hero {  title = "SPORTRANK", description = descTxt, buttons = [ ( "Continue ...", "/rankings" ) ] })
 
 modalBody: Element Msg 
 modalBody = 
