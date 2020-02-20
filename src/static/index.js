@@ -5,27 +5,32 @@ var dataFromJS = "Data from JS";
 var setOfFlags = {networkid : Int16Array, useraccounts: [], comment : String};
 
 window.addEventListener('load', function () {
-
-    if (typeof web3 !== 'undefined') {
+    if (typeof ethereum !== 'undefined') {
+        // 'ethereum' means supports EIP-1102 injected Ethereum providers.
+        window.web3 = new Web3(ethereum);
         web3.version.getNetwork(function (e, networkId) {
-            //app = window.ports.init(Elm.Main.init({flags: parseInt(networkId), node: node}));
-            setOfFlags.networkid = parseInt(networkId);
-            //setOfFlags.useraccounts = ["123456", "45678"];
-            
-            //setOfFlags.useraccounts = web3.eth.getAccounts();
-            setOfFlags.comment = " new flags can be added to the setOfFlags record in index.js";
-            app = window.ports.init(Elm.Main.init({flags: setOfFlags, node: node}));
-            ethereum.enable();
-        });
-        //console.log('accounts : ' + web3.eth.getAccounts());
-        web3.eth.getAccounts( (error, accounts) => { setOfFlags.useraccounts = accounts} );
+                        setOfFlags.networkid = parseInt(networkId);
+                        setOfFlags.comment = " new flags can be added to the setOfFlags record in index.js";
+                        app = window.ports.init(Elm.Main.init({flags: setOfFlags, node: node}));                                           
+                    });
+            web3.eth.getAccounts( (error, accounts) => { setOfFlags.useraccounts = accounts} );
+    } else if (typeof web3 !== 'undefined') {
+        // Supports legacy injected Ethereum providers.
+        window.web3 = new Web3(web3.currentProvider);
+        web3.version.getNetwork(function (e, networkId) {
+                        setOfFlags.networkid = parseInt(networkId);
+                        setOfFlags.comment = " new flags can be added to the setOfFlags record in index.js";
+                        app = window.ports.init(Elm.Main.init({flags: setOfFlags, node: node}));                                           
+                    });
+            web3.eth.getAccounts( (error, accounts) => { setOfFlags.useraccounts = accounts} );
     } else {
-        //app = window.ports.init(Elm.Main.init({flags: parseInt(networkId), node: node}));
+        // Your preferred fallback.
         setOfFlags.networkid = 0;
         setOfFlags.useraccount = "";
         setOfFlags.comment = " Metamask must be installed before this app can be used";
         app = window.ports.init(Elm.Main.init({flags: setOfFlags, node: node}));
-        console.log("Metamask not detected.");
+        console.log("Metamask not detected. Using local provider");
+        window.web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545')); 
     }
 });
 

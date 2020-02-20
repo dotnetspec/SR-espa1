@@ -19,6 +19,7 @@
     "elm-ethereum-generator": "^3.0.0",
     "elm-ethereum-ports": "^1.0.1",
     "elm-webpack-loader": "^6.0.1",
+    "ethers": "^4.0.45",
     "purecss": "^1.0.0"
   },
   "devDependencies": {
