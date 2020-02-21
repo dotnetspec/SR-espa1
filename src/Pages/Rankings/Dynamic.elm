@@ -29,6 +29,7 @@ import Ports
 import Internal.Types as Internal
 import SR.Types
 import SR.Defaults
+import SR.Decode
 
 
 -- {
@@ -42,8 +43,6 @@ import SR.Defaults
 --    "id": 2,
 --    "CURRENTCHALLENGERADDRESS": "0x48DF2ee04DFE67902B83a670281232867e5dC0Ca"
 --  },
-
-
 
 
 --import Utils.Spa exposing (Page)
@@ -213,7 +212,7 @@ fetchRanking (Internal.RankingId rankingId) =
     Http.request
         { body = Http.emptyBody
         , expect =
-            ladderOfPlayersDecoder
+            SR.Decode.ladderOfPlayersDecoder
                 |> Http.expectJson (RemoteData.fromResult >> PlayersReceived)
         , headers = [ headerKey ]
         , method = "GET"
@@ -694,15 +693,6 @@ extractPlayersFromWebData model =
             []
 
 
-
---possibly useful ref:
---stringFromBool player.active
---(String.fromInt player.currentchallengerid)
--- (String.fromInt player.rank)
--- String.fromInt player.datestamp)
---player.address
-
-
 viewplayers : List SR.Types.Player -> Element.Element Msg
 viewplayers players =
     Element.html <|
@@ -764,87 +754,6 @@ viewplayer model =
         ]
 
 
--- type alias Player =
---     { datestamp : Int
---     , active : Bool
---     , currentchallengername : String
---     , currentchallengerid : Int
---     , address : String
---     , rank : Int
---     , name : String
---     , id : Int
---     , currentchallengeraddress : String
---     }
-
-
-ladderOfPlayersDecoder : Json.Decode.Decoder (List SR.Types.Player)
-ladderOfPlayersDecoder =
-    let
-        _ =
-            Debug.log "in ladderDecoder" playerDecoder
-    in
-        Json.Decode.list playerDecoder
-
-
-playerDecoder : Json.Decode.Decoder SR.Types.Player
-playerDecoder =
-    Json.Decode.succeed SR.Types.Player
-        |> Json.Decode.Pipeline.required "DATESTAMP" Json.Decode.int
-        |> Json.Decode.Pipeline.required "ACTIVE" Json.Decode.bool
-        |> Json.Decode.Pipeline.required "CURRENTCHALLENGERNAME" Json.Decode.string
-        |> Json.Decode.Pipeline.required "CURRENTCHALLENGERID" Json.Decode.int
-        |> Json.Decode.Pipeline.required "ADDRESS" Json.Decode.string
-        |> Json.Decode.Pipeline.required "RANK" Json.Decode.int
-        |> Json.Decode.Pipeline.required "NAME" Json.Decode.string
-        |> Json.Decode.Pipeline.required "id" Json.Decode.int
-        |> Json.Decode.Pipeline.required "CURRENTCHALLENGERADDRESS" Json.Decode.string
-
-
-
-playerEncoder : SR.Types.Player -> Json.Encode.Value
-playerEncoder player =
-    Json.Encode.object
-        [ ( "DATESTAMP", Json.Encode.int player.datestamp )
-        , ( "ACTIVE"
-          , Json.Encode.bool player.active
-          )
-        , ( "CURRENTCHALLENGERNAME"
-          , Json.Encode.string player.currentchallengername
-          )
-        , ( "CURRENTCHALLENGERID"
-          , Json.Encode.int player.currentchallengerid
-          )
-        , ( "ADDRESS"
-          , Json.Encode.string player.address
-          )
-        , ( "RANK"
-          , Json.Encode.int player.rank
-          )
-        , ( "NAME"
-          , Json.Encode.string player.name
-          )
-        , ( "id"
-          , Json.Encode.int player.id
-          )
-        , ( "CURRENTCHALLENGERADDRESS"
-          , Json.Encode.string player.currentchallengeraddress
-          )
-        ]
-
-
--- emptyPlayer : SR.Types.Player
--- emptyPlayer =
---     {    datestamp = 12345
---     , active = False
---     , currentchallengername = "Available"
---     , currentchallengerid = 0
---     , address = ""
---     , rank = 0
---     , name = "Unidentified"
---     , id = 0
---     , currentchallengeraddress = ""
---     }
-
 updatedPlayerRank : SR.Types.Player -> Int -> SR.Types.Player
 updatedPlayerRank player rank =
     {    datestamp = player.datestamp
@@ -859,6 +768,6 @@ updatedPlayerRank player rank =
     }
 
 
-emptyPlayerId : SR.Types.PlayerId
-emptyPlayerId =
-    Internal.PlayerId -1
+-- emptyPlayerId : SR.Types.PlayerId
+-- emptyPlayerId =
+--     Internal.PlayerId -1
