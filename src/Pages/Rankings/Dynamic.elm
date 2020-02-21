@@ -26,6 +26,8 @@ import Json.Encode
 import Process
 import Task
 import Ports
+import Internal.Types as Internal
+import SR.Types
 
 
 -- {
@@ -101,13 +103,13 @@ type alias Model =
     { --browserEnv : BrowserEnv
       --, settings : Maybe SettingsData
       --,
-      players : RemoteData.WebData (List Player)
+      players : RemoteData.WebData (List SR.Types.Player)
     , fetchedContentNotPlayerList : String
     , error : String
     , rankingid : String
     , modalState : ModalState
     , playerid : Int
-    , player : Player
+    , player : SR.Types.Player
     , selectedRadio : ResultOptions
     , tempMsg : String
     , txSentry : Eth.Sentry.Tx.TxSentry Msg
@@ -133,12 +135,12 @@ type Msg
     | TrackTx Eth.Sentry.Tx.TxTracker
     | Fail String
     | NoOp
-    | PlayersReceived (RemoteData.WebData (List Player))
+    | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
     | FetchedContent (Result Http.Error String)
     | OpenModal Int
     | CloseModal
     | SetRadioOption ResultOptions
-    | ChangePlayerRank Player
+    | ChangePlayerRank SR.Types.Player
 
 -- this is where the types matter and are actually set to values ...
 --init : Int -> ( Model, Cmd Msg )
@@ -180,7 +182,7 @@ init pageContext { param1 } =
       , selectedRadio = Undecided
       , tempMsg = "Not confirmed yet"
       }
-    , Cmd.batch [Ports.log "Hello!", fetchRanking (RankingId param1), Task.attempt PollBlock (Eth.getBlockNumber node.http)]
+    , Cmd.batch [Ports.log "Hello!", fetchRanking (Internal.RankingId param1), Task.attempt PollBlock (Eth.getBlockNumber node.http)]
     )
 
 -- SUBSCRIPTIONS
@@ -194,8 +196,8 @@ subscriptions model =
         ]
 
 --Http and assoc Json en/decoders
-fetchRanking : RankingId -> Cmd Msg
-fetchRanking (RankingId rankingId) =
+fetchRanking : Internal.RankingId -> Cmd Msg
+fetchRanking (Internal.RankingId rankingId) =
     let
         _ =
             Debug.log "rankingid in fetchRanking" rankingId
@@ -563,7 +565,7 @@ confirmbutton color msg label =
 --     msg str
 
 
-playersResultBtnCol : List Player -> String -> Element.Column Player Msg
+playersResultBtnCol : List SR.Types.Player -> String -> Element.Column SR.Types.Player Msg
 playersResultBtnCol players str =
     { header = Element.text str
     , width = Element.fill
@@ -581,7 +583,7 @@ playersResultBtnCol players str =
     }
 
 
-playersNameCol : List Player -> String -> Element.Column Player msg
+playersNameCol : List SR.Types.Player -> String -> Element.Column SR.Types.Player msg
 playersNameCol players str =
     { header = Element.text str
     , width = Element.fill
@@ -596,7 +598,7 @@ playersNameCol players str =
     }
 
 
-playersRankCol : List Player -> String -> Element.Column Player msg
+playersRankCol : List SR.Types.Player -> String -> Element.Column SR.Types.Player msg
 playersRankCol players str =
     { header = Element.text str
     , width = Element.fill
@@ -611,7 +613,7 @@ playersRankCol players str =
     }
 
 
-playersCurrentChallCol : List Player -> String -> Element.Column Player msg
+playersCurrentChallCol : List SR.Types.Player -> String -> Element.Column SR.Types.Player msg
 playersCurrentChallCol players str =
     { header = Element.text str
     , width = Element.fill
@@ -645,7 +647,7 @@ playeridbtn color selectedplayermsg label =
         }
 
 
-retrieveSinglePlayer : Int -> List Player -> Player
+retrieveSinglePlayer : Int -> List SR.Types.Player -> SR.Types.Player
 retrieveSinglePlayer id players =
     let
         x =
@@ -675,7 +677,7 @@ viewPlayersOrError model =
             Element.text "Failure"
 
 
-extractPlayersFromWebData : Model -> List Player
+extractPlayersFromWebData : Model -> List SR.Types.Player
 extractPlayersFromWebData model =
     case model.players of
         RemoteData.NotAsked ->
@@ -700,7 +702,7 @@ extractPlayersFromWebData model =
 --player.address
 
 
-viewplayers : List Player -> Element.Element Msg
+viewplayers : List SR.Types.Player -> Element.Element Msg
 viewplayers players =
     Element.html <|
         Element.layout
@@ -761,31 +763,20 @@ viewplayer model =
         ]
 
 
-type alias Player =
-    { datestamp : Int
-    , active : Bool
-    , currentchallengername : String
-    , currentchallengerid : Int
-    , address : String
-    , rank : Int
-    , name : String
-    , id : Int
-    , currentchallengeraddress : String
-    }
+-- type alias Player =
+--     { datestamp : Int
+--     , active : Bool
+--     , currentchallengername : String
+--     , currentchallengerid : Int
+--     , address : String
+--     , rank : Int
+--     , name : String
+--     , id : Int
+--     , currentchallengeraddress : String
+--     }
 
 
-type PlayerId
-    = PlayerId Int
-
-
-
--- TODO: make an opaque type?
--- rankingIdToString: RankingId -> String
--- rankingIdToString rankingid =
---   rankingid
-
-
-ladderOfPlayersDecoder : Json.Decode.Decoder (List Player)
+ladderOfPlayersDecoder : Json.Decode.Decoder (List SR.Types.Player)
 ladderOfPlayersDecoder =
     let
         _ =
@@ -794,9 +785,9 @@ ladderOfPlayersDecoder =
         Json.Decode.list playerDecoder
 
 
-playerDecoder : Json.Decode.Decoder Player
+playerDecoder : Json.Decode.Decoder SR.Types.Player
 playerDecoder =
-    Json.Decode.succeed Player
+    Json.Decode.succeed SR.Types.Player
         |> Json.Decode.Pipeline.required "DATESTAMP" Json.Decode.int
         |> Json.Decode.Pipeline.required "ACTIVE" Json.Decode.bool
         |> Json.Decode.Pipeline.required "CURRENTCHALLENGERNAME" Json.Decode.string
@@ -809,7 +800,7 @@ playerDecoder =
 
 
 
-playerEncoder : Player -> Json.Encode.Value
+playerEncoder : SR.Types.Player -> Json.Encode.Value
 playerEncoder player =
     Json.Encode.object
         [ ( "DATESTAMP", Json.Encode.int player.datestamp )
@@ -840,7 +831,7 @@ playerEncoder player =
         ]
 
 
-emptyPlayer : Player
+emptyPlayer : SR.Types.Player
 emptyPlayer =
     {    datestamp = 12345
     , active = False
@@ -853,7 +844,7 @@ emptyPlayer =
     , currentchallengeraddress = ""
     }
 
-updatedPlayerRank : Player -> Int -> Player
+updatedPlayerRank : SR.Types.Player -> Int -> SR.Types.Player
 updatedPlayerRank player rank =
     {    datestamp = player.datestamp
     , active = player.active
@@ -867,9 +858,6 @@ updatedPlayerRank player rank =
     }
 
 
-emptyPlayerId : PlayerId
+emptyPlayerId : SR.Types.PlayerId
 emptyPlayerId =
-    PlayerId -1
-
-type RankingId
-    = RankingId String
+    Internal.PlayerId -1

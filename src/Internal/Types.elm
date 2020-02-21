@@ -1,4 +1,4 @@
-module Internal.Types exposing (Address(..), BlockHash(..), DebugLogger, Hex(..), TxHash(..), WhisperId(..))
+module Internal.Types exposing (Address(..), BlockHash(..), DebugLogger, Hex(..), PlayerId(..), RankingId(..), TxHash(..), WhisperId(..))
 
 
 type Address
@@ -19,6 +19,12 @@ type WhisperId
 
 type Hex
     = Hex String
+
+type PlayerId
+    = PlayerId Int
+
+type RankingId
+    = RankingId String
 
 
 type alias DebugLogger a =
