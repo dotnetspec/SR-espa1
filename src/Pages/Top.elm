@@ -51,7 +51,9 @@ type alias User =
     name : String
     , description : String
     , contact : String 
-    , email : String 
+    , email : String
+    , active : Bool
+    , datestamp : Int
         }
 
 type alias Config msg =
@@ -85,7 +87,9 @@ init context _ =
             name = ""
             , description = ""
             , contact = "" 
-            , email = "" 
+            , email = ""
+            , active = False
+            , datestamp = 123456
         } 
     , showDialog = False
     }
