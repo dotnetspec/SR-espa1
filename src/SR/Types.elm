@@ -1,5 +1,5 @@
 module SR.Types exposing
-    ( PlayerId, RankingId, Player
+    ( PlayerId, RankingId, Player, Ranking
     --, HttpProvider, WebsocketProvider, FilterId
     )
 
@@ -66,4 +66,12 @@ type alias Player =
     , name : String
     , id : Int
     , currentchallengeraddress : String
+    }
+
+
+type alias Ranking =
+    { id : String
+    , active : Bool
+    , name : String
+    , desc : String
     }

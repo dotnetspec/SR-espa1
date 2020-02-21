@@ -186,7 +186,6 @@ addressToString addr =
 subscriptions : Model -> Sub Msg
 subscriptions model =
         Sub.none
-        --Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
   
 
 view : Utils.Spa.PageContext -> Model -> Element Msg

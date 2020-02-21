@@ -28,6 +28,7 @@ import Task
 import Ports
 import Internal.Types as Internal
 import SR.Types
+import SR.Defaults
 
 
 -- {
@@ -655,7 +656,7 @@ retrieveSinglePlayer id players =
     in
     case List.head x of
         Nothing ->
-         emptyPlayer
+         SR.Defaults.emptyPlayer
 
         Just item ->
             item
@@ -831,18 +832,18 @@ playerEncoder player =
         ]
 
 
-emptyPlayer : SR.Types.Player
-emptyPlayer =
-    {    datestamp = 12345
-    , active = False
-    , currentchallengername = "Available"
-    , currentchallengerid = 0
-    , address = ""
-    , rank = 0
-    , name = "Unidentified"
-    , id = 0
-    , currentchallengeraddress = ""
-    }
+-- emptyPlayer : SR.Types.Player
+-- emptyPlayer =
+--     {    datestamp = 12345
+--     , active = False
+--     , currentchallengername = "Available"
+--     , currentchallengerid = 0
+--     , address = ""
+--     , rank = 0
+--     , name = "Unidentified"
+--     , id = 0
+--     , currentchallengeraddress = ""
+--     }
 
 updatedPlayerRank : SR.Types.Player -> Int -> SR.Types.Player
 updatedPlayerRank player rank =

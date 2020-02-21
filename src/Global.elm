@@ -12,7 +12,6 @@ module Global exposing
 import Generated.Routes as Routes exposing (Route)
 import Ports
 import Debug
-import Json.Decode as Decode exposing (Value)
 import Eth.Sentry.Wallet
 import Eth.Types
 import Eth.Utils
@@ -110,25 +109,6 @@ update _ msg model =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
-    --incoming decodeValue
-    --   Sub.batch
-    --     [ incoming decodeValue
-    --     , Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
-    --     --, Eth.Sentry.Tx.listen model.txSentry
-    --     ]
-
---decodeValue just used to help understanding of incoming port functionality
-decodeValue : Value -> Msg
-decodeValue x =
-    let
-        result =
-            Decode.decodeValue Decode.string x
-    in
-        case result of
-            Ok string ->
-                ReceivedDataFromJS string            
-            Err _ -> 
-                ReceivedDataFromJS "Silly JavaScript, you can't kill me!"
 
 
 
@@ -136,23 +116,5 @@ tempAddressToNameLookup : String -> String
 tempAddressToNameLookup str = 
     if str == "0x847700b781667abdd98e1393420754e503dca5b7" then "Philip" else "New User"
 
--- gotResultFromJSAddress : Result error value -> Msg 
--- gotResultFromJSAddress result = 
---     case result of 
---         Err error -> 
---              GotJSAddress error
---         Ok string ->
---             GotJSAddress string
-
--- just used below to help to understand Result type and it's args
--- isReasonableAge : Maybe String -> Result String String
--- --isReasonableAge : Result String String
--- isReasonableAge str =
---   case str of
---     Nothing ->
---         Err "error"
-
---     Just addr ->
---         Ok addr
             
 
