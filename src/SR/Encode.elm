@@ -1,4 +1,6 @@
 --module SR.Encode exposing (address, bigInt, blockHash, blockId, hex, hexInt, listOfMaybesToVal, logFilter, topicsList, txCall, txHash)
+
+
 module SR.Encode exposing (playerEncoder)
 
 {-|
@@ -7,53 +9,56 @@ module SR.Encode exposing (playerEncoder)
 
 -}
 
-import BigInt exposing (BigInt)
-import Eth.Types exposing (..)
-import Eth.Utils exposing (..)
-import Hex
+-- import BigInt exposing (BigInt)
+-- import Eth.Types exposing (..)
+-- import Eth.Utils exposing (..)
+--import Hex
+
 import Json.Encode as Encode exposing (Value, int, list, null, object, string)
+import SR.Types
 
 
 
 -- Simple
 
 
-{-| e.g. not used-}
-address : Address -> Value
-address =
-    addressToString >> string
+{-| e.g. not used
+-}
 
 
+
+-- address : Address -> Value
+-- address =
+--     addressToString >> string
 -- Complex
 
 
-playerEncoder : SR.Types.Player -> Json.Encode.Value
+playerEncoder : SR.Types.Player -> Encode.Value
 playerEncoder player =
-    Json.Encode.object
-        [ ( "DATESTAMP", Json.Encode.int player.datestamp )
+    Encode.object
+        [ ( "DATESTAMP", Encode.int player.datestamp )
         , ( "ACTIVE"
-          , Json.Encode.bool player.active
+          , Encode.bool player.active
           )
         , ( "CURRENTCHALLENGERNAME"
-          , Json.Encode.string player.currentchallengername
+          , Encode.string player.currentchallengername
           )
         , ( "CURRENTCHALLENGERID"
-          , Json.Encode.int player.currentchallengerid
+          , Encode.int player.currentchallengerid
           )
         , ( "ADDRESS"
-          , Json.Encode.string player.address
+          , Encode.string player.address
           )
         , ( "RANK"
-          , Json.Encode.int player.rank
+          , Encode.int player.rank
           )
         , ( "NAME"
-          , Json.Encode.string player.name
+          , Encode.string player.name
           )
         , ( "id"
-          , Json.Encode.int player.id
+          , Encode.int player.id
           )
         , ( "CURRENTCHALLENGERADDRESS"
-          , Json.Encode.string player.currentchallengeraddress
+          , Encode.string player.currentchallengeraddress
           )
         ]
-

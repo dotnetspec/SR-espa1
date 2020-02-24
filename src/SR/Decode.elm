@@ -1,4 +1,8 @@
-module SR.Decode exposing (rankingsDecoder, ladderOfPlayersDecoder)
+module SR.Decode exposing
+    ( rankingsDecoder
+    , ladderOfPlayersDecoder
+    )
+
 {-|
 
 @docs rankingsDecoder, rankingDecoder
@@ -16,7 +20,7 @@ ladderOfPlayersDecoder =
         _ =
             Debug.log "in ladderDecoder" playerDecoder
     in
-        Json.Decode.list playerDecoder
+    Json.Decode.list playerDecoder
 
 
 playerDecoder : Json.Decode.Decoder SR.Types.Player
@@ -31,9 +35,6 @@ playerDecoder =
         |> Json.Decode.Pipeline.required "NAME" Json.Decode.string
         |> Json.Decode.Pipeline.required "id" Json.Decode.int
         |> Json.Decode.Pipeline.required "CURRENTCHALLENGERADDRESS" Json.Decode.string
-
-
-
 
 
 rankingsDecoder : Json.Decode.Decoder (List SR.Types.Ranking)
