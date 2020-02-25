@@ -12,6 +12,8 @@ import RemoteData
 import Spa.Page
 import Ui
 import Utils.Spa exposing (Page)
+import SR.Types
+import SR.Decode
 
 
 page : Page Params.Top Model Msg model msg appMsg
@@ -26,7 +28,7 @@ page =
 
 
 type Msg
-    = RankingsReceived (RemoteData.WebData (List Ranking))
+    = RankingsReceived (RemoteData.WebData (List SR.Types.Ranking))
     | FetchedContent (Result Http.Error String)
 
 
@@ -38,7 +40,7 @@ type RemoteData e a
 
 
 type alias Model =
-    { rankings : RemoteData.WebData (List Ranking)
+    { rankings : RemoteData.WebData (List SR.Types.Ranking)
     , fetchedContentNotRankingList : String
     , error : String
     }
@@ -57,7 +59,7 @@ init _ =
     , Http.get
         { url = "https://api.jsonbin.io/b/5e2a585f593fd741856f4b04/latest"
         , expect =
-            rankingsDecoder
+            SR.Decode.rankingsDecoder
                 |> expectJson (RemoteData.fromResult >> RankingsReceived)
         }
     )
@@ -155,7 +157,7 @@ viewRankingsOrError model =
 -- (stringFromBool ranking.active)
 
 
-viewRankings : List Ranking -> Element Msg
+viewRankings : List SR.Types.Ranking -> Element Msg
 viewRankings rankings =
     html <|
         Element.layout
@@ -184,13 +186,13 @@ viewRankings rankings =
                 ]
                 { data = rankings
                 , columns =
-                    [ rankingNameCol rankings "Ranking Name"
-                    , rankingDescCol rankings "Ranking Desc"
+                    [ rankingNameCol rankings "SR.Types.Ranking Name"
+                    , rankingDescCol rankings "SR.Types.Ranking Desc"
                     ]
                 }
 
 
-rankingNameCol : List Ranking -> String -> Column Ranking msg
+rankingNameCol : List SR.Types.Ranking -> String -> Column SR.Types.Ranking msg
 rankingNameCol _ str =
     { header = Element.text str
     , width = fill
@@ -214,7 +216,7 @@ rankingNameCol _ str =
     }
 
 
-rankingDescCol : List Ranking -> String -> Column Ranking msg
+rankingDescCol : List SR.Types.Ranking -> String -> Column SR.Types.Ranking msg
 rankingDescCol _ str =
     { header = Element.text str
     , width = fill
@@ -228,23 +230,17 @@ rankingDescCol _ str =
                 ]
     }
 
-type alias Ranking =
-    { id : String
-    , active : Bool
-    , name : String
-    , desc : String
-    }
 
-rankingsDecoder : Json.Decode.Decoder (List Ranking)
-rankingsDecoder =
-    Json.Decode.list rankingDecoder
+-- rankingsDecoder : Json.Decode.Decoder (List SR.Types.Ranking)
+-- rankingsDecoder =
+--     Json.Decode.list rankingDecoder
 
 
-rankingDecoder : Json.Decode.Decoder Ranking
-rankingDecoder =
-    Json.Decode.succeed Ranking
-        |> Json.Decode.Pipeline.required "RANKINGID" Json.Decode.string
-        |> Json.Decode.Pipeline.required "ACTIVE" Json.Decode.bool
-        |> Json.Decode.Pipeline.required "RANKINGNAME" Json.Decode.string
-        |> Json.Decode.Pipeline.required "RANKINGDESC" Json.Decode.string
+-- rankingDecoder : Json.Decode.Decoder SR.Types.Ranking
+-- rankingDecoder =
+--     Json.Decode.succeed SR.Types.Ranking
+--         |> Json.Decode.Pipeline.required "RANKINGID" Json.Decode.string
+--         |> Json.Decode.Pipeline.required "ACTIVE" Json.Decode.bool
+--         |> Json.Decode.Pipeline.required "RANKINGNAME" Json.Decode.string
+--         |> Json.Decode.Pipeline.required "RANKINGDESC" Json.Decode.string
 
