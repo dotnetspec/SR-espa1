@@ -1,7 +1,7 @@
 module SR.Types exposing
     ( PlayerId, RankingId
     , Player
-    , Opponent, OpponentRelativeRank, Options, PlayerAvailability, Ranking, ResultOfMatch
+    , Opponent, OpponentRelativeRank(..), Options, PlayerAvailability(..), Ranking, ResultOfMatch(..)
     )
 
 {-| Types
@@ -65,12 +65,6 @@ type alias Opponent =
 type Options
     = Challenge
     | Result
-
-
-
--- type Challenge
---     = Available Player Opponent
---     | NotAvailable
 
 
 type ResultOfMatch

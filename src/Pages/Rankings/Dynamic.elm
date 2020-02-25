@@ -115,8 +115,8 @@ type alias Model =
     , errors : List String
     , playerRank : Int
     , opponentRank : Int
-    , playerStatus : PlayerAvailability
-    , opponentStatus : PlayerAvailability
+    , playerStatus : SR.Types.PlayerAvailability
+    , opponentStatus : SR.Types.PlayerAvailability
     }
 
 
@@ -137,7 +137,7 @@ type Msg
     | CloseModal
     | SetRadioOption ResultRadioOptions
     | ChangePlayerRank SR.Types.Player
-    | ProcessResult ResultOfMatch
+    | ProcessResult SR.Types.ResultOfMatch
 
 
 
@@ -170,22 +170,12 @@ init pageContext { param1 } =
       , rankingid = param1
       , modalState = Closed
       , playerid = 0
-      , player =
-            { datestamp = 12345
-            , active = False
-            , currentchallengername = "Available"
-            , currentchallengerid = 0
-            , address = ""
-            , rank = 0
-            , name = "Unidentified"
-            , id = 0
-            , currentchallengeraddress = ""
-            }
+      , player = SR.Defaults.emptyPlayer
       , opponent = SR.Defaults.emptyPlayer
       , playerRank = 0
       , opponentRank = 0
-      , playerStatus = Unavailable
-      , opponentStatus = Available
+      , playerStatus = SR.Types.Unavailable
+      , opponentStatus = SR.Types.Available
       , selectedRadio = UndecidedRadio
       , tempMsg = "Not confirmed yet"
       }
@@ -193,35 +183,15 @@ init pageContext { param1 } =
     )
 
 
-
--- currently don't know how to import these from Types.elm
-
-
-type PlayerAvailability
-    = Available
-    | Unavailable
-
-
-type OpponentRelativeRank
-    = OpponentRankHigher
-    | OpponentRankLower
-
-
-type ResultOfMatch
-    = Won
-    | Lost
-    | Undecided
-
-
-isOpponentHigherRank : SR.Types.Player -> SR.Types.Opponent -> OpponentRelativeRank
+isOpponentHigherRank : SR.Types.Player -> SR.Types.Opponent -> SR.Types.OpponentRelativeRank
 isOpponentHigherRank player opponent =
     -- nb. if player rank is 'higher' than opponent his rank integer will actually be 'less than' opponent
     -- we go by the integer ...
     if player.rank > opponent.rank then
-        OpponentRankHigher
+        SR.Types.OpponentRankHigher
 
     else
-        OpponentRankLower
+        SR.Types.OpponentRankLower
 
 
 
@@ -337,10 +307,6 @@ update msg model =
             )
 
         PlayersReceived players ->
-            let
-                _ =
-                    Debug.log "list of players" players
-            in
             --remove the first record (created on ranking creation with different format)
             ( { model | players = players }, Cmd.none )
 
@@ -380,9 +346,6 @@ update msg model =
         --     ( model, Cmd.none )
         InitTx ->
             let
-                _ =
-                    Debug.log "list of players" model.players
-
                 txParams =
                     { to = model.account
                     , from = model.account
@@ -412,7 +375,7 @@ update msg model =
 
         WatchTx (Ok tx) ->
             --( { model | tx = Just tx }, Cmd.none )
-            { model | tx = Just tx } |> update (ProcessResult Won)
+            { model | tx = Just tx } |> update (ProcessResult SR.Types.Won)
 
         WatchTx (Err err) ->
             ( { model | errors = ("Error Retrieving Tx: " ++ err) :: model.errors }, Cmd.none )
@@ -420,7 +383,7 @@ update msg model =
         WatchTxReceipt (Ok txReceipt) ->
             --( { model | txReceipt = Just txReceipt }, Cmd.none )
             { model | txReceipt = Just txReceipt }
-                |> update (ProcessResult Won)
+                |> update (ProcessResult SR.Types.Won)
 
         WatchTxReceipt (Err err) ->
             ( { model | errors = ("Error Retrieving TxReceipt: " ++ err) :: model.errors }, Cmd.none )
@@ -434,48 +397,48 @@ update msg model =
                     isOpponentHigherRank model.player model.opponent
 
                 _ =
-                    Debug.log "made it to process result!"
+                    Debug.log "made it to process result!" 8
             in
             case result of
-                Won ->
+                SR.Types.Won ->
                     case whoHigher of
-                        OpponentRankHigher ->
+                        SR.Types.OpponentRankHigher ->
                             --nb. higher rank is a lower number and vice versa!
                             ( { model
                                 | playerRank = model.opponentRank
                                 , opponentRank = model.opponentRank + 1
-                                , playerStatus = Available
-                                , opponentStatus = Available
+                                , playerStatus = SR.Types.Available
+                                , opponentStatus = SR.Types.Available
                               }
                             , Cmd.none
                             )
 
-                        OpponentRankLower ->
+                        SR.Types.OpponentRankLower ->
                             --nb. higher rank is a lower number and vice versa!
-                            ( { model | playerStatus = Available, opponentStatus = Available }
+                            ( { model | playerStatus = SR.Types.Available, opponentStatus = SR.Types.Available }
                             , Cmd.none
                             )
 
-                Lost ->
+                SR.Types.Lost ->
                     case whoHigher of
-                        OpponentRankHigher ->
+                        SR.Types.OpponentRankHigher ->
                             --nb. higher rank is a lower number and vice versa!
-                            ( { model | playerStatus = Available, opponentStatus = Available }
+                            ( { model | playerStatus = SR.Types.Available, opponentStatus = SR.Types.Available }
                             , Cmd.none
                             )
 
-                        OpponentRankLower ->
+                        SR.Types.OpponentRankLower ->
                             --nb. higher rank is a lower number and vice versa!
                             ( { model
                                 | opponentRank = model.playerRank
                                 , playerRank = model.opponentRank + 1
-                                , playerStatus = Available
-                                , opponentStatus = Available
+                                , playerStatus = SR.Types.Available
+                                , opponentStatus = SR.Types.Available
                               }
                             , Cmd.none
                             )
 
-                Undecided ->
+                SR.Types.Undecided ->
                     ( model, Cmd.none )
 
         -- Nothing ->
@@ -515,10 +478,10 @@ viewWithModalReady context model =
     let
         playerAvail =
             case model.playerStatus of
-                Available ->
+                SR.Types.Available ->
                     "available"
 
-                Unavailable ->
+                SR.Types.Unavailable ->
                     "unavailable"
 
         modalString =
