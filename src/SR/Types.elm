@@ -1,6 +1,7 @@
 module SR.Types exposing
-    ( PlayerId, RankingId, Player, Ranking
-    --, HttpProvider, WebsocketProvider, FilterId
+    ( PlayerId, RankingId
+    , Player
+    , Opponent, OpponentRelativeRank, Options, PlayerAvailability, Ranking, ResultOfMatch
     )
 
 {-| Types
@@ -24,11 +25,13 @@ module SR.Types exposing
 
 --import BigInt exposing (BigInt)
 --import Http
+
 import Internal.Types as Internal
+
+
+
 --import Json.Decode exposing (Decoder)
 --import Time exposing (Posix)
-
-
 -- type Error
 --     = Http Http.Error -- Standard HTTP Errors
 --     | Encoding String -- Most likely an overflow of int/uint
@@ -40,10 +43,8 @@ import Internal.Types as Internal
 --       -- TxSentry Errors:
 --     | UserRejected -- User dissapproved of tx in Wallet
 --     | Web3Undefined -- Web3 object, or provider not found.
-
-
-
 -- Simple
+
 
 type alias PlayerId =
     Internal.PlayerId
@@ -53,7 +54,40 @@ type alias RankingId =
     Internal.RankingId
 
 
+type alias Opponent =
+    Player
+
+
+
 -- Complex
+
+
+type Options
+    = Challenge
+    | Result
+
+
+
+-- type Challenge
+--     = Available Player Opponent
+--     | NotAvailable
+
+
+type ResultOfMatch
+    = Won
+    | Lost
+    | Undecided
+
+
+type OpponentRelativeRank
+    = OpponentRankHigher
+    | OpponentRankLower
+
+
+type PlayerAvailability
+    = Available
+    | Unavailable
+
 
 {-| -}
 type alias Player =

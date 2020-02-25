@@ -79,10 +79,10 @@ type ModalState
     | Closed
 
 
-type ResultOptions
-    = Won
-    | Lost
-    | Undecided
+type ResultRadioOptions
+    = WonRadio
+    | LostRadio
+    | UndecidedRadio
 
 
 
@@ -93,14 +93,16 @@ type alias Model =
     { --browserEnv : BrowserEnv
       --, settings : Maybe SettingsData
       --,
-      players : RemoteData.WebData (List SR.Types.Player)
+      isopponenthigherrank : Maybe SR.Types.OpponentRelativeRank
+    , players : RemoteData.WebData (List SR.Types.Player)
     , fetchedContentNotPlayerList : String
     , error : String
     , rankingid : String
     , modalState : ModalState
     , playerid : Int
     , player : SR.Types.Player
-    , selectedRadio : ResultOptions
+    , opponent : SR.Types.Player
+    , selectedRadio : ResultRadioOptions
     , tempMsg : String
     , txSentry : Eth.Sentry.Tx.TxSentry Msg
     , account : Maybe Eth.Types.Address
@@ -111,6 +113,10 @@ type alias Model =
     , txReceipt : Maybe Eth.Types.TxReceipt
     , blockDepth : Maybe Eth.Sentry.Tx.TxTracker
     , errors : List String
+    , playerRank : Int
+    , opponentRank : Int
+    , playerStatus : PlayerAvailability
+    , opponentStatus : PlayerAvailability
     }
 
 
@@ -129,8 +135,9 @@ type Msg
     | FetchedContent (Result Http.Error String)
     | OpenModal Int
     | CloseModal
-    | SetRadioOption ResultOptions
+    | SetRadioOption ResultRadioOptions
     | ChangePlayerRank SR.Types.Player
+    | ProcessResult ResultOfMatch
 
 
 
@@ -147,7 +154,8 @@ init pageContext { param1 } =
             Net.toNetworkId 4
                 |> Ports.ethNode
     in
-    ( { txSentry = Eth.Sentry.Tx.init ( Ports.txOut, Ports.txIn ) TxSentryMsg node.http
+    ( { isopponenthigherrank = Nothing
+      , txSentry = Eth.Sentry.Tx.init ( Ports.txOut, Ports.txIn ) TxSentryMsg node.http
       , account = Nothing
       , node = node
       , blockNumber = Nothing
@@ -173,11 +181,47 @@ init pageContext { param1 } =
             , id = 0
             , currentchallengeraddress = ""
             }
-      , selectedRadio = Undecided
+      , opponent = SR.Defaults.emptyPlayer
+      , playerRank = 0
+      , opponentRank = 0
+      , playerStatus = Unavailable
+      , opponentStatus = Available
+      , selectedRadio = UndecidedRadio
       , tempMsg = "Not confirmed yet"
       }
     , Cmd.batch [ Ports.log "Hello!", fetchRanking (Internal.RankingId param1) ]
     )
+
+
+
+-- currently don't know how to import these from Types.elm
+
+
+type PlayerAvailability
+    = Available
+    | Unavailable
+
+
+type OpponentRelativeRank
+    = OpponentRankHigher
+    | OpponentRankLower
+
+
+type ResultOfMatch
+    = Won
+    | Lost
+    | Undecided
+
+
+isOpponentHigherRank : SR.Types.Player -> SR.Types.Opponent -> OpponentRelativeRank
+isOpponentHigherRank player opponent =
+    -- nb. if player rank is 'higher' than opponent his rank integer will actually be 'less than' opponent
+    -- we go by the integer ...
+    if player.rank > opponent.rank then
+        OpponentRankHigher
+
+    else
+        OpponentRankLower
 
 
 
@@ -367,13 +411,16 @@ update msg model =
             ( { model | errors = ("Error Retrieving TxHash: " ++ err) :: model.errors }, Cmd.none )
 
         WatchTx (Ok tx) ->
-            ( { model | tx = Just tx }, Cmd.none )
+            --( { model | tx = Just tx }, Cmd.none )
+            { model | tx = Just tx } |> update (ProcessResult Won)
 
         WatchTx (Err err) ->
             ( { model | errors = ("Error Retrieving Tx: " ++ err) :: model.errors }, Cmd.none )
 
         WatchTxReceipt (Ok txReceipt) ->
-            ( { model | txReceipt = Just txReceipt }, Cmd.none )
+            --( { model | txReceipt = Just txReceipt }, Cmd.none )
+            { model | txReceipt = Just txReceipt }
+                |> update (ProcessResult Won)
 
         WatchTxReceipt (Err err) ->
             ( { model | errors = ("Error Retrieving TxReceipt: " ++ err) :: model.errors }, Cmd.none )
@@ -381,6 +428,58 @@ update msg model =
         TrackTx blockDepth ->
             ( { model | blockDepth = Just blockDepth }, Cmd.none )
 
+        ProcessResult result ->
+            let
+                whoHigher =
+                    isOpponentHigherRank model.player model.opponent
+
+                _ =
+                    Debug.log "made it to process result!"
+            in
+            case result of
+                Won ->
+                    case whoHigher of
+                        OpponentRankHigher ->
+                            --nb. higher rank is a lower number and vice versa!
+                            ( { model
+                                | playerRank = model.opponentRank
+                                , opponentRank = model.opponentRank + 1
+                                , playerStatus = Available
+                                , opponentStatus = Available
+                              }
+                            , Cmd.none
+                            )
+
+                        OpponentRankLower ->
+                            --nb. higher rank is a lower number and vice versa!
+                            ( { model | playerStatus = Available, opponentStatus = Available }
+                            , Cmd.none
+                            )
+
+                Lost ->
+                    case whoHigher of
+                        OpponentRankHigher ->
+                            --nb. higher rank is a lower number and vice versa!
+                            ( { model | playerStatus = Available, opponentStatus = Available }
+                            , Cmd.none
+                            )
+
+                        OpponentRankLower ->
+                            --nb. higher rank is a lower number and vice versa!
+                            ( { model
+                                | opponentRank = model.playerRank
+                                , playerRank = model.opponentRank + 1
+                                , playerStatus = Available
+                                , opponentStatus = Available
+                              }
+                            , Cmd.none
+                            )
+
+                Undecided ->
+                    ( model, Cmd.none )
+
+        -- Nothing ->
+        --     ( model, Cmd.none )
         Fail str ->
             let
                 _ =
@@ -414,6 +513,14 @@ view context model =
 viewWithModalReady : Utils.Spa.PageContext -> Model -> Element.Element Msg
 viewWithModalReady context model =
     let
+        playerAvail =
+            case model.playerStatus of
+                Available ->
+                    "available"
+
+                Unavailable ->
+                    "unavailable"
+
         modalString =
             case model.modalState of
                 Open ->
@@ -421,7 +528,7 @@ viewWithModalReady context model =
 
                 Closed ->
                     --validateAddress model.account ++ " you are currently ranked " ++ String.fromInt model.player.rank ++ " \nand your challenger is " ++ model.player.currentchallengername
-                    context.global.username ++ " you are currently ranked " ++ String.fromInt model.player.rank ++ " \nand your challenger is " ++ model.player.currentchallengername
+                    context.global.username ++ " you are currently ranked " ++ String.fromInt model.player.rank ++ "\n you are " ++ playerAvail ++ " \nand your challenger is " ++ model.player.currentchallengername
     in
     -- html turns html Msg into Element Msg
     Element.html
@@ -483,8 +590,12 @@ viewModal model =
                                 (confirmbutton
                                     (Element.rgb 0.95 0.6 0.25)
                                     InitTx
+                                    --"Confirm"
+                                    --div [] [ button [ onClick InitTx ] [ text "Yup Send 0 value Tx to yourself as a test yup" ] ]
+                                    -- (ProcessResult
+                                    --     Won
+                                    -- )
                                     "Confirm"
-                                 --div [] [ button [ onClick InitTx ] [ text "Yup Send 0 value Tx to yourself as a test yup" ] ]
                                 )
                             ]
                         , Element.row []
@@ -535,6 +646,10 @@ closebutton color msg label =
         }
 
 
+
+--confirmProcessResultAndInitTx : Msg -> Msg -> Elemenet.Element Msg
+
+
 confirmbutton : Element.Color -> Msg -> String -> Element.Element Msg
 confirmbutton color msg label =
     Input.button
@@ -542,6 +657,8 @@ confirmbutton color msg label =
         , Background.color color
         ]
         { onPress = Just msg
+
+        --onPress = Cmd.batch [ Just msg ]
         , label =
             Element.el
                 [ Element.centerX
@@ -740,9 +857,9 @@ viewplayer model =
             , onChange = SetRadioOption
             , label = Input.labelAbove [ Font.size 22, Element.paddingXY 0 12 ] (Element.text (playerToView.name ++ " would you like to \nenter a result against " ++ playerToView.currentchallengername ++ "?"))
             , options =
-                [ Input.option Won (Element.text "Won")
-                , Input.option Lost (Element.text "Lost")
-                , Input.option Undecided (Element.text "Undecided")
+                [ Input.option WonRadio (Element.text "Won")
+                , Input.option LostRadio (Element.text "Lost")
+                , Input.option UndecidedRadio (Element.text "Undecided")
                 ]
             }
         ]
