@@ -87,6 +87,14 @@ type ResultRadioOptions
 
 
 --Model is updated in update
+--ideally this alias Model would end up closer to:
+--the model before the update is applied
+-- type Model
+--     = Greeting : UserState WalletState
+--     | DisplayAllRankings : SRState
+--     | DisplaySingleRanking : SRState
+--     | DisplayEnterResult : WalletState SRState
+--     | Failure : String
 
 
 type alias Model =

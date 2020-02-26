@@ -1,7 +1,7 @@
 module SR.Types exposing
     ( PlayerId, RankingId
-    , Player
-    , Opponent, OpponentRelativeRank(..), Options, PlayerAvailability(..), Ranking, ResultOfMatch(..)
+    , Player, Opponent, OpponentRelativeRank(..), Options, PlayerAvailability(..), Ranking, ResultOfMatch(..), SRState(..), UserState(..), WalletState(..)
+    , UIState(..)
     )
 
 {-| Types
@@ -14,7 +14,8 @@ module SR.Types exposing
 
 # Complex
 
-@docs Player
+@docs Player, Opponent, OpponentRelativeRank, Options, PlayerAvailability, Ranking, ResultOfMatch, SRState, UserState, WalletState
+@docs UIState
 
 
 # Misc
@@ -23,15 +24,13 @@ module SR.Types exposing
 
 -}
 
---import BigInt exposing (BigInt)
---import Http
-
+import Eth.Types
 import Internal.Types as Internal
+import Ports
 
 
 
 --import Json.Decode exposing (Decoder)
---import Time exposing (Posix)
 -- type Error
 --     = Http Http.Error -- Standard HTTP Errors
 --     | Encoding String -- Most likely an overflow of int/uint
@@ -60,6 +59,30 @@ type alias Opponent =
 
 
 -- Complex
+
+
+type WalletState
+    = Missing
+    | Locked --Ports.EthNode Eth.Types.Address
+    | Opened --Ports.EthNode Eth.Types.Address
+    | Transaction --Ports.EthNode Eth.Types.Address
+
+
+type SRState
+    = AllRankings
+    | SingleRanking
+    | EnterResult
+
+
+type UserState
+    = ExistingUser --Eth.Types.Address
+    | NewUser --Eth.Types.Address
+
+
+type UIState
+    = MissingWalletDialogOpen
+    | LockedWalletDialogOpen
+    | DialogClosed
 
 
 type Options
