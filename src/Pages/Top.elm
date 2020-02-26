@@ -91,7 +91,7 @@ init context _ =
     --         -- the account number has to come through as a js value as update or [?] is too slow in global.elm
     --         -- for init
     --     in
-    ( Greeting SR.Types.DialogClosed SR.Types.NewUser SR.Types.Opened
+    ( Greeting SR.Types.LockedWalletDialogOpen SR.Types.NewUser SR.Types.Opened
       --{
       --account = Nothing
       --       , node = node
@@ -135,19 +135,35 @@ update msg model =
         Greeting uiState userState walletState ->
             case walletState of
                 SR.Types.Missing ->
-                    case msg of
-                        GetAWallet ->
-                            ( Greeting SR.Types.MissingWalletDialogOpen SR.Types.NewUser SR.Types.Missing, Cmd.none, Cmd.none )
+                    case userState of
+                        -- perhaps makes no diff if new/existing user here[?]
+                        SR.Types.NewUser ->
+                            case msg of
+                                GetAWallet ->
+                                    ( Greeting SR.Types.MissingWalletDialogOpen SR.Types.NewUser SR.Types.Missing, Cmd.none, Cmd.none )
 
-                        _ ->
-                            ( Failure "unexpected message received while door was in Missing state", Cmd.none, Cmd.none )
+                                _ ->
+                                    ( Failure "unexpected message received while wallet missing, new user state", Cmd.none, Cmd.none )
+
+                        SR.Types.ExistingUser ->
+                            case msg of
+                                GetAWallet ->
+                                    ( Greeting SR.Types.MissingWalletDialogOpen SR.Types.ExistingUser SR.Types.Missing, Cmd.none, Cmd.none )
+
+                                _ ->
+                                    ( Failure "unexpected message received while wallet missing, existing user state", Cmd.none, Cmd.none )
 
                 SR.Types.Locked ->
                     case msg of
                         OpenWallet ->
                             case uiState of
                                 SR.Types.DialogClosed ->
-                                    ( Greeting SR.Types.LockedWalletDialogOpen SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
+                                    case msg of
+                                        OpenWallet ->
+                                            ( Greeting SR.Types.MissingWalletDialogOpen SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
+
+                                        _ ->
+                                            ( Failure "unexpected message received while wallet locked, new user state", Cmd.none, Cmd.none )
 
                                 _ ->
                                     ( Greeting SR.Types.LockedWalletDialogOpen SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
@@ -156,30 +172,39 @@ update msg model =
                             ( Failure "unexpected message received while wallet was in Locked state", Cmd.none, Cmd.none )
 
                 SR.Types.Opened ->
-                    case msg of
-                        OpenWallet ->
-                            case uiState of
-                                SR.Types.DialogClosed ->
-                                    ( Greeting SR.Types.LockedWalletDialogOpen SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
+                    case userState of
+                        -- perhaps makes no diff if new/existing user here[?]
+                        SR.Types.NewUser ->
+                            case msg of
+                                CloseDialog ->
+                                    case uiState of
+                                        SR.Types.MissingWalletDialogOpen ->
+                                            ( Greeting SR.Types.DialogClosed SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
+
+                                        _ ->
+                                            ( Greeting SR.Types.DialogClosed SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
 
                                 _ ->
-                                    ( Greeting SR.Types.LockedWalletDialogOpen SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
+                                    ( Greeting SR.Types.DialogClosed SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
 
-                        CloseDialog ->
-                            ( Greeting SR.Types.DialogClosed SR.Types.ExistingUser SR.Types.Opened, Cmd.none, Cmd.none )
+                        SR.Types.ExistingUser ->
+                            case msg of
+                                CloseDialog ->
+                                    ( Greeting SR.Types.DialogClosed SR.Types.ExistingUser SR.Types.Opened, Cmd.none, Cmd.none )
 
-                        _ ->
-                            ( Failure "unexpected message received while wallet was in Opened state", Cmd.none, Cmd.none )
+                                _ ->
+                                    ( Greeting SR.Types.DialogClosed SR.Types.ExistingUser SR.Types.Opened, Cmd.none, Cmd.none )
 
+                --Transaction to be confirmed if nec
                 SR.Types.Transaction ->
                     case msg of
                         OpenWallet ->
                             case uiState of
                                 SR.Types.DialogClosed ->
-                                    ( Greeting SR.Types.LockedWalletDialogOpen SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
+                                    ( Greeting SR.Types.DialogClosed SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
 
                                 _ ->
-                                    ( Greeting SR.Types.LockedWalletDialogOpen SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
+                                    ( Greeting SR.Types.DialogClosed SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
 
                         _ ->
                             ( Failure "unexpected message received while wallet was in Transaction state", Cmd.none, Cmd.none )
@@ -242,8 +267,10 @@ update msg model =
 --     else
 --         GotUserStatus Success
 --TODO: re-factor - repeated code - to MyUtils?
--- failure message =
---     Element.text "A failure!"
+
+
+failure message =
+    Element.text "A failure!"
 
 
 addressToString : Maybe Eth.Types.Address -> String
@@ -268,17 +295,18 @@ subscriptions model =
 view : Utils.Spa.PageContext -> Model -> Element Msg
 view context model =
     let
-        -- config =
-        --     { closeMessage = Just CloseDialog
-        --     , maskAttributes = []
-        --     , containerAttributes = [ centerX, centerY, padding 10 ]
-        --     , headerAttributes = []
-        --     , bodyAttributes = []
-        --     , footerAttributes = []
-        --     , header = Just (text "Hello world")
-        --     , body = Just modalBody
-        --     , footer = Nothing
-        --     }
+        config =
+            { closeMessage = Just CloseDialog
+            , maskAttributes = []
+            , containerAttributes = [ centerX, centerY, padding 10 ]
+            , headerAttributes = []
+            , bodyAttributes = []
+            , footerAttributes = []
+            , header = Just (text "Hello world")
+            , body = Just modalBody
+            , footer = Nothing
+            }
+
         -- dialogConfig =
         --     if model.showDialog then
         --         Just config
@@ -287,8 +315,23 @@ view context model =
         descTxt =
             "Welcome " ++ context.global.username
     in
-    --Element.el [ inFront (Dialog.view dialogConfig) ]
-    Ui.hero { title = "SPORTRANK", description = descTxt, buttons = [ ( "Continue ...", "/rankings" ) ] }
+    case model of
+        Failure message ->
+            failure message
+
+        --Greeting SR.Types.UIState SR.Types.UserState SR.Types.WalletState
+        Greeting uiState userState walletState ->
+            case uiState of
+                SR.Types.LockedWalletDialogOpen ->
+                    Element.el [ inFront (Dialog.view (Just config)) ]
+                        (Ui.hero
+                            { title = "SPORTRANK", description = descTxt, buttons = [ ( "Continue ...", "/rankings" ) ] }
+                        )
+
+                _ ->
+                    --text "nothing"
+                    --Element.el [ inFront (Dialog.view dialogConfig) ]
+                    Ui.hero { title = "SPORTRANK", description = descTxt, buttons = [ ( "Continue ...", "/rankings" ) ] }
 
 
 modalBody : Element Msg
