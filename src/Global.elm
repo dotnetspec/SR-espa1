@@ -25,16 +25,13 @@ import SR.Types
 import Utils.MyUtils
 
 
-type alias Flags =
-    { networkid : Int
-    , useraccounts : List String
-    , comment : String
-    }
-
-
 type Model
     = GlobalVariant SR.Types.WalletState SR.Types.UserState
     | Failure String
+
+
+type alias Flags =
+    {}
 
 
 type Msg
