@@ -17,6 +17,7 @@ import Eth.Types
 import Eth.Units
 import Eth.Utils
 import Generated.Rankings.Params
+import Global exposing (..)
 import Http
 import Internal.Types as Internal
 import Json.Decode
@@ -484,6 +485,19 @@ view context model =
 viewWithModalReady : Utils.Spa.PageContext -> Model -> Element.Element Msg
 viewWithModalReady context model =
     let
+        uname =
+            case context.global of
+                Global.GlobalVariant wSentry uName ->
+                    case uName of
+                        SR.Types.NewUser ->
+                            "Hello New User"
+
+                        SR.Types.ExistingUser str ->
+                            str
+
+                Global.Failure str ->
+                    str
+
         playerAvail =
             case model.playerStatus of
                 SR.Types.Available ->
@@ -499,7 +513,8 @@ viewWithModalReady context model =
 
                 Closed ->
                     --validateAddress model.account ++ " you are currently ranked " ++ String.fromInt model.player.rank ++ " \nand your challenger is " ++ model.player.currentchallengername
-                    context.global.username ++ " you are currently ranked " ++ String.fromInt model.player.rank ++ "\n you are " ++ playerAvail ++ " \nand your challenger is " ++ model.player.currentchallengername
+                    --context.global.username ++ " you are currently ranked " ++ String.fromInt model.player.rank ++ "\n you are " ++ playerAvail ++ " \nand your challenger is " ++ model.player.currentchallengername
+                    uname ++ " you are currently ranked " ++ String.fromInt model.player.rank ++ "\n you are " ++ playerAvail ++ " \nand your challenger is " ++ model.player.currentchallengername
     in
     -- html turns html Msg into Element Msg
     Element.html

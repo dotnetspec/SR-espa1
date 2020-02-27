@@ -10,7 +10,7 @@ import Eth.Sentry.Wallet
 import Eth.Types
 import Eth.Utils
 import Generated.Params as Params
-import Global
+import Global exposing (..)
 import Ports
 import SR.Types
 import Spa.Page
@@ -91,7 +91,8 @@ init context _ =
     --         -- the account number has to come through as a js value as update or [?] is too slow in global.elm
     --         -- for init
     --     in
-    ( Greeting SR.Types.LockedWalletDialogOpen SR.Types.NewUser SR.Types.Opened
+    --the model before the update is applied
+    ( Greeting SR.Types.DialogClosed SR.Types.NewUser SR.Types.Missing
       --{
       --account = Nothing
       --       , node = node
@@ -125,8 +126,16 @@ type Msg
       --     | Unlock
       --     | Open
       GetAWallet
-    | OpenWallet
+    | OpenWalletInstructions
     | CloseDialog
+
+
+
+--uiState should be the last case to determine
+-- Update needs to take two things: a message (which
+-- is a description of the transition that needs to happen),
+--  and the model (which is the model before the update is applied),
+--  and it will return a new model.
 
 
 update : Msg -> Model -> ( Model, Cmd Msg, Cmd Global.Msg )
@@ -145,35 +154,29 @@ update msg model =
                                 _ ->
                                     ( Failure "unexpected message received while wallet missing, new user state", Cmd.none, Cmd.none )
 
-                        SR.Types.ExistingUser ->
+                        SR.Types.ExistingUser a ->
                             case msg of
                                 GetAWallet ->
-                                    ( Greeting SR.Types.MissingWalletDialogOpen SR.Types.ExistingUser SR.Types.Missing, Cmd.none, Cmd.none )
+                                    ( Greeting SR.Types.MissingWalletDialogOpen (SR.Types.ExistingUser a) SR.Types.Missing, Cmd.none, Cmd.none )
 
                                 _ ->
                                     ( Failure "unexpected message received while wallet missing, existing user state", Cmd.none, Cmd.none )
 
                 SR.Types.Locked ->
-                    case msg of
-                        OpenWallet ->
-                            case uiState of
-                                SR.Types.DialogClosed ->
-                                    case msg of
-                                        OpenWallet ->
-                                            ( Greeting SR.Types.MissingWalletDialogOpen SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
-
-                                        _ ->
-                                            ( Failure "unexpected message received while wallet locked, new user state", Cmd.none, Cmd.none )
+                    case uiState of
+                        SR.Types.DialogClosed ->
+                            case msg of
+                                OpenWalletInstructions ->
+                                    ( Greeting SR.Types.MissingWalletDialogOpen SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
 
                                 _ ->
-                                    ( Greeting SR.Types.LockedWalletDialogOpen SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
+                                    ( Failure "unexpected message received while wallet locked, new user state", Cmd.none, Cmd.none )
 
                         _ ->
-                            ( Failure "unexpected message received while wallet was in Locked state", Cmd.none, Cmd.none )
+                            ( Greeting SR.Types.LockedWalletDialogOpen SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
 
                 SR.Types.Opened ->
                     case userState of
-                        -- perhaps makes no diff if new/existing user here[?]
                         SR.Types.NewUser ->
                             case msg of
                                 CloseDialog ->
@@ -187,28 +190,27 @@ update msg model =
                                 _ ->
                                     ( Greeting SR.Types.DialogClosed SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
 
-                        SR.Types.ExistingUser ->
+                        SR.Types.ExistingUser a ->
                             case msg of
                                 CloseDialog ->
-                                    ( Greeting SR.Types.DialogClosed SR.Types.ExistingUser SR.Types.Opened, Cmd.none, Cmd.none )
+                                    ( Greeting SR.Types.DialogClosed (SR.Types.ExistingUser a) SR.Types.Opened, Cmd.none, Cmd.none )
 
                                 _ ->
-                                    ( Greeting SR.Types.DialogClosed SR.Types.ExistingUser SR.Types.Opened, Cmd.none, Cmd.none )
+                                    ( Greeting SR.Types.DialogClosed (SR.Types.ExistingUser a) SR.Types.Opened, Cmd.none, Cmd.none )
 
-                --Transaction to be confirmed if nec
-                SR.Types.Transaction ->
-                    case msg of
-                        OpenWallet ->
-                            case uiState of
-                                SR.Types.DialogClosed ->
-                                    ( Greeting SR.Types.DialogClosed SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
-
-                                _ ->
-                                    ( Greeting SR.Types.DialogClosed SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
-
-                        _ ->
-                            ( Failure "unexpected message received while wallet was in Transaction state", Cmd.none, Cmd.none )
-
+        -- _ ->
+        --     ( Failure "unexpected message received while wallet was in Locked state", Cmd.none, Cmd.none )
+        --Transaction to be confirmed if nec
+        -- SR.Types.Transaction ->
+        --     case msg of
+        --         OpenWallet ->
+        --             case uiState of
+        --                 SR.Types.DialogClosed ->
+        --                     ( Greeting SR.Types.DialogClosed SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
+        --                 _ ->
+        --                     ( Greeting SR.Types.DialogClosed SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
+        --         _ ->
+        --             ( Failure "unexpected message received while wallet was in Transaction state", Cmd.none, Cmd.none )
         Failure errorMessage ->
             ( model, Cmd.none, Cmd.none )
 
@@ -307,13 +309,33 @@ view context model =
             , footer = Nothing
             }
 
+        uname =
+            case context.global of
+                Global.GlobalVariant wSentry uName ->
+                    case uName of
+                        SR.Types.NewUser ->
+                            "Hello New User"
+
+                        SR.Types.ExistingUser str ->
+                            str
+
+                Global.Failure str ->
+                    str
+
+        -- case uName of
+        --     Global.GlobalVariant.Username ->
+        --         uName
         -- dialogConfig =
         --     if model.showDialog then
         --         Just config
         --     else
         --         Nothing
         descTxt =
-            "Welcome " ++ context.global.username
+            -- "Welcome "
+            --     ++ context.global.username
+            --Eth.Sentry.Wallet.WalletSentry String
+            "Welcome "
+                ++ uname
     in
     case model of
         Failure message ->
@@ -323,6 +345,12 @@ view context model =
         Greeting uiState userState walletState ->
             case uiState of
                 SR.Types.LockedWalletDialogOpen ->
+                    Element.el [ inFront (Dialog.view (Just config)) ]
+                        (Ui.hero
+                            { title = "SPORTRANK", description = descTxt, buttons = [ ( "Continue ...", "/rankings" ) ] }
+                        )
+
+                SR.Types.MissingWalletDialogOpen ->
                     Element.el [ inFront (Dialog.view (Just config)) ]
                         (Ui.hero
                             { title = "SPORTRANK", description = descTxt, buttons = [ ( "Continue ...", "/rankings" ) ] }

@@ -2,6 +2,7 @@ module SR.Types exposing
     ( PlayerId, RankingId
     , Player, Opponent, OpponentRelativeRank(..), Options, PlayerAvailability(..), Ranking, ResultOfMatch(..), SRState(..), UserState(..), WalletState(..)
     , UIState(..)
+    , Username(..)
     )
 
 {-| Types
@@ -57,15 +58,25 @@ type alias Opponent =
     Player
 
 
+type Username
+    = Username String
 
+
+
+-- type AddressState
+--     = Exists String
+--     | None
 -- Complex
 
 
 type WalletState
     = Missing
-    | Locked --Ports.EthNode Eth.Types.Address
+    | Locked --Ports.EthNode
     | Opened --Ports.EthNode Eth.Types.Address
-    | Transaction --Ports.EthNode Eth.Types.Address
+
+
+
+--| Transaction --Ports.EthNode Eth.Types.Address
 
 
 type SRState
@@ -75,7 +86,7 @@ type SRState
 
 
 type UserState
-    = ExistingUser --Eth.Types.Address
+    = ExistingUser String
     | NewUser --Eth.Types.Address
 
 
