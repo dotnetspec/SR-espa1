@@ -1,11 +1,9 @@
---standard elm-spa file + handle js messages
--- currently using both flags and port to receive data from js
+--standard elm-spa file. If needed to handle js messages could do it here
+-- currently using port to receive data from wallet
 
 
 module Global exposing
-    (  Flags
-       --, Model(GlobalVariant(..), Failure(..))
-
+    ( Flags
     , Model(..)
     , Msg(..)
     , init
@@ -34,31 +32,14 @@ type alias Flags =
     }
 
 
-
--- type alias Model =
---     {
---     username : String
---     , accountForUserLookup : String
---     , account : Maybe Eth.Types.Address
---     , node : Ports.EthNode
---     , incomingData : String}
-
-
-type
-    Model
-    --= GlobalVariant Eth.Sentry.Wallet.WalletSentry SR.Types.Username Eth.Types.Address
+type Model
     = GlobalVariant SR.Types.WalletState SR.Types.UserState
     | Failure String
 
 
 type Msg
-    = -- ReceivedDataFromJS String
-      WalletStatus Eth.Sentry.Wallet.WalletSentry
+    = WalletStatus Eth.Sentry.Wallet.WalletSentry
     | Fail String
-
-
-
---| GotJSAddress (Result String Eth.Types.Address)
 
 
 type alias Commands msg =
@@ -67,29 +48,8 @@ type alias Commands msg =
 
 
 init : Commands msg -> Flags -> ( Model, Cmd Msg, Cmd msg )
-init _ flags =
-    let
-        --         --dataStrVal = String.fromInt flags.networkid ++ flags.comment
-        --         -- have to take this as a flag from js - global.context is too slow for Top init
-        --         dataStrVal = Utils.MyUtils.stringFromMaybeString (List.head flags.useraccounts)
-        --         _ =
-        --             Debug.log "flag data is : " dataStrVal
-        node =
-            --Net.toNetworkId networkId
-            Net.toNetworkId 4
-                |> Ports.ethNode
-
-        --         --accountNumber = Utils.MyUtils.stringFromMaybeString (List.head flags.useraccounts)
-        --         --     Ports.retrieveAddress Ports.Model
-    in
-    -- ( {
-    --     username = tempAddressToNameLookup  dataStrVal
-    -- , accountForUserLookup = dataStrVal
-    -- , account = Nothing
-    -- , node = node
-    -- , incomingData = String.fromInt flags.networkid
-    --}
-    ( GlobalVariant SR.Types.Missing (SR.Types.ExistingUser "Philip")
+init _ _ =
+    ( GlobalVariant SR.Types.Missing SR.Types.NewUser
     , Cmd.none
     , Cmd.none
     )
@@ -100,110 +60,58 @@ init _ flags =
 -- is a description of the transition that needs to happen),
 --  and the model Model (which is the model before the update is applied),
 --  and it will return a new model.
--- branching on Model (just a reflection of current state)
--- is branching on something you don't need to change
--- (but you might further down that section of case(s).
--- Only branching on Msg will actually change a value.
+-- branching on Model is just a reflection of current state
+-- Only branching on Msg will actually change a value or the state
 
 
 update : Commands msg -> Msg -> Model -> ( Model, Cmd Msg, Cmd msg )
 update _ msg model =
-    let
-        --     walletSentry = {
-        --         account = walletSentry_.account
-        --         , node = Ports.ethNode walletSentry_.networkId
-        --     }
-        addressFromMaybeAddress addr =
-            case addr of
-                Nothing ->
-                    Eth.Defaults.invalidAddress
-
-                Just a ->
-                    a
-    in
     case msg of
-        -- ReceivedDataFromJS data ->
-        --     let
-        --         _ =
-        --             Debug.log "data is: " data
-        --         networkName =
-        --             if data == "4" then
-        --                 "I see you are using Rinkeby"
-        --             else
-        --                 "Not sure which network you are on"
-        --     in
-        --     ( { model | incomingData = networkName }, Cmd.none, Cmd.none )
-        -- walletSentry_ consists of an account number and a networkId
         WalletStatus walletSentry_ ->
-            -- let
-            --     walletSentry =
-            --         { account = walletSentry_.account
-            --         , node = Ports.ethNode walletSentry_.networkId
-            --         }
-            -- in
-            case walletSentry_.account of
-                Nothing ->
-                    let
-                        _ =
-                            Debug.log "Nothing" walletSentry_.account
-                    in
+            case walletSentry_.networkId of
+                Mainnet ->
+                    case walletSentry_.account of
+                        Nothing ->
+                            let
+                                _ =
+                                    Debug.log "You're on Mainnet - Locked!!!!!!" walletSentry_.account
+                            in
+                            ( GlobalVariant SR.Types.Locked SR.Types.NewUser, Cmd.none, Cmd.none )
+
+                        Just a ->
+                            let
+                                _ =
+                                    Debug.log "You're on Mainnet!!!!!!" a
+                            in
+                            ( GlobalVariant SR.Types.Opened
+                                (SR.Types.ExistingUser (tempAddressToNameLookup (Eth.Utils.addressToString a)))
+                            , Cmd.none
+                            , Cmd.none
+                            )
+
+                Rinkeby ->
+                    case walletSentry_.account of
+                        Nothing ->
+                            let
+                                _ =
+                                    Debug.log "Rinkeby Locked" walletSentry_.account
+                            in
+                            ( GlobalVariant SR.Types.Locked SR.Types.NewUser, Cmd.none, Cmd.none )
+
+                        Just a ->
+                            let
+                                _ =
+                                    Debug.log "Rinkeby" a
+                            in
+                            ( GlobalVariant SR.Types.Opened
+                                (SR.Types.ExistingUser (tempAddressToNameLookup (Eth.Utils.addressToString a)))
+                            , Cmd.none
+                            , Cmd.none
+                            )
+
+                _ ->
                     ( GlobalVariant SR.Types.Missing SR.Types.NewUser, Cmd.none, Cmd.none )
 
-                Just a ->
-                    let
-                        _ =
-                            Debug.log "Just a" a
-                    in
-                    ( GlobalVariant SR.Types.Opened
-                        (SR.Types.ExistingUser (tempAddressToNameLookup (Eth.Utils.addressToString a)))
-                    , Cmd.none
-                    , Cmd.none
-                    )
-
-        -- case walletState of
-        --         SR.Types.Missing ->
-        --             case userState of
-        --                 -- perhaps makes no diff if new/existing user here[?]
-        --                 SR.Types.NewUser ->
-        --                     case msg of
-        --                         GetAWallet ->
-        --                             ( Greeting SR.Types.MissingWalletDialogOpen SR.Types.NewUser SR.Types.Missing, Cmd.none, Cmd.none )
-        --                         _ ->
-        --                             ( Failure "unexpected message received while wallet missing, new user state", Cmd.none, Cmd.none )
-        --                 SR.Types.ExistingUser ->
-        --                     case msg of
-        --                         GetAWallet ->
-        --                             ( Greeting SR.Types.MissingWalletDialogOpen SR.Types.ExistingUser SR.Types.Missing, Cmd.none, Cmd.none )
-        --                         _ ->
-        --                             ( Failure "unexpected message received while wallet missing, existing user state", Cmd.none, Cmd.none )
-        --         SR.Types.Locked ->
-        --             case uiState of
-        --                 SR.Types.DialogClosed ->
-        --                     case msg of
-        --                         OpenWalletInstructions ->
-        --                             ( Greeting SR.Types.MissingWalletDialogOpen SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
-        --                         _ ->
-        --                             ( Failure "unexpected message received while wallet locked, new user state", Cmd.none, Cmd.none )
-        --                 _ ->
-        --                     ( Greeting SR.Types.LockedWalletDialogOpen SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
-        --         SR.Types.Opened ->
-        --             case userState of
-        --                 SR.Types.NewUser ->
-        --                     case msg of
-        --                         CloseDialog ->
-        --                             case uiState of
-        --                                 SR.Types.MissingWalletDialogOpen ->
-        --                                     ( Greeting SR.Types.DialogClosed SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
-        --                                 _ ->
-        --                                     ( Greeting SR.Types.DialogClosed SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
-        --                         _ ->
-        --                             ( Greeting SR.Types.DialogClosed SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
-        --                 SR.Types.ExistingUser ->
-        --                     case msg of
-        --                         CloseDialog ->
-        --                             ( Greeting SR.Types.DialogClosed SR.Types.ExistingUser SR.Types.Opened, Cmd.none, Cmd.none )
-        --                         _ ->
-        --                             ( Greeting SR.Types.DialogClosed SR.Types.ExistingUser SR.Types.Opened, Cmd.none, Cmd.none )
         Fail str ->
             let
                 _ =
