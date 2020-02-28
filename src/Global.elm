@@ -11,23 +11,17 @@ module Global exposing
     , update
     )
 
-import Debug
-import Eth.Defaults
-import Eth.Net as Net exposing (NetworkId(..))
-import Eth.Sentry.Wallet
-import Eth.Types
-import Eth.Utils
 import Generated.Routes as Routes exposing (Route)
-import Internal.Types
-import List
-import Ports
 import SR.Types
-import Utils.MyUtils
+
+
+
+-- if you needed to you could define a GlobalVariant here
+-- that could be accessed via a PageContext which might be defined as context.global
 
 
 type Model
-    = GlobalVariant SR.Types.WalletState SR.Types.UserState
-    | Failure String
+    = Failure String
 
 
 type alias Flags =
@@ -35,8 +29,8 @@ type alias Flags =
 
 
 type Msg
-    = WalletStatus Eth.Sentry.Wallet.WalletSentry
-    | Fail String
+    = Fail String
+    | NoOp
 
 
 type alias Commands msg =
@@ -46,7 +40,7 @@ type alias Commands msg =
 
 init : Commands msg -> Flags -> ( Model, Cmd Msg, Cmd msg )
 init _ _ =
-    ( GlobalVariant SR.Types.Missing SR.Types.NewUser
+    ( Failure ""
     , Cmd.none
     , Cmd.none
     )
@@ -64,68 +58,13 @@ init _ _ =
 update : Commands msg -> Msg -> Model -> ( Model, Cmd Msg, Cmd msg )
 update _ msg model =
     case msg of
-        WalletStatus walletSentry_ ->
-            case walletSentry_.networkId of
-                Mainnet ->
-                    case walletSentry_.account of
-                        Nothing ->
-                            let
-                                _ =
-                                    Debug.log "You're on Mainnet - Locked!!!!!!" walletSentry_.account
-                            in
-                            ( GlobalVariant SR.Types.Locked SR.Types.NewUser, Cmd.none, Cmd.none )
-
-                        Just a ->
-                            let
-                                _ =
-                                    Debug.log "You're on Mainnet!!!!!!" a
-                            in
-                            ( GlobalVariant SR.Types.Opened
-                                (SR.Types.ExistingUser (tempAddressToNameLookup (Eth.Utils.addressToString a)))
-                            , Cmd.none
-                            , Cmd.none
-                            )
-
-                Rinkeby ->
-                    case walletSentry_.account of
-                        Nothing ->
-                            let
-                                _ =
-                                    Debug.log "Rinkeby Locked" walletSentry_.account
-                            in
-                            ( GlobalVariant SR.Types.Locked SR.Types.NewUser, Cmd.none, Cmd.none )
-
-                        Just a ->
-                            let
-                                _ =
-                                    Debug.log "Rinkeby" a
-                            in
-                            ( GlobalVariant SR.Types.Opened
-                                (SR.Types.ExistingUser (tempAddressToNameLookup (Eth.Utils.addressToString a)))
-                            , Cmd.none
-                            , Cmd.none
-                            )
-
-                _ ->
-                    ( GlobalVariant SR.Types.Missing SR.Types.NewUser, Cmd.none, Cmd.none )
-
         Fail str ->
-            let
-                _ =
-                    Debug.log "Failed" str
-            in
-            ( model, Cmd.none, Cmd.none )
+            ( Failure str, Cmd.none, Cmd.none )
+
+        NoOp ->
+            ( Failure "NoOp", Cmd.none, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
-
-
-tempAddressToNameLookup : String -> String
-tempAddressToNameLookup str =
-    if str == "0x847700b781667abdd98e1393420754e503dca5b7" then
-        "Philip"
-
-    else
-        "New User"
+    Sub.none
