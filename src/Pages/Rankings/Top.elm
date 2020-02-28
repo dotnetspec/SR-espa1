@@ -7,13 +7,12 @@ import Element.Font as Font
 import Generated.Rankings.Params as Params
 import Http
 import Json.Decode
-import Json.Decode.Pipeline
 import RemoteData
+import SR.Decode
+import SR.Types
 import Spa.Page
 import Ui
 import Utils.Spa exposing (Page)
-import SR.Types
-import SR.Decode
 
 
 page : Page Params.Top Model Msg model msg appMsg
@@ -27,11 +26,6 @@ page =
         }
 
 
-type Msg
-    = RankingsReceived (RemoteData.WebData (List SR.Types.Ranking))
-    | FetchedContent (Result Http.Error String)
-
-
 type RemoteData e a
     = NotAsked
     | Loading
@@ -39,28 +33,24 @@ type RemoteData e a
     | Success a
 
 
-type alias Model =
-    { rankings : RemoteData.WebData (List SR.Types.Ranking)
-    , fetchedContentNotRankingList : String
-    , error : String
-    }
+type Model
+    = ListOfAllRankings (RemoteData.WebData (List SR.Types.Ranking)) String
+    | FailureOnAllRankings String
 
 
 
 -- INIT
 -- this accesses COLLECTION RECORDS - GLOBAL - public bin
 
+
 init : Params.Top -> ( Model, Cmd Msg )
 init _ =
-    ( { rankings = RemoteData.NotAsked
-      , error = ""
-      , fetchedContentNotRankingList = ""
-      }
+    ( ListOfAllRankings RemoteData.Loading ""
     , Http.get
         { url = "https://api.jsonbin.io/b/5e2a585f593fd741856f4b04/latest"
         , expect =
             SR.Decode.rankingsDecoder
-                |> expectJson (RemoteData.fromResult >> RankingsReceived)
+                |> expectJson (RemoteData.fromResult >> FetchAllRankings)
         }
     )
 
@@ -92,26 +82,38 @@ expectJson toMsg decoder =
 
 
 
+-- Msg is a description of the transition that needs to happen
+
+
+type Msg
+    = FetchAllRankings (RemoteData.WebData (List SR.Types.Ranking))
+
+
+
 -- UPDATE
--- first update comes from init
+-- Update needs to take two things: a message (which
+-- is a description of the transition that needs to happen),
+--  and the model (which is the model BEFORE the update is applied),
+--  Update will return a new model for View to render
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        FetchedContent (Ok fetchedContentNotRankingList) ->
-            ( { model | fetchedContentNotRankingList = fetchedContentNotRankingList }
-            , Cmd.none
-            )
+        FetchAllRankings rmtdata ->
+            case rmtdata of
+                --removes[?] the first record (created on ranking creation with different format)
+                RemoteData.Success a ->
+                    ( ListOfAllRankings (RemoteData.Success a) "Successful download", Cmd.none )
 
-        FetchedContent (Err _) ->
-            ( { model | error = "there was an error" }
-            , Cmd.none
-            )
+                RemoteData.Failure e ->
+                    ( ListOfAllRankings (RemoteData.Failure e) "Failure to download", Cmd.none )
 
-        RankingsReceived rankings ->
-            --removes[?] the first record (created on ranking creation with different format)
-            ( { model | rankings = rankings }, Cmd.none )
+                RemoteData.NotAsked ->
+                    ( ListOfAllRankings RemoteData.NotAsked "Not Asked", Cmd.none )
+
+                RemoteData.Loading ->
+                    ( ListOfAllRankings RemoteData.Loading "Loading", Cmd.none )
 
 
 
@@ -137,18 +139,23 @@ view model =
 
 viewRankingsOrError : Model -> Element Msg
 viewRankingsOrError model =
-    case model.rankings of
-        RemoteData.NotAsked ->
-            Element.text ""
+    case model of
+        ListOfAllRankings rmtdata str ->
+            case rmtdata of
+                RemoteData.NotAsked ->
+                    Element.text ""
 
-        RemoteData.Loading ->
-            Element.text "Loading..."
+                RemoteData.Loading ->
+                    Element.text "Loading..."
 
-        RemoteData.Success rankings ->
-            viewRankings rankings
+                RemoteData.Success rankings ->
+                    viewRankings rankings
 
-        RemoteData.Failure httpError ->
-            Element.text "Failure"
+                RemoteData.Failure httpError ->
+                    Element.text "(Err httpError - real value to fix here)"
+
+        FailureOnAllRankings str ->
+            Element.text str
 
 
 
@@ -229,18 +236,3 @@ rankingDescCol _ str =
                 [ Element.text ranking.desc
                 ]
     }
-
-
--- rankingsDecoder : Json.Decode.Decoder (List SR.Types.Ranking)
--- rankingsDecoder =
---     Json.Decode.list rankingDecoder
-
-
--- rankingDecoder : Json.Decode.Decoder SR.Types.Ranking
--- rankingDecoder =
---     Json.Decode.succeed SR.Types.Ranking
---         |> Json.Decode.Pipeline.required "RANKINGID" Json.Decode.string
---         |> Json.Decode.Pipeline.required "ACTIVE" Json.Decode.bool
---         |> Json.Decode.Pipeline.required "RANKINGNAME" Json.Decode.string
---         |> Json.Decode.Pipeline.required "RANKINGDESC" Json.Decode.string
-

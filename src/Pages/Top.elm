@@ -4,16 +4,15 @@ module Pages.Top exposing (Model, Msg, page)
 
 import Dialog
 import Element exposing (..)
-import Eth.Net as Net exposing (NetworkId(..))
+import Eth.Net exposing (NetworkId(..))
 import Eth.Sentry.Wallet
 import Eth.Types
 import Eth.Utils
 import Generated.Params as Params
-import Global exposing (..)
+import Global
 import Ports
 import SR.Types
 import Spa.Page
-import Task
 import Ui
 import Utils.Spa exposing (Page)
 
@@ -171,11 +170,11 @@ view context model =
         config msg =
             { closeMessage = Just msg
             , maskAttributes = []
-            , containerAttributes = [ centerX, centerY, padding 10 ]
+            , containerAttributes = []
             , headerAttributes = []
             , bodyAttributes = []
             , footerAttributes = []
-            , header = Just (text "Hello world")
+            , header = Just (text "Wallet Missing/Locked")
             , body = Just modalBody
             , footer = Nothing
             }
@@ -187,13 +186,13 @@ view context model =
         Greeting userState walletState ->
             case walletState of
                 SR.Types.Locked ->
-                    Element.el [ inFront (Dialog.view (Just (config OpenWalletInstructions))) ]
+                    Element.el [ centerX, centerY, inFront (Dialog.view (Just (config OpenWalletInstructions))) ]
                         (Ui.hero
                             { title = "SPORTRANK", description = "Hello New User", buttons = [ ( "Wallet Locked ...", "/" ) ] }
                         )
 
                 SR.Types.Missing ->
-                    Element.el [ inFront (Dialog.view (Just (config GetAWalletInstructions))) ]
+                    Element.el [ centerX, centerY, inFront (Dialog.view (Just (config GetAWalletInstructions))) ]
                         (Ui.hero
                             { title = "SPORTRANK", description = "Hello New User", buttons = [ ( "Missing Wallet ...", "/" ) ] }
                         )
@@ -201,7 +200,7 @@ view context model =
                 SR.Types.Opened ->
                     case userState of
                         SR.Types.NewUser ->
-                            Ui.hero { title = "SPORTRANK", description = "Hello New User", buttons = [ ( "Register ...", "/" ) ] }
+                            Ui.hero { title = "SPORTRANK", description = "Hello New User. Please click to register", buttons = [ ( "Register ...", "/" ) ] }
 
                         SR.Types.ExistingUser a ->
                             Ui.hero { title = "SPORTRANK", description = "Welcome Back " ++ tempAddressToNameLookup (Eth.Utils.addressToString a), buttons = [ ( "Continue ...", "/rankings" ) ] }
@@ -209,4 +208,4 @@ view context model =
 
 modalBody : Element Msg
 modalBody =
-    Element.text "hi there"
+    Element.text "Please install and unlock \nan Ethereum wallet extension in \nyour browser to continue"

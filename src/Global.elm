@@ -11,8 +11,9 @@ module Global exposing
     , update
     )
 
-import Generated.Routes as Routes exposing (Route)
-import SR.Types
+--n.b 'as Routes' alias was rm here:
+
+import Generated.Routes exposing (Route)
 
 
 
