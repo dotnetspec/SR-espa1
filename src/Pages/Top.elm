@@ -1,18 +1,20 @@
---'Homepage' of the app. Gathers username and networkid to determine how to handle user
 module Pages.Top exposing (Model, Msg, page)
 
-import Spa.Page
+--'Homepage' of the app. Gathers username and networkid to determine how to handle user
+
+import Dialog
 import Element exposing (..)
-import Generated.Params as Params
-import Global
-import Utils.Spa exposing (Page)
-import Ui
+import Eth.Net exposing (NetworkId(..))
 import Eth.Sentry.Wallet
 import Eth.Types
 import Eth.Utils
+import Generated.Params as Params
+import Global
 import Ports
-import Eth.Net as Net exposing (NetworkId(..))
-import Dialog
+import SR.Types
+import Spa.Page
+import Ui
+import Utils.Spa exposing (Page)
 
 
 page : Page Params.Top Model Msg model msg appMsg
@@ -26,73 +28,14 @@ page =
         }
 
 
+type Model
+    = Greeting SR.Types.UserState SR.Types.WalletState
+    | Failure String
 
--- INIT
-
-type UserAccountConnection = 
-    NoConnection
-    | NoAccountNumber
-    | NoUserDetails
-    | Success
-
-
-type alias Model =
-    {  
-    account : Maybe Eth.Types.Address
-    , node : Ports.EthNode
-    , user : User
-    , showDialog : Bool
-    }
-
---until can figure a better way to return account to Address type
---use string so can do a lookup
-type alias User = 
-    {  
-    name : String
-    , description : String
-    , contact : String 
-    , email : String
-    , active : Bool
-    , datestamp : Int
-        }
-
-type alias Config msg =
-    { closeMessage : Maybe msg
-    , maskAttributes : List (Attribute msg)
-    , containerAttributes : List (Attribute msg)
-    , headerAttributes : List (Attribute msg)
-    , bodyAttributes : List (Attribute msg)
-    , footerAttributes : List (Attribute msg)
-    , header : Maybe (Element msg)
-    , body : Maybe (Element msg)
-    , footer : Maybe (Element msg)
-    }
 
 init : Utils.Spa.PageContext -> Params.Top -> ( Model, Cmd Msg, Cmd Global.Msg )
 init context _ =
-  let
-        node =
-            --Net.toNetworkId networkId
-            Net.toNetworkId 4
-                |> Ports.ethNode
-        _ = 
-            Debug.log "global context" context.global.accountForUserLookup
-        -- the account number has to come through as a js value as update or [?] is too slow in global.elm
-        -- for init
-    in
-    ( { 
-    account = Nothing
-    , node = node
-    , user =  {  
-            name = ""
-            , description = ""
-            , contact = "" 
-            , email = ""
-            , active = False
-            , datestamp = 123456
-        } 
-    , showDialog = False
-    }
+    ( Greeting SR.Types.NewUser SR.Types.Missing
     , Cmd.none
     , Cmd.none
     )
@@ -100,122 +43,169 @@ init context _ =
 
 
 -- UPDATE
+-- Msg is a description of the transition that needs to happen
 
 
 type Msg
-    = 
-    --WalletStatus Eth.Sentry.Wallet.WalletSentry
-     Fail String
-    | NoOp
+    = GetAWalletInstructions
+    | OpenWalletInstructions
     | CloseDialog
-    | GotUserStatus UserAccountConnection
+    | NewUser
+    | ExistingUser Eth.Types.Address
+    | WalletStatus Eth.Sentry.Wallet.WalletSentry
+    | Fail String
+    | NoOp
+
+
+
+-- Update needs to take two things: a message (which
+-- is a description of the transition that needs to happen),
+--  and the model (which is the model before the update is applied),
+--  and it will return a new model.
 
 
 update : Msg -> Model -> ( Model, Cmd Msg, Cmd Global.Msg )
 update msg model =
-            case msg of
-                GotUserStatus acctconn ->
-                     case acctconn of
-                        NoConnection ->
-                            ( { model
-                                    | showDialog = True
-                                }
-                                , Cmd.none, Cmd.none
-                                )
+    case msg of
+        WalletStatus walletSentry_ ->
+            case walletSentry_.networkId of
+                Mainnet ->
+                    case walletSentry_.account of
+                        Nothing ->
+                            handleMsg OpenWalletInstructions
 
-                        NoAccountNumber ->
-                            ( { model
-                                | showDialog = True
-                            }
-                            , Cmd.none, Cmd.none
-                            )
+                        Just a ->
+                            handleMsg (ExistingUser a)
 
-                        NoUserDetails ->
-                            ( { model
-                                | showDialog = True
-                            }
-                            , Cmd.none, Cmd.none
-                            )
+                Rinkeby ->
+                    case walletSentry_.account of
+                        Nothing ->
+                            handleMsg OpenWalletInstructions
 
-                        Success -> 
-                            ( { model
-                                | showDialog = False
-                            }
-                            , Cmd.none, Cmd.none
-                            )
+                        Just a ->
+                            handleMsg (ExistingUser a)
 
-                CloseDialog ->
-                            ( { model
-                                | showDialog = False
-                            }
-                            , Cmd.none, Cmd.none
-                            )
+                _ ->
+                    handleMsg GetAWalletInstructions
 
-                 
-                Fail str ->
-                    let
-                        _ =
-                            Debug.log str
-                    in
-                    ( model, Cmd.none, Cmd.none )
+        GetAWalletInstructions ->
+            ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none, Cmd.none )
+
+        OpenWalletInstructions ->
+            ( Greeting SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
+
+        NewUser ->
+            ( Greeting SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
+
+        ExistingUser uname ->
+            --( Greeting SR.Types.DialogClosed (SR.Types.ExistingUser a) SR.Types.Opened, Cmd.none, Cmd.none )
+            ( Greeting (SR.Types.ExistingUser uname) SR.Types.Opened, Cmd.none, Cmd.none )
+
+        Fail str ->
+            ( Failure str, Cmd.none, Cmd.none )
+
+        NoOp ->
+            ( Failure "NoOp", Cmd.none, Cmd.none )
+
+        _ ->
+            ( Failure "Something wrong with Msg", Cmd.none, Cmd.none )
 
 
-                NoOp ->
-                            ( model, Cmd.none, Cmd.none )
-           
+handleMsg : Msg -> ( Model, Cmd Msg, Cmd Global.Msg )
+handleMsg msg =
+    case msg of
+        GetAWalletInstructions ->
+            ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none, Cmd.none )
 
--- determineUserStatus: Model -> Msg 
--- determineUserStatus model = 
---     if model.account == Nothing then 
---         GotUserStatus NoAccountNumber
---     else
---         GotUserStatus Success
+        OpenWalletInstructions ->
+            ( Greeting SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
 
---TODO: re-factor - repeated code - to MyUtils?
+        NewUser ->
+            ( Greeting SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
+
+        ExistingUser uname ->
+            ( Greeting (SR.Types.ExistingUser uname) SR.Types.Opened, Cmd.none, Cmd.none )
+
+        _ ->
+            ( Failure "Something wrong with Msg", Cmd.none, Cmd.none )
+
+
+failure : String -> Element Msg
+failure message =
+    Element.text message
+
+
+tempAddressToNameLookup : String -> String
+tempAddressToNameLookup str =
+    if str == "0x847700b781667abdd98e1393420754e503dca5b7" then
+        "Philip"
+
+    else
+        "New User"
+
+
 addressToString : Maybe Eth.Types.Address -> String
 addressToString addr =
-  case addr of
-    Nothing ->
-      "No address"
+    case addr of
+        Nothing ->
+            "No address"
 
-    Just a ->
-       Eth.Utils.addressToString a
+        Just a ->
+            Eth.Utils.addressToString a
+
+
 
 -- SUBSCRIPTIONS
 
+
 subscriptions : Model -> Sub Msg
-subscriptions model =
-        Sub.none
-  
+subscriptions _ =
+    Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+
 
 view : Utils.Spa.PageContext -> Model -> Element Msg
 view context model =
     let
-            config =
-                { closeMessage = Just CloseDialog
-                , maskAttributes = []
-                , containerAttributes = [ centerX, centerY, padding 10 ]
-                , headerAttributes = []
-                , bodyAttributes = []
-                , footerAttributes = []
-                , header = Just (text "Hello world")
-                , body = Just modalBody
-                , footer = Nothing
-                }
+        -- currently Dialog module not compatible with Elm 0.19.1!
+        config msg =
+            { closeMessage = Just msg
+            , maskAttributes = []
+            , containerAttributes = []
+            , headerAttributes = []
+            , bodyAttributes = []
+            , footerAttributes = []
+            , header = Just (text "Wallet Missing/Locked")
+            , body = Just modalBody
+            , footer = Nothing
+            }
+    in
+    case model of
+        Failure message ->
+            failure message
 
-            dialogConfig =
-                if model.showDialog then
-                    Just config
+        Greeting userState walletState ->
+            case walletState of
+                SR.Types.Locked ->
+                    Element.el [ centerX, centerY, inFront (Dialog.view (Just (config OpenWalletInstructions))) ]
+                        (Ui.hero
+                            { title = "SPORTRANK", description = "Hello New User", buttons = [ ( "Wallet Locked ...", "/" ) ] }
+                        )
 
-                else
-                    Nothing
+                SR.Types.Missing ->
+                    Element.el [ centerX, centerY, inFront (Dialog.view (Just (config GetAWalletInstructions))) ]
+                        (Ui.hero
+                            { title = "SPORTRANK", description = "Hello New User", buttons = [ ( "Missing Wallet ...", "/" ) ] }
+                        )
 
-            descTxt = "Welcome " ++ context.global.username
-        in
-    
-        Element.el [ inFront (Dialog.view dialogConfig)]
-            (Ui.hero {  title = "SPORTRANK", description = descTxt, buttons = [ ( "Continue ...", "/rankings" ) ] })
+                SR.Types.Opened ->
+                    case userState of
+                        SR.Types.NewUser ->
+                            Ui.hero { title = "SPORTRANK", description = "Hello New User. Please click to register", buttons = [ ( "Register ...", "/" ) ] }
 
-modalBody: Element Msg 
-modalBody = 
-    Element.text "hi there"
+                        SR.Types.ExistingUser a ->
+                            Ui.hero { title = "SPORTRANK", description = "Welcome Back " ++ tempAddressToNameLookup (Eth.Utils.addressToString a), buttons = [ ( "Continue ...", "/rankings" ) ] }
+
+
+modalBody : Element Msg
+modalBody =
+    Element.text "Please install and unlock \nan Ethereum wallet extension in \nyour browser to continue"

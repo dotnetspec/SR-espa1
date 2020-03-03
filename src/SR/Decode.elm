@@ -37,14 +37,14 @@ playerDecoder =
         |> Json.Decode.Pipeline.required "CURRENTCHALLENGERADDRESS" Json.Decode.string
 
 
-rankingsDecoder : Json.Decode.Decoder (List SR.Types.Ranking)
+rankingsDecoder : Json.Decode.Decoder (List SR.Types.RankingInfo)
 rankingsDecoder =
     Json.Decode.list rankingDecoder
 
 
-rankingDecoder : Json.Decode.Decoder SR.Types.Ranking
+rankingDecoder : Json.Decode.Decoder SR.Types.RankingInfo
 rankingDecoder =
-    Json.Decode.succeed SR.Types.Ranking
+    Json.Decode.succeed SR.Types.RankingInfo
         |> Json.Decode.Pipeline.required "RANKINGID" Json.Decode.string
         |> Json.Decode.Pipeline.required "ACTIVE" Json.Decode.bool
         |> Json.Decode.Pipeline.required "RANKINGNAME" Json.Decode.string

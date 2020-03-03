@@ -11,8 +11,21 @@ stringFromBool bool =
             "False"
 
 
-stringFromMaybeString : Maybe String -> String 
-stringFromMaybeString str = 
- case str of 
-    Nothing -> "Not a string"
-    Just a -> a
+stringFromMaybeString : Maybe String -> String
+stringFromMaybeString str =
+    case str of
+        Nothing ->
+            "Not a string"
+
+        Just a ->
+            a
+
+
+
+-- addressFromMaybeAddress : Maybe Address -> Address
+-- addressFromMaybeAddress addr =
+--     case addr of
+--         Nothing ->
+--             Eth.Defaults.invalidAddress
+--         Just a ->
+--             a
