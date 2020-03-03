@@ -93,7 +93,7 @@ type WalletState
 
 
 type SRState
-    = AllRankings (RemoteData.WebData (List RankingInfo)) RankingId
+    = AllRankings (RemoteData.WebData (List RankingInfo))
       --| SingleRanking (RemoteData.WebData (List Player)) RankingId
       --| EnterResult
     | Failure String

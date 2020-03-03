@@ -57,7 +57,7 @@ type Model
 
 init : Params.Top -> ( Model, Cmd Msg )
 init _ =
-    ( JsonbinData (SR.Types.AllRankings RemoteData.Loading (SR.Types.RankingId "5e2a585f593fd741856f4b04"))
+    ( JsonbinData (SR.Types.AllRankings RemoteData.Loading)
     , getRankingList
     )
 
@@ -120,7 +120,7 @@ update msg model =
             case rmtdata of
                 --removes[?] the first record (created on ranking creation with different format)
                 RemoteData.Success a ->
-                    ( JsonbinData (SR.Types.AllRankings (RemoteData.Success a) (SR.Types.RankingId "5e2a585f593fd741856f4b04")), Cmd.none )
+                    ( JsonbinData (SR.Types.AllRankings (RemoteData.Success a)), Cmd.none )
 
                 RemoteData.Failure e ->
                     ( JsonbinData (SR.Types.Failure "Failure"), Cmd.none )
@@ -159,7 +159,7 @@ viewRankingsOrError model =
     case model of
         JsonbinData srState ->
             case srState of
-                SR.Types.AllRankings rmtData c ->
+                SR.Types.AllRankings rmtData ->
                     case rmtData of
                         RemoteData.NotAsked ->
                             Element.text ""
