@@ -132,6 +132,10 @@ type alias Model =
     }
 
 
+
+--Your message type should describe what happened, not what to do
+
+
 type Msg
     = TxSentryMsg Eth.Sentry.Tx.Msg
     | WalletStatus Eth.Sentry.Wallet.WalletSentry
@@ -150,6 +154,7 @@ type Msg
     | SetRadioOption ResultRadioOptions
     | ChangePlayerRank SR.Types.Player
     | ProcessResult SR.Types.ResultOfMatch
+    | ConfirmButtonClicked
 
 
 
@@ -379,6 +384,29 @@ update msg model =
             in
             ( { model | txSentry = newSentry }, sentryCmd )
 
+        ConfirmButtonClicked ->
+            let
+                txParams =
+                    { to = model.account
+                    , from = model.account
+                    , gas = Nothing
+                    , gasPrice = Just <| Eth.Units.gwei 4
+                    , value = Just <| Eth.Units.gwei 1
+                    , data = Nothing
+                    , nonce = Nothing
+                    }
+
+                ( newSentry, sentryCmd ) =
+                    Eth.Sentry.Tx.customSend
+                        model.txSentry
+                        { onSign = Just WatchTxHash
+                        , onBroadcast = Just WatchTx
+                        , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                        }
+                        txParams
+            in
+            ( { model | txSentry = newSentry }, Cmd.batch [ sentryCmd, sendRequest (Internal.RankingId "5d8f5dcabfb1f70f0b11638b") ] )
+
         WatchTxHash (Ok txHash) ->
             ( { model | txHash = Just txHash }, Cmd.none )
 
@@ -464,6 +492,32 @@ update msg model =
 
         NoOp ->
             ( model, Cmd.none )
+
+
+sendRequest : Internal.RankingId -> Cmd Msg
+sendRequest (Internal.RankingId rankingId) =
+    let
+        _ =
+            Debug.log "rankingid in sendRequest" rankingId
+
+        headerKey =
+            Http.header
+                "secret-key"
+                "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
+    in
+    --PlayersReceived is the Msg handled by update whenever a request is made
+    --RemoteData is used throughout the module, including update
+    Http.request
+        { body = Http.emptyBody
+        , expect =
+            SR.Decode.ladderOfPlayersDecoder
+                |> Http.expectJson (RemoteData.fromResult >> PlayersReceived)
+        , headers = [ headerKey ]
+        , method = "GET"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = "https://api.jsonbin.io/b/" ++ rankingId ++ "/latest"
+        }
 
 
 
@@ -575,7 +629,8 @@ viewModal model =
                             [ Element.el []
                                 (confirmbutton
                                     (Element.rgb 0.95 0.6 0.25)
-                                    InitTx
+                                    --InitTx
+                                    ConfirmButtonClicked
                                     --"Confirm"
                                     --div [] [ button [ onClick InitTx ] [ text "Yup Send 0 value Tx to yourself as a test yup" ] ]
                                     -- (ProcessResult
