@@ -96,6 +96,9 @@ type ResultRadioOptions
 --     | DisplaySingleRanking : SRState
 --     | DisplayEnterResult : WalletState SRState
 --     | Failure : String
+-- type Model
+--     = ListOfAllRankings (RemoteData.WebData (List SR.Types.Ranking)) String
+--     | FailureOnAllRankings String
 
 
 type alias Model =

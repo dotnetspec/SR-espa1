@@ -1,8 +1,8 @@
 module SR.Types exposing
-    ( PlayerId, RankingId
-    , Player, Opponent, OpponentRelativeRank(..), Options, PlayerAvailability(..), Ranking, ResultOfMatch(..), SRState(..), UserState(..), WalletState(..)
+    ( PlayerId, RankingId(..)
+    , Player, Opponent, OpponentRelativeRank(..), Options, PlayerAvailability(..), ResultOfMatch(..), SRState(..), UserState(..), WalletState(..)
     , UIState(..)
-    , Username(..)
+    , RankingInfo, Username(..)
     )
 
 {-| Types
@@ -15,7 +15,7 @@ module SR.Types exposing
 
 # Complex
 
-@docs Player, Opponent, OpponentRelativeRank, Options, PlayerAvailability, Ranking, ResultOfMatch, SRState, UserState, WalletState
+@docs Player, Opponent, OpponentRelativeRank, Options, PlayerAvailability, ResultOfMatch, SRState, UserState, WalletState
 @docs UIState
 
 
@@ -26,23 +26,30 @@ module SR.Types exposing
 -}
 
 import Eth.Types
+import Http
 import Internal.Types as Internal
 import Ports
+import RemoteData
 
 
 
 --import Json.Decode exposing (Decoder)
--- type Error
---     = Http Http.Error -- Standard HTTP Errors
---     | Encoding String -- Most likely an overflow of int/uint
---       -- Call returns 0x, could mean:
---       -- Contract doesn't exist
---       -- Contract function doesn't exist
---       -- Other things (look at the talk by Augur team at Devcon4 on mainstage)
---     | ZeroX String
---       -- TxSentry Errors:
---     | UserRejected -- User dissapproved of tx in Wallet
---     | Web3Undefined -- Web3 object, or provider not found.
+
+
+type Error
+    = Http Http.Error -- Standard HTTP Errors
+    | Encoding String -- Most likely an overflow of int/uint
+      -- Call returns 0x, could mean:
+      -- Contract doesn't exist
+      -- Contract function doesn't exist
+      -- Other things (look at the talk by Augur team at Devcon4 on mainstage)
+    | ZeroX String
+      -- TxSentry Errors:
+    | UserRejected -- User dissapproved of tx in Wallet
+    | Web3Undefined -- Web3 object, or provider not found.
+
+
+
 -- Simple
 
 
@@ -50,8 +57,14 @@ type alias PlayerId =
     Internal.PlayerId
 
 
-type alias RankingId =
-    Internal.RankingId
+type RankingId
+    = RankingId String
+
+
+
+-- type Ranking
+--     = Global (Result Http.Error String)
+--     | Random (Result Http.Error String)
 
 
 type alias Opponent =
@@ -80,9 +93,10 @@ type WalletState
 
 
 type SRState
-    = AllRankings
-    | SingleRanking
+    = AllRankings (RemoteData.WebData (List RankingInfo)) RankingId
+    | SingleRanking (RemoteData.WebData (List Player)) RankingId
     | EnterResult
+    | Failure String
 
 
 type UserState
@@ -131,7 +145,7 @@ type alias Player =
     }
 
 
-type alias Ranking =
+type alias RankingInfo =
     { id : String
     , active : Bool
     , name : String
