@@ -57,19 +57,8 @@ type Model
 
 init : Params.Top -> ( Model, Cmd Msg )
 init _ =
-    ( --JsonbinData RemoteData.Loading ""
-      JsonbinData (SR.Types.AllRankings RemoteData.Loading (SR.Types.RankingId "5e2a585f593fd741856f4b04"))
-    , -- Http.get
-      --     { url = "https://api.jsonbin.io/b/5e2a585f593fd741856f4b04/latest"
-      -- , expect =
-      --     SR.Decode.rankingsDecoder
-      --         |> expectJson (RemoteData.fromResult >> GotJsonbinData)
-      -- , expect =
-      --     getRankingList (JsonbinData (SR.Types.AllRankings RemoteData.Loading (SR.Types.RankingId "5e2a585f593fd741856f4b04")))
-      -- }
-      --getRankingList (JsonbinData (SR.Types.AllRankings (SR.Types.RankingId "5e2a585f593fd741856f4b04")))
-      --getRankingList (JsonbinData SR.Types.AllRankings RemoteData.fromResult >> GotJsonbinData (SR.Types.RankingId "5e2a585f593fd741856f4b04"))
-      getRankingList
+    ( JsonbinData (SR.Types.AllRankings RemoteData.Loading (SR.Types.RankingId "5e2a585f593fd741856f4b04"))
+    , getRankingList
     )
 
 
@@ -79,42 +68,6 @@ getRankingList =
         { url = "https://api.jsonbin.io/b/5e2a585f593fd741856f4b04/latest"
         , expect = Http.expectJson (RemoteData.fromResult >> GotJsonbinAllRankings) SR.Decode.rankingsDecoder
         }
-
-
-
--- getSingleRanking : Cmd Msg
--- getSingleRanking =
---     Http.get
---         { url = "https://api.jsonbin.io/b/5d8f5dcabfb1f70f0b11638b/latest"
---         , expect = Http.expectJson (RemoteData.fromResult >> GotJsonbinSingleRanking) SR.Decode.ladderOfPlayersDecoder
---         }
--- case model of
---     JsonbinData r ->
---         case r of
---             SR.Types.AllRankings a glbRankingId ->
---                 Http.get
---                     { url =
---                         "https://api.jsonbin.io/b/5e2a585f593fd741856f4b04/latest"
---                     , expect =
---                         SR.Decode.rankingsDecoder
---                             |> expectJson (RemoteData.fromResult >> GotJsonbinData (SR.Types.AllRankings RemoteData.Loading (SR.Types.RankingId "5e2a585f593fd741856f4b04")))
---                     }
---             SR.Types.SingleRanking a singleRankingId ->
---                 { url =
---                     "https://api.jsonbin.io/b/"
---                         ++ singleRankingId
---                         ++ "/latest"
---                 , expect =
---                     SR.Decode.ladderOfPlayersDecoder
---                         |> expectJson (RemoteData.fromResult >> GotJsonbinData (SR.Types.AllRankings RemoteData.Loading (SR.Types.RankingId "5e2a585f593fd741856f4b04")))
---                 }
---             _ ->
---                 { url =
---                     "https://api.jsonbin.io/b/5e2a585f593fd741856f4b04/latest"
---                 , expect =
---                     SR.Decode.ladderOfPlayersDecoder
---                         |> expectJson (RemoteData.fromResult >> GotJsonbinData (SR.Types.AllRankings RemoteData.Loading (SR.Types.RankingId "5e2a585f593fd741856f4b04")))
---                 }
 
 
 expectJson : (Result Http.Error a -> msg) -> Json.Decode.Decoder a -> Http.Expect msg
@@ -152,7 +105,6 @@ type Msg
 
 
 
---| GotJsonbinSingleRanking (RemoteData.WebData (List SR.Types.Player))
 -- UPDATE
 -- Update needs to take two things: a message (which
 -- is a description of the transition that needs to happen),
@@ -168,40 +120,8 @@ update msg model =
             case rmtdata of
                 --removes[?] the first record (created on ranking creation with different format)
                 RemoteData.Success a ->
-                    -- let
-                    --     _ =
-                    --         Debug.log "result" a
-                    -- in
                     ( JsonbinData (SR.Types.AllRankings (RemoteData.Success a) (SR.Types.RankingId "5e2a585f593fd741856f4b04")), Cmd.none )
 
-                --( JsonbinData (SR.Types.Failure "Failure"), Cmd.none )
-                -- let
-                --    -- _ =
-                --         --Debug.log "result" a
-                -- in
-                -- case model of
-                --     JsonbinData rd ->
-                --         let
-                --             _ =
-                --                 Debug.log "result" rd
-                --         in
-                --         case rd of
-                --             --here just branch so we can send back the same ranking type in a new model,
-                --             --but now with new data. e is error. c is the data (Success c)
-                --             SR.Types.AllRankings e c ->
-                --                 let
-                --                     _ =
-                --                         Debug.log "result c" c
-                --                 in
-                --                 ( JsonbinData (SR.Types.AllRankings e c), Cmd.none )
-                --             SR.Types.SingleRanking e c ->
-                --                 ( JsonbinData (SR.Types.SingleRanking e c), Cmd.none )
-                --             SR.Types.EnterResult ->
-                --                 ( JsonbinData SR.Types.EnterResult, Cmd.none )
-                --             SR.Types.Failure s ->
-                --                 ( JsonbinData (SR.Types.Failure s), Cmd.none )
-                -- FailureOnAllRankings s ->
-                --     ( JsonbinData (SR.Types.Failure "Failure"), Cmd.none )
                 RemoteData.Failure e ->
                     case model of
                         JsonbinData rd ->
@@ -264,10 +184,6 @@ update msg model =
                                 SR.Types.Failure s ->
                                     ( JsonbinData (SR.Types.Failure s), Cmd.none )
 
-                        -- GotJsonbinSingleRanking remtdata ->
-                        --     case remtdata of
-                        --     RemoteData.Success a ->
-                        --     ( JsonbinData (SR.Types.SingleRanking (RemoteData.Success a) (SR.Types.RankingId "5d8f5dcabfb1f70f0b11638b")), Cmd.none )
                         FailureOnAllRankings s ->
                             ( JsonbinData (SR.Types.Failure "Failure"), Cmd.none )
 
@@ -327,10 +243,6 @@ viewRankingsOrError model =
 
 
 
--- SR.Types.SingleRanking ->
---     Element.text "Err - attempting to load single ranking"
--- SR.Types.EnterResult ->
---     Element.text "Err - attempting to enter result"
 --viewError (buildErrorMessage httpError)
 --you might need this later
 -- (stringFromBool ranking.active)
