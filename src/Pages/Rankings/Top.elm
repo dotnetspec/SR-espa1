@@ -123,69 +123,13 @@ update msg model =
                     ( JsonbinData (SR.Types.AllRankings (RemoteData.Success a) (SR.Types.RankingId "5e2a585f593fd741856f4b04")), Cmd.none )
 
                 RemoteData.Failure e ->
-                    case model of
-                        JsonbinData rd ->
-                            case rd of
-                                SR.Types.AllRankings b c ->
-                                    ( JsonbinData (SR.Types.AllRankings b c), Cmd.none )
-
-                                SR.Types.SingleRanking b c ->
-                                    ( JsonbinData (SR.Types.SingleRanking b c), Cmd.none )
-
-                                SR.Types.EnterResult ->
-                                    ( JsonbinData SR.Types.EnterResult, Cmd.none )
-
-                                SR.Types.Failure s ->
-                                    ( JsonbinData (SR.Types.Failure s), Cmd.none )
-
-                        FailureOnAllRankings s ->
-                            ( JsonbinData (SR.Types.Failure "Failure"), Cmd.none )
+                    ( JsonbinData (SR.Types.Failure "Failure"), Cmd.none )
 
                 RemoteData.NotAsked ->
-                    case model of
-                        JsonbinData rd ->
-                            case rd of
-                                SR.Types.AllRankings b c ->
-                                    ( JsonbinData (SR.Types.AllRankings b c), Cmd.none )
-
-                                SR.Types.SingleRanking b c ->
-                                    ( JsonbinData (SR.Types.SingleRanking b c), Cmd.none )
-
-                                SR.Types.EnterResult ->
-                                    ( JsonbinData SR.Types.EnterResult, Cmd.none )
-
-                                SR.Types.Failure s ->
-                                    ( JsonbinData (SR.Types.Failure s), Cmd.none )
-
-                        FailureOnAllRankings s ->
-                            ( JsonbinData (SR.Types.Failure "Failure"), Cmd.none )
+                    ( JsonbinData (SR.Types.Failure "Not Asked"), Cmd.none )
 
                 RemoteData.Loading ->
-                    case model of
-                        JsonbinData rd ->
-                            let
-                                _ =
-                                    Debug.log "result" rd
-                            in
-                            case rd of
-                                SR.Types.AllRankings b c ->
-                                    let
-                                        _ =
-                                            Debug.log "result" c
-                                    in
-                                    ( JsonbinData (SR.Types.AllRankings b c), Cmd.none )
-
-                                SR.Types.SingleRanking b c ->
-                                    ( JsonbinData (SR.Types.SingleRanking b c), Cmd.none )
-
-                                SR.Types.EnterResult ->
-                                    ( JsonbinData SR.Types.EnterResult, Cmd.none )
-
-                                SR.Types.Failure s ->
-                                    ( JsonbinData (SR.Types.Failure s), Cmd.none )
-
-                        FailureOnAllRankings s ->
-                            ( JsonbinData (SR.Types.Failure "Failure"), Cmd.none )
+                    ( JsonbinData (SR.Types.Failure "Loading"), Cmd.none )
 
 
 
@@ -228,12 +172,6 @@ viewRankingsOrError model =
 
                         RemoteData.Failure httpError ->
                             Element.text "(Err httpError - real value to fix here)"
-
-                SR.Types.SingleRanking rmtData c ->
-                    Element.text "to do : single ranking"
-
-                SR.Types.EnterResult ->
-                    Element.text "to do : enter result"
 
                 SR.Types.Failure s ->
                     Element.text "failure"
