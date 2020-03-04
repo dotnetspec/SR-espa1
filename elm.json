@@ -9,6 +9,7 @@
         "direct": {
             "Chadtech/elm-bool-extra": "2.4.0",
             "NoRedInk/elm-json-decode-pipeline": "1.0.0",
+            "Orasund/elm-ui-framework": "1.6.1",
             "PaackEng/elm-ui-dialog": "1.0.0",
             "cmditch/elm-bigint": "2.0.1",
             "elm/browser": "1.0.2",

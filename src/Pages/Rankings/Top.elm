@@ -5,7 +5,18 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
+import Framework
+import Framework.Button
+import Framework.Card as Card
+import Framework.Color as Color
+import Framework.Grid as Grid
+import Framework.Group as Group
+import Framework.Heading as Heading
+import Framework.Input as Input
+import Framework.Slider as Slider
+import Framework.Tag as Tag
 import Generated.Rankings.Params as Params
+import Html
 import Http
 import Json.Decode
 import RemoteData
@@ -47,8 +58,7 @@ type RemoteData e a
 
 
 type Model
-    = --JsonbinData SR.Types.SRState
-      AllRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
+    = AllRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
     | NewEmpty
     | FailureOnAllRankings String
 
@@ -105,6 +115,7 @@ expectJson toMsg decoder =
 
 type Msg
     = GotJsonbinAllRankings (RemoteData.WebData (List SR.Types.RankingInfo))
+    | NewRankingCreated
 
 
 
@@ -118,35 +129,24 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case model of
-        -- JsonbinData srState ->
-        --     case srState of
-        NewEmpty ->
+    case msg of
+        GotJsonbinAllRankings rmtdata ->
+            case rmtdata of
+                --removes[?] the first record (created on ranking creation with different format)
+                RemoteData.Success a ->
+                    ( AllRankingsJson (RemoteData.Success a), Cmd.none )
+
+                RemoteData.Failure e ->
+                    ( FailureOnAllRankings "Failure", Cmd.none )
+
+                RemoteData.NotAsked ->
+                    ( FailureOnAllRankings "Not Asked", Cmd.none )
+
+                RemoteData.Loading ->
+                    ( FailureOnAllRankings "Loading", Cmd.none )
+
+        NewRankingCreated ->
             ( NewEmpty, Cmd.none )
-
-        AllRankingsJson json ->
-            case msg of
-                GotJsonbinAllRankings rmtdata ->
-                    case rmtdata of
-                        --removes[?] the first record (created on ranking creation with different format)
-                        RemoteData.Success a ->
-                            ( AllRankingsJson (RemoteData.Success a), Cmd.none )
-
-                        RemoteData.Failure e ->
-                            ( FailureOnAllRankings "Failure", Cmd.none )
-
-                        RemoteData.NotAsked ->
-                            ( FailureOnAllRankings "Not Asked", Cmd.none )
-
-                        RemoteData.Loading ->
-                            ( FailureOnAllRankings "Loading", Cmd.none )
-
-        FailureOnAllRankings s ->
-            ( FailureOnAllRankings "Failure ", Cmd.none )
-
-
-
--- SUBSCRIPTIONS
 
 
 subscriptions : Model -> Sub Msg
@@ -156,23 +156,120 @@ subscriptions model =
 
 
 -- VIEW
---The view represents the visual elements of the application and will generate msgs for Update
--- it will also display whatever is currently in model
+--The view represents the visual elements of the application and
+-- will enable user to generate msgs telling Update what was done
+-- It will also display whatever is currently in model
 
 
 view : Model -> Element Msg
 view model =
-    Element.paragraph []
-        [ viewRankingsOrError model
-        ]
+    renderView model
+
+
+renderView : Model -> Element Msg
+renderView model =
+    html <|
+        Framework.responsiveLayout [ Element.explain Debug.todo ] <|
+            Element.el Framework.container <|
+                Element.paragraph [ Element.explain Debug.todo ] <|
+                    listOfElementmsgs
+                        model
+
+
+
+-- add any new html as Element Msg to this list
+
+
+listOfElementmsgs : Model -> List (Element Msg)
+listOfElementmsgs model =
+    [ getHeaderGroup model
+
+    --, viewRankingsOrError model
+    ]
+
+
+
+-- Input.button (Framework.Button.simple ++ Color.primary) <|
+--         { onPress = Just NewRankingCreated
+--         , label = Element.text "Create New Ranking"
+--         }
+
+
+getHeaderGroup : Model -> Element Msg
+getHeaderGroup model =
+    case model of
+        AllRankingsJson rnkingList ->
+            Element.column Grid.section <|
+                [ Element.el Heading.h2 <| Element.text "Global Rankings"
+                , Element.column (Card.fill ++ Grid.simple)
+                    [ Element.wrappedRow Grid.simple
+                        [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingCreated "Create New"
+                        , Element.el (Card.fill ++ Group.center ++ Color.disabled) <| joinbutton Color.primary NewRankingCreated "Join"
+                        , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingCreated "Enter Result"
+                        , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingCreated "Update Profile"
+
+                        --, viewRankingsOrError model
+                        --, Element.el (Card.fill ++ Group.bottom) <| listAllbutton Color.primary getRankingList "List All"
+                        ]
+                    ]
+                , Element.column (Card.fill ++ Grid.simple)
+                    [ Element.wrappedRow Grid.simple
+                        [ Element.el (Card.fill ++ Group.left) <| viewRankingsOrError model
+
+                        --, Element.el (Card.fill ++ Group.bottom) <| listAllbutton Color.primary getRankingList "List All"
+                        ]
+                    ]
+
+                -- , [ Element.wrappedRow Grid.simple
+                --         [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingCreated "Create New"
+                --         , viewRankingsOrError model
+                --         --, Element.el (Card.fill ++ Group.bottom) <| listAllbutton Color.primary getRankingList "List All"
+                --         ]
+                --   ]
+                ]
+
+        NewEmpty ->
+            Element.column Grid.section <|
+                [ Element.el Heading.h2 <| Element.text "Create New Ranking"
+                , Element.column (Card.fill ++ Grid.simple)
+                    [ Element.wrappedRow Grid.simple
+                        [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingCreated "Create New"
+                        , Element.el (Card.fill ++ Group.center ++ Color.disabled) <| joinbutton Color.primary NewRankingCreated "Join"
+                        , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingCreated "Enter Result"
+                        , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingCreated "Update Profile"
+
+                        --, Element.el (Card.fill ++ Group.bottom) <| listAllbutton Color.primary GotJsonbinAllRankings "List All"
+                        ]
+                    ]
+                ]
+
+        FailureOnAllRankings s ->
+            Element.column Grid.section <|
+                [ Element.el Heading.h2 <| Element.text "An error occurred"
+                , Element.column (Card.fill ++ Grid.simple)
+                    [ Element.wrappedRow Grid.simple
+                        [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingCreated "Create New"
+                        , Element.el (Card.fill ++ Group.center ++ Color.disabled) <| joinbutton Color.primary NewRankingCreated "Join"
+                        , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingCreated "Enter Result"
+                        , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingCreated "Update Profile"
+
+                        --, Element.el (Card.fill ++ Group.bottom) <| listAllbutton Color.primary GotJsonbinAllRankings "List All"
+                        ]
+                    ]
+                ]
+
+
+
+-- view : Model -> Element Msg
+-- view model =
+--     Element.paragraph []
+--         [ viewRankingsOrError model
+--         ]
 
 
 viewRankingsOrError : Model -> Element Msg
 viewRankingsOrError model =
     case model of
-        -- JsonbinData srState ->
-        --     case srState of
-        --         SR.Types.
         AllRankingsJson rmtData ->
             case rmtData of
                 RemoteData.NotAsked ->
@@ -190,8 +287,6 @@ viewRankingsOrError model =
         NewEmpty ->
             Element.text "ready to create a new ladder"
 
-        -- SR.Types.SRStateFailure s ->
-        --     Element.text "failure"
         FailureOnAllRankings s ->
             Element.text "failure on all"
 
@@ -206,33 +301,34 @@ viewRankings : List SR.Types.RankingInfo -> Element Msg
 viewRankings rankings =
     html <|
         Element.layout
-            [ Element.padding 25
-            , Background.color (rgba 0 0 0 1)
-            , Font.color (rgba 1 1 1 1)
+            [ Element.explain Debug.todo
 
-            --, Font.italic
-            , Font.size 22
-            , Font.family
-                [ Font.external
-                    { url = "https://fonts.googleapis.com/css?family=Roboto"
-                    , name = "Roboto"
-                    }
-                , Font.sansSerif
-                ]
+            --     Element.padding 25
+            -- , Background.color (rgba 0 0 0 1)
+            -- , Font.color (rgba 1 1 1 1)
+            -- --, Font.italic
+            -- , Font.size 22
+            -- , Font.family
+            --     [ Font.external
+            --         { url = "https://fonts.googleapis.com/css?family=Roboto"
+            --         , name = "Roboto"
+            --         }
+            --     , Font.sansSerif
+            --     ]
             ]
         <|
             Element.table
-                [ Element.padding 25
-                , Background.color Ui.colors.white
-                , Border.solid
-                , Border.color Ui.colors.black
-                , Border.widthXY 1 1
-                , Border.rounded 3
+                [--     Element.padding 25
+                 -- , Background.color Ui.colors.white
+                 -- , Border.solid
+                 -- , Border.color Ui.colors.black
+                 -- , Border.widthXY 1 1
+                 -- , Border.rounded 3
                 ]
                 { data = rankings
                 , columns =
-                    [ rankingNameCol rankings "SR.Types.Ranking Name"
-                    , rankingDescCol rankings "SR.Types.Ranking Desc"
+                    [ rankingNameCol rankings "Ranking Name"
+                    , rankingDescCol rankings "Ranking Desc"
                     ]
                 }
 
@@ -244,15 +340,14 @@ rankingNameCol _ str =
     , view =
         \rankingInfo ->
             Element.row
-                [ Font.color Ui.colors.lightblue
-                , Border.widthXY 2 2
+                [--     Font.color Ui.colors.lightblue
+                 -- , Border.widthXY 2 2
                 ]
                 [ Element.link
-                    [ --Background.color Ui.colors.blue
-                      Font.color Ui.colors.lightblue
-
-                    --, padding 5
-                    --, Border.widthXY 2 2
+                    [--Background.color Ui.colors.blue
+                     --Font.color Ui.colors.lightblue
+                     --, padding 5
+                     --, Border.widthXY 2 2
                     ]
                     { url = "/rankings/" ++ rankingInfo.id
                     , label = Element.text rankingInfo.name
@@ -268,8 +363,8 @@ rankingDescCol _ str =
     , view =
         \rankingInfo ->
             Element.row
-                [ Border.widthXY 2 2
-                , Font.color Ui.colors.green
+                [--     Border.widthXY 2 2
+                 -- , Font.color Ui.colors.green
                 ]
                 [ Element.text rankingInfo.desc
                 ]
@@ -280,19 +375,41 @@ rankingDescCol _ str =
 --UI
 
 
-createnewRankingbutton : Element.Color -> Msg -> String -> Element.Element Msg
+createnewRankingbutton : List (Attribute Msg) -> Msg -> String -> Element.Element Msg
 createnewRankingbutton color msg label =
-    Input.button
-        [ Element.padding 20
-        , Background.color color
-        ]
+    Input.button (Framework.Button.simple ++ color) <|
         { onPress = Just msg
-        , label =
-            Element.el
-                [ Element.centerX
-                , Element.centerY
-                , Font.center
-                , Font.color (Element.rgba 0.2 0.2 0.2 0.9)
-                ]
-                (Element.text label)
+        , label = Element.text label
+        }
+
+
+enterResultbutton : List (Attribute Msg) -> Msg -> String -> Element.Element Msg
+enterResultbutton color msg label =
+    Input.button (Framework.Button.simple ++ color) <|
+        { onPress = Just msg
+        , label = Element.text label
+        }
+
+
+joinbutton : List (Attribute Msg) -> Msg -> String -> Element.Element Msg
+joinbutton color msg label =
+    Input.button (Framework.Button.simple ++ color) <|
+        { onPress = Just msg
+        , label = Element.text label
+        }
+
+
+updateProfilebutton : List (Attribute Msg) -> Msg -> String -> Element.Element Msg
+updateProfilebutton color msg label =
+    Input.button (Framework.Button.simple ++ color) <|
+        { onPress = Just msg
+        , label = Element.text label
+        }
+
+
+listAllbutton : List (Attribute Msg) -> Msg -> String -> Element.Element Msg
+listAllbutton color msg label =
+    Input.button (Framework.Button.simple ++ color) <|
+        { onPress = Just msg
+        , label = Element.text label
         }
