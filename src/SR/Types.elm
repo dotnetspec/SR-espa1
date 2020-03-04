@@ -1,8 +1,8 @@
 module SR.Types exposing
     ( PlayerId, RankingId(..)
     , Player, Opponent, OpponentRelativeRank(..), Options, PlayerAvailability(..), ResultOfMatch(..), SRState(..), UserState(..), WalletState(..)
-    , UIState(..)
     , RankingInfo, Username(..)
+    --, UIState(..)
     )
 
 {-| Types
@@ -93,10 +93,11 @@ type WalletState
 
 
 type SRState
-    = AllRankings (RemoteData.WebData (List RankingInfo))
+    = AllRankingsJson (RemoteData.WebData (List RankingInfo))
+    | NewEmpty
       --| SingleRanking (RemoteData.WebData (List Player)) RankingId
       --| EnterResult
-    | Failure String
+    | SRStateFailure String
 
 
 type UserState
@@ -104,10 +105,13 @@ type UserState
     | NewUser
 
 
-type UIState
-    = MissingWalletDialogOpen
-    | LockedWalletDialogOpen
-    | DialogClosed
+
+-- type UIState
+--     = RenderAllRankings
+--     | CreateNewLadder
+-- MissingWalletDialogOpen
+-- | LockedWalletDialogOpen
+-- | DialogClosed
 
 
 type Options

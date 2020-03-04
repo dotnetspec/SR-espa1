@@ -155,9 +155,11 @@ type Msg
     | ChangePlayerRank SR.Types.Player
     | ProcessResult SR.Types.ResultOfMatch
     | ConfirmButtonClicked
+    | SentResultToJsonbin (Result Http.Error ())
 
 
 
+--| sentResultToJsonbin (Result Http.Error (List String))
 -- this is where the types matter and are actually set to values ...
 --init : Int -> ( Model, Cmd Msg )
 
@@ -253,6 +255,47 @@ fetchRanking (Internal.RankingId rankingId) =
         }
 
 
+postResultToJsonbin : Internal.RankingId -> Cmd Msg
+postResultToJsonbin (Internal.RankingId rankingId) =
+    let
+        _ =
+            Debug.log "rankingid in postResultToJsonbin" rankingId
+
+        headerKey =
+            Http.header
+                "secret-key"
+                "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
+    in
+    --PlayersReceived is the Msg handled by update whenever a request is made
+    --RemoteData is used throughout the module, including update
+    Http.request
+        { body = Http.emptyBody
+
+        --body = Http.jsonBody (playerEncoder rankingData)
+        -- , expect =
+        --     SR.Decode.ladderOfPlayersDecoder
+        --         |> Http.expectJson (RemoteData.fromResult >> SentResultToJsonbin)
+        , expect = Http.expectWhatever SentResultToJsonbin
+        , headers = [ headerKey ]
+        , method = "PUT"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = "https://api.jsonbin.io/b/" ++ rankingId
+        }
+
+
+
+--Http.request
+--                 { method = "PATCH"
+--                 , headers = [headerKey]
+--                 , url = "https://api.jsonbin.io/b/" ++ model.rankingid
+--                 , body = Http.jsonBody (postEncoder rankingData)
+--                 , expect = Http.expectJson PostSaved postDecoder
+--                 , timeout = Nothing
+--                 , tracker = Nothing
+--                 }
+
+
 expectJson : (Result Http.Error a -> msg) -> Json.Decode.Decoder a -> Http.Expect msg
 expectJson toMsg decoder =
     Http.expectStringResponse toMsg <|
@@ -308,6 +351,7 @@ expectJson toMsg decoder =
 -- if change here, change update, and change wherever the Msg is called from
 -- UPDATE
 --update the model before it gets passed to view
+-- update is just updating the model on what has already happened (as per Msg)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -405,7 +449,7 @@ update msg model =
                         }
                         txParams
             in
-            ( { model | txSentry = newSentry }, Cmd.batch [ sentryCmd, sendRequest (Internal.RankingId "5d8f5dcabfb1f70f0b11638b") ] )
+            ( { model | txSentry = newSentry }, Cmd.batch [ sentryCmd, postResultToJsonbin (Internal.RankingId "5d8f5dcabfb1f70f0b11638b") ] )
 
         WatchTxHash (Ok txHash) ->
             ( { model | txHash = Just txHash }, Cmd.none )
@@ -481,6 +525,9 @@ update msg model =
                 SR.Types.Undecided ->
                     ( model, Cmd.none )
 
+        SentResultToJsonbin a ->
+            ( model, Cmd.none )
+
         -- Nothing ->
         --     ( model, Cmd.none )
         Fail str ->
@@ -492,32 +539,6 @@ update msg model =
 
         NoOp ->
             ( model, Cmd.none )
-
-
-sendRequest : Internal.RankingId -> Cmd Msg
-sendRequest (Internal.RankingId rankingId) =
-    let
-        _ =
-            Debug.log "rankingid in sendRequest" rankingId
-
-        headerKey =
-            Http.header
-                "secret-key"
-                "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
-    in
-    --PlayersReceived is the Msg handled by update whenever a request is made
-    --RemoteData is used throughout the module, including update
-    Http.request
-        { body = Http.emptyBody
-        , expect =
-            SR.Decode.ladderOfPlayersDecoder
-                |> Http.expectJson (RemoteData.fromResult >> PlayersReceived)
-        , headers = [ headerKey ]
-        , method = "GET"
-        , timeout = Nothing
-        , tracker = Nothing
-        , url = "https://api.jsonbin.io/b/" ++ rankingId ++ "/latest"
-        }
 
 
 
