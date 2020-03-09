@@ -1,6 +1,6 @@
 module SR.Decode exposing
     ( rankingsDecoder
-    , ladderOfPlayersDecoder
+    , ladderOfPlayersDecoder, newRankingIdDecoder, newRankingListDecoder
     )
 
 {-|
@@ -16,10 +16,6 @@ import SR.Types
 
 ladderOfPlayersDecoder : Json.Decode.Decoder (List SR.Types.Player)
 ladderOfPlayersDecoder =
-    let
-        _ =
-            Debug.log "in ladderDecoder" playerDecoder
-    in
     Json.Decode.list playerDecoder
 
 
@@ -49,3 +45,23 @@ rankingDecoder =
         |> Json.Decode.Pipeline.required "ACTIVE" Json.Decode.bool
         |> Json.Decode.Pipeline.required "RANKINGNAME" Json.Decode.string
         |> Json.Decode.Pipeline.required "RANKINGDESC" Json.Decode.string
+
+
+newRankingListDecoder : Json.Decode.Decoder (List SR.Types.RankingInfo)
+newRankingListDecoder =
+    Json.Decode.list newRankingDecoder
+
+
+newRankingDecoder : Json.Decode.Decoder SR.Types.RankingInfo
+newRankingDecoder =
+    Json.Decode.succeed SR.Types.RankingInfo
+        |> Json.Decode.Pipeline.required "id" Json.Decode.string
+        |> Json.Decode.Pipeline.required "ACTIVE" Json.Decode.bool
+        |> Json.Decode.Pipeline.required "RANKINGNAME" Json.Decode.string
+        |> Json.Decode.Pipeline.required "RANKINGDESC" Json.Decode.string
+
+
+newRankingIdDecoder : Json.Decode.Decoder SR.Types.RankingId
+newRankingIdDecoder =
+    Json.Decode.succeed SR.Types.RankingId
+        |> Json.Decode.Pipeline.required "id" Json.Decode.string

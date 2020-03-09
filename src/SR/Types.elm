@@ -1,8 +1,10 @@
 module SR.Types exposing
     ( PlayerId, RankingId(..)
     , Player, Opponent, OpponentRelativeRank(..), Options, PlayerAvailability(..), ResultOfMatch(..), SRState(..), UserState(..), WalletState(..)
-    , RankingInfo, Username(..)
-    --, UIState(..)
+    ,  RankingInfo
+      , Username(..)
+        --, UIState(..)
+
     )
 
 {-| Types

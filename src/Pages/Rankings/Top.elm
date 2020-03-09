@@ -19,7 +19,9 @@ import Generated.Rankings.Params as Params
 import Html
 import Http
 import Json.Decode
+import Json.Encode
 import RemoteData
+import SR.Constants
 import SR.Decode
 import SR.Types
 import Spa.Page
@@ -55,15 +57,29 @@ type RemoteData e a
 -- it will go from 1 state to another
 -- functions like view will just reflect
 -- current state of model
+--nb: each variant added to model has to be handled e.g. do you need 'failure' if it's anyway handled by RemoteData?
 
 
 type Model
     = AllRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
-    | NewEmpty
-    | FailureOnAllRankings String
+    | NewEmpty (RemoteData.WebData SR.Types.RankingId)
 
 
 
+-- Msg is a description of the transition that already happened
+-- Messages that delivered the response (orign doc says 'will deliver')
+
+
+type Msg
+    = GotJsonbinAllRankings (RemoteData.WebData (List SR.Types.RankingInfo))
+      --| NewRankingCreated (RemoteData.WebData (List SR.Types.RankingInfo))
+    | NewRankingRequestedByBtnClick
+    | GotNewRankingResponse (RemoteData.WebData SR.Types.RankingId)
+
+
+
+--| SentNewRankingInfoToJsonbin (RemoteData.WebData (List SR.Types.RankingInfo))
+--NewRankingCreated (Result Http.Error ())
 -- INIT
 -- this accesses COLLECTION RECORDS - GLOBAL - public bin
 
@@ -71,16 +87,88 @@ type Model
 init : Params.Top -> ( Model, Cmd Msg )
 init _ =
     ( AllRankingsJson RemoteData.Loading
-    , getRankingList
+    , -- nb. getRankingList is an expression not a function
+      getRankingList
     )
 
 
 getRankingList : Cmd Msg
 getRankingList =
     Http.get
-        { url = "https://api.jsonbin.io/b/5e2a585f593fd741856f4b04/latest"
+        { url = SR.Constants.globalJsonbinRankingLink
         , expect = Http.expectJson (RemoteData.fromResult >> GotJsonbinAllRankings) SR.Decode.rankingsDecoder
         }
+
+
+createNewRankingList : Cmd Msg
+createNewRankingList =
+    let
+        secretKey =
+            Http.header
+                "secret-key"
+                "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
+
+        binName =
+            Http.header
+                "name"
+                "Global"
+
+        containerId =
+            Http.header
+                "collection-id"
+                "5d7deab3371673119fab12a6"
+
+        idJsonObj : Json.Encode.Value
+        idJsonObj =
+            Json.Encode.object
+                [ ( "id", Json.Encode.string "" )
+                , ( "active", Json.Encode.bool True )
+                , ( "name", Json.Encode.string "" )
+                , ( "desc", Json.Encode.string "" )
+                ]
+    in
+    --GotNewRankingResponse is the Msg handled by update whenever a request is made
+    --RemoteData is used throughout the module, including update
+    -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
+    Http.request
+        { body =
+            Http.jsonBody <| idJsonObj
+        , expect = Http.expectJson (RemoteData.fromResult >> GotNewRankingResponse) SR.Decode.newRankingIdDecoder
+        , headers = [ secretKey, binName, containerId ]
+        , method = "POST"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = SR.Constants.jsonbinUrlForCreateNewRankingAndReturnNewId
+        }
+
+
+
+-- updateNewRankingListInfoToJsonbin : SR.Types.RankingId -> Cmd Msg
+-- updateNewRankingListInfoToJsonbin (SR.Types.RankingId rankingId) =
+--     let
+--         _ =
+--             Debug.log "rankingid in updateNewRankingListInfoToJsonbin" rankingId
+--         headerKey =
+--             Http.header
+--                 "secret-key"
+--                 "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
+--     in
+--     --PlayersReceived is the Msg handled by update whenever a request is made
+--     --RemoteData is used throughout the module, including update
+--     Http.request
+--         { body = Http.emptyBody
+--         --body = Http.jsonBody (playerEncoder rankingData)
+--         -- , expect =
+--         --     SR.Decode.ladderOfPlayersDecoder
+--         --         |> Http.expectJson (RemoteData.fromResult >> SentResultToJsonbin)
+--         , expect = Http.expectWhatever SentResultToJsonbin
+--         , headers = [ headerKey ]
+--         , method = "PUT"
+--         , timeout = Nothing
+--         , tracker = Nothing
+--         , url = "https://api.jsonbin.io/b/" ++ rankingId
+--         }
+-- this is where the errors etc. are assigned to be matched against later if necessary e.g. to get new ranking id
 
 
 expectJson : (Result Http.Error a -> msg) -> Json.Decode.Decoder a -> Http.Expect msg
@@ -110,15 +198,6 @@ expectJson toMsg decoder =
 
 
 
--- Msg is a description of the transition that already happened
-
-
-type Msg
-    = GotJsonbinAllRankings (RemoteData.WebData (List SR.Types.RankingInfo))
-    | NewRankingCreated
-
-
-
 -- UPDATE
 -- Update needs to take two things: a message (which
 -- is a description of the transition that already happened),
@@ -137,16 +216,22 @@ update msg model =
                     ( AllRankingsJson (RemoteData.Success a), Cmd.none )
 
                 RemoteData.Failure e ->
-                    ( FailureOnAllRankings "Failure", Cmd.none )
+                    ( AllRankingsJson (RemoteData.Failure e), Cmd.none )
 
                 RemoteData.NotAsked ->
-                    ( FailureOnAllRankings "Not Asked", Cmd.none )
+                    ( AllRankingsJson RemoteData.NotAsked, Cmd.none )
 
                 RemoteData.Loading ->
-                    ( FailureOnAllRankings "Loading", Cmd.none )
+                    ( AllRankingsJson RemoteData.Loading, Cmd.none )
 
-        NewRankingCreated ->
-            ( NewEmpty, Cmd.none )
+        --this doesn't do much - just fires the createNewRankingList Cmd
+        NewRankingRequestedByBtnClick ->
+            ( NewEmpty RemoteData.Loading, createNewRankingList )
+
+        -- this is the result from createNewRankingList Cmd
+        -- it should have the Http.expectStringResponse in it
+        GotNewRankingResponse result ->
+            ( NewEmpty result, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -203,10 +288,10 @@ getHeaderGroup model =
                 [ Element.el Heading.h2 <| Element.text "Global Rankings"
                 , Element.column (Card.fill ++ Grid.simple)
                     [ Element.wrappedRow Grid.simple
-                        [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingCreated "Create New"
-                        , Element.el (Card.fill ++ Group.center ++ Color.disabled) <| joinbutton Color.primary NewRankingCreated "Join"
-                        , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingCreated "Enter Result"
-                        , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingCreated "Update Profile"
+                        [ Element.el (Card.fill ++ Group.left) <| createnewRankingbutton Color.primary NewRankingRequestedByBtnClick "Create New"
+                        , Element.el (Card.fill ++ Group.center ++ Color.disabled) <| joinbutton Color.primary NewRankingRequestedByBtnClick "Join"
+                        , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingRequestedByBtnClick "Enter Result"
+                        , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingRequestedByBtnClick "Update Profile"
 
                         --, viewRankingsOrError model
                         --, Element.el (Card.fill ++ Group.bottom) <| listAllbutton Color.primary getRankingList "List All"
@@ -221,37 +306,24 @@ getHeaderGroup model =
                     ]
 
                 -- , [ Element.wrappedRow Grid.simple
-                --         [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingCreated "Create New"
+                --         [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingRequestedByBtnClick "Create New"
                 --         , viewRankingsOrError model
                 --         --, Element.el (Card.fill ++ Group.bottom) <| listAllbutton Color.primary getRankingList "List All"
                 --         ]
                 --   ]
                 ]
 
-        NewEmpty ->
+        NewEmpty remdata ->
             Element.column Grid.section <|
-                [ Element.el Heading.h2 <| Element.text "Create New Ranking"
+                [ Element.el Heading.h2 <| Element.text <| "Create New Ranking ... new id is " ++ gotNewRankingId model
+
+                --Element.el Heading.h2 <| Element.text <| "Create New Ranking ... new id is " ++ remdata.expect
                 , Element.column (Card.fill ++ Grid.simple)
                     [ Element.wrappedRow Grid.simple
-                        [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingCreated "Create New"
-                        , Element.el (Card.fill ++ Group.center ++ Color.disabled) <| joinbutton Color.primary NewRankingCreated "Join"
-                        , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingCreated "Enter Result"
-                        , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingCreated "Update Profile"
-
-                        --, Element.el (Card.fill ++ Group.bottom) <| listAllbutton Color.primary GotJsonbinAllRankings "List All"
-                        ]
-                    ]
-                ]
-
-        FailureOnAllRankings s ->
-            Element.column Grid.section <|
-                [ Element.el Heading.h2 <| Element.text "An error occurred"
-                , Element.column (Card.fill ++ Grid.simple)
-                    [ Element.wrappedRow Grid.simple
-                        [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingCreated "Create New"
-                        , Element.el (Card.fill ++ Group.center ++ Color.disabled) <| joinbutton Color.primary NewRankingCreated "Join"
-                        , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingCreated "Enter Result"
-                        , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingCreated "Update Profile"
+                        [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingRequestedByBtnClick "Create New"
+                        , Element.el (Card.fill ++ Group.center) <| joinbutton Color.primary NewRankingRequestedByBtnClick "Join"
+                        , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingRequestedByBtnClick "Enter Result"
+                        , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingRequestedByBtnClick "Update Profile"
 
                         --, Element.el (Card.fill ++ Group.bottom) <| listAllbutton Color.primary GotJsonbinAllRankings "List All"
                         ]
@@ -259,7 +331,77 @@ getHeaderGroup model =
                 ]
 
 
+gotNewRankingId : Model -> String
+gotNewRankingId model =
+    case model of
+        AllRankingsJson rmtdata ->
+            "Not in NewEmpty!"
 
+        NewEmpty remtdata ->
+            case remtdata of
+                RemoteData.Success a ->
+                    case a of
+                        SR.Types.RankingId id ->
+                            "Success : " ++ id
+
+                RemoteData.NotAsked ->
+                    "Initialising."
+
+                RemoteData.Loading ->
+                    "Loading."
+
+                RemoteData.Failure err ->
+                    case err of
+                        Http.BadUrl s ->
+                            "Bad Url"
+
+                        Http.Timeout ->
+                            "Timeout"
+
+                        Http.NetworkError ->
+                            "Network Err"
+
+                        -- type alias Metadata =
+                        --     { url : String
+                        --     , statusCode : Int
+                        --     , statusText : String
+                        --     , headers : Dict String String
+                        --     }
+                        Http.BadStatus statuscode ->
+                            String.fromInt <| statuscode
+
+                        --statustext
+                        --++ String.fromInt <| Http.BadStatus metadata.statusCode
+                        -- Http.GoodStatus_ metadata body ->
+                        --     "Good status"
+                        -- case Json.Decode.decodeString SR.Decode.newRankingIdDecoder body of
+                        --     Ok value ->
+                        --         "says Ok"
+                        --     -- Ok value
+                        --     Err error ->
+                        --         "Err under GoodStatus" ++ Http.BadBody (Json.Decode.errorToString error)
+                        _ ->
+                            "some other err"
+
+
+
+--  case response of
+--                 Http.BadUrl_ url ->
+--                     Err (Http.BadUrl url)
+--                 Http.Timeout_ ->
+--                     Err Http.Timeout
+--                 Http.NetworkError_ ->
+--                     Err Http.NetworkError
+--                 Http.BadStatus_ metadata body ->
+--                     Err (Http.BadStatus metadata.statusCode)
+--                 Http.GoodStatus_ metadata body ->
+--                     case Json.Decode.decodeString decoder body of
+--                         Ok value ->
+--                             Ok value
+--                         Err err ->
+--                             Err (Http.BadBody (Json.Decode.errorToString err))
+-- _ ->
+--     "RemoteData fail"
 -- view : Model -> Element Msg
 -- view model =
 --     Element.paragraph []
@@ -284,11 +426,8 @@ viewRankingsOrError model =
                 RemoteData.Failure httpError ->
                     Element.text "(Err httpError - real value to fix here)"
 
-        NewEmpty ->
+        NewEmpty remdata ->
             Element.text "ready to create a new ladder"
-
-        FailureOnAllRankings s ->
-            Element.text "failure on all"
 
 
 

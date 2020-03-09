@@ -449,7 +449,7 @@ update msg model =
                         }
                         txParams
             in
-            ( { model | txSentry = newSentry }, Cmd.batch [ sentryCmd, postResultToJsonbin (Internal.RankingId "5d8f5dcabfb1f70f0b11638b") ] )
+            ( { model | txSentry = newSentry }, Cmd.batch [ sentryCmd, postResultToJsonbin <| Internal.RankingId model.rankingid ] )
 
         WatchTxHash (Ok txHash) ->
             ( { model | txHash = Just txHash }, Cmd.none )
