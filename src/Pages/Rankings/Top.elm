@@ -636,56 +636,61 @@ listAllbutton color msg label =
 input : Element Msg
 input =
     Element.column Grid.section <|
-        [ Element.el Heading.h2 <| Element.text "Input"
+        [ Element.el Heading.h2 <| Element.text "Please name and describe your new ranking"
         , Element.wrappedRow (Card.fill ++ Grid.simple)
             [ Element.column Grid.simple
                 [ Input.text Input.simple
                     { onChange = InputChg
-                    , text = "Input.simple"
+                    , text = "e.g. Stockton On Pullet Juniors"
                     , placeholder = Nothing
-                    , label = Input.labelLeft Input.label <| Element.text "Input.label"
+                    , label = Input.labelLeft Input.label <| Element.text "Name"
                     }
                 , Input.multiline Input.simple
                     { onChange = InputChg
-                    , text = "Input.simple"
+                    , text = "e.g. For all under 19s"
                     , placeholder = Nothing
-                    , label = Input.labelLeft Input.label <| Element.text "Input.label"
+                    , label = Input.labelLeft Input.label <| Element.text "Description"
                     , spellcheck = False
                     }
                 ]
-            , Element.column Grid.simple
-                [ Input.currentPassword Input.simple
-                    { onChange = InputChg
-                    , text = "Input.simple"
-                    , placeholder = Nothing
-                    , label = Input.labelLeft Input.label <| Element.text "Input.label"
-                    , show = False
+            ]
+        , Element.column (Card.simple ++ Grid.simple) <|
+            [ Element.wrappedRow Grid.simple <|
+                [ --     Input.button Framework.Button.simple <|
+                  --     { onPress = Nothing
+                  --     , label = Element.text "Framework.simple"
+                  --     }
+                  -- ,
+                  Input.button Framework.Button.fill <|
+                    { onPress = Nothing
+                    , label = Element.text "Create New Ranking"
                     }
                 ]
             ]
         , Element.paragraph [] <|
             List.singleton <|
-                Element.text "Input attributes can be combined with other attributes."
-        , Element.wrappedRow Grid.simple <|
-            [ Input.text (Color.danger ++ Input.simple)
-                { onChange = InputChg
-                , text = ""
-                , placeholder = Nothing
-                , label = Input.labelLeft Input.label <| Element.text "Color.danger ++ Input.simple"
-                }
-            ]
-        , Element.wrappedRow Grid.simple <|
-            [ Input.text (Color.disabled ++ Input.simple)
-                { onChange = InputChg
-                , text = ""
-                , placeholder = Nothing
-                , label = Input.labelLeft Input.label <| Element.text "Color.disabled ++ Input.simple"
-                }
-            ]
+                Element.text "Once created - get your friends to join "
+
+        -- , Element.wrappedRow Grid.simple <|
+        --     [ Input.text (Color.danger ++ Input.simple)
+        --         { onChange = InputChg
+        --         , text = ""
+        --         , placeholder = Nothing
+        --         , label = Input.labelLeft Input.label <| Element.text "Color.danger ++ Input.simple"
+        --         }
+        --     ]
+        -- , Element.wrappedRow Grid.simple <|
+        --     [ Input.text (Color.disabled ++ Input.simple)
+        --         { onChange = InputChg
+        --         , text = ""
+        --         , placeholder = Nothing
+        --         , label = Input.labelLeft Input.label <| Element.text "Color.disabled ++ Input.simple"
+        --         }
+        --     ]
         , Element.paragraph (Card.fill ++ Color.warning) <|
-            [ Element.el [ Font.bold ] <| Element.text "Warning: "
+            [ Element.el [ Font.bold ] <| Element.text "Please Note: "
             , Element.paragraph [] <|
                 List.singleton <|
-                    Element.text "color changing attributes need to come before the Input attribute."
+                    Element.text "Creating a ranking makes the administration of it entirely your responsibility. \nOnly you can delete it"
             ]
         ]
