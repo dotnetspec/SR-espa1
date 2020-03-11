@@ -75,8 +75,10 @@ type Model
 type Msg
     = GotJsonbinAllRankings (RemoteData.WebData (List SR.Types.RankingInfo))
       --| NewRankingCreated (RemoteData.WebData (List SR.Types.RankingInfo))
+    | SwitchToNewEmpty
     | NewRankingRequestedByBtnClick
     | GotNewRankingResponse (RemoteData.WebData SR.Types.RankingId)
+    | InputChg String
 
 
 
@@ -307,6 +309,9 @@ update msg model =
                 RemoteData.Loading ->
                     ( AllRankingsJson RemoteData.Loading, Cmd.none )
 
+        SwitchToNewEmpty ->
+            ( NewEmpty RemoteData.Loading, Cmd.none )
+
         --this doesn't do much - just fires the createNewRankingList Cmd
         NewRankingRequestedByBtnClick ->
             ( NewEmpty RemoteData.Loading, createNewRankingList )
@@ -315,6 +320,9 @@ update msg model =
         -- it should have the Http.expectStringResponse in it
         GotNewRankingResponse result ->
             ( NewEmpty result, Cmd.none )
+
+        InputChg str ->
+            ( NewEmpty RemoteData.Loading, Cmd.none )
 
 
 
@@ -342,6 +350,22 @@ view model =
     renderView model
 
 
+
+-- Element.column
+-- Framework.container
+-- [ Element.el Heading.h1 <| Element.text "Elm-Ui Framework"
+-- -- , heading
+-- -- , tag
+-- -- , group
+-- -- , color
+-- -- , card
+-- -- , grid
+-- -- , button
+-- , input
+-- --, slider
+-- ]
+
+
 renderView : Model -> Element Msg
 renderView model =
     html <|
@@ -353,6 +377,10 @@ renderView model =
 
 
 
+-- <|
+--     Element.paragraph [ Element.explain Debug.todo ] <|
+--         listOfElementmsgs
+--             model
 -- add any new html as Element Msg to this list
 
 
@@ -360,7 +388,7 @@ listOfElementmsgs : Model -> List (Element Msg)
 listOfElementmsgs model =
     [ getHeaderGroup model
 
-    --, viewRankingsOrError model
+    --, currentView model
     ]
 
 
@@ -379,7 +407,7 @@ getHeaderGroup model =
                 [ Element.el Heading.h2 <| Element.text "Global Rankings"
                 , Element.column (Card.fill ++ Grid.simple)
                     [ Element.wrappedRow Grid.simple
-                        [ Element.el (Card.fill ++ Group.left) <| createnewRankingbutton Color.primary NewRankingRequestedByBtnClick "Create New"
+                        [ Element.el (Card.fill ++ Group.left) <| createnewRankingbutton Color.primary SwitchToNewEmpty "Create New"
                         , Element.el (Card.fill ++ Group.center ++ Color.disabled) <| joinbutton Color.primary NewRankingRequestedByBtnClick "Join"
                         , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingRequestedByBtnClick "Enter Result"
                         , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingRequestedByBtnClick "Update Profile"
@@ -387,13 +415,13 @@ getHeaderGroup model =
                     ]
                 , Element.column (Card.fill ++ Grid.simple)
                     [ Element.wrappedRow Grid.simple
-                        [ Element.el (Card.fill ++ Group.left) <| viewRankingsOrError model
+                        [ Element.el (Card.fill ++ Group.left) <| currentView model
                         ]
                     ]
 
                 -- , [ Element.wrappedRow Grid.simple
                 --         [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingRequestedByBtnClick "Create New"
-                --         , viewRankingsOrError model
+                --         , currentView model
                 --         --, Element.el (Card.fill ++ Group.bottom) <| listAllbutton Color.primary getRankingList "List All"
                 --         ]
                 --   ]
@@ -410,6 +438,11 @@ getHeaderGroup model =
                         , Element.el (Card.fill ++ Group.center) <| joinbutton Color.primary NewRankingRequestedByBtnClick "Join"
                         , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingRequestedByBtnClick "Enter Result"
                         , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingRequestedByBtnClick "Update Profile"
+                        ]
+                    ]
+                , Element.column (Card.fill ++ Grid.simple)
+                    [ Element.wrappedRow Grid.simple
+                        [ Element.el (Card.fill ++ Group.left) <| currentView model
                         ]
                     ]
                 ]
@@ -455,8 +488,8 @@ gotNewRankingId model =
                             "BadBody " ++ s
 
 
-viewRankingsOrError : Model -> Element Msg
-viewRankingsOrError model =
+currentView : Model -> Element Msg
+currentView model =
     case model of
         AllRankingsJson rmtData ->
             case rmtData of
@@ -473,7 +506,7 @@ viewRankingsOrError model =
                     Element.text "(Err httpError - real value to fix here)"
 
         NewEmpty rankingIdremdata ->
-            Element.text "ready to create a new ladder"
+            input
 
 
 
@@ -598,3 +631,61 @@ listAllbutton color msg label =
         { onPress = Just msg
         , label = Element.text label
         }
+
+
+input : Element Msg
+input =
+    Element.column Grid.section <|
+        [ Element.el Heading.h2 <| Element.text "Input"
+        , Element.wrappedRow (Card.fill ++ Grid.simple)
+            [ Element.column Grid.simple
+                [ Input.text Input.simple
+                    { onChange = InputChg
+                    , text = "Input.simple"
+                    , placeholder = Nothing
+                    , label = Input.labelLeft Input.label <| Element.text "Input.label"
+                    }
+                , Input.multiline Input.simple
+                    { onChange = InputChg
+                    , text = "Input.simple"
+                    , placeholder = Nothing
+                    , label = Input.labelLeft Input.label <| Element.text "Input.label"
+                    , spellcheck = False
+                    }
+                ]
+            , Element.column Grid.simple
+                [ Input.currentPassword Input.simple
+                    { onChange = InputChg
+                    , text = "Input.simple"
+                    , placeholder = Nothing
+                    , label = Input.labelLeft Input.label <| Element.text "Input.label"
+                    , show = False
+                    }
+                ]
+            ]
+        , Element.paragraph [] <|
+            List.singleton <|
+                Element.text "Input attributes can be combined with other attributes."
+        , Element.wrappedRow Grid.simple <|
+            [ Input.text (Color.danger ++ Input.simple)
+                { onChange = InputChg
+                , text = ""
+                , placeholder = Nothing
+                , label = Input.labelLeft Input.label <| Element.text "Color.danger ++ Input.simple"
+                }
+            ]
+        , Element.wrappedRow Grid.simple <|
+            [ Input.text (Color.disabled ++ Input.simple)
+                { onChange = InputChg
+                , text = ""
+                , placeholder = Nothing
+                , label = Input.labelLeft Input.label <| Element.text "Color.disabled ++ Input.simple"
+                }
+            ]
+        , Element.paragraph (Card.fill ++ Color.warning) <|
+            [ Element.el [ Font.bold ] <| Element.text "Warning: "
+            , Element.paragraph [] <|
+                List.singleton <|
+                    Element.text "color changing attributes need to come before the Input attribute."
+            ]
+        ]
