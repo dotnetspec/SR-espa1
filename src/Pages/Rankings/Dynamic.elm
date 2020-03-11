@@ -847,7 +847,21 @@ viewPlayersOrError model =
             viewplayers players
 
         RemoteData.Failure httpError ->
-            Element.text "Failure"
+            case httpError of
+                Http.BadUrl s ->
+                    Element.text "Bad Url"
+
+                Http.Timeout ->
+                    Element.text "Timeout"
+
+                Http.NetworkError ->
+                    Element.text "Network Err"
+
+                Http.BadStatus statuscode ->
+                    Element.text <| String.fromInt <| statuscode
+
+                Http.BadBody s ->
+                    Element.text <| "BadBody " ++ s
 
 
 extractPlayersFromWebData : Model -> List SR.Types.Player

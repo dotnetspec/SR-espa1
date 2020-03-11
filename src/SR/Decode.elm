@@ -1,6 +1,6 @@
 module SR.Decode exposing
     ( rankingsDecoder
-    , ladderOfPlayersDecoder, newRankingIdDecoder, newRankingListDecoder
+    , ladderOfPlayersDecoder, newRankingDecoder, newRankingIdDecoder, newRankingListDecoder, playerDecoder
     )
 
 {-|
@@ -29,7 +29,7 @@ playerDecoder =
         |> Json.Decode.Pipeline.required "ADDRESS" Json.Decode.string
         |> Json.Decode.Pipeline.required "RANK" Json.Decode.int
         |> Json.Decode.Pipeline.required "NAME" Json.Decode.string
-        |> Json.Decode.Pipeline.required "id" Json.Decode.int
+        |> Json.Decode.Pipeline.required "PLAYERID" Json.Decode.int
         |> Json.Decode.Pipeline.required "CURRENTCHALLENGERADDRESS" Json.Decode.string
 
 
@@ -41,7 +41,7 @@ rankingsDecoder =
 rankingDecoder : Json.Decode.Decoder SR.Types.RankingInfo
 rankingDecoder =
     Json.Decode.succeed SR.Types.RankingInfo
-        |> Json.Decode.Pipeline.required "RANKINGID" Json.Decode.string
+        |> Json.Decode.Pipeline.required "id" Json.Decode.string
         |> Json.Decode.Pipeline.required "ACTIVE" Json.Decode.bool
         |> Json.Decode.Pipeline.required "RANKINGNAME" Json.Decode.string
         |> Json.Decode.Pipeline.required "RANKINGDESC" Json.Decode.string

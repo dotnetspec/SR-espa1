@@ -16,6 +16,7 @@ import Framework.Input as Input
 import Framework.Slider as Slider
 import Framework.Tag as Tag
 import Generated.Rankings.Params as Params
+import Global
 import Html
 import Http
 import Json.Decode
@@ -66,6 +67,7 @@ type Model
 
 
 
+--| NewEmpty (RemoteData.WebData SR.Types.Player) (RemoteData.WebData SR.Types.RankingInfo) (RemoteData.WebData SR.Types.RankingId)
 -- Msg is a description of the transition that already happened
 -- Messages that delivered the response (orign doc says 'will deliver')
 
@@ -78,7 +80,9 @@ type Msg
 
 
 
---| SentNewRankingInfoToJsonbin (RemoteData.WebData (List SR.Types.RankingInfo))
+--| GotNewRankingResponse (RemoteData.WebData SR.Types.Player)
+-- | NewRankingInfoConfirmedByBtnClick (RemoteData.WebData SR.Types.Player) (RemoteData.WebData SR.Types.RankingInfo) (RemoteData.WebData SR.Types.RankingId)
+-- | SentNewRankingInfoToJsonbin (RemoteData.WebData SR.Types.Player) (RemoteData.WebData SR.Types.RankingInfo) (RemoteData.WebData SR.Types.RankingId)
 --NewRankingCreated (Result Http.Error ())
 -- INIT
 -- this accesses COLLECTION RECORDS - GLOBAL - public bin
@@ -86,6 +90,20 @@ type Msg
 
 init : Params.Top -> ( Model, Cmd Msg )
 init _ =
+    -- let
+    --     uname =
+    --         case context.global of
+    --             Global.GlobalVariant wSentry uName ->
+    --                 case uName of
+    --                     SR.Types.NewUser ->
+    --                         "Hello New User"
+    --                     SR.Types.ExistingUser str ->
+    --                         "temp value whilst sort Top.elm"
+    --             Global.Failure str ->
+    --                 str
+    --     _ =
+    --         Debug.log "username " ++ uname
+    -- in
     ( AllRankingsJson RemoteData.Loading
     , -- nb. getRankingList is an expression not a function
       getRankingList
@@ -111,20 +129,27 @@ createNewRankingList =
         binName =
             Http.header
                 "name"
-                "Global"
+                "Selected"
 
         containerId =
             Http.header
                 "collection-id"
-                "5d7deab3371673119fab12a6"
+                "5d7deb68371673119fab12d7"
 
         idJsonObj : Json.Encode.Value
         idJsonObj =
-            Json.Encode.object
-                [ ( "id", Json.Encode.string "" )
-                , ( "active", Json.Encode.bool True )
-                , ( "name", Json.Encode.string "" )
-                , ( "desc", Json.Encode.string "" )
+            Json.Encode.list
+                Json.Encode.object
+                [ [ ( "DATESTAMP", Json.Encode.int 123456 )
+                  , ( "ACTIVE", Json.Encode.bool True )
+                  , ( "CURRENTCHALLENGERNAME", Json.Encode.string "" )
+                  , ( "CURRENTCHALLENGERID", Json.Encode.int 0 )
+                  , ( "ADDRESS", Json.Encode.string "" )
+                  , ( "RANK", Json.Encode.int 1 )
+                  , ( "NAME", Json.Encode.string "" )
+                  , ( "PLAYERID", Json.Encode.int 1 )
+                  , ( "CURRENTCHALLENGERADDRESS", Json.Encode.string "" )
+                  ]
                 ]
     in
     --GotNewRankingResponse is the Msg handled by update whenever a request is made
@@ -134,6 +159,8 @@ createNewRankingList =
         { body =
             Http.jsonBody <| idJsonObj
         , expect = Http.expectJson (RemoteData.fromResult >> GotNewRankingResponse) SR.Decode.newRankingIdDecoder
+
+        --, expect = Http.expectJson (RemoteData.fromResult >> GotNewRankingResponse) SR.Decode.playerDecoder
         , headers = [ secretKey, binName, containerId ]
         , method = "POST"
         , timeout = Nothing
@@ -143,30 +170,86 @@ createNewRankingList =
 
 
 
--- updateNewRankingListInfoToJsonbin : SR.Types.RankingId -> Cmd Msg
--- updateNewRankingListInfoToJsonbin (SR.Types.RankingId rankingId) =
+-- this also has to be done when a new ranking is created.
+-- addNewRankingListEntryInGlobal : Cmd Msg
+-- addNewRankingListEntryInGlobal =
 --     let
---         _ =
---             Debug.log "rankingid in updateNewRankingListInfoToJsonbin" rankingId
+--         secretKey =
+--             Http.header
+--                 "secret-key"
+--                 "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
+--         binName =
+--             Http.header
+--                 "name"
+--                 "Global"
+--         containerId =
+--             Http.header
+--                 "collection-id"
+--                 "5d7deab3371673119fab12a6"
+--         idJsonObj : Json.Encode.Value
+--         idJsonObj =
+--             Json.Encode.object
+--                 [ ( "id", Json.Encode.string "" )
+--                 , ( "ACTIVE", Json.Encode.bool True )
+--                 , ( "RANKINGNAME", Json.Encode.string "" )
+--                 , ( "RANKINGDESC", Json.Encode.string "" )
+--                 ]
+--     in
+--     --GotNewRankingResponse is the Msg handled by update whenever a request is made
+--     --RemoteData is used throughout the module, including update
+--     -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
+--     Http.request
+--         { body =
+--             Http.jsonBody <| idJsonObj
+--         --, expect = Http.expectJson (RemoteData.fromResult >> GotNewRankingResponse) SR.Decode.newRankingIdDecoder
+--         , expect = Http.expectJson (RemoteData.fromResult >> GotNewRankingResponse) SR.Decode.newRankingDecoder
+--         , headers = [ secretKey, binName, containerId ]
+--         , method = "POST"
+--         , timeout = Nothing
+--         , tracker = Nothing
+--         , url = SR.Constants.jsonbinUrlForCreateNewRankingAndReturnNewId
+--         }
+-- updateNewRankingListInfoToJsonbin : SR.Types.RankingId -> Cmd Msg
+-- updateNewRankingListInfoToJsonbin rankingIdRemData =
+--     let
+--         newrankingId =
+--             case rankingIdRemData of
+--                 RemoteData.Success b ->
+--                     b
+--                 _ ->
+--                     "999"
+--         --             { id = "String"
+--         --             , active = False
+--         --             , name = "String"
+--         --             , desc = "String"
+--         --             }
+--         -- _ =
+--         --     Debug.log "rankingid in updateNewRankingListInfoToJsonbin" rankingInfo.id
 --         headerKey =
 --             Http.header
 --                 "secret-key"
 --                 "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
+--         -- todo: re-factor?
+--         idJsonObj : Json.Encode.Value
+--         idJsonObj =
+--             Json.Encode.object
+--                 [ ( "id", Json.Encode.string newrankingId )
+--                 , ( "ACTIVE", Json.Encode.bool True )
+--                 , ( "RANKINGNAME", Json.Encode.string "rankingInfo.name" )
+--                 , ( "RANKINGDESC", Json.Encode.string "rankingInfo.desc" )
+--                 ]
 --     in
 --     --PlayersReceived is the Msg handled by update whenever a request is made
 --     --RemoteData is used throughout the module, including update
 --     Http.request
---         { body = Http.emptyBody
---         --body = Http.jsonBody (playerEncoder rankingData)
---         -- , expect =
---         --     SR.Decode.ladderOfPlayersDecoder
---         --         |> Http.expectJson (RemoteData.fromResult >> SentResultToJsonbin)
---         , expect = Http.expectWhatever SentResultToJsonbin
+--         { body =
+--             Http.jsonBody <| idJsonObj
+--         , expect = Http.expectJson (RemoteData.fromResult >> SentNewRankingInfoToJsonbin) SR.Decode.newRankingDecoder
 --         , headers = [ headerKey ]
 --         , method = "PUT"
 --         , timeout = Nothing
 --         , tracker = Nothing
---         , url = "https://api.jsonbin.io/b/" ++ rankingId
+--         , url = "https://api.jsonbin.io/b/" ++ newrankingId
 --         }
 -- this is where the errors etc. are assigned to be matched against later if necessary e.g. to get new ranking id
 
@@ -234,6 +317,14 @@ update msg model =
             ( NewEmpty result, Cmd.none )
 
 
+
+--have to pass both sets of info in as NewEmpty requires it ...
+-- NewRankingInfoConfirmedByBtnClick playerinfo rankinfo rankId ->
+--     ( NewEmpty playerinfo rankinfo rankId, updateNewRankingListInfoToJsonbin playerinfo rankinfo )
+-- SentNewRankingInfoToJsonbin playerinfo rankinfo rankId ->
+--     ( NewEmpty playerinfo rankinfo, Cmd.none )
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.none
@@ -292,16 +383,11 @@ getHeaderGroup model =
                         , Element.el (Card.fill ++ Group.center ++ Color.disabled) <| joinbutton Color.primary NewRankingRequestedByBtnClick "Join"
                         , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingRequestedByBtnClick "Enter Result"
                         , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingRequestedByBtnClick "Update Profile"
-
-                        --, viewRankingsOrError model
-                        --, Element.el (Card.fill ++ Group.bottom) <| listAllbutton Color.primary getRankingList "List All"
                         ]
                     ]
                 , Element.column (Card.fill ++ Grid.simple)
                     [ Element.wrappedRow Grid.simple
                         [ Element.el (Card.fill ++ Group.left) <| viewRankingsOrError model
-
-                        --, Element.el (Card.fill ++ Group.bottom) <| listAllbutton Color.primary getRankingList "List All"
                         ]
                     ]
 
@@ -313,9 +399,9 @@ getHeaderGroup model =
                 --   ]
                 ]
 
-        NewEmpty remdata ->
+        NewEmpty rankingIdremdata ->
             Element.column Grid.section <|
-                [ Element.el Heading.h2 <| Element.text <| "Create New Ranking ... new id is " ++ gotNewRankingId model
+                [ Element.el Heading.h5 <| Element.text <| "Create New Ranking ... new id is " ++ gotNewRankingId model
 
                 --Element.el Heading.h2 <| Element.text <| "Create New Ranking ... new id is " ++ remdata.expect
                 , Element.column (Card.fill ++ Grid.simple)
@@ -324,8 +410,6 @@ getHeaderGroup model =
                         , Element.el (Card.fill ++ Group.center) <| joinbutton Color.primary NewRankingRequestedByBtnClick "Join"
                         , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingRequestedByBtnClick "Enter Result"
                         , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingRequestedByBtnClick "Update Profile"
-
-                        --, Element.el (Card.fill ++ Group.bottom) <| listAllbutton Color.primary GotJsonbinAllRankings "List All"
                         ]
                     ]
                 ]
@@ -337,13 +421,16 @@ gotNewRankingId model =
         AllRankingsJson rmtdata ->
             "Not in NewEmpty!"
 
-        NewEmpty remtdata ->
-            case remtdata of
+        NewEmpty rankingIdremdata ->
+            case rankingIdremdata of
                 RemoteData.Success a ->
                     case a of
-                        SR.Types.RankingId id ->
-                            "Success : " ++ id
+                        b ->
+                            case b of
+                                SR.Types.RankingId c ->
+                                    c
 
+                --"Success : " ++ SR.Types.RankingId b
                 RemoteData.NotAsked ->
                     "Initialising."
 
@@ -361,52 +448,11 @@ gotNewRankingId model =
                         Http.NetworkError ->
                             "Network Err"
 
-                        -- type alias Metadata =
-                        --     { url : String
-                        --     , statusCode : Int
-                        --     , statusText : String
-                        --     , headers : Dict String String
-                        --     }
                         Http.BadStatus statuscode ->
                             String.fromInt <| statuscode
 
-                        --statustext
-                        --++ String.fromInt <| Http.BadStatus metadata.statusCode
-                        -- Http.GoodStatus_ metadata body ->
-                        --     "Good status"
-                        -- case Json.Decode.decodeString SR.Decode.newRankingIdDecoder body of
-                        --     Ok value ->
-                        --         "says Ok"
-                        --     -- Ok value
-                        --     Err error ->
-                        --         "Err under GoodStatus" ++ Http.BadBody (Json.Decode.errorToString error)
-                        _ ->
-                            "some other err"
-
-
-
---  case response of
---                 Http.BadUrl_ url ->
---                     Err (Http.BadUrl url)
---                 Http.Timeout_ ->
---                     Err Http.Timeout
---                 Http.NetworkError_ ->
---                     Err Http.NetworkError
---                 Http.BadStatus_ metadata body ->
---                     Err (Http.BadStatus metadata.statusCode)
---                 Http.GoodStatus_ metadata body ->
---                     case Json.Decode.decodeString decoder body of
---                         Ok value ->
---                             Ok value
---                         Err err ->
---                             Err (Http.BadBody (Json.Decode.errorToString err))
--- _ ->
---     "RemoteData fail"
--- view : Model -> Element Msg
--- view model =
---     Element.paragraph []
---         [ viewRankingsOrError model
---         ]
+                        Http.BadBody s ->
+                            "BadBody " ++ s
 
 
 viewRankingsOrError : Model -> Element Msg
@@ -426,7 +472,7 @@ viewRankingsOrError model =
                 RemoteData.Failure httpError ->
                     Element.text "(Err httpError - real value to fix here)"
 
-        NewEmpty remdata ->
+        NewEmpty rankingIdremdata ->
             Element.text "ready to create a new ladder"
 
 
