@@ -1,10 +1,8 @@
 module SR.Types exposing
     ( PlayerId, RankingId(..)
     , Player, Opponent, OpponentRelativeRank(..), Options, PlayerAvailability(..), ResultOfMatch(..), SRState(..), UserState(..), WalletState(..)
-    ,  RankingInfo
-      , Username(..)
-        --, UIState(..)
-
+    , UIState(..)
+    , RankingInfo, Username(..)
     )
 
 {-| Types
@@ -107,10 +105,12 @@ type UserState
     | NewUser
 
 
+type UIState
+    = RenderAllRankings
+    | CreateNewLadder
 
--- type UIState
---     = RenderAllRankings
---     | CreateNewLadder
+
+
 -- MissingWalletDialogOpen
 -- | LockedWalletDialogOpen
 -- | DialogClosed

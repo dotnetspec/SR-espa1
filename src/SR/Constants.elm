@@ -1,9 +1,20 @@
-module SR.Constants exposing (globalJsonbinRankingLink, jsonbinUrlForCreateNewRankingAndReturnNewId)
+module SR.Constants exposing
+    (  globalJsonbinRankingReadLink
+       --, globalJsonbinRankingUpdateLink
+
+    , jsonbinUrlForCreateNewRankingAndReturnNewId
+    )
 
 
-globalJsonbinRankingLink : String
-globalJsonbinRankingLink =
-    "https://api.jsonbin.io/b/5e2a585f593fd741856f4b04/latest"
+globalJsonbinRankingReadLink : String
+globalJsonbinRankingReadLink =
+    "https://api.jsonbin.io/b/5e66ec74a030db370e1b23fc/latest"
+
+
+
+-- globalJsonbinRankingLink : String
+-- globalJsonbinRankingLink =
+--     "https://api.jsonbin.io/b/5e2a585f593fd741856f4b04/latest"
 
 
 jsonbinUrlForCreateNewRankingAndReturnNewId : String

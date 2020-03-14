@@ -63,7 +63,7 @@ type RemoteData e a
 
 type Model
     = AllRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
-    | NewEmpty (RemoteData.WebData SR.Types.RankingId)
+    | NewEmpty (RemoteData.WebData SR.Types.RankingId) (RemoteData.WebData SR.Types.RankingInfo)
 
 
 
@@ -77,7 +77,7 @@ type Msg
       --| NewRankingCreated (RemoteData.WebData (List SR.Types.RankingInfo))
     | SwitchToNewEmpty
     | NewRankingRequestedByBtnClick
-    | GotNewRankingResponse (RemoteData.WebData SR.Types.RankingId)
+    | GotNewRankingResponse (RemoteData.WebData SR.Types.RankingId) (RemoteData.WebData SR.Types.RankingInfo)
     | InputChg String
 
 
@@ -114,9 +114,30 @@ init _ =
 
 getRankingList : Cmd Msg
 getRankingList =
-    Http.get
-        { url = SR.Constants.globalJsonbinRankingLink
+    let
+        secretKey =
+            Http.header
+                "secret-key"
+                "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
+
+        binName =
+            Http.header
+                "name"
+                "Global"
+
+        containerId =
+            Http.header
+                "collection-id"
+                "5d7deab3371673119fab12a6"
+    in
+    Http.request
+        { body = Http.emptyBody
         , expect = Http.expectJson (RemoteData.fromResult >> GotJsonbinAllRankings) SR.Decode.rankingsDecoder
+        , headers = [ secretKey, binName, containerId ]
+        , method = "GET"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = SR.Constants.globalJsonbinRankingReadLink
         }
 
 
@@ -157,12 +178,13 @@ createNewRankingList =
     --GotNewRankingResponse is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
     -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
+    -- decoder relates to what comes back from server. Nothing to do with above.
     Http.request
         { body =
             Http.jsonBody <| idJsonObj
-        , expect = Http.expectJson (RemoteData.fromResult >> GotNewRankingResponse) SR.Decode.newRankingIdDecoder
 
-        --, expect = Http.expectJson (RemoteData.fromResult >> GotNewRankingResponse) SR.Decode.playerDecoder
+        --, expect = Http.expectJson (RemoteData.fromResult >> GotNewRankingResponse RemoteData.NotAsked) SR.Decode.newRankingIdDecoder
+        , expect = Http.expectJson (RemoteData.fromResult >> GotNewRankingResponse RemoteData.NotAsked) SR.Decode.newRankingDecoder
         , headers = [ secretKey, binName, containerId ]
         , method = "POST"
         , timeout = Nothing
@@ -173,44 +195,58 @@ createNewRankingList =
 
 
 -- this also has to be done when a new ranking is created.
--- addNewRankingListEntryInGlobal : Cmd Msg
--- addNewRankingListEntryInGlobal =
---     let
---         secretKey =
---             Http.header
---                 "secret-key"
---                 "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
---         binName =
---             Http.header
---                 "name"
---                 "Global"
---         containerId =
---             Http.header
---                 "collection-id"
---                 "5d7deab3371673119fab12a6"
---         idJsonObj : Json.Encode.Value
---         idJsonObj =
---             Json.Encode.object
---                 [ ( "id", Json.Encode.string "" )
---                 , ( "ACTIVE", Json.Encode.bool True )
---                 , ( "RANKINGNAME", Json.Encode.string "" )
---                 , ( "RANKINGDESC", Json.Encode.string "" )
---                 ]
---     in
---     --GotNewRankingResponse is the Msg handled by update whenever a request is made
---     --RemoteData is used throughout the module, including update
---     -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
---     Http.request
---         { body =
---             Http.jsonBody <| idJsonObj
---         --, expect = Http.expectJson (RemoteData.fromResult >> GotNewRankingResponse) SR.Decode.newRankingIdDecoder
---         , expect = Http.expectJson (RemoteData.fromResult >> GotNewRankingResponse) SR.Decode.newRankingDecoder
---         , headers = [ secretKey, binName, containerId ]
---         , method = "POST"
---         , timeout = Nothing
---         , tracker = Nothing
---         , url = SR.Constants.jsonbinUrlForCreateNewRankingAndReturnNewId
---         }
+
+
+addNewRankingListEntryInGlobal : Cmd Msg
+addNewRankingListEntryInGlobal =
+    let
+        secretKey =
+            Http.header
+                "secret-key"
+                "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
+
+        binName =
+            Http.header
+                "name"
+                "Global"
+
+        containerId =
+            Http.header
+                "collection-id"
+                "5d7deab3371673119fab12a6"
+
+        idJsonObj : Json.Encode.Value
+        idJsonObj =
+            --Json.Encode.list
+            Json.Encode.object
+                --[
+                [ ( "id", Json.Encode.string "" )
+                , ( "ACTIVE", Json.Encode.bool True )
+                , ( "RANKINGNAME", Json.Encode.string "" )
+                , ( "RANKINGDESC", Json.Encode.string "" )
+                ]
+
+        --]
+    in
+    --GotNewRankingResponse is the Msg handled by update whenever a request is made
+    --RemoteData is used throughout the module, including update
+    -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
+    -- the Decoder decodes what comes back in the response
+    Http.request
+        { body =
+            Http.jsonBody <| idJsonObj
+
+        --, expect = Http.expectJson (RemoteData.fromResult >> GotNewRankingResponse) SR.Decode.newRankingIdDecoder
+        , expect = Http.expectJson (RemoteData.fromResult >> GotNewRankingResponse RemoteData.NotAsked) SR.Decode.newRankingDecoder
+        , headers = [ secretKey, binName, containerId ]
+        , method = "POST"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = SR.Constants.jsonbinUrlForCreateNewRankingAndReturnNewId
+        }
+
+
+
 -- updateNewRankingListInfoToJsonbin : SR.Types.RankingId -> Cmd Msg
 -- updateNewRankingListInfoToJsonbin rankingIdRemData =
 --     let
@@ -310,19 +346,19 @@ update msg model =
                     ( AllRankingsJson RemoteData.Loading, Cmd.none )
 
         SwitchToNewEmpty ->
-            ( NewEmpty RemoteData.Loading, Cmd.none )
+            ( NewEmpty RemoteData.Loading RemoteData.NotAsked, Cmd.none )
 
         --this doesn't do much - just fires the createNewRankingList Cmd
         NewRankingRequestedByBtnClick ->
-            ( NewEmpty RemoteData.Loading, createNewRankingList )
+            ( NewEmpty RemoteData.Loading RemoteData.NotAsked, createNewRankingList )
 
         -- this is the result from createNewRankingList Cmd
         -- it should have the Http.expectStringResponse in it
-        GotNewRankingResponse result ->
-            ( NewEmpty result, Cmd.none )
+        GotNewRankingResponse id result ->
+            ( NewEmpty id result, Cmd.none )
 
         InputChg str ->
-            ( NewEmpty RemoteData.Loading, Cmd.none )
+            ( NewEmpty RemoteData.Loading RemoteData.NotAsked, Cmd.none )
 
 
 
@@ -427,7 +463,7 @@ getHeaderGroup model =
                 --   ]
                 ]
 
-        NewEmpty rankingIdremdata ->
+        NewEmpty rankingIdremdata rnkInfo ->
             Element.column Grid.section <|
                 [ Element.el Heading.h5 <| Element.text <| "Create New Ranking ... new id is " ++ gotNewRankingId model
 
@@ -454,7 +490,7 @@ gotNewRankingId model =
         AllRankingsJson rmtdata ->
             "Not in NewEmpty!"
 
-        NewEmpty rankingIdremdata ->
+        NewEmpty rankingIdremdata rknInfo ->
             case rankingIdremdata of
                 RemoteData.Success a ->
                     case a of
@@ -503,14 +539,32 @@ currentView model =
                     viewRankings rankings
 
                 RemoteData.Failure httpError ->
-                    Element.text "(Err httpError - real value to fix here)"
+                    Element.text <| buildErrorMessage httpError
 
-        NewEmpty rankingIdremdata ->
+        NewEmpty rankingIdremdata rnkInfo ->
             input
 
 
+buildErrorMessage : Http.Error -> String
+buildErrorMessage httpError =
+    case httpError of
+        Http.BadUrl message ->
+            message
 
---viewError (buildErrorMessage httpError)
+        Http.Timeout ->
+            "Server is taking too long to respond. Please try again later."
+
+        Http.NetworkError ->
+            "Unable to reach server."
+
+        Http.BadStatus statusCode ->
+            "Request failed with status code: " ++ String.fromInt statusCode
+
+        Http.BadBody message ->
+            message
+
+
+
 --you might need this later
 -- (stringFromBool ranking.active)
 
