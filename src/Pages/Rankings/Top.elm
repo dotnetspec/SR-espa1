@@ -59,15 +59,18 @@ type RemoteData e a
 -- functions like view will just reflect
 -- current state of model
 --nb: each variant added to model has to be handled e.g. do you need 'failure' if it's anyway handled by RemoteData?
+-- AllRankingsJson is just the current list of all rankings
+-- AddingNewRankingToGlobalList holds a new ranking id, data for a new ranking and the existing global list to add the new data to
 
 
 type Model
-    = AllRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
-    | NewEmpty (RemoteData.WebData SR.Types.RankingId) (RemoteData.WebData SR.Types.RankingInfo)
+    = AllRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo)) String String SR.Types.UIState
+    | AddingNewRankingToGlobalList (RemoteData.WebData SR.Types.RankingId) (RemoteData.WebData SR.Types.RankingInfo) (RemoteData.WebData (List SR.Types.RankingInfo))
+    | ModelFailure String
 
 
 
---| NewEmpty (RemoteData.WebData SR.Types.Player) (RemoteData.WebData SR.Types.RankingInfo) (RemoteData.WebData SR.Types.RankingId)
+--| AddingNewRankingToGlobalList (RemoteData.WebData SR.Types.Player) (RemoteData.WebData SR.Types.RankingInfo) (RemoteData.WebData SR.Types.RankingId)
 -- Msg is a description of the transition that already happened
 -- Messages that delivered the response (orign doc says 'will deliver')
 
@@ -75,14 +78,17 @@ type Model
 type Msg
     = GotJsonbinAllRankings (RemoteData.WebData (List SR.Types.RankingInfo))
       --| NewRankingCreated (RemoteData.WebData (List SR.Types.RankingInfo))
-    | SwitchToNewEmpty
-    | NewRankingRequestedByBtnClick
-    | GotNewRankingResponse (RemoteData.WebData SR.Types.RankingId) (RemoteData.WebData SR.Types.RankingInfo)
-    | InputChg String
+    | ChangedUIStateToCreateNew
+      --| SwitchedToNewEmptyAndFilledGlobalList
+    | NewRankingRequestedByConfirmBtnClick
+    | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
+    | NameInputChg String
+    | DescInputChg String
+    | AddedNewRankingToGlobalList (RemoteData.WebData (List SR.Types.RankingInfo))
 
 
 
---| GotNewRankingResponse (RemoteData.WebData SR.Types.Player)
+--| SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.Player)
 -- | NewRankingInfoConfirmedByBtnClick (RemoteData.WebData SR.Types.Player) (RemoteData.WebData SR.Types.RankingInfo) (RemoteData.WebData SR.Types.RankingId)
 -- | SentNewRankingInfoToJsonbin (RemoteData.WebData SR.Types.Player) (RemoteData.WebData SR.Types.RankingInfo) (RemoteData.WebData SR.Types.RankingId)
 --NewRankingCreated (Result Http.Error ())
@@ -106,7 +112,7 @@ init _ =
     --     _ =
     --         Debug.log "username " ++ uname
     -- in
-    ( AllRankingsJson RemoteData.Loading
+    ( AllRankingsJson RemoteData.Loading "" "" SR.Types.RenderAllRankings
     , -- nb. getRankingList is an expression not a function
       getRankingList
     )
@@ -141,8 +147,8 @@ getRankingList =
         }
 
 
-createNewRankingList : Cmd Msg
-createNewRankingList =
+createNewPlayerListWithCurrentUser : Cmd Msg
+createNewPlayerListWithCurrentUser =
     let
         secretKey =
             Http.header
@@ -175,21 +181,22 @@ createNewRankingList =
                   ]
                 ]
     in
-    --GotNewRankingResponse is the Msg handled by update whenever a request is made
+    --SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
     -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
     -- decoder relates to what comes back from server. Nothing to do with above.
     Http.request
         { body =
             Http.jsonBody <| idJsonObj
+        , expect = Http.expectJson (RemoteData.fromResult >> SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId) SR.Decode.newRankingIdDecoder
 
-        --, expect = Http.expectJson (RemoteData.fromResult >> GotNewRankingResponse RemoteData.NotAsked) SR.Decode.newRankingIdDecoder
-        , expect = Http.expectJson (RemoteData.fromResult >> GotNewRankingResponse RemoteData.NotAsked) SR.Decode.newRankingDecoder
+        -- at this point we don't have the ranking id, it's in the ranking object
+        --, expect = Http.expectJson (RemoteData.fromResult >> SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId RemoteData.NotAsked) SR.Decode.newRankingDecoder
         , headers = [ secretKey, binName, containerId ]
         , method = "POST"
         , timeout = Nothing
         , tracker = Nothing
-        , url = SR.Constants.jsonbinUrlForCreateNewRankingAndReturnNewId
+        , url = SR.Constants.jsonbinUrlForCreateNewEntryAndRespond
         }
 
 
@@ -197,8 +204,8 @@ createNewRankingList =
 -- this also has to be done when a new ranking is created.
 
 
-addNewRankingListEntryInGlobal : Cmd Msg
-addNewRankingListEntryInGlobal =
+addedNewRankingListEntryInGlobal : RemoteData.WebData SR.Types.RankingId -> RemoteData.WebData (List SR.Types.RankingInfo) -> String -> String -> Cmd Msg
+addedNewRankingListEntryInGlobal newrankingid globalList newName newDesc =
     let
         secretKey =
             Http.header
@@ -215,20 +222,36 @@ addNewRankingListEntryInGlobal =
                 "collection-id"
                 "5d7deab3371673119fab12a6"
 
+        justGlobalList =
+            gotRankingListFromRemData globalList
+
         idJsonObj : Json.Encode.Value
         idJsonObj =
             --Json.Encode.list
             Json.Encode.object
                 --[
-                [ ( "id", Json.Encode.string "" )
+                [ ( "id", Json.Encode.string <| gotNewRankingIdFromWebData newrankingid )
                 , ( "ACTIVE", Json.Encode.bool True )
-                , ( "RANKINGNAME", Json.Encode.string "" )
-                , ( "RANKINGDESC", Json.Encode.string "" )
+                , ( "RANKINGNAME", Json.Encode.string newName )
+                , ( "RANKINGDESC", Json.Encode.string newDesc )
                 ]
+
+        newRankingInfo =
+            { id = gotNewRankingIdFromWebData newrankingid
+            , active = True
+            , name = newName
+            , desc = newDesc
+            }
+
+        globalListWithJsonObjAdded =
+            newRankingInfo :: justGlobalList
+
+        _ =
+            Debug.log "new added ?" globalListWithJsonObjAdded
 
         --]
     in
-    --GotNewRankingResponse is the Msg handled by update whenever a request is made
+    --SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
     -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
     -- the Decoder decodes what comes back in the response
@@ -236,13 +259,17 @@ addNewRankingListEntryInGlobal =
         { body =
             Http.jsonBody <| idJsonObj
 
-        --, expect = Http.expectJson (RemoteData.fromResult >> GotNewRankingResponse) SR.Decode.newRankingIdDecoder
-        , expect = Http.expectJson (RemoteData.fromResult >> GotNewRankingResponse RemoteData.NotAsked) SR.Decode.newRankingDecoder
+        --Http.jsonBody <| justGlobalList
+        --Http.jsonBody <| globalListWithJsonObjAdded
+        --, expect = Http.expectJson (RemoteData.fromResult >> SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId) SR.Decode.newRankingIdDecoder
+        , expect = Http.expectJson (RemoteData.fromResult >> AddedNewRankingToGlobalList) SR.Decode.rankingsDecoder
+
+        --, expect = Http.expectWhatever
         , headers = [ secretKey, binName, containerId ]
-        , method = "POST"
+        , method = "PUT"
         , timeout = Nothing
         , tracker = Nothing
-        , url = SR.Constants.jsonbinUrlForCreateNewRankingAndReturnNewId
+        , url = SR.Constants.globalJsonbinRankingUpdateLink
         }
 
 
@@ -320,53 +347,95 @@ expectJson toMsg decoder =
 
 
 -- UPDATE
--- Update needs to take two things: a message (which
--- is a description of the transition that already happened),
---  and the model (which is the model BEFORE the update is applied),
 --  Update component contains code that should be executed for each message generated by the view
 -- or a cmd/sub
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
+update msgOfTransitonThatAlreadyHappened previousmodel =
+    case msgOfTransitonThatAlreadyHappened of
         GotJsonbinAllRankings rmtdata ->
             case rmtdata of
                 --removes[?] the first record (created on ranking creation with different format)
                 RemoteData.Success a ->
-                    ( AllRankingsJson (RemoteData.Success a), Cmd.none )
+                    ( AllRankingsJson (RemoteData.Success a) "" "" SR.Types.RenderAllRankings, Cmd.none )
 
                 RemoteData.Failure e ->
-                    ( AllRankingsJson (RemoteData.Failure e), Cmd.none )
+                    ( AllRankingsJson (RemoteData.Failure e) "" "" SR.Types.RenderAllRankings, Cmd.none )
 
                 RemoteData.NotAsked ->
-                    ( AllRankingsJson RemoteData.NotAsked, Cmd.none )
+                    ( AllRankingsJson RemoteData.NotAsked "" "" SR.Types.RenderAllRankings, Cmd.none )
 
                 RemoteData.Loading ->
-                    ( AllRankingsJson RemoteData.Loading, Cmd.none )
+                    ( AllRankingsJson RemoteData.Loading "" "" SR.Types.RenderAllRankings, Cmd.none )
 
-        SwitchToNewEmpty ->
-            ( NewEmpty RemoteData.Loading RemoteData.NotAsked, Cmd.none )
+        ChangedUIStateToCreateNew ->
+            case previousmodel of
+                AllRankingsJson globalList _ _ _ ->
+                    --( AddingNewRankingToGlobalList RemoteData.Loading RemoteData.NotAsked globalList, Cmd.none )
+                    ( AllRankingsJson globalList "" "" SR.Types.CreateNewLadder, Cmd.none )
 
-        --this doesn't do much - just fires the createNewRankingList Cmd
-        NewRankingRequestedByBtnClick ->
-            ( NewEmpty RemoteData.Loading RemoteData.NotAsked, createNewRankingList )
+                _ ->
+                    ( ModelFailure "Error in SwitchedToNewEmptyAndFilledGlobalList", Cmd.none )
 
-        -- this is the result from createNewRankingList Cmd
-        -- it should have the Http.expectStringResponse in it
-        GotNewRankingResponse id result ->
-            ( NewEmpty id result, Cmd.none )
+        -- SwitchedToNewEmptyAndFilledGlobalList ->
+        --     case previousmodel of
+        --         AllRankingsJson globalList _ _ _ ->
+        --             ( AddingNewRankingToGlobalList RemoteData.Loading RemoteData.NotAsked globalList, Cmd.none )
+        --         _ ->
+        --             ( ModelFailure "Error in SwitchedToNewEmptyAndFilledGlobalList", Cmd.none )
+        -- AddingNewRankingToGlobalList _ _ _ ->
+        --this fires the createNewPlayerListWithCurrentUser Cmd
+        -- from the button (which only accepts Msg not Cmd.Msg)
+        NewRankingRequestedByConfirmBtnClick ->
+            --( AddingNewRankingToGlobalList RemoteData.Loading RemoteData.NotAsked RemoteData.NotAsked, createNewPlayerListWithCurrentUser )
+            case previousmodel of
+                AllRankingsJson globalList newrankingName newRankingDesc _ ->
+                    ( AllRankingsJson globalList newrankingName newRankingDesc SR.Types.CreateNewLadder, createNewPlayerListWithCurrentUser )
 
-        InputChg str ->
-            ( NewEmpty RemoteData.Loading RemoteData.NotAsked, Cmd.none )
+                _ ->
+                    ( ModelFailure "Error in NewRankingRequestedByConfirmBtnClick", Cmd.none )
+
+        -- this is the response from createNewPlayerListWithCurrentUser Cmd
+        -- it had the Http.expectStringResponse in it
+        -- it's already created the new ranking with current player as the first entry
+        -- the result now is the ranking id only at this point which was pulled out by the decoder
+        -- the globalList is preserved
+        SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
+            --( AddingNewRankingToGlobalList idValueFromDecoder RemoteData.NotAsked RemoteData.NotAsked, addedNewRankingListEntryInGlobal idValueFromDecoder )
+            case previousmodel of
+                AllRankingsJson globalList newrankingName newRankingDesc _ ->
+                    ( AllRankingsJson globalList newrankingName newRankingDesc SR.Types.CreateNewLadder, addedNewRankingListEntryInGlobal idValueFromDecoder globalList newrankingName newRankingDesc )
+
+                _ ->
+                    ( ModelFailure "Error in SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId", Cmd.none )
+
+        AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
+            ( AllRankingsJson updatedListAfterNewEntryAddedToGlobalList "" "" SR.Types.RenderAllRankings, Cmd.none )
+
+        NameInputChg namefield ->
+            case previousmodel of
+                AllRankingsJson list _ desc _ ->
+                    ( AllRankingsJson list namefield desc SR.Types.CreateNewLadder, Cmd.none )
+
+                _ ->
+                    ( ModelFailure "Error in InputChg", Cmd.none )
+
+        DescInputChg descfield ->
+            case previousmodel of
+                AllRankingsJson list name _ _ ->
+                    ( AllRankingsJson list name descfield SR.Types.CreateNewLadder, Cmd.none )
+
+                _ ->
+                    ( ModelFailure "Error in InputChg", Cmd.none )
 
 
 
---have to pass both sets of info in as NewEmpty requires it ...
+--have to pass both sets of info in as AddingNewRankingToGlobalList requires it ...
 -- NewRankingInfoConfirmedByBtnClick playerinfo rankinfo rankId ->
---     ( NewEmpty playerinfo rankinfo rankId, updateNewRankingListInfoToJsonbin playerinfo rankinfo )
+--     ( AddingNewRankingToGlobalList playerinfo rankinfo rankId, updateNewRankingListInfoToJsonbin playerinfo rankinfo )
 -- SentNewRankingInfoToJsonbin playerinfo rankinfo rankId ->
---     ( NewEmpty playerinfo rankinfo, Cmd.none )
+--     ( AddingNewRankingToGlobalList playerinfo rankinfo, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -438,15 +507,15 @@ listOfElementmsgs model =
 getHeaderGroup : Model -> Element Msg
 getHeaderGroup model =
     case model of
-        AllRankingsJson rnkingList ->
+        AllRankingsJson rnkingList _ _ _ ->
             Element.column Grid.section <|
                 [ Element.el Heading.h2 <| Element.text "Global Rankings"
                 , Element.column (Card.fill ++ Grid.simple)
                     [ Element.wrappedRow Grid.simple
-                        [ Element.el (Card.fill ++ Group.left) <| createnewRankingbutton Color.primary SwitchToNewEmpty "Create New"
-                        , Element.el (Card.fill ++ Group.center ++ Color.disabled) <| joinbutton Color.primary NewRankingRequestedByBtnClick "Join"
-                        , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingRequestedByBtnClick "Enter Result"
-                        , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingRequestedByBtnClick "Update Profile"
+                        [ Element.el (Card.fill ++ Group.left) <| createnewRankingbutton Color.primary ChangedUIStateToCreateNew "Create New"
+                        , Element.el (Card.fill ++ Group.center ++ Color.disabled) <| joinbutton Color.primary NewRankingRequestedByConfirmBtnClick "Join"
+                        , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingRequestedByConfirmBtnClick "Enter Result"
+                        , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingRequestedByConfirmBtnClick "Update Profile"
                         ]
                     ]
                 , Element.column (Card.fill ++ Grid.simple)
@@ -456,24 +525,44 @@ getHeaderGroup model =
                     ]
 
                 -- , [ Element.wrappedRow Grid.simple
-                --         [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingRequestedByBtnClick "Create New"
+                --         [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingRequestedByConfirmBtnClick "Create New"
                 --         , currentView model
                 --         --, Element.el (Card.fill ++ Group.bottom) <| listAllbutton Color.primary getRankingList "List All"
                 --         ]
                 --   ]
                 ]
 
-        NewEmpty rankingIdremdata rnkInfo ->
+        AddingNewRankingToGlobalList rankingIdremdata rnkInfo globalList ->
             Element.column Grid.section <|
                 [ Element.el Heading.h5 <| Element.text <| "Create New Ranking ... new id is " ++ gotNewRankingId model
 
-                --Element.el Heading.h2 <| Element.text <| "Create New Ranking ... new id is " ++ remdata.expect
+                --Element.el Heading.h2 <| Element.text <| "Create New Ranking ... new id is " ++ rankingIdremdata
                 , Element.column (Card.fill ++ Grid.simple)
                     [ Element.wrappedRow Grid.simple
-                        [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingRequestedByBtnClick "Create New"
-                        , Element.el (Card.fill ++ Group.center) <| joinbutton Color.primary NewRankingRequestedByBtnClick "Join"
-                        , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingRequestedByBtnClick "Enter Result"
-                        , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingRequestedByBtnClick "Update Profile"
+                        [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingRequestedByConfirmBtnClick "Create New"
+                        , Element.el (Card.fill ++ Group.center) <| joinbutton Color.primary NewRankingRequestedByConfirmBtnClick "Join"
+                        , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingRequestedByConfirmBtnClick "Enter Result"
+                        , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingRequestedByConfirmBtnClick "Update Profile"
+                        ]
+                    ]
+                , Element.column (Card.fill ++ Grid.simple)
+                    [ Element.wrappedRow Grid.simple
+                        [ Element.el (Card.fill ++ Group.left) <| currentView model
+                        ]
+                    ]
+                ]
+
+        ModelFailure str ->
+            Element.column Grid.section <|
+                [ Element.el Heading.h5 <| Element.text <| "Something wrong  " ++ str
+
+                --Element.el Heading.h2 <| Element.text <| "Create New Ranking ... new id is " ++ rankingIdremdata
+                , Element.column (Card.fill ++ Grid.simple)
+                    [ Element.wrappedRow Grid.simple
+                        [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingRequestedByConfirmBtnClick "Create New"
+                        , Element.el (Card.fill ++ Group.center) <| joinbutton Color.primary NewRankingRequestedByConfirmBtnClick "Join"
+                        , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingRequestedByConfirmBtnClick "Enter Result"
+                        , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingRequestedByConfirmBtnClick "Update Profile"
                         ]
                     ]
                 , Element.column (Card.fill ++ Grid.simple)
@@ -484,50 +573,10 @@ getHeaderGroup model =
                 ]
 
 
-gotNewRankingId : Model -> String
-gotNewRankingId model =
-    case model of
-        AllRankingsJson rmtdata ->
-            "Not in NewEmpty!"
-
-        NewEmpty rankingIdremdata rknInfo ->
-            case rankingIdremdata of
-                RemoteData.Success a ->
-                    case a of
-                        b ->
-                            case b of
-                                SR.Types.RankingId c ->
-                                    c
-
-                --"Success : " ++ SR.Types.RankingId b
-                RemoteData.NotAsked ->
-                    "Initialising."
-
-                RemoteData.Loading ->
-                    "Loading."
-
-                RemoteData.Failure err ->
-                    case err of
-                        Http.BadUrl s ->
-                            "Bad Url"
-
-                        Http.Timeout ->
-                            "Timeout"
-
-                        Http.NetworkError ->
-                            "Network Err"
-
-                        Http.BadStatus statuscode ->
-                            String.fromInt <| statuscode
-
-                        Http.BadBody s ->
-                            "BadBody " ++ s
-
-
 currentView : Model -> Element Msg
 currentView model =
     case model of
-        AllRankingsJson rmtData ->
+        AllRankingsJson rmtData _ _ uiState ->
             case rmtData of
                 RemoteData.NotAsked ->
                     Element.text ""
@@ -536,32 +585,16 @@ currentView model =
                     Element.text "Loading..."
 
                 RemoteData.Success rankings ->
-                    viewRankings rankings
+                    viewRankings rankings uiState
 
                 RemoteData.Failure httpError ->
                     Element.text <| buildErrorMessage httpError
 
-        NewEmpty rankingIdremdata rnkInfo ->
+        AddingNewRankingToGlobalList rankingIdremdata rnkInfo globalList ->
             input
 
-
-buildErrorMessage : Http.Error -> String
-buildErrorMessage httpError =
-    case httpError of
-        Http.BadUrl message ->
-            message
-
-        Http.Timeout ->
-            "Server is taking too long to respond. Please try again later."
-
-        Http.NetworkError ->
-            "Unable to reach server."
-
-        Http.BadStatus statusCode ->
-            "Request failed with status code: " ++ String.fromInt statusCode
-
-        Http.BadBody message ->
-            message
+        ModelFailure str ->
+            Element.text str
 
 
 
@@ -569,40 +602,45 @@ buildErrorMessage httpError =
 -- (stringFromBool ranking.active)
 
 
-viewRankings : List SR.Types.RankingInfo -> Element Msg
-viewRankings rankings =
-    html <|
-        Element.layout
-            [ Element.explain Debug.todo
+viewRankings : List SR.Types.RankingInfo -> SR.Types.UIState -> Element Msg
+viewRankings rankings uiState =
+    case uiState of
+        SR.Types.RenderAllRankings ->
+            html <|
+                Element.layout
+                    [ Element.explain Debug.todo
 
-            --     Element.padding 25
-            -- , Background.color (rgba 0 0 0 1)
-            -- , Font.color (rgba 1 1 1 1)
-            -- --, Font.italic
-            -- , Font.size 22
-            -- , Font.family
-            --     [ Font.external
-            --         { url = "https://fonts.googleapis.com/css?family=Roboto"
-            --         , name = "Roboto"
-            --         }
-            --     , Font.sansSerif
-            --     ]
-            ]
-        <|
-            Element.table
-                [--     Element.padding 25
-                 -- , Background.color Ui.colors.white
-                 -- , Border.solid
-                 -- , Border.color Ui.colors.black
-                 -- , Border.widthXY 1 1
-                 -- , Border.rounded 3
-                ]
-                { data = rankings
-                , columns =
-                    [ rankingNameCol rankings "Ranking Name"
-                    , rankingDescCol rankings "Ranking Desc"
+                    --     Element.padding 25
+                    -- , Background.color (rgba 0 0 0 1)
+                    -- , Font.color (rgba 1 1 1 1)
+                    -- --, Font.italic
+                    -- , Font.size 22
+                    -- , Font.family
+                    --     [ Font.external
+                    --         { url = "https://fonts.googleapis.com/css?family=Roboto"
+                    --         , name = "Roboto"
+                    --         }
+                    --     , Font.sansSerif
+                    --     ]
                     ]
-                }
+                <|
+                    Element.table
+                        [--     Element.padding 25
+                         -- , Background.color Ui.colors.white
+                         -- , Border.solid
+                         -- , Border.color Ui.colors.black
+                         -- , Border.widthXY 1 1
+                         -- , Border.rounded 3
+                        ]
+                        { data = rankings
+                        , columns =
+                            [ rankingNameCol rankings "Ranking Name"
+                            , rankingDescCol rankings "Ranking Desc"
+                            ]
+                        }
+
+        SR.Types.CreateNewLadder ->
+            input
 
 
 rankingNameCol : List SR.Types.RankingInfo -> String -> Column SR.Types.RankingInfo msg
@@ -694,13 +732,13 @@ input =
         , Element.wrappedRow (Card.fill ++ Grid.simple)
             [ Element.column Grid.simple
                 [ Input.text Input.simple
-                    { onChange = InputChg
+                    { onChange = NameInputChg
                     , text = "e.g. Stockton On Pullet Juniors"
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Name"
                     }
                 , Input.multiline Input.simple
-                    { onChange = InputChg
+                    { onChange = DescInputChg
                     , text = "e.g. For all under 19s"
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Description"
@@ -716,7 +754,8 @@ input =
                   --     }
                   -- ,
                   Input.button Framework.Button.fill <|
-                    { onPress = Nothing
+                    { -- this btn fires createNewPlayerListWithCurrentUser from update
+                      onPress = Just NewRankingRequestedByConfirmBtnClick
                     , label = Element.text "Create New Ranking"
                     }
                 ]
@@ -748,3 +787,328 @@ input =
                     Element.text "Creating a ranking makes the administration of it entirely your responsibility. \nOnly you can delete it"
             ]
         ]
+
+
+
+-- Helpers
+-- addNewRankingToTopOfGlobalList : Model -> List SR.Types.RankingInfo
+-- addNewRankingToTopOfGlobalList model =
+--     -- remove the remote data and reveal the data
+--     let
+--         newRanking =
+--             gotNewRanking model
+--         -- case model of
+--         --     AllRankingsJson rmtdata ->
+--         --         gotNewRanking rmtdata
+--         --     AddingNewRankingToGlobalList id info globalList ->
+--         --         gotNewRanking info
+--         newGlobalList =
+--             gotRankingListfromModel model
+--         -- case model of
+--         --     AllRankingsJson rmtdata ->
+--         --         RemoteData.NotAsked
+--         --     AddingNewRankingToGlobalList id info globalList ->
+--         --         globalList
+--     in
+--     newRanking :: newGlobalList
+
+
+addNewRankingToTopOfGlobalList : SR.Types.RankingInfo -> List SR.Types.RankingInfo -> List SR.Types.RankingInfo
+addNewRankingToTopOfGlobalList newRankingInfo existingGlobalList =
+    -- remove the remote data and reveal the data
+    -- let
+    --     newRanking =
+    --         gotNewRanking model
+    --     -- case model of
+    --     --     AllRankingsJson rmtdata ->
+    --     --         gotNewRanking rmtdata
+    --     --     AddingNewRankingToGlobalList id info globalList ->
+    --     --         gotNewRanking info
+    --     newGlobalList =
+    --         gotRankingListfromModel model
+    --     -- case model of
+    --     --     AllRankingsJson rmtdata ->
+    --     --         RemoteData.NotAsked
+    --     --     AddingNewRankingToGlobalList id info globalList ->
+    --     --         globalList
+    -- in
+    newRankingInfo :: existingGlobalList
+
+
+buildErrorMessage : Http.Error -> String
+buildErrorMessage httpError =
+    case httpError of
+        Http.BadUrl message ->
+            message
+
+        Http.Timeout ->
+            "Server is taking too long to respond. Please try again later."
+
+        Http.NetworkError ->
+            "Unable to reach server."
+
+        Http.BadStatus statusCode ->
+            "Request failed with status code: " ++ String.fromInt statusCode
+
+        Http.BadBody message ->
+            message
+
+
+
+-- gotNewRanking : Model -> SR.Types.RankingInfo
+-- gotNewRanking model =
+-- case model of
+--     AllRankingsJson rmtdata _ _ _ ->
+--         { id = "AllRankingsJson"
+--         , active = False
+--         , name = "AllRankingsJson"
+--         , desc = "AllRankingsJson"
+--         }
+-- AddingNewRankingToGlobalList rankingIdremdata rknInfo globalList ->
+--     let
+--         _ =
+--             Debug.log "here" rknInfo
+--     in
+-- case rknInfo of
+--     RemoteData.Success a ->
+--         a
+--     -- case a of
+--     --     b ->
+--     --         case b of
+--     --             SR.Types.RankingId c ->
+--     --                 c
+--     RemoteData.NotAsked ->
+--         { id = "Initialising"
+--         , active = False
+--         , name = ""
+--         , desc = ""
+--         }
+--     RemoteData.Loading ->
+--         { id = "Loading"
+--         , active = False
+--         , name = ""
+--         , desc = ""
+--         }
+--     RemoteData.Failure err ->
+--         case err of
+--             Http.BadUrl s ->
+--                 { id = s
+--                 , active = False
+--                 , name = ""
+--                 , desc = ""
+--                 }
+--             Http.Timeout ->
+--                 { id = "Timeout"
+--                 , active = False
+--                 , name = ""
+--                 , desc = ""
+--                 }
+--             Http.NetworkError ->
+--                 { id = "0"
+--                 , active = False
+--                 , name = "Network Err"
+--                 , desc = ""
+--                 }
+--             Http.BadStatus statuscode ->
+--                 { id = "0"
+--                 , active = False
+--                 , name = String.fromInt <| statuscode
+--                 , desc = ""
+--                 }
+--             Http.BadBody s ->
+--                 { id = "0"
+--                 , active = False
+--                 , name = s
+--                 , desc = ""
+--                 }
+-- ModelFailure str ->
+--     { id = "0"
+--     , active = False
+--     , name = str
+--     , desc = ""
+--     }
+
+
+gotRankingListFromRemData : RemoteData.WebData (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
+gotRankingListFromRemData globalList =
+    case globalList of
+        RemoteData.Success a ->
+            a
+
+        -- case a of
+        --     b ->
+        --         case b of
+        --             SR.Types.RankingId c ->
+        --                 c
+        RemoteData.NotAsked ->
+            [ { id = "Initialising"
+              , active = False
+              , name = ""
+              , desc = ""
+              }
+            ]
+
+        RemoteData.Loading ->
+            [ { id = "Loading"
+              , active = False
+              , name = ""
+              , desc = ""
+              }
+            ]
+
+        RemoteData.Failure err ->
+            case err of
+                Http.BadUrl s ->
+                    [ { id = s
+                      , active = False
+                      , name = ""
+                      , desc = ""
+                      }
+                    ]
+
+                Http.Timeout ->
+                    [ { id = "Timeout"
+                      , active = False
+                      , name = ""
+                      , desc = ""
+                      }
+                    ]
+
+                Http.NetworkError ->
+                    [ { id = "0"
+                      , active = False
+                      , name = "Network Err"
+                      , desc = ""
+                      }
+                    ]
+
+                Http.BadStatus statuscode ->
+                    [ { id = "0"
+                      , active = False
+                      , name = String.fromInt <| statuscode
+                      , desc = ""
+                      }
+                    ]
+
+                Http.BadBody s ->
+                    [ { id = "0"
+                      , active = False
+                      , name = s
+                      , desc = ""
+                      }
+                    ]
+
+
+
+--         ModelFailure str ->
+--             [ { id = "0"
+--               , active = False
+--               , name = str
+--               , desc = ""
+--               }
+--             ]
+-- gotNewRankingId : Model -> String
+-- gotNewRankingId model =
+--     case model of
+--         AllRankingsJson rmtdata ->
+--             "Not in AddingNewRankingToGlobalList!"
+--         AddingNewRankingToGlobalList rankingIdremdata rknInfo globalList ->
+--             case rknInfo of
+--                 RemoteData.Success arknInfo ->
+--                     case arknInfo of
+--                         b ->
+--                             case b of
+--                                 SR.Types.RankingId c ->
+--                                     c
+--                 RemoteData.NotAsked ->
+--                     "Initialising."
+--                 RemoteData.Loading ->
+--                     "Loading."
+--                 RemoteData.Failure err ->
+--                     case err of
+--                         Http.BadUrl s ->
+--                             "Bad Url"
+--                         Http.Timeout ->
+--                             "Timeout"
+--                         Http.NetworkError ->
+--                             "Network Err"
+--                         Http.BadStatus statuscode ->
+--                             String.fromInt <| statuscode
+--                         Http.BadBody s ->
+--                             "BadBody " ++ s
+
+
+gotNewRankingId : Model -> String
+gotNewRankingId model =
+    case model of
+        AllRankingsJson rmtdata _ _ _ ->
+            "Not in AddingNewRankingToGlobalList!"
+
+        AddingNewRankingToGlobalList rankingIdremdata rknInfo globalList ->
+            case rankingIdremdata of
+                RemoteData.Success a ->
+                    case a of
+                        b ->
+                            case b of
+                                SR.Types.RankingId c ->
+                                    c
+
+                RemoteData.NotAsked ->
+                    "Initialising."
+
+                RemoteData.Loading ->
+                    "Loading."
+
+                RemoteData.Failure err ->
+                    case err of
+                        Http.BadUrl s ->
+                            "Bad Url"
+
+                        Http.Timeout ->
+                            "Timeout"
+
+                        Http.NetworkError ->
+                            "Network Err"
+
+                        Http.BadStatus statuscode ->
+                            String.fromInt <| statuscode
+
+                        Http.BadBody s ->
+                            "BadBody " ++ s
+
+        ModelFailure str ->
+            str
+
+
+gotNewRankingIdFromWebData : RemoteData.WebData SR.Types.RankingId -> String
+gotNewRankingIdFromWebData rankingIdremdata =
+    case rankingIdremdata of
+        RemoteData.Success a ->
+            case a of
+                b ->
+                    case b of
+                        SR.Types.RankingId c ->
+                            c
+
+        RemoteData.NotAsked ->
+            "Initialising."
+
+        RemoteData.Loading ->
+            "Loading."
+
+        RemoteData.Failure err ->
+            case err of
+                Http.BadUrl s ->
+                    "Bad Url"
+
+                Http.Timeout ->
+                    "Timeout"
+
+                Http.NetworkError ->
+                    "Network Err"
+
+                Http.BadStatus statuscode ->
+                    String.fromInt <| statuscode
+
+                Http.BadBody s ->
+                    "BadBody " ++ s

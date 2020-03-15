@@ -2,7 +2,7 @@ module SR.Types exposing
     ( PlayerId, RankingId(..)
     , Player, Opponent, OpponentRelativeRank(..), Options, PlayerAvailability(..), ResultOfMatch(..), SRState(..), UserState(..), WalletState(..)
     , UIState(..)
-    , RankingInfo, Username(..)
+    , CreateNewLadderFormFields, RankingInfo, Username(..)
     )
 
 {-| Types
@@ -108,6 +108,12 @@ type UserState
 type UIState
     = RenderAllRankings
     | CreateNewLadder
+
+
+type alias CreateNewLadderFormFields =
+    { name : String
+    , desc : String
+    }
 
 
 
