@@ -249,6 +249,16 @@ addedNewRankingListEntryInGlobal newrankingid globalList newName newDesc =
         _ =
             Debug.log "new added ?" globalListWithJsonObjAdded
 
+        _ =
+            Debug.log "and the list ?" jsonEncodeNewGlobalRankingList globalListWithJsonObjAdded
+
+        -- completeJsonObjList : Json.Encode.Value
+        -- completeJsonObjList =
+        --     Json.Encode.list [ globalListWithJsonObjAdded ]
+        --completeJsonObjList =
+        --Json.Encode.list <| SR.Types.RankingInfo globalListWithJsonObjAdded
+        --Json.Encode.encode 0
+        --Json.Encode.list Json.Encode.object <| globalListWithJsonObjAdded
         --]
     in
     --SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId is the Msg handled by update whenever a request is made
@@ -257,8 +267,10 @@ addedNewRankingListEntryInGlobal newrankingid globalList newName newDesc =
     -- the Decoder decodes what comes back in the response
     Http.request
         { body =
-            Http.jsonBody <| idJsonObj
+            Http.jsonBody <| jsonEncodeNewGlobalRankingList globalListWithJsonObjAdded
 
+        --Http.jsonBody <| idJsonObj
+        --Http.jsonBody <| completeJsonObjList
         --Http.jsonBody <| justGlobalList
         --Http.jsonBody <| globalListWithJsonObjAdded
         --, expect = Http.expectJson (RemoteData.fromResult >> SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId) SR.Decode.newRankingIdDecoder
@@ -273,7 +285,29 @@ addedNewRankingListEntryInGlobal newrankingid globalList newName newDesc =
         }
 
 
+jsonEncodeNewGlobalRankingList : List SR.Types.RankingInfo -> Json.Encode.Value
+jsonEncodeNewGlobalRankingList globalList =
+    let
+        encodeAglobalRankingObj : SR.Types.RankingInfo -> Json.Encode.Value
+        encodeAglobalRankingObj rankingInfo =
+            Json.Encode.object
+                [ ( "id", Json.Encode.string rankingInfo.id )
+                , ( "active", Json.Encode.bool rankingInfo.active )
+                , ( "rankingname", Json.Encode.string rankingInfo.name )
+                , ( "rankingdesc", Json.Encode.string rankingInfo.desc )
+                ]
 
+        encodedList =
+            Json.Encode.list encodeAglobalRankingObj globalList
+
+        _ =
+            Debug.log "encode the list: " encodedList
+    in
+    encodedList
+
+
+
+--Json.Encode.string "hello"
 -- updateNewRankingListInfoToJsonbin : SR.Types.RankingId -> Cmd Msg
 -- updateNewRankingListInfoToJsonbin rankingIdRemData =
 --     let

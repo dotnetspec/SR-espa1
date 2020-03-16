@@ -42,9 +42,9 @@ rankingDecoder : Json.Decode.Decoder SR.Types.RankingInfo
 rankingDecoder =
     Json.Decode.succeed SR.Types.RankingInfo
         |> Json.Decode.Pipeline.required "id" Json.Decode.string
-        |> Json.Decode.Pipeline.required "ACTIVE" Json.Decode.bool
-        |> Json.Decode.Pipeline.required "RANKINGNAME" Json.Decode.string
-        |> Json.Decode.Pipeline.required "RANKINGDESC" Json.Decode.string
+        |> Json.Decode.Pipeline.required "active" Json.Decode.bool
+        |> Json.Decode.Pipeline.required "rankingname" Json.Decode.string
+        |> Json.Decode.Pipeline.required "rankingdesc" Json.Decode.string
 
 
 newRankingListDecoder : Json.Decode.Decoder (List SR.Types.RankingInfo)
@@ -56,9 +56,9 @@ newRankingDecoder : Json.Decode.Decoder SR.Types.RankingInfo
 newRankingDecoder =
     Json.Decode.succeed SR.Types.RankingInfo
         |> Json.Decode.Pipeline.required "id" Json.Decode.string
-        |> Json.Decode.Pipeline.required "ACTIVE" Json.Decode.bool
-        |> Json.Decode.Pipeline.required "RANKINGNAME" Json.Decode.string
-        |> Json.Decode.Pipeline.required "RANKINGDESC" Json.Decode.string
+        |> Json.Decode.Pipeline.required "active" Json.Decode.bool
+        |> Json.Decode.Pipeline.required "rankingname" Json.Decode.string
+        |> Json.Decode.Pipeline.required "rankingdesc" Json.Decode.string
 
 
 newRankingIdDecoder : Json.Decode.Decoder SR.Types.RankingId
