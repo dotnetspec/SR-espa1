@@ -27,6 +27,7 @@ import Http
 import Json.Decode as Decode exposing (Value)
 import Process
 import Task
+import Eth.Utils
 
 
 
@@ -89,6 +90,19 @@ ethNode networkId =
         _ ->
             EthNode "UnknownEthNetwork" "UnknownEthNetwork"
 
+
+-- retrieveAddress : Model -> String
+-- retrieveAddress model =
+--   case model.account of
+--     Nothing ->
+--       "No address"
+
+--     Just a ->
+--         let
+--             _ = Debug.log "in retreive" a
+--         in
+--         "99999"
+--        --Eth.Utils.addressToString a
 
 type Msg
     = TxSentryMsg TxSentry.Msg
@@ -191,6 +205,8 @@ update msg model =
                     Debug.log "data is: " data
             in
                 ( { model | incomingData = data }, Cmd.none )
+
+--retrieveAddress : Maybe Eth.Types.Address -> String
 
 
 

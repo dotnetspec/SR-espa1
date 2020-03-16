@@ -1,29 +1,37 @@
+--standard elm-spa file. If needed to handle js messages could do it here
+-- currently using port to receive data from wallet
+
+
 module Global exposing
     ( Flags
-    , Model
+    , Model(..)
     , Msg(..)
     , init
     , subscriptions
     , update
     )
 
-import Generated.Routes as Routes exposing (Route)
-import Ports exposing (..)
-import Debug
-import Json.Decode as Decode exposing (Value)
---import Http
+--n.b 'as Routes' alias was rm here:
+
+import Generated.Routes exposing (Route)
+
+
+
+-- if you needed to you could define a GlobalVariant here
+-- that could be accessed via a PageContext which might be defined as context.global
+
+
+type Model
+    = Failure String
 
 
 type alias Flags =
-    ()
+    {}
 
 
-type alias Model =
-    {incomingData : String}
-
-
-type Msg =  
-    ReceivedDataFromJS String
+type Msg
+    = Fail String
+    | NoOp
 
 
 type alias Commands msg =
@@ -33,36 +41,31 @@ type alias Commands msg =
 
 init : Commands msg -> Flags -> ( Model, Cmd Msg, Cmd msg )
 init _ _ =
-    ( {incomingData = ""}
+    ( Failure ""
     , Cmd.none
     , Cmd.none
     )
 
 
+
+-- Update needs to take two things: a message Msg (which
+-- is a description of the transition that needs to happen),
+--  and the model Model (which is the model before the update is applied),
+--  and it will return a new model.
+-- branching on Model is just a reflection of current state
+-- Only branching on Msg will actually change a value or the state
+
+
 update : Commands msg -> Msg -> Model -> ( Model, Cmd Msg, Cmd msg )
 update _ msg model =
     case msg of
-    ReceivedDataFromJS data ->
-            let
-                _ =
-                    Debug.log "data is: " data
-            in
-            ( { model | incomingData = data }, Cmd.none, Cmd.none)
+        Fail str ->
+            ( Failure str, Cmd.none, Cmd.none )
+
+        NoOp ->
+            ( Failure "NoOp", Cmd.none, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    incoming decodeValue
-
---decodeValue just used to help understanding of incoming port functionality
-decodeValue : Value -> Msg
-decodeValue x =
-    let
-        result =
-            Decode.decodeValue Decode.string x
-    in
-        case result of
-            Ok string ->
-                ReceivedDataFromJS string            
-            Err _ -> 
-                ReceivedDataFromJS "Silly JavaScript, you can't kill me!"
+    Sub.none

@@ -1,41 +1,38 @@
+--standard elm-spa dynamic file. For this app where most of the functionality is implemented
+
+
 module Pages.Rankings.Dynamic exposing (Model, Msg, page)
 
-import Components.Players exposing (Player, PlayerId(..), emptyPlayer, emptyPlayerId, ladderOfPlayersDecoder, playerDecoder, playerEncoder)
-import Components.Ranking exposing (Ranking, RankingId(..), rankingDecoder, rankingEncoder, rankingsDecoder)
-import Dict exposing (Dict)
-import Element exposing (..)
+import Element
 import Element.Background as Background
 import Element.Border as Border
 import Element.Events as E
 import Element.Font as Font
 import Element.Input as Input
-import Generated.Rankings.Params as Params
---import Html exposing (Html)
-import Http
---import Json.Decode as Decode exposing (Decoder, bool, int, list, string)
-import RemoteData exposing (RemoteData, WebData)
-import Spa.Page
-import Ui exposing (colors, markdown)
-import Utils.MyUtils exposing (stringFromBool)
-import Utils.Spa exposing (Page, PageContext)
-
---import Eth.Units exposing (gwei)
-
 import Eth
 import Eth.Net as Net exposing (NetworkId(..))
-import Eth.Sentry.Tx as TxSentry exposing (..)
-import Eth.Sentry.Wallet as WalletSentry exposing (WalletSentry)
-import Eth.Types exposing (..)
-import Eth.Units exposing (gwei)
---import Eth.Utils
---import Html exposing (..)
-import Html.Events exposing (onClick)
-import Json.Decode as Decode exposing (Value)
+import Eth.Sentry.Tx
+import Eth.Sentry.Wallet
+import Eth.Types
+import Eth.Units
+import Eth.Utils
+import Generated.Rankings.Params
+import Global exposing (..)
+import Http
+import Internal.Types as Internal
+import Json.Decode
+import Json.Decode.Pipeline
+import Json.Encode
+import Ports
 import Process
+import RemoteData
+import SR.Decode
+import SR.Defaults
+import SR.Types
+import Spa.Page
 import Task
-
---import Global exposing (EthNode, ethNode)
-import Ports exposing (..)
+import Ui
+import Utils.Spa
 
 
 
@@ -50,11 +47,11 @@ import Ports exposing (..)
 --          -> pageParams
 --          -> ( Model, Cmd Msg )
 -- these are output types of page function (not input)
---i.e. Spa.Page.element init now expects to output
+--i.e. Spa.Page.Element init now expects to output
 -- Spa.Page.PageContext route globalModel as an arg to init
 
 
-page : Page Params.Dynamic Model Msg model msg appMsg
+page : Utils.Spa.Page Generated.Rankings.Params.Dynamic Model Msg model msg appMsg
 page =
     Spa.Page.element
         { title = always "Rankings.Dynamic"
@@ -63,7 +60,7 @@ page =
         , init = init
         , update = always update
         , subscriptions = always subscriptions
-        , view = always view
+        , view = view
         }
 
 
@@ -83,100 +80,101 @@ type ModalState
     | Closed
 
 
-type ResultOptions
-    = Won
-    | Lost
-    | Undecided
+type ResultRadioOptions
+    = WonRadio
+    | LostRadio
+    | UndecidedRadio
 
 
 
 --Model is updated in update
+--ideally this alias Model would end up closer to:
+--the model before the update is applied
+-- type Model
+--     = Greeting : UserState WalletState
+--     | DisplayAllRankings : SRState
+--     | DisplaySingleRanking : SRState
+--     | DisplayEnterResult : WalletState SRState
+--     | Failure : String
+-- type Model
+--     = ListOfAllRankings (RemoteData.WebData (List SR.Types.Ranking)) String
+--     | FailureOnAllRankings String
 
 
 type alias Model =
     { --browserEnv : BrowserEnv
       --, settings : Maybe SettingsData
       --,
-      players : WebData (List Player)
+      isopponenthigherrank : Maybe SR.Types.OpponentRelativeRank
+    , players : RemoteData.WebData (List SR.Types.Player)
     , fetchedContentNotPlayerList : String
     , error : String
     , rankingid : String
     , modalState : ModalState
     , playerid : Int
-    , player : Player
-    , selectedRadio : ResultOptions
+    , player : SR.Types.Player
+    , opponent : SR.Types.Player
+    , selectedRadio : ResultRadioOptions
     , tempMsg : String
-    , txSentry : TxSentry Msg
-    , account : Maybe Address
-    , node : EthNode
+    , txSentry : Eth.Sentry.Tx.TxSentry Msg
+    , account : Maybe Eth.Types.Address
+    , node : Ports.EthNode
     , blockNumber : Maybe Int
-    , txHash : Maybe TxHash
-    , tx : Maybe Tx
-    , txReceipt : Maybe TxReceipt
-    , blockDepth : Maybe TxTracker
+    , txHash : Maybe Eth.Types.TxHash
+    , tx : Maybe Eth.Types.Tx
+    , txReceipt : Maybe Eth.Types.TxReceipt
+    , blockDepth : Maybe Eth.Sentry.Tx.TxTracker
     , errors : List String
+    , playerRank : Int
+    , opponentRank : Int
+    , playerStatus : SR.Types.PlayerAvailability
+    , opponentStatus : SR.Types.PlayerAvailability
     }
 
 
+
+--Your message type should describe what happened, not what to do
+
+
 type Msg
-    = TxSentryMsg TxSentry.Msg
-    | WalletStatus WalletSentry
-    | PollBlock (Result Http.Error Int)
+    = TxSentryMsg Eth.Sentry.Tx.Msg
+    | WalletStatus Eth.Sentry.Wallet.WalletSentry
+      --| PollBlock (Result Http.Error Int)
     | InitTx
-    | WatchTxHash (Result String TxHash)
-    | WatchTx (Result String Tx)
-    | WatchTxReceipt (Result String TxReceipt)
-    | TrackTx TxTracker
+    | WatchTxHash (Result String Eth.Types.TxHash)
+    | WatchTx (Result String Eth.Types.Tx)
+    | WatchTxReceipt (Result String Eth.Types.TxReceipt)
+    | TrackTx Eth.Sentry.Tx.TxTracker
     | Fail String
     | NoOp
-    | PlayersReceived (WebData (List Player))
+    | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
     | FetchedContent (Result Http.Error String)
     | OpenModal Int
     | CloseModal
-    | SetRadioOption ResultOptions
+    | SetRadioOption ResultRadioOptions
+    | ChangePlayerRank SR.Types.Player
+    | ProcessResult SR.Types.ResultOfMatch
+    | ConfirmButtonClicked
+    | SentResultToJsonbin (Result Http.Error ())
 
+
+
+--| sentResultToJsonbin (Result Http.Error (List String))
 -- this is where the types matter and are actually set to values ...
-
-
--- init : PageContext -> Params.Dynamic -> ( Model, Cmd Msg )
--- init pageContext { param1 } =
---     ( { --  browserEnv = pageContext.global.browserEnv
---         --, settings = Nothing
---         --,
---         players = RemoteData.NotAsked
---       , fetchedContentNotPlayerList = ""
---       , error = ""
---       , rankingid = param1
---       , modalState = Closed
---       , playerid = 0
---       , player =
---             { datestamp = 12345
---             , active = False
---             , currentchallengername = "Available"
---             , currentchallengerid = 0
---             , address = ""
---             , rank = 0
---             , name = "Unidentified"
---             , id = 0
---             , currentchallengeraddress = ""
---             }
---       , selectedRadio = Undecided
---       , tempMsg = "Not confirmed yet"
---       }
---     , fetchRanking (RankingId param1)
---     )
-
 --init : Int -> ( Model, Cmd Msg )
-init : PageContext -> Params.Dynamic -> ( Model, Cmd Msg )
+
+
+init : Utils.Spa.PageContext -> Generated.Rankings.Params.Dynamic -> ( Model, Cmd Msg )
 init pageContext { param1 } =
---init networkId =
+    --init networkId =
     let
         node =
             --Net.toNetworkId networkId
             Net.toNetworkId 4
-                |> ethNode
+                |> Ports.ethNode
     in
-    ( { txSentry = TxSentry.init ( txOut, txIn ) TxSentryMsg node.http
+    ( { isopponenthigherrank = Nothing
+      , txSentry = Eth.Sentry.Tx.init ( Ports.txOut, Ports.txIn ) TxSentryMsg node.http
       , account = Nothing
       , node = node
       , blockNumber = Nothing
@@ -191,26 +189,48 @@ init pageContext { param1 } =
       , rankingid = param1
       , modalState = Closed
       , playerid = 0
-      , player =
-            { datestamp = 12345
-            , active = False
-            , currentchallengername = "Available"
-            , currentchallengerid = 0
-            , address = ""
-            , rank = 0
-            , name = "Unidentified"
-            , id = 0
-            , currentchallengeraddress = ""
-            }
-      , selectedRadio = Undecided
+      , player = SR.Defaults.emptyPlayer
+      , opponent = SR.Defaults.emptyPlayer
+      , playerRank = 0
+      , opponentRank = 0
+      , playerStatus = SR.Types.Unavailable
+      , opponentStatus = SR.Types.Available
+      , selectedRadio = UndecidedRadio
       , tempMsg = "Not confirmed yet"
       }
-    , Cmd.batch [Ports.log "Hello!", fetchRanking (RankingId param1), Task.attempt PollBlock (Eth.getBlockNumber node.http)]
+    , Cmd.batch [ Ports.log "Hello!", fetchRanking (Internal.RankingId param1) ]
     )
 
 
-fetchRanking : RankingId -> Cmd Msg
-fetchRanking (RankingId rankingId) =
+isOpponentHigherRank : SR.Types.Player -> SR.Types.Opponent -> SR.Types.OpponentRelativeRank
+isOpponentHigherRank player opponent =
+    -- nb. if player rank is 'higher' than opponent his rank integer will actually be 'less than' opponent
+    -- we go by the integer ...
+    if player.rank > opponent.rank then
+        SR.Types.OpponentRankHigher
+
+    else
+        SR.Types.OpponentRankLower
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.batch
+        [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+        , Eth.Sentry.Tx.listen model.txSentry
+        ]
+
+
+
+--Http and assoc Json en/decoders
+
+
+fetchRanking : Internal.RankingId -> Cmd Msg
+fetchRanking (Internal.RankingId rankingId) =
     let
         _ =
             Debug.log "rankingid in fetchRanking" rankingId
@@ -225,7 +245,7 @@ fetchRanking (RankingId rankingId) =
     Http.request
         { body = Http.emptyBody
         , expect =
-            ladderOfPlayersDecoder
+            SR.Decode.ladderOfPlayersDecoder
                 |> Http.expectJson (RemoteData.fromResult >> PlayersReceived)
         , headers = [ headerKey ]
         , method = "GET"
@@ -235,7 +255,48 @@ fetchRanking (RankingId rankingId) =
         }
 
 
-expectJson : (Result Http.Error a -> msg) -> Decode.Decoder a -> Http.Expect msg
+postResultToJsonbin : Internal.RankingId -> Cmd Msg
+postResultToJsonbin (Internal.RankingId rankingId) =
+    let
+        _ =
+            Debug.log "rankingid in postResultToJsonbin" rankingId
+
+        headerKey =
+            Http.header
+                "secret-key"
+                "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
+    in
+    --PlayersReceived is the Msg handled by update whenever a request is made
+    --RemoteData is used throughout the module, including update
+    Http.request
+        { body = Http.emptyBody
+
+        --body = Http.jsonBody (playerEncoder rankingData)
+        -- , expect =
+        --     SR.Decode.ladderOfPlayersDecoder
+        --         |> Http.expectJson (RemoteData.fromResult >> SentResultToJsonbin)
+        , expect = Http.expectWhatever SentResultToJsonbin
+        , headers = [ headerKey ]
+        , method = "PUT"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = "https://api.jsonbin.io/b/" ++ rankingId
+        }
+
+
+
+--Http.request
+--                 { method = "PATCH"
+--                 , headers = [headerKey]
+--                 , url = "https://api.jsonbin.io/b/" ++ model.rankingid
+--                 , body = Http.jsonBody (postEncoder rankingData)
+--                 , expect = Http.expectJson PostSaved postDecoder
+--                 , timeout = Nothing
+--                 , tracker = Nothing
+--                 }
+
+
+expectJson : (Result Http.Error a -> msg) -> Json.Decode.Decoder a -> Http.Expect msg
 expectJson toMsg decoder =
     Http.expectStringResponse toMsg <|
         \response ->
@@ -253,26 +314,44 @@ expectJson toMsg decoder =
                     Err (Http.BadStatus metadata.statusCode)
 
                 Http.GoodStatus_ metadata body ->
-                    case Decode.decodeString decoder body of
+                    case Json.Decode.decodeString decoder body of
                         Ok value ->
                             Ok value
 
                         Err err ->
-                            Err (Http.BadBody (Decode.errorToString err))
+                            Err (Http.BadBody (Json.Decode.errorToString err))
 
 
 
+-- this put on hold 16 Feb 2020 until create new player functionality in place
+--updateRanking : RemoteData.WebData Ranking -> Cmd Msg
+-- updateRanking: Model -> Cmd Msg
+-- updateRanking model =
+--      let
+--         _ =
+--             Debug.log "rankingid in model" model.rankingid
+--         headerKey =
+--             Http.header
+--                 "secret-key"
+--                 "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
+--     in
+--             Http.request
+--                 { method = "PATCH"
+--                 , headers = [headerKey]
+--                 , url = "https://api.jsonbin.io/b/" ++ model.rankingid
+--                 , body = Http.jsonBody (postEncoder rankingData)
+--                 , expect = Http.expectJson PostSaved postDecoder
+--                 , timeout = Nothing
+--                 , tracker = Nothing
+--                 }
+-- _ ->
+--     Cmd.none
 -- Use Msg types to pattern match and trigger different updates in update
 -- define according to variant. Pass the variant the nec. type (if nec.)
 -- if change here, change update, and change wherever the Msg is called from
-
-
-
-
-
-
 -- UPDATE
 --update the model before it gets passed to view
+-- update is just updating the model on what has already happened (as per Msg)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -289,10 +368,6 @@ update msg model =
             )
 
         PlayersReceived players ->
-            let
-                _ =
-                    Debug.log "list of players" players
-            in
             --remove the first record (created on ranking creation with different format)
             ( { model | players = players }, Cmd.none )
 
@@ -302,49 +377,48 @@ update msg model =
         CloseModal ->
             ( { model | modalState = Closed }, Cmd.none )
 
+        ChangePlayerRank newPlayer ->
+            ( { model | player = newPlayer }, Cmd.none )
+
         SetRadioOption val ->
             ( { model | selectedRadio = val }, Cmd.none )
 
         TxSentryMsg subMsg ->
             let
                 ( subModel, subCmd ) =
-                    TxSentry.update subMsg model.txSentry
+                    Eth.Sentry.Tx.update subMsg model.txSentry
             in
             ( { model | txSentry = subModel }, subCmd )
 
         WalletStatus walletSentry_ ->
             ( { model
                 | account = walletSentry_.account
-                , node = ethNode walletSentry_.networkId
+                , node = Ports.ethNode walletSentry_.networkId
               }
             , Cmd.none
             )
 
-        PollBlock (Ok blockNumber) ->
-            ( { model | blockNumber = Just blockNumber }
-            , Task.attempt PollBlock <|
-                Task.andThen (\_ -> Eth.getBlockNumber model.node.http) (Process.sleep 1000)
-            )
-
-        PollBlock (Err error) ->
-            ( model, Cmd.none )
-
+        -- PollBlock (Ok blockNumber) ->
+        --     ( { model | blockNumber = Just blockNumber }
+        --     , Task.attempt PollBlock <|
+        --         Task.andThen (\_ -> Eth.getBlockNumber model.node.http) (Process.sleep 1000)
+        --     )
+        -- PollBlock (Err error) ->
+        --     ( model, Cmd.none )
         InitTx ->
             let
-                _ =
-                    Debug.log "list of players" model.players
                 txParams =
                     { to = model.account
                     , from = model.account
                     , gas = Nothing
-                    , gasPrice = Just <| gwei 4
-                    , value = Just <| gwei 1
+                    , gasPrice = Just <| Eth.Units.gwei 4
+                    , value = Just <| Eth.Units.gwei 1
                     , data = Nothing
                     , nonce = Nothing
                     }
 
                 ( newSentry, sentryCmd ) =
-                    TxSentry.customSend
+                    Eth.Sentry.Tx.customSend
                         model.txSentry
                         { onSign = Just WatchTxHash
                         , onBroadcast = Just WatchTx
@@ -354,6 +428,29 @@ update msg model =
             in
             ( { model | txSentry = newSentry }, sentryCmd )
 
+        ConfirmButtonClicked ->
+            let
+                txParams =
+                    { to = model.account
+                    , from = model.account
+                    , gas = Nothing
+                    , gasPrice = Just <| Eth.Units.gwei 4
+                    , value = Just <| Eth.Units.gwei 1
+                    , data = Nothing
+                    , nonce = Nothing
+                    }
+
+                ( newSentry, sentryCmd ) =
+                    Eth.Sentry.Tx.customSend
+                        model.txSentry
+                        { onSign = Just WatchTxHash
+                        , onBroadcast = Just WatchTx
+                        , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                        }
+                        txParams
+            in
+            ( { model | txSentry = newSentry }, Cmd.batch [ sentryCmd, postResultToJsonbin <| Internal.RankingId model.rankingid ] )
+
         WatchTxHash (Ok txHash) ->
             ( { model | txHash = Just txHash }, Cmd.none )
 
@@ -361,13 +458,16 @@ update msg model =
             ( { model | errors = ("Error Retrieving TxHash: " ++ err) :: model.errors }, Cmd.none )
 
         WatchTx (Ok tx) ->
-            ( { model | tx = Just tx }, Cmd.none )
+            --( { model | tx = Just tx }, Cmd.none )
+            { model | tx = Just tx } |> update (ProcessResult SR.Types.Won)
 
         WatchTx (Err err) ->
             ( { model | errors = ("Error Retrieving Tx: " ++ err) :: model.errors }, Cmd.none )
 
         WatchTxReceipt (Ok txReceipt) ->
-            ( { model | txReceipt = Just txReceipt }, Cmd.none )
+            --( { model | txReceipt = Just txReceipt }, Cmd.none )
+            { model | txReceipt = Just txReceipt }
+                |> update (ProcessResult SR.Types.Won)
 
         WatchTxReceipt (Err err) ->
             ( { model | errors = ("Error Retrieving TxReceipt: " ++ err) :: model.errors }, Cmd.none )
@@ -375,6 +475,61 @@ update msg model =
         TrackTx blockDepth ->
             ( { model | blockDepth = Just blockDepth }, Cmd.none )
 
+        ProcessResult result ->
+            let
+                whoHigher =
+                    isOpponentHigherRank model.player model.opponent
+
+                _ =
+                    Debug.log "made it to process result!" 8
+            in
+            case result of
+                SR.Types.Won ->
+                    case whoHigher of
+                        SR.Types.OpponentRankHigher ->
+                            --nb. higher rank is a lower number and vice versa!
+                            ( { model
+                                | playerRank = model.opponentRank
+                                , opponentRank = model.opponentRank + 1
+                                , playerStatus = SR.Types.Available
+                                , opponentStatus = SR.Types.Available
+                              }
+                            , Cmd.none
+                            )
+
+                        SR.Types.OpponentRankLower ->
+                            --nb. higher rank is a lower number and vice versa!
+                            ( { model | playerStatus = SR.Types.Available, opponentStatus = SR.Types.Available }
+                            , Cmd.none
+                            )
+
+                SR.Types.Lost ->
+                    case whoHigher of
+                        SR.Types.OpponentRankHigher ->
+                            --nb. higher rank is a lower number and vice versa!
+                            ( { model | playerStatus = SR.Types.Available, opponentStatus = SR.Types.Available }
+                            , Cmd.none
+                            )
+
+                        SR.Types.OpponentRankLower ->
+                            --nb. higher rank is a lower number and vice versa!
+                            ( { model
+                                | opponentRank = model.playerRank
+                                , playerRank = model.opponentRank + 1
+                                , playerStatus = SR.Types.Available
+                                , opponentStatus = SR.Types.Available
+                              }
+                            , Cmd.none
+                            )
+
+                SR.Types.Undecided ->
+                    ( model, Cmd.none )
+
+        SentResultToJsonbin a ->
+            ( model, Cmd.none )
+
+        -- Nothing ->
+        --     ( model, Cmd.none )
         Fail str ->
             let
                 _ =
@@ -387,25 +542,16 @@ update msg model =
 
 
 
--- SUBSCRIPTIONS
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    Sub.none
-
-
-
 -- VIEW
 -- display whatever is in the model
 
 
-view : Model -> Element Msg
-view model =
+view : Utils.Spa.PageContext -> Model -> Element.Element Msg
+view context model =
     --  add any extra views on a new line eg.
-    --, el [ Font.bold ] (text "this is bold")
+    --, element.el [ Font.bold ] (text "this is bold")
     Element.row []
-        [ viewWithModalReady model
+        [ viewWithModalReady context model
         ]
 
 
@@ -414,75 +560,110 @@ view model =
 --so that a result can be entered
 
 
-viewWithModalReady : Model -> Element Msg
-viewWithModalReady model =
+viewWithModalReady : Utils.Spa.PageContext -> Model -> Element.Element Msg
+viewWithModalReady context model =
     let
+        -- uname =
+        --     case context.global of
+        --         Global.GlobalVariant wSentry uName ->
+        --             case uName of
+        --                 SR.Types.NewUser ->
+        --                     "Hello New User"
+        --                 SR.Types.ExistingUser str ->
+        --                     "temp value whilst sort Top.elm"
+        --         Global.Failure str ->
+        --             str
+        playerAvail =
+            case model.playerStatus of
+                SR.Types.Available ->
+                    "available"
+
+                SR.Types.Unavailable ->
+                    "unavailable"
+
         modalString =
             case model.modalState of
                 Open ->
                     "Open"
 
                 Closed ->
-                    model.player.name ++ " you are currently ranked " ++ String.fromInt model.player.rank ++ " \nand your challenger is " ++ model.player.currentchallengername
+                    --validateAddress model.account ++ " you are currently ranked " ++ String.fromInt model.player.rank ++ " \nand your challenger is " ++ model.player.currentchallengername
+                    --context.global.username ++ " you are currently ranked " ++ String.fromInt model.player.rank ++ "\n you are " ++ playerAvail ++ " \nand your challenger is " ++ model.player.currentchallengername
+                    "find a new way to get name here" ++ " you are currently ranked " ++ String.fromInt model.player.rank ++ "\n you are " ++ playerAvail ++ " \nand your challenger is " ++ model.player.currentchallengername
     in
     -- html turns html Msg into Element Msg
-    html
-        (layout
-            [ inFront <| viewModal model ]
+    Element.html
+        (Element.layout
+            [ Element.inFront <| viewModal model ]
          <|
-            el
-                [ width fill
-                , height fill
-                , padding 20
+            Element.el
+                [ Element.width Element.fill
+                , Element.height Element.fill
+                , Element.padding 20
                 ]
             <|
-                column
-                    [ width fill
-                    , height fill
-                    , spacing 50
+                Element.column
+                    [ Element.width Element.fill
+                    , Element.height Element.fill
+                    , Element.spacing 50
                     ]
-                    [ el [ Font.color (rgb 0.2 0.2 0.2) ] (text modalString)
-                    , el [] <| viewPlayersOrError model
-                    , el [ Font.color (rgb 0.2 0.2 0.2) ] (text model.tempMsg)
+                    [ Element.el [ Font.color (Element.rgb 0.2 0.2 0.2) ] (Element.text modalString)
+                    , Element.el [] <| viewPlayersOrError model
+                    , Element.el [ Font.color (Element.rgb 0.2 0.2 0.2) ] (Element.text model.tempMsg)
 
                     --below was the original 'Open' button from the ellie example (now handled by Result btn)
-                    --, el [ centerX ] <| playeridbtn (rgb 0.25 0.75 0.75) (OpenModal model.player.id) "Opensadfa"
+                    --, Element.el [ centerX ] <| playeridbtn (rgb 0.25 0.75 0.75) (OpenModal model.player.id) "Opensadfa"
                     ]
         )
 
 
-viewModal : Model -> Element Msg
+validateAddress : Maybe Eth.Types.Address -> String
+validateAddress addr =
+    case addr of
+        Nothing ->
+            "No address"
+
+        Just a ->
+            Eth.Utils.addressToString a
+
+
+viewModal : Model -> Element.Element Msg
 viewModal model =
     let
         box =
-            el
-                [ width (px 300)
-                , height (px 300)
-                , centerX
-                , centerY
-                , Background.color (rgb 1 1 1)
+            Element.el
+                [ Element.width (Element.px 300)
+                , Element.height (Element.px 300)
+                , Element.centerX
+                , Element.centerY
+                , Background.color (Element.rgb 1 1 1)
                 ]
             <|
-                el [ centerX, centerY ] <|
-                    textColumn []
-                        [ row []
-                            [ el
+                Element.el [ Element.centerX, Element.centerY ] <|
+                    Element.textColumn []
+                        [ Element.row []
+                            [ Element.el
                                 []
                                 (viewplayer model)
                             ]
-                        , row []
-                            [ el []
+                        , Element.row []
+                            [ Element.el []
                                 (confirmbutton
-                                    (rgb 0.95 0.6 0.25)
-                                    InitTx
+                                    (Element.rgb 0.95 0.6 0.25)
+                                    --InitTx
+                                    ConfirmButtonClicked
+                                    --"Confirm"
+                                    --div [] [ button [ onClick InitTx ] [ text "Yup Send 0 value Tx to yourself as a test yup" ] ]
+                                    -- (ProcessResult
+                                    --     Won
+                                    -- )
                                     "Confirm"
-                                 --div [] [ button [ onClick InitTx ] [ text "Yup Send 0 value Tx to yourself as a test yup" ] ]
                                 )
                             ]
-                        , row []
-                            [ el []
+                        , Element.row []
+                            [ Element.el []
                                 (closebutton
-                                    (rgb 0.95 0.6 0.25)
+                                    (Element.rgb 0.95 0.6 0.25)
                                     CloseModal
                                     "Close"
                                 )
@@ -491,84 +672,94 @@ viewModal model =
     in
     case model.modalState of
         Open ->
-            el
-                [ width fill
-                , height fill
-                , behindContent <|
-                    el
-                        [ width fill
-                        , height fill
-                        , Background.color (rgba 0.5 0.5 0.5 0.7)
+            Element.el
+                [ Element.width Element.fill
+                , Element.height Element.fill
+                , Element.behindContent <|
+                    Element.el
+                        [ Element.width Element.fill
+                        , Element.height Element.fill
+                        , Background.color (Element.rgba 0.5 0.5 0.5 0.7)
                         , E.onClick CloseModal
                         ]
-                        none
+                        Element.none
                 ]
                 box
 
         Closed ->
-            el [] none
+            Element.el [] Element.none
 
 
-closebutton : Color -> Msg -> String -> Element Msg
+closebutton : Element.Color -> Msg -> String -> Element.Element Msg
 closebutton color msg label =
     Input.button
-        [ padding 20
+        [ Element.padding 20
         , Background.color color
         ]
         { onPress = Just msg
         , label =
-            el
-                [ centerX
-                , centerY
+            Element.el
+                [ Element.centerX
+                , Element.centerY
                 , Font.center
-                , Font.color (rgba 0.2 0.2 0.2 0.9)
+                , Font.color (Element.rgba 0.2 0.2 0.2 0.9)
                 ]
-                (text label)
+                (Element.text label)
         }
 
 
-confirmbutton : Color -> Msg -> String -> Element Msg
+
+--confirmProcessResultAndInitTx : Msg -> Msg -> Elemenet.Element Msg
+
+
+confirmbutton : Element.Color -> Msg -> String -> Element.Element Msg
 confirmbutton color msg label =
     Input.button
-        [ padding 20
+        [ Element.padding 20
         , Background.color color
         ]
         { onPress = Just msg
+
+        --onPress = Cmd.batch [ Just msg ]
         , label =
-            el
-                [ centerX
-                , centerY
+            Element.el
+                [ Element.centerX
+                , Element.centerY
                 , Font.center
-                , Font.color (rgba 0.2 0.2 0.2 0.9)
+                , Font.color (Element.rgba 0.2 0.2 0.2 0.9)
                 ]
-                (text label)
+                (Element.text label)
         }
 
+
+
 -- dothisOnPress : String -> Msg -> Msg
--- dothisOnPress  str msg = 
---     -- this is going to run and update with InitTx 
+-- dothisOnPress  str msg =
+--     -- this is going to run and update with InitTx
 --     msg str
 
 
-playersResultBtnCol : List Player -> String -> Column Player Msg
+playersResultBtnCol : List SR.Types.Player -> String -> Element.Column SR.Types.Player Msg
 playersResultBtnCol players str =
     { header = Element.text str
-    , width = fill
+    , width = Element.fill
     , view =
         \player ->
             Element.row
                 [ Font.color Ui.colors.lightblue
                 , Border.widthXY 2 2
                 ]
-                [ playeridbtn colors.blue (OpenModal player.id) "Result"
+                [ playeridbtn Ui.colors.blue (OpenModal player.id) "Result"
+
+                -- playeridbtn Ui.colors.blue (ChangePlayerRank (updatedPlayerRank player 5)) "Result"
                 ]
     }
 
 
-playersNameCol : List Player -> String -> Column Player msg
+playersNameCol : List SR.Types.Player -> String -> Element.Column SR.Types.Player msg
 playersNameCol players str =
     { header = Element.text str
-    , width = fill
+    , width = Element.fill
     , view =
         \player ->
             Element.row
@@ -580,10 +771,10 @@ playersNameCol players str =
     }
 
 
-playersRankCol : List Player -> String -> Column Player msg
+playersRankCol : List SR.Types.Player -> String -> Element.Column SR.Types.Player msg
 playersRankCol players str =
     { header = Element.text str
-    , width = fill
+    , width = Element.fill
     , view =
         \player ->
             Element.row
@@ -595,10 +786,10 @@ playersRankCol players str =
     }
 
 
-playersCurrentChallCol : List Player -> String -> Column Player msg
+playersCurrentChallCol : List SR.Types.Player -> String -> Element.Column SR.Types.Player msg
 playersCurrentChallCol players str =
     { header = Element.text str
-    , width = fill
+    , width = Element.fill
     , view =
         \player ->
             Element.row
@@ -610,26 +801,26 @@ playersCurrentChallCol players str =
     }
 
 
-playeridbtn : Color -> Msg -> String -> Element Msg
+playeridbtn : Element.Color -> Msg -> String -> Element.Element Msg
 playeridbtn color selectedplayermsg label =
     Input.button
         [ Background.color color
-        , centerX
-        , centerY
+        , Element.centerX
+        , Element.centerY
         ]
         { onPress = Just selectedplayermsg
         , label =
-            el
-                [ centerX
-                , centerY
+            Element.el
+                [ Element.centerX
+                , Element.centerY
                 , Font.center
-                , Font.color (rgba 0.2 0.2 0.2 0.9)
+                , Font.color (Element.rgba 0.2 0.2 0.2 0.9)
                 ]
-                (text label)
+                (Element.text label)
         }
 
 
-retrieveSinglePlayer : Int -> List Player -> Player
+retrieveSinglePlayer : Int -> List SR.Types.Player -> SR.Types.Player
 retrieveSinglePlayer id players =
     let
         x =
@@ -637,22 +828,13 @@ retrieveSinglePlayer id players =
     in
     case List.head x of
         Nothing ->
-            { datestamp = 12345
-            , active = False
-            , currentchallengername = ""
-            , currentchallengerid = 0
-            , address = ""
-            , rank = 0
-            , name = ""
-            , id = 0
-            , currentchallengeraddress = ""
-            }
+            SR.Defaults.emptyPlayer
 
         Just item ->
             item
 
 
-viewPlayersOrError : Model -> Element Msg
+viewPlayersOrError : Model -> Element.Element Msg
 viewPlayersOrError model =
     case model.players of
         RemoteData.NotAsked ->
@@ -665,10 +847,24 @@ viewPlayersOrError model =
             viewplayers players
 
         RemoteData.Failure httpError ->
-            Element.text "Failure"
+            case httpError of
+                Http.BadUrl s ->
+                    Element.text "Bad Url"
+
+                Http.Timeout ->
+                    Element.text "Timeout"
+
+                Http.NetworkError ->
+                    Element.text "Network Err"
+
+                Http.BadStatus statuscode ->
+                    Element.text <| String.fromInt <| statuscode
+
+                Http.BadBody s ->
+                    Element.text <| "BadBody " ++ s
 
 
-extractPlayersFromWebData : Model -> List Player
+extractPlayersFromWebData : Model -> List SR.Types.Player
 extractPlayersFromWebData model =
     case model.players of
         RemoteData.NotAsked ->
@@ -684,22 +880,13 @@ extractPlayersFromWebData model =
             []
 
 
-
---possibly useful ref:
---stringFromBool player.active
---(String.fromInt player.currentchallengerid)
--- (String.fromInt player.rank)
--- String.fromInt player.datestamp)
---player.address
-
-
-viewplayers : List Player -> Element Msg
+viewplayers : List SR.Types.Player -> Element.Element Msg
 viewplayers players =
-    html <|
+    Element.html <|
         Element.layout
             [ Element.padding 25
-            , Background.color (rgba 0 0 0 1)
-            , Font.color (rgba 1 1 1 1)
+            , Background.color (Element.rgba 0 0 0 1)
+            , Font.color (Element.rgba 1 1 1 1)
             , Font.size 22
             , Font.family
                 [ Font.external
@@ -731,7 +918,7 @@ viewplayers players =
 --the 'List' is just a list of one player (for the table to work)
 
 
-viewplayer : Model -> Element Msg
+viewplayer : Model -> Element.Element Msg
 viewplayer model =
     let
         playerToView =
@@ -739,16 +926,36 @@ viewplayer model =
     in
     Element.paragraph []
         [ Input.radio
-            [ spacing 12
+            [ Element.spacing 12
             , Background.color Ui.colors.grey
             ]
             { selected = Just model.selectedRadio
             , onChange = SetRadioOption
-            , label = Input.labelAbove [ Font.size 22, paddingXY 0 12 ] (text (playerToView.name ++ " would you like to \nenter a result against " ++ playerToView.currentchallengername ++ "?"))
+            , label = Input.labelAbove [ Font.size 22, Element.paddingXY 0 12 ] (Element.text (playerToView.name ++ " would you like to \nenter a result against " ++ playerToView.currentchallengername ++ "?"))
             , options =
-                [ Input.option Won (text "Won")
-                , Input.option Lost (text "Lost")
-                , Input.option Undecided (text "Undecided")
+                [ Input.option WonRadio (Element.text "Won")
+                , Input.option LostRadio (Element.text "Lost")
+                , Input.option UndecidedRadio (Element.text "Undecided")
                 ]
             }
         ]
+
+
+updatedPlayerRank : SR.Types.Player -> Int -> SR.Types.Player
+updatedPlayerRank player rank =
+    { datestamp = player.datestamp
+    , active = player.active
+    , currentchallengername = player.currentchallengername
+    , currentchallengerid = player.currentchallengerid
+    , address = player.address
+    , rank = rank
+    , name = player.name
+    , id = player.id
+    , currentchallengeraddress = player.currentchallengeraddress
+    }
+
+
+
+-- emptyPlayerId : SR.Types.PlayerId
+-- emptyPlayerId =
+--     Internal.PlayerId -1

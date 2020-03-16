@@ -1,4 +1,4 @@
-module Utils.MyUtils exposing (stringFromBool)
+module Utils.MyUtils exposing (stringFromBool, stringFromMaybeString)
 
 
 stringFromBool : Bool -> String
@@ -9,3 +9,23 @@ stringFromBool bool =
 
         False ->
             "False"
+
+
+stringFromMaybeString : Maybe String -> String
+stringFromMaybeString str =
+    case str of
+        Nothing ->
+            "Not a string"
+
+        Just a ->
+            a
+
+
+
+-- addressFromMaybeAddress : Maybe Address -> Address
+-- addressFromMaybeAddress addr =
+--     case addr of
+--         Nothing ->
+--             Eth.Defaults.invalidAddress
+--         Just a ->
+--             a
