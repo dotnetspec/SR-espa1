@@ -74,6 +74,7 @@ type Model
 
 type Msg
     = GotJsonbinAllRankings (RemoteData.WebData (List SR.Types.RankingInfo))
+    | UserChangedUIStateToRenderAll (RemoteData.WebData (List SR.Types.RankingInfo))
     | ChangedUIStateToCreateNew
     | NewRankingRequestedByConfirmBtnClicked
     | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
@@ -324,6 +325,9 @@ update msgOfTransitonThatAlreadyHappened previousmodel =
                 _ ->
                     ( ModelFailure "Error in SwitchedToNewEmptyAndFilledGlobalList", Cmd.none )
 
+        UserChangedUIStateToRenderAll globalList ->
+            ( AllRankingsJson globalList "" "" SR.Types.RenderAllRankings, Cmd.none )
+
         --this fires the createNewPlayerListWithCurrentUser Cmd
         -- from the button (which only accepts Msg not Cmd.Msg)
         NewRankingRequestedByConfirmBtnClicked ->
@@ -519,7 +523,7 @@ viewRankings rankings uiState =
                         }
 
         SR.Types.CreateNewLadder ->
-            input
+            input (RemoteData.Success rankings)
 
 
 rankingNameCol : List SR.Types.RankingInfo -> String -> Column SR.Types.RankingInfo msg
@@ -604,8 +608,8 @@ listAllbutton color msg label =
         }
 
 
-input : Element Msg
-input =
+input : RemoteData.WebData (List SR.Types.RankingInfo) -> Element Msg
+input rankings =
     Element.column Grid.section <|
         [ Element.el Heading.h2 <| Element.text "Please name and describe your new ranking"
         , Element.wrappedRow (Card.fill ++ Grid.simple)
@@ -627,12 +631,11 @@ input =
             ]
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
-                [ --     Input.button Framework.Button.simple <|
-                  --     { onPress = Nothing
-                  --     , label = Element.text "Framework.simple"
-                  --     }
-                  -- ,
-                  Input.button Framework.Button.fill <|
+                [ Input.button Framework.Button.simple <|
+                    { onPress = Just (UserChangedUIStateToRenderAll rankings)
+                    , label = Element.text "Cancel"
+                    }
+                , Input.button Framework.Button.fill <|
                     { -- this btn fires createNewPlayerListWithCurrentUser from update
                       onPress = Just NewRankingRequestedByConfirmBtnClicked
                     , label = Element.text "Create New Ranking"
