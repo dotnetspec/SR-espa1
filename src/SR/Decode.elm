@@ -1,6 +1,6 @@
 module SR.Decode exposing
     ( rankingsDecoder
-    , ladderOfPlayersDecoder, newRankingDecoder, newRankingIdDecoder, newRankingListDecoder, playerDecoder
+    , decodeNewRankingListServerResponse, ladderOfPlayersDecoder, newRankingDecoder, newRankingIdDecoder, playerDecoder
     )
 
 {-|
@@ -47,9 +47,37 @@ rankingDecoder =
         |> Json.Decode.Pipeline.required "rankingdesc" Json.Decode.string
 
 
-newRankingListDecoder : Json.Decode.Decoder (List SR.Types.RankingInfo)
-newRankingListDecoder =
-    Json.Decode.list newRankingDecoder
+
+-- newRankingObjDecoder : Json.Decode.Decoder ( SR.Types.NewRankingListServerResponse)
+-- newRankingObjDecoder =
+--     Json.Decode.object decodeCondition
+--decodeNewRankingListdata : Decoder (List SR.Types.RankingInfo)
+-- decodeNewRankingListServerResponse : Decoder SR.Types.NewRankingListServerResponse
+-- decodeNewRankingListServerResponse =
+--     Json.Decode.list decodeNewRankingListdata
+-- decodeNewRankingListdata : Decoder SR.Types.RankingInfo
+-- decodeNewRankingListdata =
+--     Json.Decode.succeed SR.Types.RankingInfo
+--         |> Json.Decode.Pipeline.required "data" newRankingListDecoder
+-- decodeNewRankingListServerResponse : Decoder (List SR.Types.RankingInfo)
+-- decodeNewRankingListServerResponse =
+--     Json.Decode.succeed (List SR.Types.RankingInfo)
+--         |> Json.Decode.Pipeline.required "data" Json.Decode.list
+
+
+decodeNewRankingListServerResponse : Decoder (List SR.Types.RankingInfo)
+decodeNewRankingListServerResponse =
+    Json.Decode.field "data" (Json.Decode.list rankingDecoder)
+
+
+
+--decoderToDecodeRankingInfoValue :
+-- Json.Decode.decodeValue rankingsDecoder
+--     |> required "data" []
+--     |> Json.Decode.list
+-- newRankingListDecoder : Json.Decode.Decoder SR.Types.NewRankingListServerResponse
+-- newRankingListDecoder =
+--     Json.Decode.list newRankingDecoder
 
 
 newRankingDecoder : Json.Decode.Decoder SR.Types.RankingInfo

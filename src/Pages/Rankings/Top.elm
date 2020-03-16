@@ -75,7 +75,7 @@ type Model
 type Msg
     = GotJsonbinAllRankings (RemoteData.WebData (List SR.Types.RankingInfo))
     | ChangedUIStateToCreateNew
-    | NewRankingRequestedByConfirmBtnClick
+    | NewRankingRequestedByConfirmBtnClicked
     | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
     | NameInputChg String
     | DescInputChg String
@@ -233,7 +233,7 @@ addedNewRankingListEntryInGlobal newrankingid globalList newName newDesc =
     Http.request
         { body =
             Http.jsonBody <| jsonEncodeNewGlobalRankingList globalListWithJsonObjAdded
-        , expect = Http.expectJson (RemoteData.fromResult >> AddedNewRankingToGlobalList) SR.Decode.rankingsDecoder
+        , expect = Http.expectJson (RemoteData.fromResult >> AddedNewRankingToGlobalList) SR.Decode.decodeNewRankingListServerResponse
         , headers = [ secretKey, binName, containerId ]
         , method = "PUT"
         , timeout = Nothing
@@ -326,13 +326,13 @@ update msgOfTransitonThatAlreadyHappened previousmodel =
 
         --this fires the createNewPlayerListWithCurrentUser Cmd
         -- from the button (which only accepts Msg not Cmd.Msg)
-        NewRankingRequestedByConfirmBtnClick ->
+        NewRankingRequestedByConfirmBtnClicked ->
             case previousmodel of
                 AllRankingsJson globalList newrankingName newRankingDesc _ ->
                     ( AllRankingsJson globalList newrankingName newRankingDesc SR.Types.CreateNewLadder, createNewPlayerListWithCurrentUser )
 
                 _ ->
-                    ( ModelFailure "Error in NewRankingRequestedByConfirmBtnClick", Cmd.none )
+                    ( ModelFailure "Error in NewRankingRequestedByConfirmBtnClicked", Cmd.none )
 
         -- this is the response from createNewPlayerListWithCurrentUser Cmd
         -- it had the Http.expectStringResponse in it
@@ -411,9 +411,9 @@ getHeaderGroup model =
                 , Element.column (Card.fill ++ Grid.simple)
                     [ Element.wrappedRow Grid.simple
                         [ Element.el (Card.fill ++ Group.left) <| createnewRankingbutton Color.primary ChangedUIStateToCreateNew "Create New"
-                        , Element.el (Card.fill ++ Group.center ++ Color.disabled) <| joinbutton Color.primary NewRankingRequestedByConfirmBtnClick "Join"
-                        , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingRequestedByConfirmBtnClick "Enter Result"
-                        , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingRequestedByConfirmBtnClick "Update Profile"
+                        , Element.el (Card.fill ++ Group.center ++ Color.disabled) <| joinbutton Color.primary NewRankingRequestedByConfirmBtnClicked "Join"
+                        , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingRequestedByConfirmBtnClicked "Enter Result"
+                        , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingRequestedByConfirmBtnClicked "Update Profile"
                         ]
                     ]
                 , Element.column (Card.fill ++ Grid.simple)
@@ -423,7 +423,7 @@ getHeaderGroup model =
                     ]
 
                 -- , [ Element.wrappedRow Grid.simple
-                --         [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingRequestedByConfirmBtnClick "Create New"
+                --         [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingRequestedByConfirmBtnClicked "Create New"
                 --         , currentView model
                 --         --, Element.el (Card.fill ++ Group.bottom) <| listAllbutton Color.primary getRankingList "List All"
                 --         ]
@@ -432,15 +432,15 @@ getHeaderGroup model =
 
         ModelFailure str ->
             Element.column Grid.section <|
-                [ Element.el Heading.h5 <| Element.text <| "Something wrong  " ++ str
+                [ Element.el Heading.h5 <| Element.text <| "Model failure  " ++ str
 
                 --Element.el Heading.h2 <| Element.text <| "Create New Ranking ... new id is " ++ rankingIdremdata
                 , Element.column (Card.fill ++ Grid.simple)
                     [ Element.wrappedRow Grid.simple
-                        [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingRequestedByConfirmBtnClick "Create New"
-                        , Element.el (Card.fill ++ Group.center) <| joinbutton Color.primary NewRankingRequestedByConfirmBtnClick "Join"
-                        , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingRequestedByConfirmBtnClick "Enter Result"
-                        , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingRequestedByConfirmBtnClick "Update Profile"
+                        [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingRequestedByConfirmBtnClicked "Create New"
+                        , Element.el (Card.fill ++ Group.center) <| joinbutton Color.primary NewRankingRequestedByConfirmBtnClicked "Join"
+                        , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingRequestedByConfirmBtnClicked "Enter Result"
+                        , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingRequestedByConfirmBtnClicked "Update Profile"
                         ]
                     ]
                 , Element.column (Card.fill ++ Grid.simple)
@@ -468,13 +468,15 @@ currentView model =
                 RemoteData.Failure httpError ->
                     Element.text <| buildErrorMessage httpError
 
-        -- AddingNewRankingToGlobalList rankingIdremdata rnkInfo globalList ->
-        --     input
         ModelFailure str ->
             Element.text str
 
 
 
+-- gotRankingsListFromResponse : List SR.Types.RankingInfo -> List SR.Types.RankingInfo
+-- gotRankingsListFromResponse jsonResponseWithRankings =
+--     jsonResponseWithRankings.data
+--Json.Decode.decodeO SR.Decode.rankingsDecoder
 --you might need this later
 -- (stringFromBool ranking.active)
 
@@ -632,7 +634,7 @@ input =
                   -- ,
                   Input.button Framework.Button.fill <|
                     { -- this btn fires createNewPlayerListWithCurrentUser from update
-                      onPress = Just NewRankingRequestedByConfirmBtnClick
+                      onPress = Just NewRankingRequestedByConfirmBtnClicked
                     , label = Element.text "Create New Ranking"
                     }
                 ]

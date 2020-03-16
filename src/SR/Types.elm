@@ -2,7 +2,7 @@ module SR.Types exposing
     ( PlayerId, RankingId(..)
     , Player, Opponent, OpponentRelativeRank(..), Options, PlayerAvailability(..), ResultOfMatch(..), SRState(..), UserState(..), WalletState(..)
     , UIState(..)
-    , CreateNewLadderFormFields, RankingInfo, Username(..)
+    , CreateNewLadderFormFields, NewRankingListServerResponse, RankingInfo, Username(..)
     )
 
 {-| Types
@@ -162,4 +162,18 @@ type alias RankingInfo =
     , active : Bool
     , name : String
     , desc : String
+    }
+
+
+type alias NewRankingListServerResponse =
+    { success : Bool
+    , data :
+        List
+            { id : String
+            , active : Bool
+            , rankingname : String
+            , rankingdesc : String
+            }
+    , version : Int
+    , parentId : String
     }
