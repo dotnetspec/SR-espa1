@@ -42,16 +42,11 @@ page =
 
 
 --variants are labels for different situations, with assoc data possibly attached.
-
-
-type RemoteData e a
-    = NotAsked
-    | Loading
-    | Failure e
-    | Success a
-
-
-
+-- type RemoteData e a
+--     = NotAsked
+--     | Loading
+--     | Failure e
+--     | Success a
 --The model represents the state of the application
 -- Model is what is going to change via Update (which is changed from places like View, Subs etc.)
 -- it will go from 1 state to another
@@ -213,6 +208,9 @@ addedNewRankingListEntryInGlobal newrankingid globalList newName newDesc =
             Http.header
                 "collection-id"
                 "5d7deab3371673119fab12a6"
+
+        _ =
+            Debug.log "new ranking owner address in addedNewRankingListEntryInGlobal: " "it will go here"
 
         justGlobalList =
             gotRankingListFromRemData globalList
@@ -408,6 +406,10 @@ listOfElementmsgs model =
 
 getHeaderGroup : Model -> Element Msg
 getHeaderGroup model =
+    let
+        _ =
+            Debug.log "new ranking owner address in getHeaderGroup: " "it will go here"
+    in
     case model of
         AllRankingsJson rnkingList _ _ _ ->
             Element.column Grid.section <|

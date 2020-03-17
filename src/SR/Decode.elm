@@ -1,6 +1,6 @@
 module SR.Decode exposing
     ( rankingsDecoder
-    , decodeNewRankingListServerResponse, ladderOfPlayersDecoder, newRankingDecoder, newRankingIdDecoder, playerDecoder
+    , decodeNewRankingListServerResponse, ladderOfPlayersDecoder, listOfUsersDecoder, newRankingDecoder, newRankingIdDecoder, playerDecoder, userDecoder
     )
 
 {-|
@@ -65,3 +65,20 @@ newRankingIdDecoder : Json.Decode.Decoder SR.Types.RankingId
 newRankingIdDecoder =
     Json.Decode.succeed SR.Types.RankingId
         |> Json.Decode.Pipeline.required "id" Json.Decode.string
+
+
+listOfUsersDecoder : Json.Decode.Decoder (List SR.Types.User)
+listOfUsersDecoder =
+    Json.Decode.list userDecoder
+
+
+userDecoder : Json.Decode.Decoder SR.Types.User
+userDecoder =
+    Json.Decode.succeed SR.Types.User
+        |> Json.Decode.Pipeline.required "datestamp" Json.Decode.int
+        |> Json.Decode.Pipeline.required "active" Json.Decode.bool
+        |> Json.Decode.Pipeline.required "username" Json.Decode.string
+        |> Json.Decode.Pipeline.required "ethaddress" Json.Decode.string
+        |> Json.Decode.Pipeline.required "description" Json.Decode.string
+        |> Json.Decode.Pipeline.required "email" Json.Decode.string
+        |> Json.Decode.Pipeline.required "mobile" Json.Decode.string

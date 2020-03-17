@@ -10,7 +10,12 @@ import Eth.Types
 import Eth.Utils
 import Generated.Params as Params
 import Global
+import Http
 import Ports
+import RemoteData
+import SR.Constants
+import SR.Decode
+import SR.Defaults
 import SR.Types
 import Spa.Page
 import Ui
@@ -29,14 +34,14 @@ page =
 
 
 type Model
-    = Greeting SR.Types.UserState SR.Types.WalletState
+    = Greeting SR.Types.UserListState SR.Types.UserState SR.Types.WalletState
     | Failure String
 
 
 init : Utils.Spa.PageContext -> Params.Top -> ( Model, Cmd Msg, Cmd Global.Msg )
 init context _ =
-    ( Greeting SR.Types.NewUser SR.Types.Missing
-    , Cmd.none
+    ( Greeting SR.Types.Loading SR.Types.NewUser SR.Types.Missing
+    , gotPlayersList
     , Cmd.none
     )
 
@@ -53,6 +58,7 @@ type Msg
     | NewUser
     | ExistingUser Eth.Types.Address
     | WalletStatus Eth.Sentry.Wallet.WalletSentry
+    | GotJsonbinUsers (RemoteData.WebData (List SR.Types.User))
     | Fail String
     | NoOp
 
@@ -89,17 +95,51 @@ update msg model =
                     handleMsg GetAWalletInstructions
 
         GetAWalletInstructions ->
-            ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none, Cmd.none )
+            ( Greeting SR.Types.NotAsked SR.Types.NewUser SR.Types.Missing, Cmd.none, Cmd.none )
 
         OpenWalletInstructions ->
-            ( Greeting SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
+            ( Greeting SR.Types.NotAsked SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
 
         NewUser ->
-            ( Greeting SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
+            ( Greeting SR.Types.NotAsked SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
 
         ExistingUser uname ->
             --( Greeting SR.Types.DialogClosed (SR.Types.ExistingUser a) SR.Types.Opened, Cmd.none, Cmd.none )
-            ( Greeting (SR.Types.ExistingUser uname) SR.Types.Opened, Cmd.none, Cmd.none )
+            ( Greeting SR.Types.NotAsked (SR.Types.ExistingUser uname) SR.Types.Opened, Cmd.none, Cmd.none )
+
+        GotJsonbinUsers rmtdata ->
+            case rmtdata of
+                RemoteData.Success a ->
+                    case model of
+                        Greeting _ b c ->
+                            ( Greeting (SR.Types.Success a) b c, Cmd.none, Cmd.none )
+
+                        Failure str ->
+                            ( Failure str, Cmd.none, Cmd.none )
+
+                RemoteData.Failure e ->
+                    case model of
+                        Greeting _ b c ->
+                            ( Greeting (SR.Types.Failure "error") b c, Cmd.none, Cmd.none )
+
+                        Failure str ->
+                            ( Failure str, Cmd.none, Cmd.none )
+
+                RemoteData.NotAsked ->
+                    case model of
+                        Greeting _ b c ->
+                            ( Greeting SR.Types.NotAsked b c, Cmd.none, Cmd.none )
+
+                        Failure str ->
+                            ( Failure str, Cmd.none, Cmd.none )
+
+                RemoteData.Loading ->
+                    case model of
+                        Greeting _ b c ->
+                            ( Greeting SR.Types.Loading b c, Cmd.none, Cmd.none )
+
+                        Failure str ->
+                            ( Failure str, Cmd.none, Cmd.none )
 
         Fail str ->
             ( Failure str, Cmd.none, Cmd.none )
@@ -108,23 +148,28 @@ update msg model =
             ( Failure "NoOp", Cmd.none, Cmd.none )
 
         _ ->
-            ( Failure "Something wrong with Msg", Cmd.none, Cmd.none )
+            ( Failure "Msg Err - is it list as a variant?", Cmd.none, Cmd.none )
+
+
+
+-- it might not be enough to just use RemoteData.Loading here
+-- it might overwrite the model ref to List Players
 
 
 handleMsg : Msg -> ( Model, Cmd Msg, Cmd Global.Msg )
 handleMsg msg =
     case msg of
         GetAWalletInstructions ->
-            ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none, Cmd.none )
+            ( Greeting SR.Types.NotAsked SR.Types.NewUser SR.Types.Missing, Cmd.none, Cmd.none )
 
         OpenWalletInstructions ->
-            ( Greeting SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
+            ( Greeting SR.Types.NotAsked SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
 
         NewUser ->
-            ( Greeting SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
+            ( Greeting SR.Types.NotAsked SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
 
         ExistingUser uname ->
-            ( Greeting (SR.Types.ExistingUser uname) SR.Types.Opened, Cmd.none, Cmd.none )
+            ( Greeting SR.Types.NotAsked (SR.Types.ExistingUser uname) SR.Types.Opened, Cmd.none, Cmd.none )
 
         _ ->
             ( Failure "Something wrong with Msg", Cmd.none, Cmd.none )
@@ -183,7 +228,13 @@ view context model =
         Failure message ->
             failure message
 
-        Greeting userState walletState ->
+        Greeting userList userState walletState ->
+            let
+                -- usrlist =
+                --     gotUserListFromRemData (SR.Types.Success userList)
+                _ =
+                    Debug.log "user list : " userList
+            in
             case walletState of
                 SR.Types.Locked ->
                     Element.el [ centerX, centerY, inFront (Dialog.view (Just (config OpenWalletInstructions))) ]
@@ -209,3 +260,73 @@ view context model =
 modalBody : Element Msg
 modalBody =
     Element.text "Please install and unlock \nan Ethereum wallet extension in \nyour browser to continue"
+
+
+
+-- Http ops
+
+
+gotPlayersList : Cmd Msg
+gotPlayersList =
+    let
+        secretKey =
+            Http.header
+                "secret-key"
+                "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
+
+        binName =
+            Http.header
+                "name"
+                "Users"
+
+        containerId =
+            Http.header
+                "collection-id"
+                "5e4cf4ba4d073155b0dca8b8"
+    in
+    Http.request
+        { body = Http.emptyBody
+        , expect = Http.expectJson (RemoteData.fromResult >> GotJsonbinUsers) SR.Decode.listOfUsersDecoder
+        , headers = [ secretKey, binName, containerId ]
+        , method = "GET"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = SR.Constants.jsonbinUsersReadLink
+        }
+
+
+gotUserListFromRemData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
+gotUserListFromRemData userList =
+    case userList of
+        RemoteData.Success a ->
+            a
+
+        RemoteData.NotAsked ->
+            [ SR.Defaults.emptyUser
+            ]
+
+        RemoteData.Loading ->
+            [ SR.Defaults.emptyUser
+            ]
+
+        RemoteData.Failure err ->
+            case err of
+                Http.BadUrl s ->
+                    [ SR.Defaults.emptyUser
+                    ]
+
+                Http.Timeout ->
+                    [ SR.Defaults.emptyUser
+                    ]
+
+                Http.NetworkError ->
+                    [ SR.Defaults.emptyUser
+                    ]
+
+                Http.BadStatus statuscode ->
+                    [ SR.Defaults.emptyUser
+                    ]
+
+                Http.BadBody s ->
+                    [ SR.Defaults.emptyUser
+                    ]
