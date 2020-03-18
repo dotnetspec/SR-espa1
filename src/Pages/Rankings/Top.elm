@@ -23,6 +23,7 @@ import Json.Encode
 import RemoteData
 import SR.Constants
 import SR.Decode
+import SR.Defaults
 import SR.Types
 import Spa.Page
 import Ui
@@ -220,6 +221,7 @@ addedNewRankingListEntryInGlobal newrankingid globalList newName newDesc =
             , active = True
             , name = newName
             , desc = newDesc
+            , rankingowneraddr = "0x847700B781667abdD98E1393420754E503dca5b7"
             }
 
         globalListWithJsonObjAdded =
@@ -251,6 +253,7 @@ jsonEncodeNewGlobalRankingList globalList =
                 , ( "active", Json.Encode.bool rankingInfo.active )
                 , ( "rankingname", Json.Encode.string rankingInfo.name )
                 , ( "rankingdesc", Json.Encode.string rankingInfo.desc )
+                , ( "rankingowneraddr", Json.Encode.string rankingInfo.rankingowneraddr )
                 ]
 
         encodedList =
@@ -703,61 +706,33 @@ gotRankingListFromRemData globalList =
             a
 
         RemoteData.NotAsked ->
-            [ { id = "Initialising"
-              , active = False
-              , name = ""
-              , desc = ""
-              }
+            [ SR.Defaults.emptyRankingInfo
             ]
 
         RemoteData.Loading ->
-            [ { id = "Loading"
-              , active = False
-              , name = ""
-              , desc = ""
-              }
+            [ SR.Defaults.emptyRankingInfo
             ]
 
         RemoteData.Failure err ->
             case err of
                 Http.BadUrl s ->
-                    [ { id = s
-                      , active = False
-                      , name = ""
-                      , desc = ""
-                      }
+                    [ SR.Defaults.emptyRankingInfo
                     ]
 
                 Http.Timeout ->
-                    [ { id = "Timeout"
-                      , active = False
-                      , name = ""
-                      , desc = ""
-                      }
+                    [ SR.Defaults.emptyRankingInfo
                     ]
 
                 Http.NetworkError ->
-                    [ { id = "0"
-                      , active = False
-                      , name = "Network Err"
-                      , desc = ""
-                      }
+                    [ SR.Defaults.emptyRankingInfo
                     ]
 
                 Http.BadStatus statuscode ->
-                    [ { id = "0"
-                      , active = False
-                      , name = String.fromInt <| statuscode
-                      , desc = ""
-                      }
+                    [ SR.Defaults.emptyRankingInfo
                     ]
 
                 Http.BadBody s ->
-                    [ { id = "0"
-                      , active = False
-                      , name = s
-                      , desc = ""
-                      }
+                    [ SR.Defaults.emptyRankingInfo
                     ]
 
 

@@ -176,6 +176,7 @@ type alias RankingInfo =
     , active : Bool
     , name : String
     , desc : String
+    , rankingowneraddr : String
     }
 
 

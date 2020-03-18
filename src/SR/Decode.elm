@@ -1,6 +1,14 @@
 module SR.Decode exposing
     ( rankingsDecoder
-    , decodeNewRankingListServerResponse, ladderOfPlayersDecoder, listOfUsersDecoder, newRankingDecoder, newRankingIdDecoder, playerDecoder, userDecoder
+    ,  decodeNewRankingListServerResponse
+      , ladderOfPlayersDecoder
+      , listOfUsersDecoder
+        -- ,
+        -- newRankingDecoder
+      , newRankingIdDecoder
+      , playerDecoder
+      , userDecoder
+
     )
 
 {-|
@@ -45,6 +53,7 @@ rankingDecoder =
         |> Json.Decode.Pipeline.required "active" Json.Decode.bool
         |> Json.Decode.Pipeline.required "rankingname" Json.Decode.string
         |> Json.Decode.Pipeline.required "rankingdesc" Json.Decode.string
+        |> Json.Decode.Pipeline.required "rankingowneraddr" Json.Decode.string
 
 
 decodeNewRankingListServerResponse : Decoder (List SR.Types.RankingInfo)
@@ -52,16 +61,17 @@ decodeNewRankingListServerResponse =
     Json.Decode.field "data" (Json.Decode.list rankingDecoder)
 
 
-newRankingDecoder : Json.Decode.Decoder SR.Types.RankingInfo
-newRankingDecoder =
-    Json.Decode.succeed SR.Types.RankingInfo
-        |> Json.Decode.Pipeline.required "id" Json.Decode.string
-        |> Json.Decode.Pipeline.required "active" Json.Decode.bool
-        |> Json.Decode.Pipeline.required "rankingname" Json.Decode.string
-        |> Json.Decode.Pipeline.required "rankingdesc" Json.Decode.string
+
+-- newRankingDecoder : Json.Decode.Decoder SR.Types.RankingInfo
+-- newRankingDecoder =
+--     Json.Decode.succeed SR.Types.RankingInfo
+--         |> Json.Decode.Pipeline.required "id" Json.Decode.string
+--         |> Json.Decode.Pipeline.required "active" Json.Decode.bool
+--         |> Json.Decode.Pipeline.required "rankingname" Json.Decode.string
+--         |> Json.Decode.Pipeline.required "rankingdesc" Json.Decode.string
+-- newRankingIdDecoder : Json.Decode.Decoder SR.Types.RankingId
 
 
-newRankingIdDecoder : Json.Decode.Decoder SR.Types.RankingId
 newRankingIdDecoder =
     Json.Decode.succeed SR.Types.RankingId
         |> Json.Decode.Pipeline.required "id" Json.Decode.string

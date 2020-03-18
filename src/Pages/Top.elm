@@ -33,14 +33,17 @@ page =
         }
 
 
-type Model
-    = Greeting SR.Types.UserListState SR.Types.UserState SR.Types.WalletState
+type
+    Model
+    --= Greeting SR.Types.UserListState SR.Types.UserState SR.Types.WalletState
+    = Greeting SR.Types.UserState SR.Types.WalletState
     | Failure String
 
 
 init : Utils.Spa.PageContext -> Params.Top -> ( Model, Cmd Msg, Cmd Global.Msg )
 init context _ =
-    ( Greeting SR.Types.Loading SR.Types.NewUser SR.Types.Missing
+    ( --Greeting SR.Types.Loading SR.Types.NewUser SR.Types.Missing
+      Greeting SR.Types.NewUser SR.Types.Missing
     , gotPlayersList
     , Cmd.none
     )
@@ -95,48 +98,47 @@ update msg model =
                     handleMsg GetAWalletInstructions
 
         GetAWalletInstructions ->
-            ( Greeting SR.Types.NotAsked SR.Types.NewUser SR.Types.Missing, Cmd.none, Cmd.none )
+            ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none, Cmd.none )
 
         OpenWalletInstructions ->
-            ( Greeting SR.Types.NotAsked SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
+            ( Greeting SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
 
         NewUser ->
-            ( Greeting SR.Types.NotAsked SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
+            ( Greeting SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
 
         ExistingUser uname ->
-            --( Greeting SR.Types.DialogClosed (SR.Types.ExistingUser a) SR.Types.Opened, Cmd.none, Cmd.none )
-            ( Greeting SR.Types.NotAsked (SR.Types.ExistingUser uname) SR.Types.Opened, Cmd.none, Cmd.none )
+            ( Greeting (SR.Types.ExistingUser uname) SR.Types.Opened, Cmd.none, Cmd.none )
 
         GotJsonbinUsers rmtdata ->
             case rmtdata of
                 RemoteData.Success a ->
                     case model of
-                        Greeting _ b c ->
-                            ( Greeting (SR.Types.Success a) b c, Cmd.none, Cmd.none )
+                        Greeting b c ->
+                            ( Greeting b c, Cmd.none, Cmd.none )
 
                         Failure str ->
                             ( Failure str, Cmd.none, Cmd.none )
 
                 RemoteData.Failure e ->
                     case model of
-                        Greeting _ b c ->
-                            ( Greeting (SR.Types.Failure "error") b c, Cmd.none, Cmd.none )
+                        Greeting b c ->
+                            ( Greeting b c, Cmd.none, Cmd.none )
 
                         Failure str ->
                             ( Failure str, Cmd.none, Cmd.none )
 
                 RemoteData.NotAsked ->
                     case model of
-                        Greeting _ b c ->
-                            ( Greeting SR.Types.NotAsked b c, Cmd.none, Cmd.none )
+                        Greeting b c ->
+                            ( Greeting b c, Cmd.none, Cmd.none )
 
                         Failure str ->
                             ( Failure str, Cmd.none, Cmd.none )
 
                 RemoteData.Loading ->
                     case model of
-                        Greeting _ b c ->
-                            ( Greeting SR.Types.Loading b c, Cmd.none, Cmd.none )
+                        Greeting b c ->
+                            ( Greeting b c, Cmd.none, Cmd.none )
 
                         Failure str ->
                             ( Failure str, Cmd.none, Cmd.none )
@@ -160,16 +162,16 @@ handleMsg : Msg -> ( Model, Cmd Msg, Cmd Global.Msg )
 handleMsg msg =
     case msg of
         GetAWalletInstructions ->
-            ( Greeting SR.Types.NotAsked SR.Types.NewUser SR.Types.Missing, Cmd.none, Cmd.none )
+            ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none, Cmd.none )
 
         OpenWalletInstructions ->
-            ( Greeting SR.Types.NotAsked SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
+            ( Greeting SR.Types.NewUser SR.Types.Locked, Cmd.none, Cmd.none )
 
         NewUser ->
-            ( Greeting SR.Types.NotAsked SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
+            ( Greeting SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
 
         ExistingUser uname ->
-            ( Greeting SR.Types.NotAsked (SR.Types.ExistingUser uname) SR.Types.Opened, Cmd.none, Cmd.none )
+            ( Greeting (SR.Types.ExistingUser uname) SR.Types.Opened, Cmd.none, Cmd.none )
 
         _ ->
             ( Failure "Something wrong with Msg", Cmd.none, Cmd.none )
@@ -228,13 +230,14 @@ view context model =
         Failure message ->
             failure message
 
-        Greeting userList userState walletState ->
-            let
-                -- usrlist =
-                --     gotUserListFromRemData (SR.Types.Success userList)
-                _ =
-                    Debug.log "user list : " userList
-            in
+        -- Greeting userList userState walletState ->
+        Greeting userState walletState ->
+            -- let
+            --     -- usrlist =
+            --     --     gotUserListFromRemData (SR.Types.Success userList)
+            --     _ =
+            --         Debug.log "user list : " userList
+            -- in
             case walletState of
                 SR.Types.Locked ->
                     Element.el [ centerX, centerY, inFront (Dialog.view (Just (config OpenWalletInstructions))) ]

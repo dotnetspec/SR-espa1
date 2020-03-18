@@ -1,6 +1,6 @@
 module SR.Defaults exposing
     ( emptyPlayer
-    , emptyUser
+    , emptyRankingInfo, emptyUser
     )
 
 {-| Default values.
@@ -37,4 +37,13 @@ emptyUser =
     , description = ""
     , email = ""
     , mobile = ""
+    }
+
+
+emptyRankingInfo =
+    { id = "0"
+    , active = False
+    , name = ""
+    , desc = ""
+    , rankingowneraddr = ""
     }
