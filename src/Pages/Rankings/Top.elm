@@ -425,10 +425,10 @@ listOfElementmsgs model =
 
 gotGroupView : Model -> Element Msg
 gotGroupView model =
-    let
-        _ =
-            Debug.log "new ranking owner address in gotGroupView: " "it will go here"
-    in
+    -- let
+    --     _ =
+    --         Debug.log "new ranking owner address in gotGroupView: " "it will go here"
+    -- in
     case model of
         AllRankingsJson rnkingList _ _ _ ->
             Element.column Grid.section <|
@@ -486,7 +486,7 @@ currentView model =
                     Element.text "Loading..."
 
                 RemoteData.Success rankings ->
-                    viewRankings rankings uiState
+                    viewRankings model rankings uiState
 
                 RemoteData.Failure httpError ->
                     Element.text <| buildErrorMessage httpError
@@ -504,8 +504,8 @@ currentView model =
 -- (stringFromBool ranking.active)
 
 
-viewRankings : List SR.Types.RankingInfo -> SR.Types.UIState -> Element Msg
-viewRankings rankings uiState =
+viewRankings : Model -> List SR.Types.RankingInfo -> SR.Types.UIState -> Element Msg
+viewRankings model rankings uiState =
     case uiState of
         SR.Types.RenderAllRankings ->
             Element.column Grid.spacedEvenly <|
@@ -542,7 +542,7 @@ viewRankings rankings uiState =
         -- SR.Types.RenderAllRankings ->
         --     input (RemoteData.Success rankings)
         SR.Types.CreateNewLadder ->
-            input (RemoteData.Success rankings)
+            input model (RemoteData.Success rankings)
 
 
 
@@ -639,8 +639,25 @@ listAllbutton color msg label =
         }
 
 
-input : RemoteData.WebData (List SR.Types.RankingInfo) -> Element Msg
-input rankings =
+input : Model -> RemoteData.WebData (List SR.Types.RankingInfo) -> Element Msg
+input model rankings =
+    let
+        updatedname =
+            case model of
+                AllRankingsJson _ b c _ ->
+                    b
+
+                ModelFailure s ->
+                    "no name"
+
+        updateddesc =
+            case model of
+                AllRankingsJson _ b c _ ->
+                    c
+
+                ModelFailure s ->
+                    "no name"
+    in
     Element.column Grid.section <|
         [ Element.el Heading.h2 <| Element.text "Please name and describe your new ranking"
         , Element.wrappedRow (Card.fill ++ Grid.simple)
@@ -648,13 +665,13 @@ input rankings =
                 [ Input.text Input.simple
                     { --onChange = Just NameInputChg
                       onChange = NameInputChg
-                    , text = "e.g. Stockton On Pullet Juniors"
+                    , text = updatedname
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Name"
                     }
                 , Input.multiline Input.simple
                     { onChange = DescInputChg
-                    , text = "e.g. For all under 19s"
+                    , text = updateddesc
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Description"
                     , spellcheck = False
