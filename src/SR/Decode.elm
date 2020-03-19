@@ -1,6 +1,14 @@
 module SR.Decode exposing
     ( rankingsDecoder
-    , decodeNewRankingListServerResponse, ladderOfPlayersDecoder, newRankingDecoder, newRankingIdDecoder, playerDecoder
+    ,  decodeNewRankingListServerResponse
+      , ladderOfPlayersDecoder
+      , listOfUsersDecoder
+        -- ,
+        -- newRankingDecoder
+      , newRankingIdDecoder
+      , playerDecoder
+      , userDecoder
+
     )
 
 {-|
@@ -45,24 +53,7 @@ rankingDecoder =
         |> Json.Decode.Pipeline.required "active" Json.Decode.bool
         |> Json.Decode.Pipeline.required "rankingname" Json.Decode.string
         |> Json.Decode.Pipeline.required "rankingdesc" Json.Decode.string
-
-
-
--- newRankingObjDecoder : Json.Decode.Decoder ( SR.Types.NewRankingListServerResponse)
--- newRankingObjDecoder =
---     Json.Decode.object decodeCondition
---decodeNewRankingListdata : Decoder (List SR.Types.RankingInfo)
--- decodeNewRankingListServerResponse : Decoder SR.Types.NewRankingListServerResponse
--- decodeNewRankingListServerResponse =
---     Json.Decode.list decodeNewRankingListdata
--- decodeNewRankingListdata : Decoder SR.Types.RankingInfo
--- decodeNewRankingListdata =
---     Json.Decode.succeed SR.Types.RankingInfo
---         |> Json.Decode.Pipeline.required "data" newRankingListDecoder
--- decodeNewRankingListServerResponse : Decoder (List SR.Types.RankingInfo)
--- decodeNewRankingListServerResponse =
---     Json.Decode.succeed (List SR.Types.RankingInfo)
---         |> Json.Decode.Pipeline.required "data" Json.Decode.list
+        |> Json.Decode.Pipeline.required "rankingowneraddr" Json.Decode.string
 
 
 decodeNewRankingListServerResponse : Decoder (List SR.Types.RankingInfo)
@@ -71,25 +62,33 @@ decodeNewRankingListServerResponse =
 
 
 
---decoderToDecodeRankingInfoValue :
--- Json.Decode.decodeValue rankingsDecoder
---     |> required "data" []
---     |> Json.Decode.list
--- newRankingListDecoder : Json.Decode.Decoder SR.Types.NewRankingListServerResponse
--- newRankingListDecoder =
---     Json.Decode.list newRankingDecoder
+-- newRankingDecoder : Json.Decode.Decoder SR.Types.RankingInfo
+-- newRankingDecoder =
+--     Json.Decode.succeed SR.Types.RankingInfo
+--         |> Json.Decode.Pipeline.required "id" Json.Decode.string
+--         |> Json.Decode.Pipeline.required "active" Json.Decode.bool
+--         |> Json.Decode.Pipeline.required "rankingname" Json.Decode.string
+--         |> Json.Decode.Pipeline.required "rankingdesc" Json.Decode.string
+-- newRankingIdDecoder : Json.Decode.Decoder SR.Types.RankingId
 
 
-newRankingDecoder : Json.Decode.Decoder SR.Types.RankingInfo
-newRankingDecoder =
-    Json.Decode.succeed SR.Types.RankingInfo
-        |> Json.Decode.Pipeline.required "id" Json.Decode.string
-        |> Json.Decode.Pipeline.required "active" Json.Decode.bool
-        |> Json.Decode.Pipeline.required "rankingname" Json.Decode.string
-        |> Json.Decode.Pipeline.required "rankingdesc" Json.Decode.string
-
-
-newRankingIdDecoder : Json.Decode.Decoder SR.Types.RankingId
 newRankingIdDecoder =
     Json.Decode.succeed SR.Types.RankingId
         |> Json.Decode.Pipeline.required "id" Json.Decode.string
+
+
+listOfUsersDecoder : Json.Decode.Decoder (List SR.Types.User)
+listOfUsersDecoder =
+    Json.Decode.list userDecoder
+
+
+userDecoder : Json.Decode.Decoder SR.Types.User
+userDecoder =
+    Json.Decode.succeed SR.Types.User
+        |> Json.Decode.Pipeline.required "datestamp" Json.Decode.int
+        |> Json.Decode.Pipeline.required "active" Json.Decode.bool
+        |> Json.Decode.Pipeline.required "username" Json.Decode.string
+        |> Json.Decode.Pipeline.required "ethaddress" Json.Decode.string
+        |> Json.Decode.Pipeline.required "description" Json.Decode.string
+        |> Json.Decode.Pipeline.required "email" Json.Decode.string
+        |> Json.Decode.Pipeline.required "mobile" Json.Decode.string

@@ -23,6 +23,7 @@ import Json.Encode
 import RemoteData
 import SR.Constants
 import SR.Decode
+import SR.Defaults
 import SR.Types
 import Spa.Page
 import Ui
@@ -42,16 +43,11 @@ page =
 
 
 --variants are labels for different situations, with assoc data possibly attached.
-
-
-type RemoteData e a
-    = NotAsked
-    | Loading
-    | Failure e
-    | Success a
-
-
-
+-- type RemoteData e a
+--     = NotAsked
+--     | Loading
+--     | Failure e
+--     | Success a
 --The model represents the state of the application
 -- Model is what is going to change via Update (which is changed from places like View, Subs etc.)
 -- it will go from 1 state to another
@@ -74,6 +70,7 @@ type Model
 
 type Msg
     = GotJsonbinAllRankings (RemoteData.WebData (List SR.Types.RankingInfo))
+    | UserChangedUIStateToRenderAll (RemoteData.WebData (List SR.Types.RankingInfo))
     | ChangedUIStateToCreateNew
     | NewRankingRequestedByConfirmBtnClicked
     | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
@@ -213,6 +210,9 @@ addedNewRankingListEntryInGlobal newrankingid globalList newName newDesc =
                 "collection-id"
                 "5d7deab3371673119fab12a6"
 
+        _ =
+            Debug.log "new ranking owner address in addedNewRankingListEntryInGlobal: " "it will go here"
+
         justGlobalList =
             gotRankingListFromRemData globalList
 
@@ -221,6 +221,7 @@ addedNewRankingListEntryInGlobal newrankingid globalList newName newDesc =
             , active = True
             , name = newName
             , desc = newDesc
+            , rankingowneraddr = "0x847700B781667abdD98E1393420754E503dca5b7"
             }
 
         globalListWithJsonObjAdded =
@@ -252,6 +253,7 @@ jsonEncodeNewGlobalRankingList globalList =
                 , ( "active", Json.Encode.bool rankingInfo.active )
                 , ( "rankingname", Json.Encode.string rankingInfo.name )
                 , ( "rankingdesc", Json.Encode.string rankingInfo.desc )
+                , ( "rankingowneraddr", Json.Encode.string rankingInfo.rankingowneraddr )
                 ]
 
         encodedList =
@@ -324,6 +326,9 @@ update msgOfTransitonThatAlreadyHappened previousmodel =
                 _ ->
                     ( ModelFailure "Error in SwitchedToNewEmptyAndFilledGlobalList", Cmd.none )
 
+        UserChangedUIStateToRenderAll globalList ->
+            ( AllRankingsJson globalList "" "" SR.Types.RenderAllRankings, Cmd.none )
+
         --this fires the createNewPlayerListWithCurrentUser Cmd
         -- from the button (which only accepts Msg not Cmd.Msg)
         NewRankingRequestedByConfirmBtnClicked ->
@@ -388,46 +393,64 @@ renderView : Model -> Element Msg
 renderView model =
     html <|
         Framework.responsiveLayout [ Element.explain Debug.todo ] <|
-            Element.el Framework.container <|
-                Element.paragraph [ Element.explain Debug.todo ] <|
-                    listOfElementmsgs
-                        model
+            -- Element.el Framework.container <|
+            --     Element.paragraph [ Element.explain Debug.todo ] <|
+            --         listOfElementmsgs
+            --             model
+            Element.column
+                Framework.container
+                [ Element.el Heading.h1 <| Element.text "SportRank"
+
+                -- , heading
+                -- , tag
+                -- , group
+                -- , color
+                -- , card
+                -- , grid
+                -- , button
+                -- , input
+                -- , slider
+                , gotGroupView
+                    model
+                ]
 
 
 listOfElementmsgs : Model -> List (Element Msg)
 listOfElementmsgs model =
-    [ getHeaderGroup model
+    [ gotGroupView model
 
     --, currentView model
     ]
 
 
-getHeaderGroup : Model -> Element Msg
-getHeaderGroup model =
+gotGroupView : Model -> Element Msg
+gotGroupView model =
+    -- let
+    --     _ =
+    --         Debug.log "new ranking owner address in gotGroupView: " "it will go here"
+    -- in
     case model of
         AllRankingsJson rnkingList _ _ _ ->
             Element.column Grid.section <|
-                [ Element.el Heading.h2 <| Element.text "Global Rankings"
-                , Element.column (Card.fill ++ Grid.simple)
+                [ Element.el Heading.h2 <| Element.text "Username"
+                , Element.column Grid.simple <|
                     [ Element.wrappedRow Grid.simple
-                        [ Element.el (Card.fill ++ Group.left) <| createnewRankingbutton Color.primary ChangedUIStateToCreateNew "Create New"
-                        , Element.el (Card.fill ++ Group.center ++ Color.disabled) <| joinbutton Color.primary NewRankingRequestedByConfirmBtnClicked "Join"
-                        , Element.el (Card.fill ++ Group.right ++ Color.disabled) <| enterResultbutton Color.primary NewRankingRequestedByConfirmBtnClicked "Enter Result"
-                        , Element.el (Card.fill ++ Group.top ++ Color.disabled) <| updateProfilebutton Color.primary NewRankingRequestedByConfirmBtnClicked "Update Profile"
+                        [ Element.column (Card.simple ++ Grid.spaceEvenly) <|
+                            [ Element.el Heading.h4 <| Element.text "Manage Your Rankings ..."
+                            , Element.row Grid.spacedEvenly <|
+                                [ Element.el (Card.fill ++ Group.left) <| createnewRankingbutton Color.primary ChangedUIStateToCreateNew "Create New"
+                                , Element.el Card.simple <| joinbutton Color.primary NewRankingRequestedByConfirmBtnClicked "Join"
+                                , Element.el Card.simple <| enterResultbutton Color.primary NewRankingRequestedByConfirmBtnClicked "Enter Result"
+                                , Element.el Card.simple <| updateProfilebutton Color.primary NewRankingRequestedByConfirmBtnClicked "Update Profile"
+                                ]
+                            ]
+                        , Element.column (Card.fill ++ Grid.simple)
+                            [ Element.wrappedRow Grid.simple
+                                [ Element.el (Card.fill ++ Group.left) <| currentView model
+                                ]
+                            ]
                         ]
                     ]
-                , Element.column (Card.fill ++ Grid.simple)
-                    [ Element.wrappedRow Grid.simple
-                        [ Element.el (Card.fill ++ Group.left) <| currentView model
-                        ]
-                    ]
-
-                -- , [ Element.wrappedRow Grid.simple
-                --         [ Element.el (Card.fill ++ Group.left ++ Color.disabled) <| createnewRankingbutton Color.primary NewRankingRequestedByConfirmBtnClicked "Create New"
-                --         , currentView model
-                --         --, Element.el (Card.fill ++ Group.bottom) <| listAllbutton Color.primary getRankingList "List All"
-                --         ]
-                --   ]
                 ]
 
         ModelFailure str ->
@@ -463,7 +486,7 @@ currentView model =
                     Element.text "Loading..."
 
                 RemoteData.Success rankings ->
-                    viewRankings rankings uiState
+                    viewRankings model rankings uiState
 
                 RemoteData.Failure httpError ->
                     Element.text <| buildErrorMessage httpError
@@ -481,61 +504,69 @@ currentView model =
 -- (stringFromBool ranking.active)
 
 
-viewRankings : List SR.Types.RankingInfo -> SR.Types.UIState -> Element Msg
-viewRankings rankings uiState =
+viewRankings : Model -> List SR.Types.RankingInfo -> SR.Types.UIState -> Element Msg
+viewRankings model rankings uiState =
     case uiState of
         SR.Types.RenderAllRankings ->
-            html <|
-                Element.layout
-                    [ Element.explain Debug.todo
-
-                    --     Element.padding 25
-                    -- , Background.color (rgba 0 0 0 1)
-                    -- , Font.color (rgba 1 1 1 1)
-                    -- --, Font.italic
-                    -- , Font.size 22
-                    -- , Font.family
-                    --     [ Font.external
-                    --         { url = "https://fonts.googleapis.com/css?family=Roboto"
-                    --         , name = "Roboto"
-                    --         }
-                    --     , Font.sansSerif
-                    --     ]
-                    ]
-                <|
-                    Element.table
-                        [--     Element.padding 25
-                         -- , Background.color Ui.colors.white
-                         -- , Border.solid
-                         -- , Border.color Ui.colors.black
-                         -- , Border.widthXY 1 1
-                         -- , Border.rounded 3
-                        ]
-                        { data = rankings
-                        , columns =
-                            [ rankingNameCol rankings "Ranking Name"
-                            , rankingDescCol rankings "Ranking Desc"
+            Element.column Grid.spacedEvenly <|
+                [ Element.wrappedRow Grid.spacedEvenly
+                    [ Element.column Card.fill <|
+                        [ Element.el Heading.h4 <| Element.text "Click ranking name to select a ranking ..."
+                        , Element.row Grid.spacedEvenly <|
+                            [ Element.table
+                                [--     Element.padding 25
+                                 -- , spacing 15
+                                 -- , Background.color Ui.colors.white
+                                 -- , Border.solid
+                                 -- , Border.color Ui.colors.black
+                                 -- , Border.widthXY 1 1
+                                 -- , Border.rounded 3
+                                 --Element.width fill
+                                 -- , Font.size
+                                 --     30
+                                 -- , width
+                                 --     fill
+                                ]
+                                { data = rankings
+                                , columns =
+                                    [ rankingNameCol rankings "Ranking Name"
+                                    , rankingDescCol rankings "Ranking Desc"
+                                    ]
+                                }
                             ]
-                        }
+                        ]
+                    ]
+                ]
 
+        --]
+        -- SR.Types.RenderAllRankings ->
+        --     input (RemoteData.Success rankings)
         SR.Types.CreateNewLadder ->
-            input
+            input model (RemoteData.Success rankings)
+
+
+
+--input RemoteData.NotAsked
 
 
 rankingNameCol : List SR.Types.RankingInfo -> String -> Column SR.Types.RankingInfo msg
 rankingNameCol _ str =
-    { header = Element.text str
+    { header = Element.el [ Font.size 25 ] (Element.text str)
     , width = fill
     , view =
         \rankingInfo ->
             Element.row
                 [--     Font.color Ui.colors.lightblue
                  -- , Border.widthXY 2 2
+                 --   padding 5
+                 -- , spacing 5
+                 -- , width fill
+                 --Font.size 25
                 ]
                 [ Element.link
                     [--Background.color Ui.colors.blue
                      --Font.color Ui.colors.lightblue
-                     --, padding 5
+                     --padding 5
                      --, Border.widthXY 2 2
                     ]
                     { url = "/rankings/" ++ rankingInfo.id
@@ -547,21 +578,25 @@ rankingNameCol _ str =
 
 rankingDescCol : List SR.Types.RankingInfo -> String -> Column SR.Types.RankingInfo msg
 rankingDescCol _ str =
-    { header = Element.text str
+    { header = Element.el [ Font.size 25 ] (Element.text str)
     , width = fill
     , view =
         \rankingInfo ->
             Element.row
                 [--     Border.widthXY 2 2
                  -- , Font.color Ui.colors.green
+                 -- width fill
+                 --Element.padding 25
+                 --Font.size 25
+                 -- , paddingXY
+                 --     5
+                 --     10
+                 -- , spacing 5
+                 --, alignLeft
                 ]
                 [ Element.text rankingInfo.desc
                 ]
     }
-
-
-
---UI
 
 
 createnewRankingbutton : List (Attribute Msg) -> Msg -> String -> Element.Element Msg
@@ -604,21 +639,39 @@ listAllbutton color msg label =
         }
 
 
-input : Element Msg
-input =
+input : Model -> RemoteData.WebData (List SR.Types.RankingInfo) -> Element Msg
+input model rankings =
+    let
+        updatedname =
+            case model of
+                AllRankingsJson _ b c _ ->
+                    b
+
+                ModelFailure s ->
+                    "no name"
+
+        updateddesc =
+            case model of
+                AllRankingsJson _ b c _ ->
+                    c
+
+                ModelFailure s ->
+                    "no name"
+    in
     Element.column Grid.section <|
         [ Element.el Heading.h2 <| Element.text "Please name and describe your new ranking"
         , Element.wrappedRow (Card.fill ++ Grid.simple)
             [ Element.column Grid.simple
                 [ Input.text Input.simple
-                    { onChange = NameInputChg
-                    , text = "e.g. Stockton On Pullet Juniors"
+                    { --onChange = Just NameInputChg
+                      onChange = NameInputChg
+                    , text = updatedname
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Name"
                     }
                 , Input.multiline Input.simple
                     { onChange = DescInputChg
-                    , text = "e.g. For all under 19s"
+                    , text = updateddesc
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Description"
                     , spellcheck = False
@@ -627,12 +680,11 @@ input =
             ]
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
-                [ --     Input.button Framework.Button.simple <|
-                  --     { onPress = Nothing
-                  --     , label = Element.text "Framework.simple"
-                  --     }
-                  -- ,
-                  Input.button Framework.Button.fill <|
+                [ Input.button Framework.Button.simple <|
+                    { onPress = Just (UserChangedUIStateToRenderAll rankings)
+                    , label = Element.text "Cancel"
+                    }
+                , Input.button Framework.Button.fill <|
                     { -- this btn fires createNewPlayerListWithCurrentUser from update
                       onPress = Just NewRankingRequestedByConfirmBtnClicked
                     , label = Element.text "Create New Ranking"
@@ -698,61 +750,33 @@ gotRankingListFromRemData globalList =
             a
 
         RemoteData.NotAsked ->
-            [ { id = "Initialising"
-              , active = False
-              , name = ""
-              , desc = ""
-              }
+            [ SR.Defaults.emptyRankingInfo
             ]
 
         RemoteData.Loading ->
-            [ { id = "Loading"
-              , active = False
-              , name = ""
-              , desc = ""
-              }
+            [ SR.Defaults.emptyRankingInfo
             ]
 
         RemoteData.Failure err ->
             case err of
                 Http.BadUrl s ->
-                    [ { id = s
-                      , active = False
-                      , name = ""
-                      , desc = ""
-                      }
+                    [ SR.Defaults.emptyRankingInfo
                     ]
 
                 Http.Timeout ->
-                    [ { id = "Timeout"
-                      , active = False
-                      , name = ""
-                      , desc = ""
-                      }
+                    [ SR.Defaults.emptyRankingInfo
                     ]
 
                 Http.NetworkError ->
-                    [ { id = "0"
-                      , active = False
-                      , name = "Network Err"
-                      , desc = ""
-                      }
+                    [ SR.Defaults.emptyRankingInfo
                     ]
 
                 Http.BadStatus statuscode ->
-                    [ { id = "0"
-                      , active = False
-                      , name = String.fromInt <| statuscode
-                      , desc = ""
-                      }
+                    [ SR.Defaults.emptyRankingInfo
                     ]
 
                 Http.BadBody s ->
-                    [ { id = "0"
-                      , active = False
-                      , name = s
-                      , desc = ""
-                      }
+                    [ SR.Defaults.emptyRankingInfo
                     ]
 
 

@@ -2,7 +2,14 @@ module SR.Types exposing
     ( PlayerId, RankingId(..)
     , Player, Opponent, OpponentRelativeRank(..), Options, PlayerAvailability(..), ResultOfMatch(..), SRState(..), UserState(..), WalletState(..)
     , UIState(..)
-    , CreateNewLadderFormFields, NewRankingListServerResponse, RankingInfo, Username(..)
+    ,  CreateNewLadderFormFields
+      , NewRankingListServerResponse
+      , RankingInfo
+      , User
+      , UserListState(..)
+      , Username(..)
+        --, JsonApiURLs(..)
+
     )
 
 {-| Types
@@ -110,6 +117,13 @@ type UIState
     | CreateNewLadder
 
 
+type UserListState
+    = Success (List User)
+    | Loading
+    | NotAsked
+    | Failure String
+
+
 type alias CreateNewLadderFormFields =
     { name : String
     , desc : String
@@ -162,6 +176,7 @@ type alias RankingInfo =
     , active : Bool
     , name : String
     , desc : String
+    , rankingowneraddr : String
     }
 
 
@@ -176,4 +191,15 @@ type alias NewRankingListServerResponse =
             }
     , version : Int
     , parentId : String
+    }
+
+
+type alias User =
+    { datestamp : Int
+    , active : Bool
+    , username : String
+    , ethaddress : String
+    , description : String
+    , email : String
+    , mobile : String
     }
