@@ -50,7 +50,6 @@ type alias Commands msg =
 init : Commands msg -> Flags -> ( Model, Cmd Msg, Cmd msg )
 init _ _ =
     ( Failure ""
-      --GlobalModel (SR.Types.ExistingUser (Eth.Types.Address "0x847700B781667abdD98E1393420754E503dca5b7"))
     , Cmd.none
     , Cmd.none
     )
