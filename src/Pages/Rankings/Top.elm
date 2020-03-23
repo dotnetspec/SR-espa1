@@ -5,6 +5,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
+import Eth.Types
 import Framework
 import Framework.Button
 import Framework.Card as Card
@@ -27,6 +28,7 @@ import SR.Defaults
 import SR.Types
 import Spa.Page
 import Ui
+import Utils.MyUtils
 import Utils.Spa exposing (Page)
 
 
@@ -34,7 +36,7 @@ page : Page Params.Top Model Msg model msg appMsg
 page =
     Spa.Page.element
         { title = always "Rankings.Top"
-        , init = always init
+        , init = init
         , update = always update
         , subscriptions = always subscriptions
         , view = always view
@@ -84,22 +86,25 @@ type Msg
 -- this accesses COLLECTION RECORDS - GLOBAL - public bin
 
 
-init : Params.Top -> ( Model, Cmd Msg )
-init _ =
-    -- let
-    --     uname =
-    --         case context.global of
-    --             Global.GlobalVariant wSentry uName ->
-    --                 case uName of
-    --                     SR.Types.NewUser ->
-    --                         "Hello New User"
-    --                     SR.Types.ExistingUser str ->
-    --                         "temp value whilst sort Top.elm"
-    --             Global.Failure str ->
-    --                 str
-    --     _ =
-    --         Debug.log "username " ++ uname
-    -- in
+init : Utils.Spa.PageContext -> Params.Top -> ( Model, Cmd Msg )
+init context _ =
+    let
+        uaddr =
+            case context.global of
+                Global.GlobalModel userState ->
+                    case userState of
+                        SR.Types.NewUser ->
+                            ""
+
+                        SR.Types.ExistingUser a ->
+                            Utils.MyUtils.addressToString <| Just a
+
+                Global.Failure str ->
+                    "failed"
+
+        _ =
+            Debug.log "useraddress " uaddr
+    in
     ( AllRankingsJson RemoteData.Loading "" "" SR.Types.RenderAllRankings
     , -- nb. getRankingList is an expression not a function
       getRankingList
@@ -425,10 +430,10 @@ listOfElementmsgs model =
 
 gotGroupView : Model -> Element Msg
 gotGroupView model =
-    -- let
-    --     _ =
-    --         Debug.log "new ranking owner address in gotGroupView: " "it will go here"
-    -- in
+    let
+        _ =
+            Debug.log "new ranking owner address in gotGroupView: " "it will go here"
+    in
     case model of
         AllRankingsJson rnkingList _ _ _ ->
             Element.column Grid.section <|
