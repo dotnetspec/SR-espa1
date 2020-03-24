@@ -1,10 +1,15 @@
 module Main exposing (main)
 
---import Browser
-
+import Browser
 import Element exposing (Element)
 import Element.Font as Font
 import Element.Input as Input
+import Eth.Net as Net exposing (NetworkId(..))
+import Eth.Sentry.Tx
+import Eth.Sentry.Wallet
+import Eth.Types
+import Eth.Units
+import Eth.Utils
 import Framework
 import Framework.Button as Button
 import Framework.Card as Card
@@ -14,25 +19,125 @@ import Framework.Group as Group
 import Framework.Heading as Heading
 import Framework.Input as Input
 import Html exposing (Html)
+import Http
+import Internal.Types as Internal
+import Ports
+import RemoteData
+import SR.Decode
 import SR.Types
+import Ui
+
+
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( GlobalRankings RemoteData.Loading "" "" SR.Types.RenderAllRankings "", Cmd.none )
 
 
 
--- document :
---     { init : flags -> ( model, Cmd msg )
---     , view : model -> Document msg
---     , update : msg -> model -> ( model, Cmd msg )
---     , subscriptions : model -> Sub msg
---     }
---     -> Program flags model msg
--- document =
--- type alias Document msg =
---     { title : String
---     , body : List (Html msg)
---     }
+--   , Http.get
+--       { url = "https://elm-lang.org/assets/public-opinion.txt"
+--       , expect = Http.expectString GotText
+--       }
+--Cmd.none
 
 
-heading : Element msg
+main =
+    Browser.element
+        { init = init
+        , update = update
+        , subscriptions = subscriptions
+        , view = view
+        }
+
+
+
+--The model represents the state of the application
+-- Model is what is going to change via Update (which is changed from places like View, Subs etc.)
+-- it will go from 1 state to another
+-- functions like view will just reflect
+-- current state of model
+--nb: each variant added to model has to be handled e.g. do you need 'failure' if it's anyway handled by RemoteData?
+-- AllRankingsJson is just the current list of all rankings
+-- AddingNewRankingToGlobalList holds a new ranking id, data for a new ranking and the existing global list to add the new data to
+
+
+type Model
+    = GlobalRankings (RemoteData.WebData (List SR.Types.RankingInfo)) String String SR.Types.UIState String
+    | SelectedRanking DynaModel
+
+
+type alias DynaModel =
+    { --browserEnv : BrowserEnv
+      --, settings : Maybe SettingsData
+      --,
+      isopponenthigherrank : Maybe SR.Types.OpponentRelativeRank
+    , players : RemoteData.WebData (List SR.Types.Player)
+    , fetchedContentNotPlayerList : String
+    , error : String
+    , rankingid : String
+    , modalState : SR.Types.ModalState
+    , playerid : Int
+    , player : SR.Types.Player
+    , opponent : SR.Types.Player
+    , selectedRadio : SR.Types.ResultRadioOptions
+    , tempMsg : String
+    , txSentry : Eth.Sentry.Tx.TxSentry Msg
+    , account : Maybe Eth.Types.Address
+    , node : Ports.EthNode
+    , blockNumber : Maybe Int
+    , txHash : Maybe Eth.Types.TxHash
+    , tx : Maybe Eth.Types.Tx
+    , txReceipt : Maybe Eth.Types.TxReceipt
+    , blockDepth : Maybe Eth.Sentry.Tx.TxTracker
+    , errors : List String
+    , playerRank : Int
+    , opponentRank : Int
+    , playerStatus : SR.Types.PlayerAvailability
+    , opponentStatus : SR.Types.PlayerAvailability
+    }
+
+
+
+-- Msg is a description of the transition that already happened
+-- Messages that delivered the response (orign doc says 'will deliver')
+
+
+type Msg
+    = --GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
+      --|
+      GotRankingId Internal.RankingId
+    | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msgOfTransitonThatAlreadyHappened previousmodel =
+    case msgOfTransitonThatAlreadyHappened of
+        GotRankingId rnkidstr ->
+            ( GlobalRankings RemoteData.Loading "" "" SR.Types.RenderAllRankings "", fetchRanking rnkidstr )
+
+        PlayersReceived players ->
+            --remove the first record (created on ranking creation with different format)
+            case previousmodel of
+                SelectedRanking dynaModel ->
+                    --( { dynaModel | players = players }, Cmd.none )
+                    ( SelectedRanking { dynaModel | players = players }, Cmd.none )
+
+                GlobalRankings _ _ _ _ _ ->
+                    ( GlobalRankings RemoteData.Loading "" "" SR.Types.RenderAllRankings "", Cmd.none )
+
+
+
+-- GotGlobalRankingsJson rmtdata ->
+--     case rmtdata of
+--         RemoteData.Success a ->
+--             case previousmodel of
+--                 GlobalRankings globalList _ _ _ rnkowner ->
+--                     ( GlobalRankings (RemoteData.Success a) "" "" SR.Types.RenderAllRankings rnkowner, Cmd.none )
+-- _ ->
+--     ( GlobalRankings RemoteData.Loading "" "" SR.Types.RenderAllRankings "", Cmd.none )
+
+
+heading : Element Msg
 heading =
     Element.column Grid.section <|
         [ Element.el Heading.h2 <| Element.text "Username"
@@ -77,7 +182,7 @@ grid =
         ]
 
 
-rankingbuttons : Element msg
+rankingbuttons : Element Msg
 rankingbuttons =
     Element.column Grid.section <|
         [ Element.el Heading.h2 <| Element.text "Global Rankings"
@@ -119,16 +224,17 @@ rankingInfoList =
     ]
 
 
+addRankingInfoToAnyElText : SR.Types.RankingInfo -> Element Msg
 addRankingInfoToAnyElText rankingobj =
     Element.column Grid.simple <|
         [ Input.button (Button.fill ++ Color.info) <|
-            { onPress = Nothing --rankingobj.id
+            { onPress = Just (GotRankingId (Internal.RankingId rankingobj.id))
             , label = Element.text rankingobj.rankingname
             }
         ]
 
 
-insertRankingList : List SR.Types.RankingInfo -> List (Element msg)
+insertRankingList : List SR.Types.RankingInfo -> List (Element Msg)
 insertRankingList rnkgInfoList =
     let
         mapOutRankingList =
@@ -139,7 +245,7 @@ insertRankingList rnkgInfoList =
     mapOutRankingList
 
 
-newrankingbuttons : Element msg
+newrankingbuttons : Element Msg
 newrankingbuttons =
     Element.column Grid.section <|
         [ Element.el Heading.h4 <| Element.text "Click to continue ..."
@@ -196,23 +302,74 @@ input =
         ]
 
 
-view : Element ()
-view =
-    Element.column
-        Framework.container
-        [ Element.el Heading.h1 <| Element.text "SportRank"
-        , heading
-        , group
 
-        --, color
-        , grid
-        , rankingbuttons
-        , input
-        , newrankingbuttons
-        ]
+--view : Element ()
 
 
-main : Html ()
-main =
+responsiveview : Html Msg
+responsiveview =
+    --Html <|
     Framework.responsiveLayout [] <|
-        view
+        Element.column
+            Framework.container
+            [ Element.el Heading.h1 <| Element.text "SportRank"
+            , heading
+
+            --, group
+            --, color
+            --, grid
+            , rankingbuttons
+
+            --, input
+            , newrankingbuttons
+            ]
+
+
+view : Model -> Html Msg
+view model =
+    case model of
+        GlobalRankings _ _ _ _ _ ->
+            responsiveview
+
+        SelectedRanking _ ->
+            --Element.html <| Element.text "in selected ranking"
+            Html.text "Hello World!"
+
+
+
+-- main : Html ()
+-- main =
+--     Framework.responsiveLayout [] <|
+--         view
+--main : Html ()
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.none
+
+
+fetchRanking : Internal.RankingId -> Cmd Msg
+fetchRanking (Internal.RankingId rankingId) =
+    let
+        _ =
+            Debug.log "rankingid in fetchRanking" rankingId
+
+        headerKey =
+            Http.header
+                "secret-key"
+                "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
+    in
+    --PlayersReceived is the Msg handled by update whenever a request is made
+    --RemoteData is used throughout the module, including update
+    Http.request
+        { body = Http.emptyBody
+        , expect =
+            SR.Decode.ladderOfPlayersDecoder
+                |> Http.expectJson (RemoteData.fromResult >> PlayersReceived)
+        , headers = [ headerKey ]
+        , method = "GET"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = "https://api.jsonbin.io/b/" ++ rankingId ++ "/latest"
+        }

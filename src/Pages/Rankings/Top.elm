@@ -586,7 +586,7 @@ rankingNameCol _ str =
                      --, Border.widthXY 2 2
                     ]
                     { url = "/rankings/" ++ rankingInfo.id
-                    , label = Element.text rankingInfo.name
+                    , label = Element.text rankingInfo.rankingname
                     }
                 ]
     }
@@ -610,7 +610,7 @@ rankingDescCol _ str =
                  -- , spacing 5
                  --, alignLeft
                 ]
-                [ Element.text rankingInfo.desc
+                [ Element.text rankingInfo.rankingdesc
                 ]
     }
 

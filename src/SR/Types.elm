@@ -3,12 +3,14 @@ module SR.Types exposing
     , Player, Opponent, OpponentRelativeRank(..), Options, PlayerAvailability(..), ResultOfMatch(..), SRState(..), UserState(..), WalletState(..)
     , UIState(..)
     ,  CreateNewLadderFormFields
+      , ModalState(..)
       , NewRankingListServerResponse
       , RankingInfo
+      , ResultRadioOptions(..)
+        --, JsonApiURLs(..)
       , User
       , UserListState(..)
       , Username(..)
-        --, JsonApiURLs(..)
 
     )
 
@@ -58,6 +60,17 @@ type Error
 
 
 -- Simple
+
+
+type ModalState
+    = Open
+    | Closed
+
+
+type ResultRadioOptions
+    = WonRadio
+    | LostRadio
+    | UndecidedRadio
 
 
 type alias PlayerId =
