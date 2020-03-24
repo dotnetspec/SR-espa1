@@ -1,5 +1,7 @@
 module Main exposing (main)
 
+--import Browser
+
 import Element exposing (Element)
 import Element.Font as Font
 import Element.Input as Input
@@ -12,6 +14,22 @@ import Framework.Group as Group
 import Framework.Heading as Heading
 import Framework.Input as Input
 import Html exposing (Html)
+import SR.Types
+
+
+
+-- document :
+--     { init : flags -> ( model, Cmd msg )
+--     , view : model -> Document msg
+--     , update : msg -> model -> ( model, Cmd msg )
+--     , subscriptions : model -> Sub msg
+--     }
+--     -> Program flags model msg
+-- document =
+-- type alias Document msg =
+--     { title : String
+--     , body : List (Html msg)
+--     }
 
 
 heading : Element msg
@@ -40,27 +58,6 @@ group =
         ]
 
 
-color : Element msg
-color =
-    Element.column Grid.section <|
-        [ Element.el Heading.h2 <| Element.text "Color"
-        , Element.wrappedRow (Card.fill ++ Grid.simple)
-            [ Element.column Grid.simple
-                [ Element.el Heading.h3 <| Element.text "Elm-Ui Attributes"
-                , Element.el (Card.fill ++ Color.primary) <| Element.text "Color.primary"
-                , Element.el (Card.fill ++ Color.info) <| Element.text "Color.info"
-                , Element.el (Card.fill ++ Color.success) <| Element.text "Color.success"
-                , Element.el (Card.fill ++ Color.warning) <| Element.text "Color.warning"
-                , Element.el (Card.fill ++ Color.danger) <| Element.text "Color.danger"
-                , Element.el (Card.fill ++ Color.light) <| Element.text "Color.light"
-                , Element.el (Card.fill ++ Color.simple) <| Element.text "Color.simple"
-                , Element.el (Card.fill ++ Color.dark) <| Element.text "Color.dark"
-                , Element.el (Card.fill ++ Color.disabled) <| Element.text "Color.disabled"
-                ]
-            ]
-        ]
-
-
 grid : Element msg
 grid =
     Element.column Grid.section <|
@@ -80,17 +77,79 @@ grid =
         ]
 
 
-button : Element msg
-button =
+rankingbuttons : Element msg
+rankingbuttons =
     Element.column Grid.section <|
-        [ Element.el Heading.h2 <| Element.text "Button"
+        [ Element.el Heading.h2 <| Element.text "Global Rankings"
+        , Element.column (Card.simple ++ Grid.simple) <|
+            insertRankingList rankingInfoList
+        , Element.column Grid.simple <|
+            [ Element.paragraph [] <|
+                List.singleton <|
+                    Element.text "Button attributes can be combined with other attributes."
+            ]
+        ]
+
+
+rankingInfoList =
+    [ { id = "5e787508b325b3162e3cd426"
+      , active = True
+      , rankingname = "mmmmmm"
+      , rankingdesc = "mmmmmmm"
+      , rankingowneraddr = "0x847700b781667abdd98e1393420754e503dca5b7"
+      }
+    , { id = "5e7301aad3ffb01648aa73be"
+      , active = True
+      , rankingname = "pppppppp"
+      , rankingdesc = "pppppppp"
+      , rankingowneraddr = "0x847700B781667abdD98E1393420754E503dca5b7"
+      }
+    , { id = "5e7301aad3ffb01648aa73be"
+      , active = True
+      , rankingname = "oooooooo"
+      , rankingdesc = "pppppppp"
+      , rankingowneraddr = "0x847700B781667abdD98E1393420754E503dca5b7"
+      }
+    , { id = "5e7301aad3ffb01648aa73be"
+      , active = True
+      , rankingname = "tttttttt"
+      , rankingdesc = "pppppppp"
+      , rankingowneraddr = "0x847700B781667abdD98E1393420754E503dca5b7"
+      }
+    ]
+
+
+addRankingInfoToAnyElText rankingobj =
+    Element.column Grid.simple <|
+        [ Input.button (Button.fill ++ Color.info) <|
+            { onPress = Nothing --rankingobj.id
+            , label = Element.text rankingobj.rankingname
+            }
+        ]
+
+
+insertRankingList : List SR.Types.RankingInfo -> List (Element msg)
+insertRankingList rnkgInfoList =
+    let
+        mapOutRankingList =
+            List.map
+                addRankingInfoToAnyElText
+                rnkgInfoList
+    in
+    mapOutRankingList
+
+
+newrankingbuttons : Element msg
+newrankingbuttons =
+    Element.column Grid.section <|
+        [ Element.el Heading.h4 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
-                [ Input.button Button.simple <|
+                [ Input.button (Button.simple ++ Color.simple) <|
                     { onPress = Nothing
                     , label = Element.text "Button.simple"
                     }
-                , Input.button Button.fill <|
+                , Input.button (Button.fill ++ Color.success) <|
                     { onPress = Nothing
                     , label = Element.text "Button.fill"
                     }
@@ -124,15 +183,6 @@ input =
                     , spellcheck = False
                     }
                 ]
-            , Element.column Grid.simple
-                [ Input.currentPassword Input.simple
-                    { onChange = always ()
-                    , text = "Input.simple"
-                    , placeholder = Nothing
-                    , label = Input.labelLeft Input.label <| Element.text "Input.label"
-                    , show = False
-                    }
-                ]
             ]
         , Element.paragraph [] <|
             List.singleton <|
@@ -153,10 +203,12 @@ view =
         [ Element.el Heading.h1 <| Element.text "SportRank"
         , heading
         , group
-        , color
+
+        --, color
         , grid
-        , button
+        , rankingbuttons
         , input
+        , newrankingbuttons
         ]
 
 

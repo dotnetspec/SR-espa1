@@ -174,8 +174,8 @@ type alias Player =
 type alias RankingInfo =
     { id : String
     , active : Bool
-    , name : String
-    , desc : String
+    , rankingname : String
+    , rankingdesc : String
     , rankingowneraddr : String
     }
 
