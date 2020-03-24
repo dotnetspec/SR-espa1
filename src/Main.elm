@@ -63,7 +63,8 @@ main =
 
 type Model
     = GlobalRankings (RemoteData.WebData (List SR.Types.RankingInfo)) String String SR.Types.UIState String
-    | SelectedRanking DynaModel
+      --| SelectedRanking DynaModel
+    | SelectedRanking (List SR.Types.Player) Internal.RankingId
 
 
 type alias DynaModel =
@@ -71,7 +72,9 @@ type alias DynaModel =
       --, settings : Maybe SettingsData
       --,
       isopponenthigherrank : Maybe SR.Types.OpponentRelativeRank
-    , players : RemoteData.WebData (List SR.Types.Player)
+
+    --, players : RemoteData.WebData (List SR.Types.Player)
+    , players : List SR.Types.Player
     , fetchedContentNotPlayerList : String
     , error : String
     , rankingid : String
@@ -113,20 +116,37 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msgOfTransitonThatAlreadyHappened previousmodel =
     case msgOfTransitonThatAlreadyHappened of
         GotRankingId rnkidstr ->
-            ( GlobalRankings RemoteData.Loading "" "" SR.Types.RenderAllRankings "", fetchRanking rnkidstr )
+            let
+                _ =
+                    Debug.log "rank id " rnkidstr
+            in
+            ( SelectedRanking [] rnkidstr, fetchRanking rnkidstr )
 
+        -- case previousmodel of
+        --     GlobalRankings _ _ _ _ _ ->
+        --         --( SelectedRanking (), fetchRanking rnkidstr )
+        --         ( GlobalRankings RemoteData.Loading "" "" SR.Types.RenderAllRankings "", Cmd.none )
+        -- SelectedRanking dynamodel ->
+        --     ( SelectedRanking { dynamodel | rankingid = "5e787508b325b3162e3cd426" }, Cmd.none )
         PlayersReceived players ->
             --remove the first record (created on ranking creation with different format)
-            case previousmodel of
-                SelectedRanking dynaModel ->
-                    --( { dynaModel | players = players }, Cmd.none )
-                    ( SelectedRanking { dynaModel | players = players }, Cmd.none )
+            let
+                playerAsJustList =
+                    extractPlayersFromWebData players
 
-                GlobalRankings _ _ _ _ _ ->
-                    ( GlobalRankings RemoteData.Loading "" "" SR.Types.RenderAllRankings "", Cmd.none )
+                _ =
+                    Debug.log "player list " playerAsJustList
+            in
+            ( SelectedRanking playerAsJustList (Internal.RankingId ""), Cmd.none )
 
 
 
+-- case previousmodel of
+--     SelectedRanking dynaModel ->
+--         --( { dynaModel | players = players }, Cmd.none )
+--         ( SelectedRanking { dynaModel | players = playerAsJustList }, Cmd.none )
+--     GlobalRankings _ _ _ _ _ ->
+--         ( GlobalRankings RemoteData.Loading "" "" SR.Types.RenderAllRankings "", Cmd.none )
 -- GotGlobalRankingsJson rmtdata ->
 --     case rmtdata of
 --         RemoteData.Success a ->
@@ -140,7 +160,17 @@ update msgOfTransitonThatAlreadyHappened previousmodel =
 heading : Element Msg
 heading =
     Element.column Grid.section <|
-        [ Element.el Heading.h2 <| Element.text "Username"
+        [ Element.el Heading.h2 <| Element.text "Global Rankings"
+        , Element.column Card.fill
+            [ Element.el Heading.h1 <| Element.text "Username"
+            ]
+        ]
+
+
+selectedHeading : Element Msg
+selectedHeading =
+    Element.column Grid.section <|
+        [ Element.el Heading.h2 <| Element.text "Selected Ranking"
         , Element.column Card.fill
             [ Element.el Heading.h1 <| Element.text "Username"
             ]
@@ -197,7 +227,7 @@ rankingbuttons =
 
 
 rankingInfoList =
-    [ { id = "5e787508b325b3162e3cd426"
+    [ { id = "5e7301aad3ffb01648aa73be"
       , active = True
       , rankingname = "mmmmmm"
       , rankingdesc = "mmmmmmm"
@@ -245,6 +275,42 @@ insertRankingList rnkgInfoList =
     mapOutRankingList
 
 
+playerbuttons : List SR.Types.Player -> Element Msg
+playerbuttons playerInfoList =
+    Element.column Grid.section <|
+        [ Element.el Heading.h2 <| Element.text "Selected Ranking"
+        , Element.column (Card.simple ++ Grid.simple) <|
+            insertPlayerList playerInfoList
+        , Element.column Grid.simple <|
+            [ Element.paragraph [] <|
+                List.singleton <|
+                    Element.text "Button attributes can be combined with other attributes."
+            ]
+        ]
+
+
+addPlayerInfoToAnyElText : SR.Types.Player -> Element Msg
+addPlayerInfoToAnyElText playerObj =
+    Element.column Grid.simple <|
+        [ Input.button (Button.fill ++ Color.info) <|
+            { --onPress = Just (GotRankingId (Internal.RankingId playerObj.id))
+              onPress = Nothing
+            , label = Element.text playerObj.name
+            }
+        ]
+
+
+insertPlayerList : List SR.Types.Player -> List (Element Msg)
+insertPlayerList playerInfoList =
+    let
+        mapOutPlayerList =
+            List.map
+                addPlayerInfoToAnyElText
+                playerInfoList
+    in
+    mapOutPlayerList
+
+
 newrankingbuttons : Element Msg
 newrankingbuttons =
     Element.column Grid.section <|
@@ -267,6 +333,10 @@ newrankingbuttons =
                     Element.text "Button attributes can be combined with other attributes."
             ]
         ]
+
+
+
+-- () means there is a value there, but you don't care what it is
 
 
 input : Element ()
@@ -304,10 +374,19 @@ input =
 
 
 --view : Element ()
+-- globalResponsiveview : Model -> Html Msg
+-- globalResponsiveview model =
 
 
-responsiveview : Html Msg
-responsiveview =
+globalResponsiveview : Html Msg
+globalResponsiveview =
+    -- globalResponsiveview : DynaModel -> Html Msg
+    -- globalResponsiveview dynamodel =
+    -- let
+    --     globalRankingList =
+    --     case model of
+    --         GlobalRankings rnkList ____ ->
+    -- in
     --Html <|
     Framework.responsiveLayout [] <|
         Element.column
@@ -318,7 +397,26 @@ responsiveview =
             --, group
             --, color
             --, grid
-            , rankingbuttons
+            , rankingbuttons --dynamodel
+
+            --, input
+            , newrankingbuttons
+            ]
+
+
+selectedResponsiveview : List SR.Types.Player -> Html Msg
+selectedResponsiveview playerList =
+    --Html <|
+    Framework.responsiveLayout [] <|
+        Element.column
+            Framework.container
+            [ Element.el Heading.h1 <| Element.text "SportRank"
+            , selectedHeading
+
+            --, group
+            --, color
+            --, grid
+            , playerbuttons playerList
 
             --, input
             , newrankingbuttons
@@ -329,19 +427,44 @@ view : Model -> Html Msg
 view model =
     case model of
         GlobalRankings _ _ _ _ _ ->
-            responsiveview
+            globalResponsiveview
 
-        SelectedRanking _ ->
-            --Element.html <| Element.text "in selected ranking"
-            Html.text "Hello World!"
-
+        SelectedRanking playerList rnkid ->
+            selectedResponsiveview playerList
 
 
--- main : Html ()
--- main =
---     Framework.responsiveLayout [] <|
---         view
---main : Html ()
+extractPlayersFromWebData : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
+extractPlayersFromWebData remData =
+    case remData of
+        RemoteData.NotAsked ->
+            []
+
+        RemoteData.Loading ->
+            []
+
+        RemoteData.Success players ->
+            players
+
+        RemoteData.Failure httpError ->
+            []
+
+
+
+-- extractPlayersFromWebData : Model -> List SR.Types.Player
+-- extractPlayersFromWebData model =
+--     case model of
+--         SelectedRanking dynamodel ->
+--             case dynamodel.players of
+--                 RemoteData.NotAsked ->
+--                     []
+--                 RemoteData.Loading ->
+--                     []
+--                 RemoteData.Success players ->
+--                     players
+--                 RemoteData.Failure httpError ->
+--                     []
+--         GlobalRankings _ _ _ _ _ ->
+--             []
 
 
 subscriptions : Model -> Sub Msg
