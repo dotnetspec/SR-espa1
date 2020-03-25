@@ -23,14 +23,16 @@ import Http
 import Internal.Types as Internal
 import Ports
 import RemoteData
+import SR.Constants
 import SR.Decode
+import SR.Defaults
 import SR.Types
 import Ui
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( GlobalRankings RemoteData.Loading "" "" SR.Types.RenderAllRankings "", Cmd.none )
+    ( GlobalRankings RemoteData.Loading "" "" SR.Types.RenderAllRankings "", getRankingList )
 
 
 
@@ -106,9 +108,9 @@ type alias DynaModel =
 
 
 type Msg
-    = --GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
+    = GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
       --|
-      GotRankingId Internal.RankingId
+    | GotRankingId Internal.RankingId
     | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
 
 
@@ -116,45 +118,31 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msgOfTransitonThatAlreadyHappened previousmodel =
     case msgOfTransitonThatAlreadyHappened of
         GotRankingId rnkidstr ->
-            let
-                _ =
-                    Debug.log "rank id " rnkidstr
-            in
+            -- let
+            --     _ =
+            --         Debug.log "rank id " rnkidstr
+            -- in
             ( SelectedRanking [] rnkidstr, fetchRanking rnkidstr )
 
-        -- case previousmodel of
-        --     GlobalRankings _ _ _ _ _ ->
-        --         --( SelectedRanking (), fetchRanking rnkidstr )
-        --         ( GlobalRankings RemoteData.Loading "" "" SR.Types.RenderAllRankings "", Cmd.none )
-        -- SelectedRanking dynamodel ->
-        --     ( SelectedRanking { dynamodel | rankingid = "5e787508b325b3162e3cd426" }, Cmd.none )
         PlayersReceived players ->
-            --remove the first record (created on ranking creation with different format)
             let
                 playerAsJustList =
                     extractPlayersFromWebData players
 
-                _ =
-                    Debug.log "player list " playerAsJustList
+                -- _ =
+                --     Debug.log "player list " playerAsJustList
             in
             ( SelectedRanking playerAsJustList (Internal.RankingId ""), Cmd.none )
 
+        GotGlobalRankingsJson rmtrnkingdata ->
+            let
+                rankingsAsJustList =
+                    extractRankingsFromWebData rmtrnkingdata
 
-
--- case previousmodel of
---     SelectedRanking dynaModel ->
---         --( { dynaModel | players = players }, Cmd.none )
---         ( SelectedRanking { dynaModel | players = playerAsJustList }, Cmd.none )
---     GlobalRankings _ _ _ _ _ ->
---         ( GlobalRankings RemoteData.Loading "" "" SR.Types.RenderAllRankings "", Cmd.none )
--- GotGlobalRankingsJson rmtdata ->
---     case rmtdata of
---         RemoteData.Success a ->
---             case previousmodel of
---                 GlobalRankings globalList _ _ _ rnkowner ->
---                     ( GlobalRankings (RemoteData.Success a) "" "" SR.Types.RenderAllRankings rnkowner, Cmd.none )
--- _ ->
---     ( GlobalRankings RemoteData.Loading "" "" SR.Types.RenderAllRankings "", Cmd.none )
+                _ =
+                    Debug.log "ranking list " rankingsAsJustList
+            in
+            ( GlobalRankings RemoteData.Loading "" "" SR.Types.RenderAllRankings "", Cmd.none )
 
 
 heading : Element Msg
@@ -449,22 +437,20 @@ extractPlayersFromWebData remData =
             []
 
 
+extractRankingsFromWebData : RemoteData.WebData (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
+extractRankingsFromWebData remData =
+    case remData of
+        RemoteData.NotAsked ->
+            []
 
--- extractPlayersFromWebData : Model -> List SR.Types.Player
--- extractPlayersFromWebData model =
---     case model of
---         SelectedRanking dynamodel ->
---             case dynamodel.players of
---                 RemoteData.NotAsked ->
---                     []
---                 RemoteData.Loading ->
---                     []
---                 RemoteData.Success players ->
---                     players
---                 RemoteData.Failure httpError ->
---                     []
---         GlobalRankings _ _ _ _ _ ->
---             []
+        RemoteData.Loading ->
+            []
+
+        RemoteData.Success rankings ->
+            rankings
+
+        RemoteData.Failure httpError ->
+            []
 
 
 subscriptions : Model -> Sub Msg
@@ -495,4 +481,37 @@ fetchRanking (Internal.RankingId rankingId) =
         , timeout = Nothing
         , tracker = Nothing
         , url = "https://api.jsonbin.io/b/" ++ rankingId ++ "/latest"
+        }
+
+
+
+--GotGlobalRankingsJson
+
+
+getRankingList : Cmd Msg
+getRankingList =
+    let
+        secretKey =
+            Http.header
+                "secret-key"
+                "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
+
+        binName =
+            Http.header
+                "name"
+                "Global"
+
+        containerId =
+            Http.header
+                "collection-id"
+                "5d7deab3371673119fab12a6"
+    in
+    Http.request
+        { body = Http.emptyBody
+        , expect = Http.expectJson (RemoteData.fromResult >> GotGlobalRankingsJson) SR.Decode.rankingsDecoder
+        , headers = [ secretKey, binName, containerId ]
+        , method = "GET"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = SR.Constants.globalJsonbinRankingReadLink
         }
