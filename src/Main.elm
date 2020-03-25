@@ -30,19 +30,6 @@ import SR.Types
 import Ui
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", getRankingList )
-
-
-
---   , Http.get
---       { url = "https://elm-lang.org/assets/public-opinion.txt"
---       , expect = Http.expectString GotText
---       }
---Cmd.none
-
-
 main =
     Browser.element
         { init = init
@@ -64,9 +51,15 @@ main =
 
 
 type Model
-    = GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState String
-      --| SelectedRanking DynaModel
+    = Greeting SR.Types.UserState SR.Types.WalletState
+    | GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState String
     | SelectedRanking (List SR.Types.Player) Internal.RankingId
+
+
+init : () -> ( Model, Cmd Msg )
+init _ =
+    --( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", getRankingList )
+    ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
 
 
 type alias DynaModel =
@@ -108,10 +101,15 @@ type alias DynaModel =
 
 
 type Msg
-    = GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
-      --|
+    = WalletStatus Eth.Sentry.Wallet.WalletSentry
+    | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
     | GotRankingId Internal.RankingId
     | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
+    | GetAWalletInstructions
+    | OpenWalletInstructions
+      --| CloseDialog
+    | NewUser
+    | ExistingUser Eth.Types.Address
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -143,6 +141,68 @@ update msgOfTransitonThatAlreadyHappened previousmodel =
                     Debug.log "ranking list " rankingsAsJustList
             in
             ( GlobalRankings rankingsAsJustList "" "" SR.Types.RenderAllRankings "", Cmd.none )
+
+        WalletStatus walletSentry_ ->
+            case walletSentry_.networkId of
+                Mainnet ->
+                    case walletSentry_.account of
+                        Nothing ->
+                            handleMsg OpenWalletInstructions
+
+                        Just a ->
+                            handleMsg (ExistingUser a)
+
+                Rinkeby ->
+                    case walletSentry_.account of
+                        Nothing ->
+                            handleMsg OpenWalletInstructions
+
+                        Just a ->
+                            handleMsg (ExistingUser a)
+
+                _ ->
+                    handleMsg GetAWalletInstructions
+
+        GetAWalletInstructions ->
+            ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
+
+        OpenWalletInstructions ->
+            ( Greeting SR.Types.NewUser SR.Types.Locked, Cmd.none )
+
+        NewUser ->
+            ( Greeting SR.Types.NewUser SR.Types.Opened, Cmd.none )
+
+        ExistingUser uname ->
+            ( Greeting (SR.Types.ExistingUser uname) SR.Types.Opened, getRankingList )
+
+
+handleMsg : Msg -> ( Model, Cmd Msg )
+handleMsg msg =
+    case msg of
+        GetAWalletInstructions ->
+            ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
+
+        OpenWalletInstructions ->
+            ( Greeting SR.Types.NewUser SR.Types.Locked, Cmd.none )
+
+        NewUser ->
+            ( Greeting SR.Types.NewUser SR.Types.Opened, Cmd.none )
+
+        ExistingUser uaddr ->
+            ( Greeting (SR.Types.ExistingUser uaddr) SR.Types.Opened, Cmd.none )
+
+        _ ->
+            ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
+
+
+greetingHeading : String -> Element Msg
+greetingHeading greetingStr =
+    Element.column Grid.section <|
+        [ Element.el Heading.h2 <| Element.text "Greeting Username"
+        , Element.column Card.fill
+            [ Element.el Heading.h1 <| Element.text greetingStr
+            ]
+        ]
 
 
 heading : Element Msg
@@ -340,14 +400,6 @@ input =
 
 globalResponsiveview : List SR.Types.RankingInfo -> Html Msg
 globalResponsiveview rankingList =
-    -- globalResponsiveview : DynaModel -> Html Msg
-    -- globalResponsiveview dynamodel =
-    -- let
-    --     globalRankingList =
-    --     case model of
-    --         GlobalRankings rnkList ____ ->
-    -- in
-    --Html <|
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
@@ -366,7 +418,6 @@ globalResponsiveview rankingList =
 
 selectedResponsiveview : List SR.Types.Player -> Html Msg
 selectedResponsiveview playerList =
-    --Html <|
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
@@ -383,6 +434,16 @@ selectedResponsiveview playerList =
             ]
 
 
+greetingView : String -> Html Msg
+greetingView greetingMsg =
+    Framework.responsiveLayout [] <|
+        Element.column
+            Framework.container
+            [ Element.el Heading.h1 <| Element.text "SportRank"
+            , greetingHeading greetingMsg
+            ]
+
+
 view : Model -> Html Msg
 view model =
     case model of
@@ -391,6 +452,9 @@ view model =
 
         SelectedRanking playerList rnkid ->
             selectedResponsiveview playerList
+
+        Greeting _ _ ->
+            greetingView "Greeting"
 
 
 extractPlayersFromWebData : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
