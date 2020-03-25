@@ -110,6 +110,7 @@ type Msg
       --| CloseDialog
     | NewUser
     | ExistingUser Eth.Types.Address
+    | Fail String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -175,6 +176,13 @@ update msgOfTransitonThatAlreadyHappened previousmodel =
         ExistingUser uname ->
             ( Greeting (SR.Types.ExistingUser uname) SR.Types.Opened, getRankingList )
 
+        Fail str ->
+            let
+                _ =
+                    Debug.log "wallet fail " str
+            in
+            ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
+
 
 handleMsg : Msg -> ( Model, Cmd Msg )
 handleMsg msg =
@@ -200,17 +208,17 @@ greetingHeading greetingStr =
     Element.column Grid.section <|
         [ Element.el Heading.h2 <| Element.text "Greeting Username"
         , Element.column Card.fill
-            [ Element.el Heading.h1 <| Element.text greetingStr
+            [ Element.el Heading.h4 <| Element.text greetingStr
             ]
         ]
 
 
-heading : Element Msg
-heading =
+globalHeading : Element Msg
+globalHeading =
     Element.column Grid.section <|
         [ Element.el Heading.h2 <| Element.text "Global Rankings"
         , Element.column Card.fill
-            [ Element.el Heading.h1 <| Element.text "Username"
+            [ Element.el Heading.h4 <| Element.text "Username"
             ]
         ]
 
@@ -220,7 +228,7 @@ selectedHeading =
     Element.column Grid.section <|
         [ Element.el Heading.h2 <| Element.text "Selected Ranking"
         , Element.column Card.fill
-            [ Element.el Heading.h1 <| Element.text "Username"
+            [ Element.el Heading.h4 <| Element.text "Username"
             ]
         ]
 
@@ -392,19 +400,13 @@ input =
         ]
 
 
-
---view : Element ()
--- globalResponsiveview : Model -> Html Msg
--- globalResponsiveview model =
-
-
 globalResponsiveview : List SR.Types.RankingInfo -> Html Msg
 globalResponsiveview rankingList =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
             [ Element.el Heading.h1 <| Element.text "SportRank"
-            , heading
+            , globalHeading
 
             --, group
             --, color
@@ -453,8 +455,34 @@ view model =
         SelectedRanking playerList rnkid ->
             selectedResponsiveview playerList
 
-        Greeting _ _ ->
-            greetingView "Greeting"
+        -- Greeting _ _ ->
+        --     greetingView "Greeting"
+        Greeting userState walletState ->
+            -- let
+            --     -- usrlist =
+            --     --     gotUserListFromRemData (SR.Types.Success userList)
+            --     _ =
+            --         Debug.log "user list : " userList
+            -- in
+            case walletState of
+                SR.Types.Locked ->
+                    greetingView "OpenWalletInstructions"
+
+                SR.Types.Missing ->
+                    greetingView "GetAWalletInstructions"
+
+                SR.Types.Opened ->
+                    case userState of
+                        SR.Types.NewUser ->
+                            greetingView "NewUserInstructions"
+
+                        --description = "Hello New User. Please click to register", buttons = [ ( "Register ...", "/" ) ] }
+                        SR.Types.ExistingUser a ->
+                            greetingView "ExistingUserInstructions"
+
+
+
+--description = "Welcome Back " ++ tempAddressToNameLookup (Eth.Utils.addressToString a), buttons = [ ( "Continue ...", "/rankings" ) ] }
 
 
 extractPlayersFromWebData : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
@@ -490,8 +518,8 @@ extractRankingsFromWebData remData =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
-    Sub.none
+subscriptions _ =
+    Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
 
 
 fetchRanking : Internal.RankingId -> Cmd Msg
