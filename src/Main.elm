@@ -32,7 +32,7 @@ import Ui
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( GlobalRankings RemoteData.Loading "" "" SR.Types.RenderAllRankings "", getRankingList )
+    ( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", getRankingList )
 
 
 
@@ -64,7 +64,7 @@ main =
 
 
 type Model
-    = GlobalRankings (RemoteData.WebData (List SR.Types.RankingInfo)) String String SR.Types.UIState String
+    = GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState String
       --| SelectedRanking DynaModel
     | SelectedRanking (List SR.Types.Player) Internal.RankingId
 
@@ -142,7 +142,7 @@ update msgOfTransitonThatAlreadyHappened previousmodel =
                 _ =
                     Debug.log "ranking list " rankingsAsJustList
             in
-            ( GlobalRankings RemoteData.Loading "" "" SR.Types.RenderAllRankings "", Cmd.none )
+            ( GlobalRankings rankingsAsJustList "" "" SR.Types.RenderAllRankings "", Cmd.none )
 
 
 heading : Element Msg
@@ -200,46 +200,18 @@ grid =
         ]
 
 
-rankingbuttons : Element Msg
-rankingbuttons =
+rankingbuttons : List SR.Types.RankingInfo -> Element Msg
+rankingbuttons rankingList =
     Element.column Grid.section <|
         [ Element.el Heading.h2 <| Element.text "Global Rankings"
         , Element.column (Card.simple ++ Grid.simple) <|
-            insertRankingList rankingInfoList
+            insertRankingList rankingList
         , Element.column Grid.simple <|
             [ Element.paragraph [] <|
                 List.singleton <|
                     Element.text "Button attributes can be combined with other attributes."
             ]
         ]
-
-
-rankingInfoList =
-    [ { id = "5e7301aad3ffb01648aa73be"
-      , active = True
-      , rankingname = "mmmmmm"
-      , rankingdesc = "mmmmmmm"
-      , rankingowneraddr = "0x847700b781667abdd98e1393420754e503dca5b7"
-      }
-    , { id = "5e7301aad3ffb01648aa73be"
-      , active = True
-      , rankingname = "pppppppp"
-      , rankingdesc = "pppppppp"
-      , rankingowneraddr = "0x847700B781667abdD98E1393420754E503dca5b7"
-      }
-    , { id = "5e7301aad3ffb01648aa73be"
-      , active = True
-      , rankingname = "oooooooo"
-      , rankingdesc = "pppppppp"
-      , rankingowneraddr = "0x847700B781667abdD98E1393420754E503dca5b7"
-      }
-    , { id = "5e7301aad3ffb01648aa73be"
-      , active = True
-      , rankingname = "tttttttt"
-      , rankingdesc = "pppppppp"
-      , rankingowneraddr = "0x847700B781667abdD98E1393420754E503dca5b7"
-      }
-    ]
 
 
 addRankingInfoToAnyElText : SR.Types.RankingInfo -> Element Msg
@@ -366,8 +338,8 @@ input =
 -- globalResponsiveview model =
 
 
-globalResponsiveview : Html Msg
-globalResponsiveview =
+globalResponsiveview : List SR.Types.RankingInfo -> Html Msg
+globalResponsiveview rankingList =
     -- globalResponsiveview : DynaModel -> Html Msg
     -- globalResponsiveview dynamodel =
     -- let
@@ -385,7 +357,7 @@ globalResponsiveview =
             --, group
             --, color
             --, grid
-            , rankingbuttons --dynamodel
+            , rankingbuttons rankingList
 
             --, input
             , newrankingbuttons
@@ -414,8 +386,8 @@ selectedResponsiveview playerList =
 view : Model -> Html Msg
 view model =
     case model of
-        GlobalRankings _ _ _ _ _ ->
-            globalResponsiveview
+        GlobalRankings globalList _ _ _ _ ->
+            globalResponsiveview globalList
 
         SelectedRanking playerList rnkid ->
             selectedResponsiveview playerList
