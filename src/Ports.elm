@@ -1,20 +1,19 @@
 port module Ports exposing (..)
 
-import Json.Encode as Json exposing (Value)
-    -- ( EthNode
-    -- , Model
-    -- , Msg(..)
-    -- , ethNode
-    -- , init
-    -- , main
-    -- , subscriptions
-    -- , txIn
-    -- , txOut
-    -- , update
-    -- , view
-    -- , viewThing
-    -- , walletSentry
-    -- )
+-- ( EthNode
+-- , Model
+-- , Msg(..)
+-- , ethNode
+-- , init
+-- , main
+-- , subscriptions
+-- , txIn
+-- , txOut
+-- , update
+-- , view
+-- , viewThing
+-- , walletSentry
+-- )
 
 import Eth
 import Eth.Net as Net exposing (NetworkId(..))
@@ -22,13 +21,13 @@ import Eth.Sentry.Tx as TxSentry exposing (..)
 import Eth.Sentry.Wallet as WalletSentry exposing (WalletSentry)
 import Eth.Types exposing (..)
 import Eth.Units exposing (gwei)
+import Eth.Utils
 import Html exposing (..)
 import Http
 import Json.Decode as Decode exposing (Value)
+import Json.Encode as Json exposing (Value)
 import Process
 import Task
-import Eth.Utils
-
 
 
 type alias Model =
@@ -91,18 +90,19 @@ ethNode networkId =
             EthNode "UnknownEthNetwork" "UnknownEthNetwork"
 
 
+
 -- retrieveAddress : Model -> String
 -- retrieveAddress model =
 --   case model.account of
 --     Nothing ->
 --       "No address"
-
 --     Just a ->
 --         let
 --             _ = Debug.log "in retreive" a
 --         in
 --         "99999"
 --        --Eth.Utils.addressToString a
+
 
 type Msg
     = TxSentryMsg TxSentry.Msg
@@ -204,10 +204,11 @@ update msg model =
                 _ =
                     Debug.log "data is: " data
             in
-                ( { model | incomingData = data }, Cmd.none )
+            ( { model | incomingData = data }, Cmd.none )
+
+
 
 --retrieveAddress : Maybe Eth.Types.Address -> String
-
 
 
 subscriptions : Model -> Sub Msg
@@ -218,38 +219,51 @@ subscriptions model =
         , TxSentry.listen model.txSentry
         ]
 
+
+
 --decodeValue just used to help understanding of incoming port functionality
+
+
 decodeValue : Value -> Msg
 decodeValue x =
     let
         result =
             Decode.decodeValue Decode.string x
     in
-        case result of
-            Ok string ->
-                ReceivedDataFromJS string            
-            Err _ -> 
-                ReceivedDataFromJS "Silly JavaScript, you can't kill me!"
+    case result of
+        Ok string ->
+            ReceivedDataFromJS string
+
+        Err _ ->
+            ReceivedDataFromJS "Silly JavaScript, you can't kill me!"
 
 
 
 -- Ports
 -- Test ports
 
+
 port incoming : (Value -> msg) -> Sub msg
+
 
 port outgoing : { action : String, data : Json.Value } -> Cmd msg
 
 
+
 --web3 ports
+
 
 port walletSentry : (Value -> msg) -> Sub msg
 
+
 port output : Value -> Cmd msg
+
 
 port input : (Value -> msg) -> Sub msg
 
+
 port txOut : Value -> Cmd msg
+
 
 port txIn : (Value -> msg) -> Sub msg
 
@@ -270,14 +284,14 @@ maybeToString toString onNothing mVal =
 
 boolToString : Bool -> String
 boolToString b =
- if b == True then
-      "True"
+    if b == True then
+        "True"
 
-  else if b == False then
-      "False"
+    else if b == False then
+        "False"
 
-  else
-      "There was a problem converting this string!!"
+    else
+        "There was a problem converting this string!!"
 
 
 log : String -> Cmd msg

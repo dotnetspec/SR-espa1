@@ -56,10 +56,17 @@ type Model
     | SelectedRanking (List SR.Types.Player) Internal.RankingId
 
 
+
+--init : Commands msg -> Flags -> ( Model, Cmd Msg )
+
+
 init : () -> ( Model, Cmd Msg )
 init _ =
     --( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", getRankingList )
-    ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
+    ( Greeting SR.Types.NewUser SR.Types.Missing
+      --, Cmd.none )
+    , Ports.log "Sending out msg from init "
+    )
 
 
 type alias DynaModel =
@@ -102,10 +109,11 @@ type alias DynaModel =
 
 type Msg
     = WalletStatus Eth.Sentry.Wallet.WalletSentry
+      --| TxSentryMsg Eth.Sentry.Tx.Msg
     | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
     | GotRankingId Internal.RankingId
     | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
-    | GetAWalletInstructions
+    | MissingWalletInstructions
     | OpenWalletInstructions
       --| CloseDialog
     | NewUser
@@ -162,9 +170,9 @@ update msgOfTransitonThatAlreadyHappened previousmodel =
                             handleMsg (ExistingUser a)
 
                 _ ->
-                    handleMsg GetAWalletInstructions
+                    handleMsg MissingWalletInstructions
 
-        GetAWalletInstructions ->
+        MissingWalletInstructions ->
             ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
 
         OpenWalletInstructions ->
@@ -187,7 +195,7 @@ update msgOfTransitonThatAlreadyHappened previousmodel =
 handleMsg : Msg -> ( Model, Cmd Msg )
 handleMsg msg =
     case msg of
-        GetAWalletInstructions ->
+        MissingWalletInstructions ->
             ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
 
         OpenWalletInstructions ->
@@ -469,7 +477,7 @@ view model =
                     greetingView "OpenWalletInstructions"
 
                 SR.Types.Missing ->
-                    greetingView "GetAWalletInstructions"
+                    greetingView "MissingWalletInstructions"
 
                 SR.Types.Opened ->
                     case userState of
@@ -518,8 +526,15 @@ extractRankingsFromWebData remData =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
+subscriptions model =
     Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+
+
+
+--  Sub.batch
+--     [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+--     , Eth.Sentry.Tx.listen model.txSentry
+--     ]
 
 
 fetchRanking : Internal.RankingId -> Cmd Msg

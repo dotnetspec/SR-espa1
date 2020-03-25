@@ -6,9 +6,13 @@ var setOfFlags = {};
 window.addEventListener('load', function () {
     if (typeof ethereum !== 'undefined') {
         // 'ethereum' means supports EIP-1102 injected Ethereum providers.
+        //this.alert("hello")
         window.web3 = new Web3(ethereum);
         web3.version.getNetwork(function (e, networkId) {
-            app = window.ports.init(Elm.Main.init({ flags: setOfFlags, node: node }));
+            //app = window.ports.init(Elm.Main.init({ flags: setOfFlags, node: node }));
+            console.log("network id ", networkId)
+            app = window.ports.init(Elm.Main.init({ node: node }))
+            //node: document.getElementById('elm')
         });
     } else if (typeof web3 !== 'undefined') {
         // Supports legacy injected Ethereum providers.
@@ -34,8 +38,9 @@ window.ports = {
                     ? actions[action](data)
                     : console.warn(`I didn't recognize action "${action}".`)
             )
-            //these are the only ports that are being used currently ...
-            , elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, web3)
+            // next line commented to enable walletSentry until we're ready to implement txSentry
+            // ,
+            // elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, web3)
             , elm_ethereum_ports.walletSentry(app.ports.walletSentry, web3)
         )
 }
