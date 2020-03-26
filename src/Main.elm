@@ -111,14 +111,13 @@ type alias DynaModel =
 
 type Msg
     = WalletStatus Eth.Sentry.Wallet.WalletSentry
-    | PollBlock (Result Http.Error Int)
+      --| PollBlock (Result Http.Error Int)
       --| TxSentryMsg Eth.Sentry.Tx.Msg
     | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
     | GotRankingId Internal.RankingId
     | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
     | MissingWalletInstructions
     | OpenWalletInstructions
-      --| CloseDialog
     | NewUser
     | ExistingUser Eth.Types.Address
     | Fail String
@@ -591,7 +590,15 @@ extractRankingsFromWebData remData =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+    case model of
+        Greeting _ _ ->
+            Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+
+        GlobalRankings _ _ _ _ _ ->
+            Sub.none
+
+        SelectedRanking _ _ ->
+            Sub.none
 
 
 
