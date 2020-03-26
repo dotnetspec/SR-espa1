@@ -30,6 +30,7 @@ import SR.Defaults
 import SR.Types
 import Task
 import Ui
+import Utils.MyUtils
 
 
 main =
@@ -54,7 +55,7 @@ main =
 
 type Model
     = Greeting SR.Types.UserState SR.Types.WalletState
-    | GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState String
+    | GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState Eth.Types.Address
     | SelectedRanking (List SR.Types.Player) Internal.RankingId
 
 
@@ -172,7 +173,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     in
                     --( Greeting (SR.Types.ExistingUser uname) SR.Types.Opened, Cmd.none )
                     --( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", getRankingList )
-                    ( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", getRankingList )
+                    ( GlobalRankings [] "" "" SR.Types.RenderAllRankings (Internal.Address ""), getRankingList )
 
                 Fail str ->
                     let
@@ -184,23 +185,16 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 _ ->
                     ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
 
-        GlobalRankings lrankingInfo nameStr descStr uIState rnkOwnerStr ->
+        GlobalRankings lrankingInfo nameStr descStr uIState rnkOwnerAddr ->
             case msgOfTransitonThatAlreadyHappened of
                 GotGlobalRankingsJson rmtrnkingdata ->
                     let
                         rankingsAsJustList =
                             extractRankingsFromWebData rmtrnkingdata
-
-                        _ =
-                            Debug.log "ranking list " rankingsAsJustList
                     in
-                    ( GlobalRankings rankingsAsJustList "" "" SR.Types.RenderAllRankings "", Cmd.none )
+                    ( GlobalRankings rankingsAsJustList "" "" SR.Types.RenderAllRankings rnkOwnerAddr, Cmd.none )
 
                 GotRankingId rnkidstr ->
-                    let
-                        _ =
-                            Debug.log "rank id " rnkidstr
-                    in
                     ( SelectedRanking [] rnkidstr, fetchRanking rnkidstr )
 
                 Fail str ->
@@ -208,10 +202,10 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         _ =
                             Debug.log "GlobalRankings fail " str
                     in
-                    ( GlobalRankings lrankingInfo "" "" SR.Types.RenderAllRankings "", Cmd.none )
+                    ( GlobalRankings lrankingInfo "" "" SR.Types.RenderAllRankings (Internal.Address ""), Cmd.none )
 
                 _ ->
-                    ( GlobalRankings lrankingInfo "" "" SR.Types.RenderAllRankings "", Cmd.none )
+                    ( GlobalRankings lrankingInfo "" "" SR.Types.RenderAllRankings (Internal.Address ""), Cmd.none )
 
         SelectedRanking lPlayer intrankingId ->
             case msgOfTransitonThatAlreadyHappened of
@@ -255,7 +249,7 @@ handleMsg msg =
 
         ExistingUser uaddr ->
             --( Greeting (SR.Types.ExistingUser uaddr) SR.Types.Opened, Cmd.none )
-            ( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", getRankingList )
+            ( GlobalRankings [] "" "" SR.Types.RenderAllRankings uaddr, getRankingList )
 
         _ ->
             ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
@@ -271,14 +265,23 @@ greetingHeading greetingStr =
         ]
 
 
-globalHeading : Element Msg
-globalHeading =
+globalHeading : Eth.Types.Address -> Element Msg
+globalHeading uaddr =
+    let
+        uaddrStr =
+            Eth.Utils.addressToString uaddr
+    in
     Element.column Grid.section <|
         [ Element.el Heading.h2 <| Element.text "Global Rankings"
         , Element.column Card.fill
-            [ Element.el Heading.h4 <| Element.text "Username"
+            [ --Element.el Heading.h4 <| Element.text (Just uaddr)
+              Element.el Heading.h4 <| Element.text uaddrStr
             ]
         ]
+
+
+
+--Just (GotRankingId (Internal.RankingId <| String.fromInt playerObj.id))
 
 
 selectedHeading : Element Msg
@@ -459,13 +462,13 @@ input =
         ]
 
 
-globalResponsiveview : List SR.Types.RankingInfo -> Html Msg
-globalResponsiveview rankingList =
+globalResponsiveview : List SR.Types.RankingInfo -> Eth.Types.Address -> Html Msg
+globalResponsiveview rankingList uaddr =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
             [ Element.el Heading.h1 <| Element.text "SportRank"
-            , globalHeading
+            , globalHeading uaddr
 
             --, group
             --, color
@@ -508,8 +511,8 @@ greetingView greetingMsg =
 view : Model -> Html Msg
 view model =
     case model of
-        GlobalRankings globalList _ _ _ _ ->
-            globalResponsiveview globalList
+        GlobalRankings globalList _ _ _ uaddr ->
+            globalResponsiveview globalList uaddr
 
         SelectedRanking playerList rnkid ->
             selectedResponsiveview playerList
@@ -535,7 +538,6 @@ view model =
                         SR.Types.NewUser ->
                             greetingView "NewUserInstructions"
 
-                        --description = "Hello New User. Please click to register", buttons = [ ( "Register ...", "/" ) ] }
                         SR.Types.ExistingUser a ->
                             greetingView "Welcome back "
 
@@ -544,16 +546,6 @@ view model =
 
                 SR.Types.Inactive ->
                     greetingView "Inactive "
-
-
-
--- globalHeading
--- case model of
---     GlobalRankings globalList _ _ _ _ ->
---         globalResponsiveview globalList
---     _ ->
---         greetingView "Welcome back "
---description = "Welcome Back " ++ tempAddressToNameLookup (Eth.Utils.addressToString a), buttons = [ ( "Continue ...", "/rankings" ) ] }
 
 
 extractPlayersFromWebData : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
@@ -611,9 +603,6 @@ subscriptions model =
 fetchRanking : Internal.RankingId -> Cmd Msg
 fetchRanking (Internal.RankingId rankingId) =
     let
-        _ =
-            Debug.log "rankingid in fetchRanking" rankingId
-
         headerKey =
             Http.header
                 "secret-key"
@@ -634,16 +623,9 @@ fetchRanking (Internal.RankingId rankingId) =
         }
 
 
-
---GotGlobalRankingsJson
-
-
 getRankingList : Cmd Msg
 getRankingList =
     let
-        _ =
-            Debug.log "inside the" "ranking list"
-
         secretKey =
             Http.header
                 "secret-key"

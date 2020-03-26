@@ -6,13 +6,9 @@ var setOfFlags = {};
 window.addEventListener('load', function () {
     if (typeof ethereum !== 'undefined') {
         // 'ethereum' means supports EIP-1102 injected Ethereum providers.
-        //this.alert("hello")
         window.web3 = new Web3(ethereum);
         web3.version.getNetwork(function (e, networkId) {
-            //app = window.ports.init(Elm.Main.init({ flags: setOfFlags, node: node }));
-            console.log("network id ", networkId)
-            app = window.ports.init(Elm.Main.init({ node: node }))
-            //node: document.getElementById('elm')
+            app = window.ports.init(Elm.Main.init({ flags: setOfFlags, node: node }));
         });
     } else if (typeof web3 !== 'undefined') {
         // Supports legacy injected Ethereum providers.
