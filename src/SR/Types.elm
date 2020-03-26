@@ -106,6 +106,8 @@ type WalletState
     = Missing
     | Locked --Ports.EthNode
     | Opened --Ports.EthNode Eth.Types.Address
+    | Active
+    | Inactive
 
 
 

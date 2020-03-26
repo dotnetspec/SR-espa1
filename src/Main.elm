@@ -122,74 +122,110 @@ type Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msgOfTransitonThatAlreadyHappened previousmodel =
-    case msgOfTransitonThatAlreadyHappened of
-        GotRankingId rnkidstr ->
-            -- let
-            --     _ =
-            --         Debug.log "rank id " rnkidstr
-            -- in
-            ( SelectedRanking [] rnkidstr, fetchRanking rnkidstr )
+update msgOfTransitonThatAlreadyHappened currentmodel =
+    case currentmodel of
+        Greeting userState walletState ->
+            case msgOfTransitonThatAlreadyHappened of
+                WalletStatus walletSentry_ ->
+                    case walletSentry_.networkId of
+                        Mainnet ->
+                            case walletSentry_.account of
+                                Nothing ->
+                                    handleMsg OpenWalletInstructions
 
-        PlayersReceived players ->
-            let
-                playerAsJustList =
-                    extractPlayersFromWebData players
+                                Just a ->
+                                    handleMsg (ExistingUser a)
 
-                -- _ =
-                --     Debug.log "player list " playerAsJustList
-            in
-            ( SelectedRanking playerAsJustList (Internal.RankingId ""), Cmd.none )
+                        Rinkeby ->
+                            case walletSentry_.account of
+                                Nothing ->
+                                    handleMsg OpenWalletInstructions
 
-        GotGlobalRankingsJson rmtrnkingdata ->
-            let
-                rankingsAsJustList =
-                    extractRankingsFromWebData rmtrnkingdata
+                                Just a ->
+                                    handleMsg (ExistingUser a)
 
-                _ =
-                    Debug.log "ranking list " rankingsAsJustList
-            in
-            ( GlobalRankings rankingsAsJustList "" "" SR.Types.RenderAllRankings "", Cmd.none )
+                        _ ->
+                            handleMsg MissingWalletInstructions
 
-        WalletStatus walletSentry_ ->
-            case walletSentry_.networkId of
-                Mainnet ->
-                    case walletSentry_.account of
-                        Nothing ->
-                            handleMsg OpenWalletInstructions
+                MissingWalletInstructions ->
+                    ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
 
-                        Just a ->
-                            handleMsg (ExistingUser a)
+                OpenWalletInstructions ->
+                    ( Greeting SR.Types.NewUser SR.Types.Locked, Cmd.none )
 
-                Rinkeby ->
-                    case walletSentry_.account of
-                        Nothing ->
-                            handleMsg OpenWalletInstructions
+                NewUser ->
+                    ( Greeting SR.Types.NewUser SR.Types.Opened, Cmd.none )
 
-                        Just a ->
-                            handleMsg (ExistingUser a)
+                ExistingUser uname ->
+                    --( Greeting (SR.Types.ExistingUser uname) SR.Types.Opened, Cmd.none )
+                    --( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", getRankingList )
+                    ( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", Cmd.none )
+
+                Fail str ->
+                    let
+                        _ =
+                            Debug.log "GlobalRankings fail " str
+                    in
+                    ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
 
                 _ ->
-                    handleMsg MissingWalletInstructions
+                    ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
 
-        MissingWalletInstructions ->
-            ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
+        GlobalRankings lrankingInfo nameStr descStr uIState rnkOwnerStr ->
+            case msgOfTransitonThatAlreadyHappened of
+                GotGlobalRankingsJson rmtrnkingdata ->
+                    let
+                        rankingsAsJustList =
+                            extractRankingsFromWebData rmtrnkingdata
 
-        OpenWalletInstructions ->
-            ( Greeting SR.Types.NewUser SR.Types.Locked, Cmd.none )
+                        _ =
+                            Debug.log "ranking list " rankingsAsJustList
+                    in
+                    ( GlobalRankings rankingsAsJustList "" "" SR.Types.RenderAllRankings "", Cmd.none )
 
-        NewUser ->
-            ( Greeting SR.Types.NewUser SR.Types.Opened, Cmd.none )
+                Fail str ->
+                    let
+                        _ =
+                            Debug.log "GlobalRankings fail " str
+                    in
+                    ( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", Cmd.none )
 
-        ExistingUser uname ->
-            ( Greeting (SR.Types.ExistingUser uname) SR.Types.Opened, getRankingList )
+                _ ->
+                    ( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", Cmd.none )
 
-        Fail str ->
-            let
-                _ =
-                    Debug.log "wallet fail " str
-            in
-            ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
+        SelectedRanking lPlayer intrankingId ->
+            case msgOfTransitonThatAlreadyHappened of
+                GotRankingId rnkidstr ->
+                    -- let
+                    --     _ =
+                    --         Debug.log "rank id " rnkidstr
+                    -- in
+                    ( SelectedRanking [] rnkidstr, fetchRanking rnkidstr )
+
+                PlayersReceived players ->
+                    let
+                        playerAsJustList =
+                            extractPlayersFromWebData players
+
+                        -- _ =
+                        --     Debug.log "player list " playerAsJustList
+                    in
+                    ( SelectedRanking playerAsJustList (Internal.RankingId ""), Cmd.none )
+
+                Fail str ->
+                    let
+                        _ =
+                            Debug.log "SelectedRanking fail " str
+                    in
+                    ( SelectedRanking [] (Internal.RankingId ""), Cmd.none )
+
+                _ ->
+                    ( SelectedRanking [] (Internal.RankingId ""), Cmd.none )
+
+
+
+-- updateGreetingNetworkIdAndAccountNo : Msg -> Model -> ( Model, Cmd Msg )
+-- updateGreetingNetworkIdAndAccountNo msg model =
 
 
 handleMsg : Msg -> ( Model, Cmd Msg )
@@ -205,7 +241,8 @@ handleMsg msg =
             ( Greeting SR.Types.NewUser SR.Types.Opened, Cmd.none )
 
         ExistingUser uaddr ->
-            ( Greeting (SR.Types.ExistingUser uaddr) SR.Types.Opened, Cmd.none )
+            --( Greeting (SR.Types.ExistingUser uaddr) SR.Types.Opened, Cmd.none )
+            ( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", Cmd.none )
 
         _ ->
             ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
@@ -486,10 +523,22 @@ view model =
 
                         --description = "Hello New User. Please click to register", buttons = [ ( "Register ...", "/" ) ] }
                         SR.Types.ExistingUser a ->
-                            greetingView "ExistingUserInstructions"
+                            greetingView "Welcome back "
+
+                SR.Types.Active ->
+                    greetingView "Active "
+
+                SR.Types.Inactive ->
+                    greetingView "Inactive "
 
 
 
+-- globalHeading
+-- case model of
+--     GlobalRankings globalList _ _ _ _ ->
+--         globalResponsiveview globalList
+--     _ ->
+--         greetingView "Welcome back "
 --description = "Welcome Back " ++ tempAddressToNameLookup (Eth.Utils.addressToString a), buttons = [ ( "Continue ...", "/rankings" ) ] }
 
 
@@ -570,6 +619,9 @@ fetchRanking (Internal.RankingId rankingId) =
 getRankingList : Cmd Msg
 getRankingList =
     let
+        _ =
+            Debug.log "inside the" "ranking list"
+
         secretKey =
             Http.header
                 "secret-key"
