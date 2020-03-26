@@ -157,9 +157,13 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( Greeting SR.Types.NewUser SR.Types.Opened, Cmd.none )
 
                 ExistingUser uname ->
+                    let
+                        _ =
+                            Debug.log "ExistingUser " "str"
+                    in
                     --( Greeting (SR.Types.ExistingUser uname) SR.Types.Opened, Cmd.none )
                     --( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", getRankingList )
-                    ( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", Cmd.none )
+                    ( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", getRankingList )
 
                 Fail str ->
                     let
@@ -188,10 +192,10 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         _ =
                             Debug.log "GlobalRankings fail " str
                     in
-                    ( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", Cmd.none )
+                    ( GlobalRankings lrankingInfo "" "" SR.Types.RenderAllRankings "", Cmd.none )
 
                 _ ->
-                    ( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", Cmd.none )
+                    ( GlobalRankings lrankingInfo "" "" SR.Types.RenderAllRankings "", Cmd.none )
 
         SelectedRanking lPlayer intrankingId ->
             case msgOfTransitonThatAlreadyHappened of
@@ -242,7 +246,7 @@ handleMsg msg =
 
         ExistingUser uaddr ->
             --( Greeting (SR.Types.ExistingUser uaddr) SR.Types.Opened, Cmd.none )
-            ( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", Cmd.none )
+            ( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", getRankingList )
 
         _ ->
             ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
