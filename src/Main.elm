@@ -54,7 +54,7 @@ main =
 
 
 type Model
-    = Greeting SR.Types.UserState SR.Types.WalletState
+    = Greeting (List SR.Types.User) SR.Types.UserState SR.Types.WalletState
     | GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState Eth.Types.Address
     | SelectedRanking (List SR.Types.Player) Internal.RankingId
 
@@ -66,7 +66,7 @@ type Model
 init : () -> ( Model, Cmd Msg )
 init _ =
     --( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", getRankingList )
-    ( Greeting SR.Types.NewUser SR.Types.Missing
+    ( Greeting [] SR.Types.NewUser SR.Types.Missing
       --, Cmd.none )
     , Ports.log "Sending out msg from init "
     )
@@ -117,6 +117,7 @@ type Msg
     | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
     | GotRankingId Internal.RankingId
     | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
+    | UsersReceived (RemoteData.WebData (List SR.Types.User))
     | MissingWalletInstructions
     | OpenWalletInstructions
     | NewUser
@@ -127,7 +128,7 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msgOfTransitonThatAlreadyHappened currentmodel =
     case currentmodel of
-        Greeting userState walletState ->
+        Greeting uList userState walletState ->
             case msgOfTransitonThatAlreadyHappened of
                 WalletStatus walletSentry_ ->
                     case walletSentry_.networkId of
@@ -158,13 +159,13 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 -- PollBlock (Err error) ->
                 --     ( model, Cmd.none )
                 MissingWalletInstructions ->
-                    ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
+                    ( Greeting [] SR.Types.NewUser SR.Types.Missing, Cmd.none )
 
                 OpenWalletInstructions ->
-                    ( Greeting SR.Types.NewUser SR.Types.Locked, Cmd.none )
+                    ( Greeting [] SR.Types.NewUser SR.Types.Locked, Cmd.none )
 
                 NewUser ->
-                    ( Greeting SR.Types.NewUser SR.Types.Opened, Cmd.none )
+                    ( Greeting [] SR.Types.NewUser SR.Types.Opened, Cmd.none )
 
                 ExistingUser uname ->
                     let
@@ -175,15 +176,22 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     --( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", getRankingList )
                     ( GlobalRankings [] "" "" SR.Types.RenderAllRankings (Internal.Address ""), getRankingList )
 
+                UsersReceived userList ->
+                    let
+                        usersAsJustList =
+                            extractUsersFromWebData userList
+                    in
+                    ( Greeting usersAsJustList SR.Types.NewUser SR.Types.Missing, Cmd.none )
+
                 Fail str ->
                     let
                         _ =
                             Debug.log "GlobalRankings fail " str
                     in
-                    ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
+                    ( Greeting [] SR.Types.NewUser SR.Types.Missing, Cmd.none )
 
                 _ ->
-                    ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
+                    ( Greeting [] SR.Types.NewUser SR.Types.Missing, Cmd.none )
 
         GlobalRankings lrankingInfo nameStr descStr uIState rnkOwnerAddr ->
             case msgOfTransitonThatAlreadyHappened of
@@ -239,20 +247,20 @@ handleMsg : Msg -> ( Model, Cmd Msg )
 handleMsg msg =
     case msg of
         MissingWalletInstructions ->
-            ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
+            ( Greeting [] SR.Types.NewUser SR.Types.Missing, Cmd.none )
 
         OpenWalletInstructions ->
-            ( Greeting SR.Types.NewUser SR.Types.Locked, Cmd.none )
+            ( Greeting [] SR.Types.NewUser SR.Types.Locked, Cmd.none )
 
         NewUser ->
-            ( Greeting SR.Types.NewUser SR.Types.Opened, Cmd.none )
+            ( Greeting [] SR.Types.NewUser SR.Types.Opened, Cmd.none )
 
         ExistingUser uaddr ->
             --( Greeting (SR.Types.ExistingUser uaddr) SR.Types.Opened, Cmd.none )
             ( GlobalRankings [] "" "" SR.Types.RenderAllRankings uaddr, getRankingList )
 
         _ ->
-            ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
+            ( Greeting [] SR.Types.NewUser SR.Types.Missing, Cmd.none )
 
 
 greetingHeading : String -> Element Msg
@@ -519,7 +527,7 @@ view model =
 
         -- Greeting _ _ ->
         --     greetingView "Greeting"
-        Greeting userState walletState ->
+        Greeting userList userState walletState ->
             -- let
             --     -- usrlist =
             --     --     gotUserListFromRemData (SR.Types.Success userList)
@@ -580,10 +588,26 @@ extractRankingsFromWebData remData =
             []
 
 
+extractUsersFromWebData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
+extractUsersFromWebData remData =
+    case remData of
+        RemoteData.NotAsked ->
+            []
+
+        RemoteData.Loading ->
+            []
+
+        RemoteData.Success users ->
+            users
+
+        RemoteData.Failure httpError ->
+            []
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
-        Greeting _ _ ->
+        Greeting _ _ _ ->
             Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
 
         GlobalRankings _ _ _ _ _ ->
