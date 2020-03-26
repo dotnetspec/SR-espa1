@@ -22,11 +22,13 @@ import Html exposing (Html)
 import Http
 import Internal.Types as Internal
 import Ports
+import Process
 import RemoteData
 import SR.Constants
 import SR.Decode
 import SR.Defaults
 import SR.Types
+import Task
 import Ui
 
 
@@ -109,6 +111,7 @@ type alias DynaModel =
 
 type Msg
     = WalletStatus Eth.Sentry.Wallet.WalletSentry
+    | PollBlock (Result Http.Error Int)
       --| TxSentryMsg Eth.Sentry.Tx.Msg
     | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
     | GotRankingId Internal.RankingId
@@ -147,6 +150,13 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         _ ->
                             handleMsg MissingWalletInstructions
 
+                -- PollBlock (Ok blockNumber) ->
+                --     ( { model | blockNumber = Just blockNumber }
+                --     , Task.attempt PollBlock <|
+                --         Task.andThen (\_ -> Eth.getBlockNumber model.node.http) (Process.sleep 1000)
+                --     )
+                -- PollBlock (Err error) ->
+                --     ( model, Cmd.none )
                 MissingWalletInstructions ->
                     ( Greeting SR.Types.NewUser SR.Types.Missing, Cmd.none )
 
@@ -187,6 +197,13 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     in
                     ( GlobalRankings rankingsAsJustList "" "" SR.Types.RenderAllRankings "", Cmd.none )
 
+                GotRankingId rnkidstr ->
+                    let
+                        _ =
+                            Debug.log "rank id " rnkidstr
+                    in
+                    ( SelectedRanking [] rnkidstr, fetchRanking rnkidstr )
+
                 Fail str ->
                     let
                         _ =
@@ -199,13 +216,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
         SelectedRanking lPlayer intrankingId ->
             case msgOfTransitonThatAlreadyHappened of
-                GotRankingId rnkidstr ->
-                    -- let
-                    --     _ =
-                    --         Debug.log "rank id " rnkidstr
-                    -- in
-                    ( SelectedRanking [] rnkidstr, fetchRanking rnkidstr )
-
                 PlayersReceived players ->
                     let
                         playerAsJustList =
@@ -221,10 +231,10 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         _ =
                             Debug.log "SelectedRanking fail " str
                     in
-                    ( SelectedRanking [] (Internal.RankingId ""), Cmd.none )
+                    ( SelectedRanking lPlayer (Internal.RankingId ""), Cmd.none )
 
                 _ ->
-                    ( SelectedRanking [] (Internal.RankingId ""), Cmd.none )
+                    ( SelectedRanking lPlayer (Internal.RankingId ""), Cmd.none )
 
 
 
@@ -370,8 +380,9 @@ addPlayerInfoToAnyElText : SR.Types.Player -> Element Msg
 addPlayerInfoToAnyElText playerObj =
     Element.column Grid.simple <|
         [ Input.button (Button.fill ++ Color.info) <|
-            { --onPress = Just (GotRankingId (Internal.RankingId playerObj.id))
-              onPress = Nothing
+            { onPress = Just (GotRankingId (Internal.RankingId <| String.fromInt playerObj.id))
+
+            --onPress = Nothing
             , label = Element.text playerObj.name
             }
         ]
