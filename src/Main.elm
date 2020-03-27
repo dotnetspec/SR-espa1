@@ -308,7 +308,7 @@ globalHeading uaddr =
             Eth.Utils.addressToString uaddr
     in
     Element.column Grid.section <|
-        [ Element.el Heading.h2 <| Element.text "Global Rankings"
+        [ Element.el Heading.h5 <| Element.text "Global Rankings"
         , Element.column Card.fill
             [ --Element.el Heading.h4 <| Element.text (Just uaddr)
               Element.el Heading.h4 <| Element.text uaddrStr
@@ -368,7 +368,7 @@ grid =
 rankingbuttons : List SR.Types.RankingInfo -> Element Msg
 rankingbuttons rankingList =
     Element.column Grid.section <|
-        [ Element.el Heading.h2 <| Element.text "Global Rankings"
+        [ Element.el Heading.h5 <| Element.text "Global Rankings"
         , Element.column (Card.simple ++ Grid.simple) <|
             insertRankingList rankingList
         , Element.column Grid.simple <|
@@ -440,7 +440,7 @@ insertPlayerList playerInfoList =
 newrankingbuttons : Element Msg
 newrankingbuttons =
     Element.column Grid.section <|
-        [ Element.el Heading.h4 <| Element.text "Click to continue ..."
+        [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
                 [ Input.button (Button.simple ++ Color.simple) <|
@@ -503,8 +503,9 @@ globalResponsiveview rankingList uaddr =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
-            [ Element.el Heading.h1 <| Element.text "SportRank"
+            [ Element.el Heading.h4 <| Element.text "SportRank"
             , globalHeading uaddr
+            , newrankingbuttons
 
             --, group
             --, color
@@ -512,7 +513,6 @@ globalResponsiveview rankingList uaddr =
             , rankingbuttons rankingList
 
             --, input
-            , newrankingbuttons
             ]
 
 
@@ -521,8 +521,9 @@ selectedResponsiveview playerList =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
-            [ Element.el Heading.h1 <| Element.text "SportRank"
+            [ Element.el Heading.h4 <| Element.text "SportRank"
             , selectedHeading
+            , newrankingbuttons
 
             --, group
             --, color
@@ -530,7 +531,6 @@ selectedResponsiveview playerList =
             , playerbuttons playerList
 
             --, input
-            , newrankingbuttons
             ]
 
 
@@ -539,7 +539,7 @@ greetingView greetingMsg =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
-            [ Element.el Heading.h1 <| Element.text "SportRank"
+            [ Element.el Heading.h4 <| Element.text "SportRank"
             , greetingHeading greetingMsg
             ]
 
