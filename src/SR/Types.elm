@@ -105,12 +105,12 @@ type Username
 type WalletState
     = Missing
     | Locked --Ports.EthNode
-    | Opened --Ports.EthNode Eth.Types.Address
-    | Active
-    | Inactive
+      --| Opened --Ports.EthNode Eth.Types.Address
+    | Opened Eth.Types.Address
 
 
 
+--| Inactive
 --| Transaction --Ports.EthNode Eth.Types.Address
 
 
@@ -130,6 +130,8 @@ type UserState
 type UIState
     = RenderAllRankings
     | CreateNewLadder
+    | CreateNewUser
+    | UserInfo
 
 
 type UserListState

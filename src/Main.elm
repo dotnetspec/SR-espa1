@@ -56,7 +56,7 @@ main =
 
 
 type Model
-    = Greeting (List SR.Types.User) SR.Types.UserState SR.Types.WalletState
+    = Greeting (List SR.Types.User) SR.Types.UserState SR.Types.WalletState SR.Types.UIState
     | GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState Eth.Types.Address
     | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.RankingId
 
@@ -67,9 +67,7 @@ type Model
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    --( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", getRankingList )
-    ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing
-      --, Cmd.none )
+    ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing SR.Types.RenderAllRankings
     , Ports.log "Sending out msg from init "
     )
 
@@ -126,6 +124,7 @@ type Msg
     | MissingWalletInstructions
     | OpenWalletInstructions
     | NewUser
+    | NameInputChg String
     | ResetToShowGlobal (List SR.Types.RankingInfo) Eth.Types.Address
     | ExistingUser Eth.Types.Address
     | Fail String
@@ -134,79 +133,119 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msgOfTransitonThatAlreadyHappened currentmodel =
     case currentmodel of
-        Greeting uList userState walletState ->
-            case msgOfTransitonThatAlreadyHappened of
-                WalletStatus walletSentry_ ->
-                    case walletSentry_.networkId of
-                        Mainnet ->
-                            case walletSentry_.account of
-                                Nothing ->
-                                    handleMsg OpenWalletInstructions
-
-                                Just a ->
-                                    handleMsg (ExistingUser a)
-
-                        Rinkeby ->
-                            case walletSentry_.account of
-                                Nothing ->
-                                    handleMsg OpenWalletInstructions
-
-                                Just a ->
-                                    handleMsg (ExistingUser a)
-
-                        _ ->
-                            handleMsg MissingWalletInstructions
-
-                -- PollBlock (Ok blockNumber) ->
-                --     ( { model | blockNumber = Just blockNumber }
-                --     , Task.attempt PollBlock <|
-                --         Task.andThen (\_ -> Eth.getBlockNumber model.node.http) (Process.sleep 1000)
-                --     )
-                -- PollBlock (Err error) ->
-                --     ( model, Cmd.none )
-                MissingWalletInstructions ->
-                    ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing, Cmd.none )
-
-                OpenWalletInstructions ->
-                    ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Locked, Cmd.none )
-
-                NewUser ->
-                    ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Opened, Cmd.none )
-
-                ExistingUser uname ->
+        Greeting uList userState walletState uiState ->
+            case walletState of
+                SR.Types.Opened uaddr ->
                     let
+                        userNameInList =
+                            gotUserFromUserList uList uaddr
+
                         _ =
-                            Debug.log "ExistingUser " "str"
+                            Debug.log "userNameInList " userNameInList.username
                     in
-                    --( Greeting (SR.Types.ExistingUser uname) SR.Types.Opened, Cmd.none )
-                    --( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", getRankingList )
-                    ( GlobalRankings [] "" "" SR.Types.RenderAllRankings (Internal.Address ""), getRankingList )
+                    if userNameInList.username == "" then
+                        --( Greeting [] (SR.Types.NewUser <| uaddr) (SR.Types.Opened uaddr) SR.Types.UserInfo, Cmd.none )
+                        ( GlobalRankings [] "" "" SR.Types.CreateNewUser uaddr, getRankingList )
 
-                UsersReceived userList ->
-                    let
-                        usersAsJustList =
-                            extractUsersFromWebData userList
-                    in
-                    ( Greeting usersAsJustList (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing, Cmd.none )
-
-                Fail str ->
-                    let
-                        _ =
-                            Debug.log "GlobalRankings fail " str
-                    in
-                    ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing, Cmd.none )
+                    else
+                        ( GlobalRankings [] "" "" SR.Types.RenderAllRankings uaddr, getRankingList )
 
                 _ ->
-                    ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing, Cmd.none )
+                    case msgOfTransitonThatAlreadyHappened of
+                        WalletStatus walletSentry_ ->
+                            case walletSentry_.networkId of
+                                Mainnet ->
+                                    case walletSentry_.account of
+                                        Nothing ->
+                                            handleMsg OpenWalletInstructions
 
-        GlobalRankings lrankingInfo nameStr descStr uIState rnkOwnerAddr ->
+                                        Just uaddr ->
+                                            --handleMsg (WalletOpened a)
+                                            ( Greeting [] (SR.Types.NewUser <| uaddr) (SR.Types.Opened uaddr) SR.Types.UserInfo, Cmd.none )
+
+                                Rinkeby ->
+                                    case walletSentry_.account of
+                                        Nothing ->
+                                            handleMsg OpenWalletInstructions
+
+                                        Just uaddr ->
+                                            let
+                                                _ =
+                                                    Debug.log "Rinkeby " "str"
+                                            in
+                                            --handleMsg (WalletOpened a)
+                                            ( Greeting [] (SR.Types.NewUser <| uaddr) (SR.Types.Opened uaddr) SR.Types.UserInfo, Cmd.none )
+
+                                _ ->
+                                    let
+                                        _ =
+                                            Debug.log "MissingWalletInstructions " "str"
+                                    in
+                                    handleMsg MissingWalletInstructions
+
+                        -- PollBlock (Ok blockNumber) ->
+                        --     ( { model | blockNumber = Just blockNumber }
+                        --     , Task.attempt PollBlock <|
+                        --         Task.andThen (\_ -> Eth.getBlockNumber model.node.http) (Process.sleep 1000)
+                        --     )
+                        -- PollBlock (Err error) ->
+                        --     ( model, Cmd.none )
+                        MissingWalletInstructions ->
+                            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
+
+                        OpenWalletInstructions ->
+                            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Locked SR.Types.UserInfo, Cmd.none )
+
+                        --WalletOpened uaddr ->
+                        --( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Opened uaddr SR.Types.UserInfo, Cmd.none )
+                        NewUser ->
+                            let
+                                _ =
+                                    Debug.log "New user " "str"
+                            in
+                            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") (SR.Types.Opened <| Internal.Address "") SR.Types.CreateNewUser, Cmd.none )
+
+                        ExistingUser uname ->
+                            let
+                                _ =
+                                    Debug.log "ExistingUser " "str"
+                            in
+                            --( Greeting (SR.Types.ExistingUser uname) SR.Types.Opened, Cmd.none )
+                            --( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", getRankingList )
+                            ( GlobalRankings [] "" "" SR.Types.RenderAllRankings (Internal.Address ""), getRankingList )
+
+                        UsersReceived userList ->
+                            let
+                                usersAsJustList =
+                                    extractUsersFromWebData userList
+                            in
+                            ( Greeting usersAsJustList (SR.Types.NewUser <| Internal.Address "") (SR.Types.Opened <| Internal.Address "") SR.Types.UserInfo, Cmd.none )
+
+                        NameInputChg namefield ->
+                            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
+
+                        Fail str ->
+                            let
+                                _ =
+                                    Debug.log "GlobalRankings fail " str
+                            in
+                            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
+
+                        _ ->
+                            let
+                                _ =
+                                    Debug.log "Greeting fall through " "str"
+                            in
+                            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
+
+        GlobalRankings lrankingInfo nameStr descStr uiState rnkOwnerAddr ->
             case msgOfTransitonThatAlreadyHappened of
                 GotGlobalRankingsJson rmtrnkingdata ->
                     let
                         rankingsAsJustList =
                             extractRankingsFromWebData rmtrnkingdata
                     in
-                    ( GlobalRankings rankingsAsJustList "" "" SR.Types.RenderAllRankings rnkOwnerAddr, Cmd.none )
+                    ( GlobalRankings rankingsAsJustList "" "" uiState rnkOwnerAddr, Cmd.none )
 
                 GotRankingId rnkidstr ->
                     ( SelectedRanking lrankingInfo [] rnkidstr, fetchRanking rnkidstr )
@@ -274,20 +313,21 @@ handleMsg : Msg -> ( Model, Cmd Msg )
 handleMsg msg =
     case msg of
         MissingWalletInstructions ->
-            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing, Cmd.none )
+            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
 
         OpenWalletInstructions ->
-            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Locked, Cmd.none )
+            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Locked SR.Types.UserInfo, Cmd.none )
 
         NewUser ->
-            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Opened, Cmd.none )
+            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing SR.Types.CreateNewUser, Cmd.none )
 
         ExistingUser uaddr ->
+            --SR.Types.Opened uaddr ->
             --( Greeting (SR.Types.ExistingUser uaddr) SR.Types.Opened, Cmd.none )
             ( GlobalRankings [] "" "" SR.Types.RenderAllRankings uaddr, getRankingList )
 
         _ ->
-            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing, Cmd.none )
+            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
 
 
 greetingHeading : String -> Element Msg
@@ -486,55 +526,53 @@ homebutton rankingList uaddr =
 
 
 -- () means there is a value there, but you don't care what it is
+-- input : Element ()
+-- input =
+--     Element.column Grid.section <|
+--         [ Element.el Heading.h2 <| Element.text "Input"
+--         , Element.wrappedRow (Card.fill ++ Grid.simple)
+--             [ Element.column Grid.simple
+--                 [ Input.text Input.simple
+--                     { onChange = always ()
+--                     , text = "Input.simple"
+--                     , placeholder = Nothing
+--                     , label = Input.labelLeft Input.label <| Element.text "Input.label"
+--                     }
+--                 , Input.multiline Input.simple
+--                     { onChange = always ()
+--                     , text = "Input.simple"
+--                     , placeholder = Nothing
+--                     , label = Input.labelLeft Input.label <| Element.text "Input.label"
+--                     , spellcheck = False
+--                     }
+--                 ]
+--             ]
+--         , Element.paragraph [] <|
+--             List.singleton <|
+--                 Element.text "Input attributes can be combined with other attributes."
+--         , Element.paragraph (Card.fill ++ Color.warning) <|
+--             [ Element.el [ Font.bold ] <| Element.text "Warning: "
+--             , Element.paragraph [] <|
+--                 List.singleton <|
+--                     Element.text "color changing attributes need to come before the Input attribute."
+--             ]
+--         ]
 
 
-input : Element ()
-input =
-    Element.column Grid.section <|
-        [ Element.el Heading.h2 <| Element.text "Input"
-        , Element.wrappedRow (Card.fill ++ Grid.simple)
-            [ Element.column Grid.simple
-                [ Input.text Input.simple
-                    { onChange = always ()
-                    , text = "Input.simple"
-                    , placeholder = Nothing
-                    , label = Input.labelLeft Input.label <| Element.text "Input.label"
-                    }
-                , Input.multiline Input.simple
-                    { onChange = always ()
-                    , text = "Input.simple"
-                    , placeholder = Nothing
-                    , label = Input.labelLeft Input.label <| Element.text "Input.label"
-                    , spellcheck = False
-                    }
-                ]
-            ]
-        , Element.paragraph [] <|
-            List.singleton <|
-                Element.text "Input attributes can be combined with other attributes."
-        , Element.paragraph (Card.fill ++ Color.warning) <|
-            [ Element.el [ Font.bold ] <| Element.text "Warning: "
-            , Element.paragraph [] <|
-                List.singleton <|
-                    Element.text "color changing attributes need to come before the Input attribute."
-            ]
-        ]
-
-
-inputNewUser : Element ()
-inputNewUser =
+inputNewUser : Eth.Types.Address -> Element Msg
+inputNewUser uaddr =
     Element.column Grid.section <|
         [ Element.el Heading.h2 <| Element.text "New User Details"
         , Element.wrappedRow (Card.fill ++ Grid.simple)
             [ Element.column Grid.simple
                 [ Input.text Input.simple
-                    { onChange = always ()
+                    { onChange = NameInputChg
                     , text = "Username"
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Username"
                     }
                 , Input.multiline Input.simple
-                    { onChange = always ()
+                    { onChange = NameInputChg
                     , text = "Input.simple"
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Input.label"
@@ -603,7 +641,7 @@ inputNewUserview uaddr =
             --, color
             --, grid
             --, playerbuttons playerList
-            --, inputNewUser
+            , inputNewUser uaddr
             ]
 
 
@@ -620,15 +658,20 @@ greetingView greetingMsg =
 view : Model -> Html Msg
 view model =
     case model of
-        GlobalRankings globalList _ _ _ uaddr ->
-            globalResponsiveview globalList uaddr
+        GlobalRankings globalList _ _ uiState uaddr ->
+            case uiState of
+                SR.Types.CreateNewUser ->
+                    inputNewUserview uaddr
+
+                _ ->
+                    globalResponsiveview globalList uaddr
 
         SelectedRanking globalList playerList rnkid ->
             selectedResponsiveview globalList playerList
 
         -- Greeting _ _ ->
         --     greetingView "Greeting"
-        Greeting userList userState walletState ->
+        Greeting userList userState walletState uiState ->
             -- let
             --     -- usrlist =
             --     --     gotUserListFromRemData (SR.Types.Success userList)
@@ -642,20 +685,27 @@ view model =
                 SR.Types.Missing ->
                     greetingView "MissingWalletInstructions"
 
-                SR.Types.Opened ->
-                    case userState of
-                        SR.Types.NewUser uaddr ->
-                            --greetingView uaddr
+                SR.Types.Opened uaddr ->
+                    case uiState of
+                        SR.Types.CreateNewUser ->
                             inputNewUserview uaddr
 
-                        SR.Types.ExistingUser a ->
+                        _ ->
                             greetingView "Welcome back "
 
-                SR.Types.Active ->
-                    greetingView "Active "
 
-                SR.Types.Inactive ->
-                    greetingView "Inactive "
+
+-- case userState of
+--     SR.Types.NewUser a ->
+--         --greetingView uaddr
+--         inputNewUserview uaddr
+--     SR.Types.ExistingUser a ->
+--         greetingView "Welcome back "
+
+
+gotUserFromUserList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
+gotUserFromUserList userList uaddr =
+    SR.Defaults.emptyUser
 
 
 extractPlayersFromWebData : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
@@ -709,7 +759,7 @@ extractUsersFromWebData remData =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
-        Greeting _ _ _ ->
+        Greeting _ _ _ _ ->
             Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
 
         GlobalRankings _ _ _ _ _ ->
