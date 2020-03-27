@@ -21,6 +21,8 @@ import Framework.Input as Input
 import Html exposing (Html)
 import Http
 import Internal.Types as Internal
+import Json.Decode.Pipeline
+import Json.Encode
 import Ports
 import Process
 import RemoteData
@@ -108,10 +110,12 @@ type alias DynaModel =
 
 -- Msg is a description of the transition that already happened
 -- Messages that delivered the response (orign doc says 'will deliver')
+-- The messages use RemoteData. The model does not (strip out)
 
 
 type Msg
     = WalletStatus Eth.Sentry.Wallet.WalletSentry
+    | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
       --| PollBlock (Result Http.Error Int)
       --| TxSentryMsg Eth.Sentry.Tx.Msg
     | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
@@ -204,6 +208,20 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                 GotRankingId rnkidstr ->
                     ( SelectedRanking [] rnkidstr, fetchRanking rnkidstr )
+
+                -- this is the response from createNewPlayerListWithCurrentUser Cmd
+                -- it had the Http.expectStringResponse in it
+                -- it's already created the new ranking with current player as the first entry
+                -- the result now is the ranking id only at this point which was pulled out by the decoder
+                -- the globalList is preserved
+                SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
+                    case currentmodel of
+                        GlobalRankings globalList newrankingName newRankingDesc _ rnkowneraddr ->
+                            --todo: this is just holding code - needs re-factor
+                            ( GlobalRankings lrankingInfo "" "" SR.Types.RenderAllRankings (Internal.Address ""), Cmd.none )
+
+                        _ ->
+                            ( GlobalRankings lrankingInfo "" "" SR.Types.RenderAllRankings (Internal.Address ""), Cmd.none )
 
                 Fail str ->
                     let
@@ -626,12 +644,6 @@ subscriptions model =
 
 fetchRanking : Internal.RankingId -> Cmd Msg
 fetchRanking (Internal.RankingId rankingId) =
-    let
-        headerKey =
-            Http.header
-                "secret-key"
-                "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
-    in
     --PlayersReceived is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
     Http.request
@@ -639,7 +651,7 @@ fetchRanking (Internal.RankingId rankingId) =
         , expect =
             SR.Decode.ladderOfPlayersDecoder
                 |> Http.expectJson (RemoteData.fromResult >> PlayersReceived)
-        , headers = [ headerKey ]
+        , headers = [ SR.Defaults.secretKey ]
         , method = "GET"
         , timeout = Nothing
         , tracker = Nothing
@@ -650,11 +662,6 @@ fetchRanking (Internal.RankingId rankingId) =
 getRankingList : Cmd Msg
 getRankingList =
     let
-        secretKey =
-            Http.header
-                "secret-key"
-                "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
-
         binName =
             Http.header
                 "name"
@@ -668,9 +675,57 @@ getRankingList =
     Http.request
         { body = Http.emptyBody
         , expect = Http.expectJson (RemoteData.fromResult >> GotGlobalRankingsJson) SR.Decode.rankingsDecoder
-        , headers = [ secretKey, binName, containerId ]
+        , headers = [ SR.Defaults.secretKey, binName, containerId ]
         , method = "GET"
         , timeout = Nothing
         , tracker = Nothing
         , url = SR.Constants.globalJsonbinRankingReadLink
+        }
+
+
+createNewPlayerListWithCurrentUser : Cmd Msg
+createNewPlayerListWithCurrentUser =
+    let
+        binName =
+            Http.header
+                "name"
+                "Selected"
+
+        containerId =
+            Http.header
+                "collection-id"
+                "5d7deb68371673119fab12d7"
+
+        idJsonObj : Json.Encode.Value
+        idJsonObj =
+            Json.Encode.list
+                Json.Encode.object
+                [ [ ( "datestamp", Json.Encode.int 123456 )
+                  , ( "active", Json.Encode.bool True )
+                  , ( "currentchallengername", Json.Encode.string "" )
+                  , ( "currentchallengerid", Json.Encode.int 0 )
+                  , ( "address", Json.Encode.string "" )
+                  , ( "rank", Json.Encode.int 1 )
+                  , ( "name", Json.Encode.string "" )
+                  , ( "playerid", Json.Encode.int 1 )
+                  , ( "currentchallengeraddress", Json.Encode.string "" )
+                  ]
+                ]
+    in
+    --SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId is the Msg handled by update whenever a request is made
+    --RemoteData is used throughout the module, including update
+    -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
+    -- decoder relates to what comes back from server. Nothing to do with above.
+    Http.request
+        { body =
+            Http.jsonBody <| idJsonObj
+        , expect = Http.expectJson (RemoteData.fromResult >> SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId) SR.Decode.newRankingIdDecoder
+
+        -- at this point we don't have the ranking id, it's in the ranking object
+        --, expect = Http.expectJson (RemoteData.fromResult >> SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId RemoteData.NotAsked) SR.Decode.newRankingDecoder
+        , headers = [ SR.Defaults.secretKey, binName, containerId ]
+        , method = "POST"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = SR.Constants.jsonbinUrlForCreateNewEntryAndRespond
         }

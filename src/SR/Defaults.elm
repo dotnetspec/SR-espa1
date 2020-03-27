@@ -1,6 +1,6 @@
 module SR.Defaults exposing
     ( emptyPlayer
-    , emptyRankingInfo, emptyUser
+    , emptyRankingInfo, emptyUser, secretKey
     )
 
 {-| Default values.
@@ -10,6 +10,7 @@ For those withDefault shenanigans.
 
 -}
 
+import Http
 import Internal.Types as Internal
 import SR.Types exposing (..)
 
@@ -47,3 +48,9 @@ emptyRankingInfo =
     , desc = ""
     , rankingowneraddr = ""
     }
+
+
+secretKey =
+    Http.header
+        "secret-key"
+        "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
