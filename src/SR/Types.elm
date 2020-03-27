@@ -124,7 +124,7 @@ type SRState
 
 type UserState
     = ExistingUser Eth.Types.Address
-    | NewUser
+    | NewUser Eth.Types.Address
 
 
 type UIState

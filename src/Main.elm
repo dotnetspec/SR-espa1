@@ -68,7 +68,7 @@ type Model
 init : () -> ( Model, Cmd Msg )
 init _ =
     --( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", getRankingList )
-    ( Greeting [] SR.Types.NewUser SR.Types.Missing
+    ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing
       --, Cmd.none )
     , Ports.log "Sending out msg from init "
     )
@@ -165,13 +165,13 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 -- PollBlock (Err error) ->
                 --     ( model, Cmd.none )
                 MissingWalletInstructions ->
-                    ( Greeting [] SR.Types.NewUser SR.Types.Missing, Cmd.none )
+                    ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing, Cmd.none )
 
                 OpenWalletInstructions ->
-                    ( Greeting [] SR.Types.NewUser SR.Types.Locked, Cmd.none )
+                    ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Locked, Cmd.none )
 
                 NewUser ->
-                    ( Greeting [] SR.Types.NewUser SR.Types.Opened, Cmd.none )
+                    ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Opened, Cmd.none )
 
                 ExistingUser uname ->
                     let
@@ -187,17 +187,17 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         usersAsJustList =
                             extractUsersFromWebData userList
                     in
-                    ( Greeting usersAsJustList SR.Types.NewUser SR.Types.Missing, Cmd.none )
+                    ( Greeting usersAsJustList (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing, Cmd.none )
 
                 Fail str ->
                     let
                         _ =
                             Debug.log "GlobalRankings fail " str
                     in
-                    ( Greeting [] SR.Types.NewUser SR.Types.Missing, Cmd.none )
+                    ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing, Cmd.none )
 
                 _ ->
-                    ( Greeting [] SR.Types.NewUser SR.Types.Missing, Cmd.none )
+                    ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing, Cmd.none )
 
         GlobalRankings lrankingInfo nameStr descStr uIState rnkOwnerAddr ->
             case msgOfTransitonThatAlreadyHappened of
@@ -274,20 +274,20 @@ handleMsg : Msg -> ( Model, Cmd Msg )
 handleMsg msg =
     case msg of
         MissingWalletInstructions ->
-            ( Greeting [] SR.Types.NewUser SR.Types.Missing, Cmd.none )
+            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing, Cmd.none )
 
         OpenWalletInstructions ->
-            ( Greeting [] SR.Types.NewUser SR.Types.Locked, Cmd.none )
+            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Locked, Cmd.none )
 
         NewUser ->
-            ( Greeting [] SR.Types.NewUser SR.Types.Opened, Cmd.none )
+            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Opened, Cmd.none )
 
         ExistingUser uaddr ->
             --( Greeting (SR.Types.ExistingUser uaddr) SR.Types.Opened, Cmd.none )
             ( GlobalRankings [] "" "" SR.Types.RenderAllRankings uaddr, getRankingList )
 
         _ ->
-            ( Greeting [] SR.Types.NewUser SR.Types.Missing, Cmd.none )
+            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing, Cmd.none )
 
 
 greetingHeading : String -> Element Msg
@@ -521,6 +521,39 @@ input =
         ]
 
 
+inputNewUser : Element ()
+inputNewUser =
+    Element.column Grid.section <|
+        [ Element.el Heading.h2 <| Element.text "New User Details"
+        , Element.wrappedRow (Card.fill ++ Grid.simple)
+            [ Element.column Grid.simple
+                [ Input.text Input.simple
+                    { onChange = always ()
+                    , text = "Username"
+                    , placeholder = Nothing
+                    , label = Input.labelLeft Input.label <| Element.text "Username"
+                    }
+                , Input.multiline Input.simple
+                    { onChange = always ()
+                    , text = "Input.simple"
+                    , placeholder = Nothing
+                    , label = Input.labelLeft Input.label <| Element.text "Input.label"
+                    , spellcheck = False
+                    }
+                ]
+            ]
+        , Element.paragraph [] <|
+            List.singleton <|
+                Element.text "Input attributes can be combined with other attributes."
+        , Element.paragraph (Card.fill ++ Color.warning) <|
+            [ Element.el [ Font.bold ] <| Element.text "Warning: "
+            , Element.paragraph [] <|
+                List.singleton <|
+                    Element.text "color changing attributes need to come before the Input attribute."
+            ]
+        ]
+
+
 globalResponsiveview : List SR.Types.RankingInfo -> Eth.Types.Address -> Html Msg
 globalResponsiveview rankingList uaddr =
     Framework.responsiveLayout [] <|
@@ -554,6 +587,23 @@ selectedResponsiveview globalList playerList =
             , playerbuttons playerList
 
             --, input
+            ]
+
+
+inputNewUserview : Eth.Types.Address -> Html Msg
+inputNewUserview uaddr =
+    Framework.responsiveLayout [] <|
+        Element.column
+            Framework.container
+            [ Element.el Heading.h4 <| Element.text "New User Input"
+
+            --, selectedHeading
+            --, homebutton globalList (Internal.Address "")
+            --, group
+            --, color
+            --, grid
+            --, playerbuttons playerList
+            --, inputNewUser
             ]
 
 
@@ -594,8 +644,9 @@ view model =
 
                 SR.Types.Opened ->
                     case userState of
-                        SR.Types.NewUser ->
-                            greetingView "NewUserInstructions"
+                        SR.Types.NewUser uaddr ->
+                            --greetingView uaddr
+                            inputNewUserview uaddr
 
                         SR.Types.ExistingUser a ->
                             greetingView "Welcome back "
