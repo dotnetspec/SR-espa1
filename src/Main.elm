@@ -116,6 +116,7 @@ type alias DynaModel =
 type Msg
     = WalletStatus Eth.Sentry.Wallet.WalletSentry
     | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
+    | SentUserInfoAndDecodedResponseToNewUser (RemoteData.WebData (List SR.Types.User))
       --| PollBlock (Result Http.Error Int)
       --| TxSentryMsg Eth.Sentry.Tx.Msg
     | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
@@ -218,7 +219,16 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     case currentmodel of
                         GlobalRankings globalList newrankingName newRankingDesc _ rnkowneraddr ->
                             --todo: this is just holding code - needs re-factor
+                            ( GlobalRankings globalList newrankingName newRankingDesc SR.Types.RenderAllRankings rnkowneraddr, Cmd.none )
+
+                        _ ->
                             ( GlobalRankings lrankingInfo "" "" SR.Types.RenderAllRankings (Internal.Address ""), Cmd.none )
+
+                SentUserInfoAndDecodedResponseToNewUser serverResponse ->
+                    case currentmodel of
+                        GlobalRankings globalList newrankingName newRankingDesc _ rnkowneraddr ->
+                            --todo: this is just holding code - needs re-factor
+                            ( GlobalRankings globalList newrankingName newRankingDesc SR.Types.RenderAllRankings rnkowneraddr, Cmd.none )
 
                         _ ->
                             ( GlobalRankings lrankingInfo "" "" SR.Types.RenderAllRankings (Internal.Address ""), Cmd.none )
@@ -723,6 +733,49 @@ createNewPlayerListWithCurrentUser =
 
         -- at this point we don't have the ranking id, it's in the ranking object
         --, expect = Http.expectJson (RemoteData.fromResult >> SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId RemoteData.NotAsked) SR.Decode.newRankingDecoder
+        , headers = [ SR.Defaults.secretKey, binName, containerId ]
+        , method = "POST"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = SR.Constants.jsonbinUrlForCreateNewEntryAndRespond
+        }
+
+
+createNewUser : Cmd Msg
+createNewUser =
+    let
+        binName =
+            Http.header
+                "name"
+                "Users"
+
+        containerId =
+            Http.header
+                "collection-id"
+                "5e4cf4ba4d073155b0dca8b8"
+
+        idJsonObj : Json.Encode.Value
+        idJsonObj =
+            Json.Encode.list
+                Json.Encode.object
+                [ [ ( "datestamp", Json.Encode.int 1569839363942 )
+                  , ( "active", Json.Encode.bool True )
+                  , ( "username", Json.Encode.string "" )
+                  , ( "ethaddress", Json.Encode.string "" )
+                  , ( "description", Json.Encode.string "" )
+                  , ( "email", Json.Encode.string "" )
+                  , ( "mobile", Json.Encode.string "" )
+                  ]
+                ]
+    in
+    --SentUserInfoAndDecodedResponseToNewUser is the Msg handled by update whenever a request is made by button click
+    --RemoteData is used throughout the module, including update
+    -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
+    -- decoder relates to what comes back from server. Nothing to do with above.
+    Http.request
+        { body =
+            Http.jsonBody <| idJsonObj
+        , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
         , headers = [ SR.Defaults.secretKey, binName, containerId ]
         , method = "POST"
         , timeout = Nothing

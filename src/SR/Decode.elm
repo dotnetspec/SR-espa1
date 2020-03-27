@@ -1,6 +1,7 @@
 module SR.Decode exposing
     ( rankingsDecoder
     ,  decodeNewRankingListServerResponse
+      , decodeNewUserListServerResponse
       , ladderOfPlayersDecoder
       , listOfUsersDecoder
         -- ,
@@ -92,3 +93,8 @@ userDecoder =
         |> Json.Decode.Pipeline.required "description" Json.Decode.string
         |> Json.Decode.Pipeline.required "email" Json.Decode.string
         |> Json.Decode.Pipeline.required "mobile" Json.Decode.string
+
+
+decodeNewUserListServerResponse : Decoder (List SR.Types.User)
+decodeNewUserListServerResponse =
+    Json.Decode.field "data" (Json.Decode.list userDecoder)
