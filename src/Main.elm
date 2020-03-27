@@ -58,7 +58,7 @@ main =
 type Model
     = Greeting (List SR.Types.User) SR.Types.UserState SR.Types.WalletState
     | GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState Eth.Types.Address
-    | SelectedRanking (List SR.Types.Player) Internal.RankingId
+    | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.RankingId
 
 
 
@@ -126,6 +126,7 @@ type Msg
     | MissingWalletInstructions
     | OpenWalletInstructions
     | NewUser
+    | ResetToShowGlobal (List SR.Types.RankingInfo) Eth.Types.Address
     | ExistingUser Eth.Types.Address
     | Fail String
 
@@ -208,7 +209,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( GlobalRankings rankingsAsJustList "" "" SR.Types.RenderAllRankings rnkOwnerAddr, Cmd.none )
 
                 GotRankingId rnkidstr ->
-                    ( SelectedRanking [] rnkidstr, fetchRanking rnkidstr )
+                    ( SelectedRanking lrankingInfo [] rnkidstr, fetchRanking rnkidstr )
 
                 -- this is the response from createNewPlayerListWithCurrentUser Cmd
                 -- it had the Http.expectStringResponse in it
@@ -233,6 +234,9 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         _ ->
                             ( GlobalRankings lrankingInfo "" "" SR.Types.RenderAllRankings (Internal.Address ""), Cmd.none )
 
+                ResetToShowGlobal globalList rnkowneraddr ->
+                    ( GlobalRankings globalList "" "" SR.Types.RenderAllRankings rnkowneraddr, Cmd.none )
+
                 Fail str ->
                     let
                         _ =
@@ -243,32 +247,27 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 _ ->
                     ( GlobalRankings lrankingInfo "" "" SR.Types.RenderAllRankings (Internal.Address ""), Cmd.none )
 
-        SelectedRanking lPlayer intrankingId ->
+        SelectedRanking globalList lPlayer intrankingId ->
             case msgOfTransitonThatAlreadyHappened of
                 PlayersReceived players ->
                     let
                         playerAsJustList =
                             extractPlayersFromWebData players
-
-                        -- _ =
-                        --     Debug.log "player list " playerAsJustList
                     in
-                    ( SelectedRanking playerAsJustList (Internal.RankingId ""), Cmd.none )
+                    ( SelectedRanking globalList playerAsJustList (Internal.RankingId ""), Cmd.none )
+
+                ResetToShowGlobal _ rnkowneraddr ->
+                    ( GlobalRankings globalList "" "" SR.Types.RenderAllRankings rnkowneraddr, Cmd.none )
 
                 Fail str ->
                     let
                         _ =
                             Debug.log "SelectedRanking fail " str
                     in
-                    ( SelectedRanking lPlayer (Internal.RankingId ""), Cmd.none )
+                    ( SelectedRanking globalList lPlayer (Internal.RankingId ""), Cmd.none )
 
                 _ ->
-                    ( SelectedRanking lPlayer (Internal.RankingId ""), Cmd.none )
-
-
-
--- updateGreetingNetworkIdAndAccountNo : Msg -> Model -> ( Model, Cmd Msg )
--- updateGreetingNetworkIdAndAccountNo msg model =
+                    ( SelectedRanking globalList lPlayer (Internal.RankingId ""), Cmd.none )
 
 
 handleMsg : Msg -> ( Model, Cmd Msg )
@@ -445,9 +444,33 @@ newrankingbuttons =
             [ Element.wrappedRow Grid.simple <|
                 [ Input.button (Button.simple ++ Color.simple) <|
                     { onPress = Nothing
-                    , label = Element.text "Button.simple"
+                    , label = Element.text "Create New"
                     }
-                , Input.button (Button.fill ++ Color.success) <|
+                , Input.button (Button.simple ++ Color.success) <|
+                    { onPress = Nothing
+                    , label = Element.text "Button.fill"
+                    }
+                ]
+            ]
+        , Element.column Grid.simple <|
+            [ Element.paragraph [] <|
+                List.singleton <|
+                    Element.text "Button attributes can be combined with other attributes."
+            ]
+        ]
+
+
+homebutton : List SR.Types.RankingInfo -> Eth.Types.Address -> Element Msg
+homebutton rankingList uaddr =
+    Element.column Grid.section <|
+        [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+        , Element.column (Card.simple ++ Grid.simple) <|
+            [ Element.wrappedRow Grid.simple <|
+                [ Input.button (Button.simple ++ Color.simple) <|
+                    { onPress = Just <| ResetToShowGlobal rankingList uaddr
+                    , label = Element.text "Home"
+                    }
+                , Input.button (Button.simple ++ Color.success) <|
                     { onPress = Nothing
                     , label = Element.text "Button.fill"
                     }
@@ -505,7 +528,7 @@ globalResponsiveview rankingList uaddr =
             Framework.container
             [ Element.el Heading.h4 <| Element.text "SportRank"
             , globalHeading uaddr
-            , newrankingbuttons
+            , homebutton rankingList uaddr
 
             --, group
             --, color
@@ -516,14 +539,14 @@ globalResponsiveview rankingList uaddr =
             ]
 
 
-selectedResponsiveview : List SR.Types.Player -> Html Msg
-selectedResponsiveview playerList =
+selectedResponsiveview : List SR.Types.RankingInfo -> List SR.Types.Player -> Html Msg
+selectedResponsiveview globalList playerList =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
             [ Element.el Heading.h4 <| Element.text "SportRank"
             , selectedHeading
-            , newrankingbuttons
+            , homebutton globalList (Internal.Address "")
 
             --, group
             --, color
@@ -550,8 +573,8 @@ view model =
         GlobalRankings globalList _ _ _ uaddr ->
             globalResponsiveview globalList uaddr
 
-        SelectedRanking playerList rnkid ->
-            selectedResponsiveview playerList
+        SelectedRanking globalList playerList rnkid ->
+            selectedResponsiveview globalList playerList
 
         -- Greeting _ _ ->
         --     greetingView "Greeting"
@@ -641,7 +664,7 @@ subscriptions model =
         GlobalRankings _ _ _ _ _ ->
             Sub.none
 
-        SelectedRanking _ _ ->
+        SelectedRanking _ _ _ ->
             Sub.none
 
 
