@@ -21,6 +21,7 @@ import Framework.Input as Input
 import Html exposing (Html)
 import Http
 import Internal.Types as Internal
+import Json.Decode
 import Json.Decode.Pipeline
 import Json.Encode
 import Ports
@@ -67,8 +68,12 @@ type Model
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing SR.Types.RenderAllRankings
-    , Ports.log "Sending out msg from init "
+    ( --Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.RenderAllRankings
+      Greeting [] (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Missing SR.Types.RenderAllRankings
+    , Cmd.batch
+        [ Ports.log "Sending out msg from init "
+        , gotUserList
+        ]
     )
 
 
@@ -145,10 +150,10 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     in
                     if userNameInList.username == "" then
                         --( Greeting [] (SR.Types.NewUser <| uaddr) (SR.Types.Opened uaddr) SR.Types.UserInfo, Cmd.none )
-                        ( GlobalRankings [] "" "" SR.Types.CreateNewUser uaddr, getRankingList )
+                        ( GlobalRankings [] "" "" SR.Types.CreateNewUser uaddr, gotRankingList )
 
                     else
-                        ( GlobalRankings [] "" "" SR.Types.RenderAllRankings uaddr, getRankingList )
+                        ( GlobalRankings [] "" "" SR.Types.RenderAllRankings uaddr, gotRankingList )
 
                 _ ->
                     case msgOfTransitonThatAlreadyHappened of
@@ -161,7 +166,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                                         Just uaddr ->
                                             --handleMsg (WalletOpened a)
-                                            ( Greeting [] (SR.Types.NewUser <| uaddr) (SR.Types.Opened uaddr) SR.Types.UserInfo, Cmd.none )
+                                            ( Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser uaddr) (SR.Types.Opened uaddr) SR.Types.UserInfo, gotUserList )
 
                                 Rinkeby ->
                                     case walletSentry_.account of
@@ -169,12 +174,8 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                             handleMsg OpenWalletInstructions
 
                                         Just uaddr ->
-                                            let
-                                                _ =
-                                                    Debug.log "Rinkeby " "str"
-                                            in
                                             --handleMsg (WalletOpened a)
-                                            ( Greeting [] (SR.Types.NewUser <| uaddr) (SR.Types.Opened uaddr) SR.Types.UserInfo, Cmd.none )
+                                            ( Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser uaddr) (SR.Types.Opened uaddr) SR.Types.UserInfo, gotUserList )
 
                                 _ ->
                                     let
@@ -191,19 +192,19 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         -- PollBlock (Err error) ->
                         --     ( model, Cmd.none )
                         MissingWalletInstructions ->
-                            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
+                            ( Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
 
                         OpenWalletInstructions ->
-                            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Locked SR.Types.UserInfo, Cmd.none )
+                            ( Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Locked SR.Types.UserInfo, Cmd.none )
 
                         --WalletOpened uaddr ->
-                        --( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Opened uaddr SR.Types.UserInfo, Cmd.none )
+                        --( Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Opened uaddr SR.Types.UserInfo, Cmd.none )
                         NewUser ->
                             let
                                 _ =
                                     Debug.log "New user " "str"
                             in
-                            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") (SR.Types.Opened <| Internal.Address "") SR.Types.CreateNewUser, Cmd.none )
+                            ( Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") (SR.Types.Opened <| Internal.Address "") SR.Types.CreateNewUser, Cmd.none )
 
                         ExistingUser uname ->
                             let
@@ -211,32 +212,35 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                     Debug.log "ExistingUser " "str"
                             in
                             --( Greeting (SR.Types.ExistingUser uname) SR.Types.Opened, Cmd.none )
-                            --( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", getRankingList )
-                            ( GlobalRankings [] "" "" SR.Types.RenderAllRankings (Internal.Address ""), getRankingList )
+                            --( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", gotRankingList )
+                            ( GlobalRankings [] "" "" SR.Types.RenderAllRankings (Internal.Address ""), gotRankingList )
 
-                        UsersReceived userList ->
-                            let
-                                usersAsJustList =
-                                    extractUsersFromWebData userList
-                            in
-                            ( Greeting usersAsJustList (SR.Types.NewUser <| Internal.Address "") (SR.Types.Opened <| Internal.Address "") SR.Types.UserInfo, Cmd.none )
-
+                        -- UsersReceived userList ->
+                        --     let
+                        --         _ =
+                        --             Debug.log "users as remote data " userList
+                        --         usersAsJustList =
+                        --             extractUsersFromWebData userList
+                        --         _ =
+                        --             Debug.log "users as list " userList
+                        --     in
+                        --     ( Greeting usersAsJustList (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") (SR.Types.Opened <| Internal.Address "") SR.Types.UserInfo, Cmd.none )
                         NameInputChg namefield ->
-                            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
+                            ( Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
 
                         Fail str ->
                             let
                                 _ =
                                     Debug.log "GlobalRankings fail " str
                             in
-                            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
+                            ( Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
 
                         _ ->
                             let
                                 _ =
                                     Debug.log "Greeting fall through " "str"
                             in
-                            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
+                            ( Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
 
         GlobalRankings lrankingInfo nameStr descStr uiState rnkOwnerAddr ->
             case msgOfTransitonThatAlreadyHappened of
@@ -248,7 +252,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( GlobalRankings rankingsAsJustList "" "" uiState rnkOwnerAddr, Cmd.none )
 
                 GotRankingId rnkidstr ->
-                    ( SelectedRanking lrankingInfo [] rnkidstr, fetchRanking rnkidstr )
+                    ( SelectedRanking lrankingInfo [] rnkidstr, fetchedSingleRanking rnkidstr )
 
                 -- this is the response from createNewPlayerListWithCurrentUser Cmd
                 -- it had the Http.expectStringResponse in it
@@ -275,6 +279,19 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                 ResetToShowGlobal globalList rnkowneraddr ->
                     ( GlobalRankings globalList "" "" SR.Types.RenderAllRankings rnkowneraddr, Cmd.none )
+
+                UsersReceived userList ->
+                    let
+                        _ =
+                            Debug.log "users as remote data " userList
+
+                        usersAsJustList =
+                            extractUsersFromWebData userList
+
+                        _ =
+                            Debug.log "users as list " usersAsJustList
+                    in
+                    ( Greeting usersAsJustList (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") (SR.Types.Opened <| Internal.Address "") SR.Types.UserInfo, Cmd.none )
 
                 Fail str ->
                     let
@@ -309,25 +326,37 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( SelectedRanking globalList lPlayer (Internal.RankingId ""), Cmd.none )
 
 
+addedUAddrToNewEmptyUser : Eth.Types.Address -> SR.Types.User
+addedUAddrToNewEmptyUser uaddr =
+    let
+        newEmptyUser =
+            SR.Defaults.emptyUser
+
+        newUser =
+            { newEmptyUser | ethaddress = Eth.Utils.addressToString uaddr }
+    in
+    newUser
+
+
 handleMsg : Msg -> ( Model, Cmd Msg )
 handleMsg msg =
     case msg of
         MissingWalletInstructions ->
-            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
+            ( Greeting [] (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Missing SR.Types.UserInfo, Cmd.none )
 
         OpenWalletInstructions ->
-            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Locked SR.Types.UserInfo, Cmd.none )
+            ( Greeting [] (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Locked SR.Types.UserInfo, Cmd.none )
 
         NewUser ->
-            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing SR.Types.CreateNewUser, Cmd.none )
+            ( Greeting [] (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Missing SR.Types.CreateNewUser, Cmd.none )
 
         ExistingUser uaddr ->
             --SR.Types.Opened uaddr ->
             --( Greeting (SR.Types.ExistingUser uaddr) SR.Types.Opened, Cmd.none )
-            ( GlobalRankings [] "" "" SR.Types.RenderAllRankings uaddr, getRankingList )
+            ( GlobalRankings [] "" "" SR.Types.RenderAllRankings uaddr, gotRankingList )
 
         _ ->
-            ( Greeting [] (SR.Types.NewUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
+            ( Greeting [] (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Missing SR.Types.UserInfo, Cmd.none )
 
 
 greetingHeading : String -> Element Msg
@@ -672,12 +701,12 @@ view model =
         -- Greeting _ _ ->
         --     greetingView "Greeting"
         Greeting userList userState walletState uiState ->
-            -- let
-            --     -- usrlist =
-            --     --     gotUserListFromRemData (SR.Types.Success userList)
-            --     _ =
-            --         Debug.log "user list : " userList
-            -- in
+            let
+                -- usrlist =
+                --     gotUserListFromRemData (SR.Types.Success userList)
+                _ =
+                    Debug.log "user list in view : " userList
+            in
             case walletState of
                 SR.Types.Locked ->
                     greetingView "OpenWalletInstructions"
@@ -695,16 +724,46 @@ view model =
 
 
 
+-- viewUsersOrError : Model -> Element.Element Msg
+-- viewUsersOrError model =
+--     case model of
+--         Greeting uList userState walletState uiState ->
+--             case uList
+--             RemoteData.NotAsked ->
+--                 Element.text ""
+--             RemoteData.Loading ->
+--                 Element.text "Loading..."
+--             RemoteData.Success players ->
+--                 viewplayers players
+--             RemoteData.Failure httpError ->
+--                 case httpError of
+--                     Http.BadUrl s ->
+--                         Element.text "Bad Url"
+--                     Http.Timeout ->
+--                         Element.text "Timeout"
+--                     Http.NetworkError ->
+--                         Element.text "Network Err"
+--                     Http.BadStatus statuscode ->
+--                         Element.text <| String.fromInt <| statuscode
+--                     Http.BadBody s ->
+--                         Element.text <| "BadBody " ++ s
+--         _ ->
+--             Element.text "Some other error user list"
 -- case userState of
 --     SR.Types.NewUser a ->
 --         --greetingView uaddr
 --         inputNewUserview uaddr
 --     SR.Types.ExistingUser a ->
 --         greetingView "Welcome back "
+-- Helper functions
 
 
 gotUserFromUserList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
 gotUserFromUserList userList uaddr =
+    let
+        _ =
+            Debug.log "userlist " userList
+    in
     SR.Defaults.emptyUser
 
 
@@ -744,16 +803,54 @@ extractUsersFromWebData : RemoteData.WebData (List SR.Types.User) -> List SR.Typ
 extractUsersFromWebData remData =
     case remData of
         RemoteData.NotAsked ->
+            let
+                _ =
+                    Debug.log "http err" "not asked"
+            in
             []
 
         RemoteData.Loading ->
+            let
+                _ =
+                    Debug.log "http err" "loading"
+            in
             []
 
         RemoteData.Success users ->
+            let
+                _ =
+                    Debug.log "http " "success"
+            in
             users
 
         RemoteData.Failure httpError ->
+            let
+                httpErr =
+                    gotHttpErr httpError
+
+                _ =
+                    Debug.log "http err" httpErr
+            in
             []
+
+
+gotHttpErr : Http.Error -> String
+gotHttpErr httperr =
+    case httperr of
+        Http.BadUrl s ->
+            "Bad" ++ s
+
+        Http.Timeout ->
+            "Timeout"
+
+        Http.NetworkError ->
+            "Network Err"
+
+        Http.BadStatus statuscode ->
+            String.fromInt <| statuscode
+
+        Http.BadBody s ->
+            "BadBody " ++ s
 
 
 subscriptions : Model -> Sub Msg
@@ -774,10 +871,60 @@ subscriptions model =
 --     [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
 --     , Eth.Sentry.Tx.listen model.txSentry
 --     ]
+-- Http ops
 
 
-fetchRanking : Internal.RankingId -> Cmd Msg
-fetchRanking (Internal.RankingId rankingId) =
+gotUserList : Cmd Msg
+gotUserList =
+    let
+        binName =
+            Http.header
+                "name"
+                "Users"
+
+        containerId =
+            Http.header
+                "collection-id"
+                "5e4cf4ba4d073155b0dca8b8"
+
+        _ =
+            Debug.log "getting user list : " "userList"
+    in
+    Http.request
+        { body = Http.emptyBody
+        , expect = Http.expectJson (RemoteData.fromResult >> UsersReceived) SR.Decode.listOfUsersDecoder
+        , headers = [ SR.Defaults.secretKey, binName, containerId ]
+        , method = "GET"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = SR.Constants.jsonbinUsersReadBinLink
+        }
+
+
+
+-- expectJson : (Result Http.Error a -> msg) -> Json.Decode.Decoder a -> Http.Expect msg
+-- expectJson toMsg decoder =
+--     Http.expectStringResponse toMsg <|
+--         \response ->
+--             case response of
+--                 Http.BadUrl_ url ->
+--                     Err (Http.BadUrl url)
+--                 Http.Timeout_ ->
+--                     Err Http.Timeout
+--                 Http.NetworkError_ ->
+--                     Err Http.NetworkError
+--                 Http.BadStatus_ metadata body ->
+--                     Err (Http.BadStatus metadata.statusCode)
+--                 Http.GoodStatus_ metadata body ->
+--                     case Json.Decode.decodeString decoder body of
+--                         Ok value ->
+--                             Ok value
+--                         Err err ->
+--                             Err (Http.BadBody (Json.Decode.errorToString err))
+
+
+fetchedSingleRanking : Internal.RankingId -> Cmd Msg
+fetchedSingleRanking (Internal.RankingId rankingId) =
     --PlayersReceived is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
     Http.request
@@ -793,8 +940,8 @@ fetchRanking (Internal.RankingId rankingId) =
         }
 
 
-getRankingList : Cmd Msg
-getRankingList =
+gotRankingList : Cmd Msg
+gotRankingList =
     let
         binName =
             Http.header
