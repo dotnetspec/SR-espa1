@@ -54,11 +54,13 @@ main =
 --nb: each variant added to model has to be handled e.g. do you need 'failure' if it's anyway handled by RemoteData?
 -- AllRankingsJson is just the current list of all rankings
 -- AddingNewRankingToGlobalList holds a new ranking id, data for a new ranking and the existing global list to add the new data to
+--we have to have a separate VARIANT for the user to move on from wallet_status sub - avoiding looping
 
 
 type Model
-    = Greeting (List SR.Types.User) SR.Types.UserState SR.Types.WalletState SR.Types.UIState
-    | GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState Eth.Types.Address
+    = WalletOps SR.Types.UserState SR.Types.WalletState SR.Types.UIState
+    | UserOps (List SR.Types.User) Eth.Types.Address String
+    | GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState Eth.Types.Address (List SR.Types.User)
     | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.RankingId
 
 
@@ -68,46 +70,15 @@ type Model
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( --Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.RenderAllRankings
-      Greeting [] (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Missing SR.Types.RenderAllRankings
+    ( --WalletOps [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.UIRenderAllRankings
+      WalletOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Missing SR.Types.DisplayWalletInfoToUser
     , Cmd.batch
         [ Ports.log "Sending out msg from init "
-        , gotUserList
+
+        --, gotUserList
+        , Cmd.none
         ]
     )
-
-
-type alias DynaModel =
-    { --browserEnv : BrowserEnv
-      --, settings : Maybe SettingsData
-      --,
-      isopponenthigherrank : Maybe SR.Types.OpponentRelativeRank
-
-    --, players : RemoteData.WebData (List SR.Types.Player)
-    , players : List SR.Types.Player
-    , fetchedContentNotPlayerList : String
-    , error : String
-    , rankingid : String
-    , modalState : SR.Types.ModalState
-    , playerid : Int
-    , player : SR.Types.Player
-    , opponent : SR.Types.Player
-    , selectedRadio : SR.Types.ResultRadioOptions
-    , tempMsg : String
-    , txSentry : Eth.Sentry.Tx.TxSentry Msg
-    , account : Maybe Eth.Types.Address
-    , node : Ports.EthNode
-    , blockNumber : Maybe Int
-    , txHash : Maybe Eth.Types.TxHash
-    , tx : Maybe Eth.Types.Tx
-    , txReceipt : Maybe Eth.Types.TxReceipt
-    , blockDepth : Maybe Eth.Sentry.Tx.TxTracker
-    , errors : List String
-    , playerRank : Int
-    , opponentRank : Int
-    , playerStatus : SR.Types.PlayerAvailability
-    , opponentStatus : SR.Types.PlayerAvailability
-    }
 
 
 
@@ -138,118 +109,139 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msgOfTransitonThatAlreadyHappened currentmodel =
     case currentmodel of
-        Greeting uList userState walletState uiState ->
-            case walletState of
-                SR.Types.Opened uaddr ->
-                    let
-                        userNameInList =
-                            gotUserFromUserList uList uaddr
+        WalletOps userState walletState uiState ->
+            --case walletState of
+            --SR.Types.WalletOpenedWithoutUserCheck uaddr ->
+            -- let
+            --     userNameInList =
+            --         gotUserFromUserList userlist uaddr
+            --     _ =
+            --         Debug.log "userNameInList " userNameInList.username
+            -- in
+            -- if userNameInList.username == "" then
+            --( WalletOps [] (SR.Types.NewUser <| SR.Defaults.emptyUser) (SR.Types.WalletOpenedWithoutUserCheck uaddr) SR.Types.DisplayWalletInfoToUser, gotUserList )
+            --( GlobalRankings [] "" "" SR.Types.CreateNewUser uaddr [], Cmd.none )
+            -- else
+            --     ( GlobalRankings [] "" "" SR.Types.UIRenderAllRankings uaddr userlist, gotRankingList )
+            --SR.Types.WalletOpenedUserCheckDone user uaddr ->
+            --( GlobalRankings [] "" "" SR.Types.UIRenderAllRankings uaddr [], gotRankingList )
+            --( WalletOps [] (SR.Types.NewUser <| uaddr) (SR.Types.WalletOpenedWithoutUserCheck uaddr) SR.Types.DisplayWalletInfoToUser, Cmd.none)
+            --_ ->
+            case msgOfTransitonThatAlreadyHappened of
+                WalletStatus walletSentry_ ->
+                    case walletSentry_.networkId of
+                        Mainnet ->
+                            case walletSentry_.account of
+                                Nothing ->
+                                    handleMsg OpenWalletInstructions
 
-                        _ =
-                            Debug.log "userNameInList " userNameInList.username
-                    in
-                    if userNameInList.username == "" then
-                        --( Greeting [] (SR.Types.NewUser <| uaddr) (SR.Types.Opened uaddr) SR.Types.UserInfo, Cmd.none )
-                        ( GlobalRankings [] "" "" SR.Types.CreateNewUser uaddr, gotRankingList )
+                                Just uaddr ->
+                                    --handleMsg (WalletOpened a)
+                                    --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser uaddr) (SR.Types.WalletOpenedWithoutUserCheck uaddr) SR.Types.DisplayWalletInfoToUser, gotUserList )
+                                    ( UserOps [] uaddr "no name", gotUserList )
 
-                    else
-                        ( GlobalRankings [] "" "" SR.Types.RenderAllRankings uaddr, gotRankingList )
+                        Rinkeby ->
+                            case walletSentry_.account of
+                                Nothing ->
+                                    handleMsg OpenWalletInstructions
 
-                _ ->
-                    case msgOfTransitonThatAlreadyHappened of
-                        WalletStatus walletSentry_ ->
-                            case walletSentry_.networkId of
-                                Mainnet ->
-                                    case walletSentry_.account of
-                                        Nothing ->
-                                            handleMsg OpenWalletInstructions
-
-                                        Just uaddr ->
-                                            --handleMsg (WalletOpened a)
-                                            ( Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser uaddr) (SR.Types.Opened uaddr) SR.Types.UserInfo, gotUserList )
-
-                                Rinkeby ->
-                                    case walletSentry_.account of
-                                        Nothing ->
-                                            handleMsg OpenWalletInstructions
-
-                                        Just uaddr ->
-                                            --handleMsg (WalletOpened a)
-                                            ( Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser uaddr) (SR.Types.Opened uaddr) SR.Types.UserInfo, gotUserList )
-
-                                _ ->
-                                    let
-                                        _ =
-                                            Debug.log "MissingWalletInstructions " "str"
-                                    in
-                                    handleMsg MissingWalletInstructions
-
-                        -- PollBlock (Ok blockNumber) ->
-                        --     ( { model | blockNumber = Just blockNumber }
-                        --     , Task.attempt PollBlock <|
-                        --         Task.andThen (\_ -> Eth.getBlockNumber model.node.http) (Process.sleep 1000)
-                        --     )
-                        -- PollBlock (Err error) ->
-                        --     ( model, Cmd.none )
-                        MissingWalletInstructions ->
-                            ( Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
-
-                        OpenWalletInstructions ->
-                            ( Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Locked SR.Types.UserInfo, Cmd.none )
-
-                        --WalletOpened uaddr ->
-                        --( Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Opened uaddr SR.Types.UserInfo, Cmd.none )
-                        NewUser ->
-                            let
-                                _ =
-                                    Debug.log "New user " "str"
-                            in
-                            ( Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") (SR.Types.Opened <| Internal.Address "") SR.Types.CreateNewUser, Cmd.none )
-
-                        ExistingUser uname ->
-                            let
-                                _ =
-                                    Debug.log "ExistingUser " "str"
-                            in
-                            --( Greeting (SR.Types.ExistingUser uname) SR.Types.Opened, Cmd.none )
-                            --( GlobalRankings [] "" "" SR.Types.RenderAllRankings "", gotRankingList )
-                            ( GlobalRankings [] "" "" SR.Types.RenderAllRankings (Internal.Address ""), gotRankingList )
-
-                        -- UsersReceived userList ->
-                        --     let
-                        --         _ =
-                        --             Debug.log "users as remote data " userList
-                        --         usersAsJustList =
-                        --             extractUsersFromWebData userList
-                        --         _ =
-                        --             Debug.log "users as list " userList
-                        --     in
-                        --     ( Greeting usersAsJustList (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") (SR.Types.Opened <| Internal.Address "") SR.Types.UserInfo, Cmd.none )
-                        NameInputChg namefield ->
-                            ( Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
-
-                        Fail str ->
-                            let
-                                _ =
-                                    Debug.log "GlobalRankings fail " str
-                            in
-                            ( Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
+                                Just uaddr ->
+                                    --handleMsg (WalletOpened a)
+                                    --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser uaddr) (SR.Types.WalletOpenedWithoutUserCheck uaddr) SR.Types.DisplayWalletInfoToUser, gotUserList )
+                                    ( UserOps [] uaddr "no name", gotUserList )
 
                         _ ->
                             let
                                 _ =
-                                    Debug.log "Greeting fall through " "str"
+                                    Debug.log "MissingWalletInstructions " "str"
                             in
-                            ( Greeting [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.UserInfo, Cmd.none )
+                            handleMsg MissingWalletInstructions
 
-        GlobalRankings lrankingInfo nameStr descStr uiState rnkOwnerAddr ->
+                -- PollBlock (Ok blockNumber) ->
+                --     ( { model | blockNumber = Just blockNumber }
+                --     , Task.attempt PollBlock <|
+                --         Task.andThen (\_ -> Eth.getBlockNumber model.node.http) (Process.sleep 1000)
+                --     )
+                -- PollBlock (Err error) ->
+                --     ( model, Cmd.none )
+                MissingWalletInstructions ->
+                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.DisplayWalletInfoToUser, Cmd.none )
+
+                OpenWalletInstructions ->
+                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Locked SR.Types.DisplayWalletInfoToUser, Cmd.none )
+
+                --WalletOpened uaddr ->
+                --( WalletOps  (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.WalletOpenedWithoutUserCheck uaddr SR.Types.DisplayWalletInfoToUser, Cmd.none )
+                NewUser ->
+                    let
+                        _ =
+                            Debug.log "New user " "str"
+                    in
+                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") (SR.Types.WalletOpenedWithoutUserCheck <| Internal.Address "") SR.Types.CreateNewUser, Cmd.none )
+
+                ExistingUser uname ->
+                    let
+                        _ =
+                            Debug.log "ExistingUser " "str"
+                    in
+                    --( WalletOps (SR.Types.ExistingUser uname) SR.Types.WalletOpenedWithoutUserCheck, Cmd.none )
+                    --( GlobalRankings  "" "" SR.Types.UIRenderAllRankings "", gotRankingList )
+                    ( GlobalRankings [] "" "" SR.Types.UIRenderAllRankings (Internal.Address "") [], gotRankingList )
+
+                UsersReceived userList ->
+                    let
+                        _ =
+                            Debug.log "users as remote data " userList
+
+                        usersAsJustList =
+                            extractUsersFromWebData userList
+
+                        _ =
+                            Debug.log "users as list " userList
+                    in
+                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") (SR.Types.WalletOpenedUserCheckDone SR.Defaults.emptyUser <| Internal.Address "") SR.Types.DisplayWalletInfoToUser, Cmd.none )
+
+                NameInputChg namefield ->
+                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.DisplayWalletInfoToUser, Cmd.none )
+
+                Fail str ->
+                    let
+                        _ =
+                            Debug.log "GlobalRankings fail " str
+                    in
+                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.DisplayWalletInfoToUser, Cmd.none )
+
+                _ ->
+                    let
+                        _ =
+                            Debug.log "WalletOps fall through " "str"
+                    in
+                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.DisplayWalletInfoToUser, Cmd.none )
+
+        UserOps _ uaddr _ ->
+            case msgOfTransitonThatAlreadyHappened of
+                UsersReceived userlist ->
+                    let
+                        usersAsJustList =
+                            extractUsersFromWebData userlist
+
+                        -- _ =
+                        --     Debug.log "users as list " usersAsJustList
+                    in
+                    --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") (SR.Types.WalletOpenedUserCheckDone SR.Defaults.emptyUser <| Internal.Address "") SR.Types.DisplayWalletInfoToUser, Cmd.none )
+                    ( UserOps usersAsJustList uaddr "no name yet", Cmd.none )
+
+                _ ->
+                    ( GlobalRankings [] "" "" SR.Types.UIRenderAllRankings (Internal.Address "") [], Cmd.none )
+
+        GlobalRankings lrankingInfo nameStr descStr uiState rnkOwnerAddr userList ->
             case msgOfTransitonThatAlreadyHappened of
                 GotGlobalRankingsJson rmtrnkingdata ->
                     let
                         rankingsAsJustList =
                             extractRankingsFromWebData rmtrnkingdata
                     in
-                    ( GlobalRankings rankingsAsJustList "" "" uiState rnkOwnerAddr, Cmd.none )
+                    ( GlobalRankings rankingsAsJustList "" "" uiState rnkOwnerAddr userList, Cmd.none )
 
                 GotRankingId rnkidstr ->
                     ( SelectedRanking lrankingInfo [] rnkidstr, fetchedSingleRanking rnkidstr )
@@ -261,47 +253,34 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 -- the globalList is preserved
                 SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
                     case currentmodel of
-                        GlobalRankings globalList newrankingName newRankingDesc _ rnkowneraddr ->
+                        GlobalRankings globalList newrankingName newRankingDesc _ rnkowneraddr _ ->
                             --todo: this is just holding code - needs re-factor
-                            ( GlobalRankings globalList newrankingName newRankingDesc SR.Types.RenderAllRankings rnkowneraddr, Cmd.none )
+                            ( GlobalRankings globalList newrankingName newRankingDesc SR.Types.UIRenderAllRankings rnkowneraddr userList, Cmd.none )
 
                         _ ->
-                            ( GlobalRankings lrankingInfo "" "" SR.Types.RenderAllRankings (Internal.Address ""), Cmd.none )
+                            ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings (Internal.Address "") userList, Cmd.none )
 
                 SentUserInfoAndDecodedResponseToNewUser serverResponse ->
                     case currentmodel of
-                        GlobalRankings globalList newrankingName newRankingDesc _ rnkowneraddr ->
+                        GlobalRankings globalList newrankingName newRankingDesc _ rnkowneraddr _ ->
                             --todo: this is just holding code - needs re-factor
-                            ( GlobalRankings globalList newrankingName newRankingDesc SR.Types.RenderAllRankings rnkowneraddr, Cmd.none )
+                            ( GlobalRankings globalList newrankingName newRankingDesc SR.Types.UIRenderAllRankings rnkowneraddr userList, Cmd.none )
 
                         _ ->
-                            ( GlobalRankings lrankingInfo "" "" SR.Types.RenderAllRankings (Internal.Address ""), Cmd.none )
+                            ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings (Internal.Address "") userList, Cmd.none )
 
                 ResetToShowGlobal globalList rnkowneraddr ->
-                    ( GlobalRankings globalList "" "" SR.Types.RenderAllRankings rnkowneraddr, Cmd.none )
-
-                UsersReceived userList ->
-                    let
-                        _ =
-                            Debug.log "users as remote data " userList
-
-                        usersAsJustList =
-                            extractUsersFromWebData userList
-
-                        _ =
-                            Debug.log "users as list " usersAsJustList
-                    in
-                    ( Greeting usersAsJustList (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") (SR.Types.Opened <| Internal.Address "") SR.Types.UserInfo, Cmd.none )
+                    ( GlobalRankings globalList "" "" SR.Types.UIRenderAllRankings rnkowneraddr userList, Cmd.none )
 
                 Fail str ->
                     let
                         _ =
                             Debug.log "GlobalRankings fail " str
                     in
-                    ( GlobalRankings lrankingInfo "" "" SR.Types.RenderAllRankings (Internal.Address ""), Cmd.none )
+                    ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings (Internal.Address "") userList, Cmd.none )
 
                 _ ->
-                    ( GlobalRankings lrankingInfo "" "" SR.Types.RenderAllRankings (Internal.Address ""), Cmd.none )
+                    ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings (Internal.Address "") userList, Cmd.none )
 
         SelectedRanking globalList lPlayer intrankingId ->
             case msgOfTransitonThatAlreadyHappened of
@@ -313,7 +292,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( SelectedRanking globalList playerAsJustList (Internal.RankingId ""), Cmd.none )
 
                 ResetToShowGlobal _ rnkowneraddr ->
-                    ( GlobalRankings globalList "" "" SR.Types.RenderAllRankings rnkowneraddr, Cmd.none )
+                    ( GlobalRankings globalList "" "" SR.Types.UIRenderAllRankings rnkowneraddr [ SR.Defaults.emptyUser ], Cmd.none )
 
                 Fail str ->
                     let
@@ -342,29 +321,45 @@ handleMsg : Msg -> ( Model, Cmd Msg )
 handleMsg msg =
     case msg of
         MissingWalletInstructions ->
-            ( Greeting [] (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Missing SR.Types.UserInfo, Cmd.none )
+            ( WalletOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Missing SR.Types.DisplayWalletInfoToUser, Cmd.none )
 
         OpenWalletInstructions ->
-            ( Greeting [] (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Locked SR.Types.UserInfo, Cmd.none )
+            ( WalletOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Locked SR.Types.DisplayWalletInfoToUser, Cmd.none )
 
-        NewUser ->
-            ( Greeting [] (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Missing SR.Types.CreateNewUser, Cmd.none )
-
-        ExistingUser uaddr ->
-            --SR.Types.Opened uaddr ->
-            --( Greeting (SR.Types.ExistingUser uaddr) SR.Types.Opened, Cmd.none )
-            ( GlobalRankings [] "" "" SR.Types.RenderAllRankings uaddr, gotRankingList )
-
+        -- NewUser ->
+        --     ( WalletOps [] (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Missing SR.Types.CreateNewUser, Cmd.none )
+        -- ExistingUser uaddr ->
+        --     let
+        --         _ =
+        --             Debug.log "at existing user " "str"
+        --     in
+        --     --SR.Types.WalletOpenedWithoutUserCheck uaddr ->
+        --     --( WalletOps (SR.Types.ExistingUser uaddr) SR.Types.WalletOpenedWithoutUserCheck, Cmd.none )
+        --     ( GlobalRankings [] "" "" SR.Types.UIRenderAllRankings uaddr [ SR.Defaults.emptyUser ], gotRankingList )
         _ ->
-            ( Greeting [] (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Missing SR.Types.UserInfo, Cmd.none )
+            let
+                _ =
+                    Debug.log "in handle msg fall thur " "str"
+            in
+            ( WalletOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Missing SR.Types.DisplayWalletInfoToUser, Cmd.none )
 
 
 greetingHeading : String -> Element Msg
 greetingHeading greetingStr =
     Element.column Grid.section <|
-        [ Element.el Heading.h2 <| Element.text "Greeting Username"
+        [ Element.el Heading.h2 <| Element.text "WalletOps"
         , Element.column Card.fill
             [ Element.el Heading.h4 <| Element.text greetingStr
+            ]
+        ]
+
+
+userHeading : String -> String -> Element Msg
+userHeading uaddr uname =
+    Element.column Grid.section <|
+        [ Element.el Heading.h2 <| Element.text "Username"
+        , Element.column Card.fill
+            [ Element.el Heading.h4 <| Element.text <| uname ++ uaddr
             ]
         ]
 
@@ -684,10 +679,20 @@ greetingView greetingMsg =
             ]
 
 
+userView : String -> String -> Html Msg
+userView uaddr uname =
+    Framework.responsiveLayout [] <|
+        Element.column
+            Framework.container
+            [ Element.el Heading.h4 <| Element.text "SportRank"
+            , userHeading uaddr uname
+            ]
+
+
 view : Model -> Html Msg
 view model =
     case model of
-        GlobalRankings globalList _ _ uiState uaddr ->
+        GlobalRankings globalList _ _ uiState uaddr userlist ->
             case uiState of
                 SR.Types.CreateNewUser ->
                     inputNewUserview uaddr
@@ -698,15 +703,13 @@ view model =
         SelectedRanking globalList playerList rnkid ->
             selectedResponsiveview globalList playerList
 
-        -- Greeting _ _ ->
-        --     greetingView "Greeting"
-        Greeting userList userState walletState uiState ->
-            let
-                -- usrlist =
-                --     gotUserListFromRemData (SR.Types.Success userList)
-                _ =
-                    Debug.log "user list in view : " userList
-            in
+        -- WalletOps _ _ ->
+        --     greetingView "WalletOps"
+        WalletOps userState walletState uiState ->
+            --let
+            -- _ =
+            --     Debug.log "user list in view : " userList
+            --in
             case walletState of
                 SR.Types.Locked ->
                     greetingView "OpenWalletInstructions"
@@ -714,21 +717,35 @@ view model =
                 SR.Types.Missing ->
                     greetingView "MissingWalletInstructions"
 
-                SR.Types.Opened uaddr ->
-                    case uiState of
-                        SR.Types.CreateNewUser ->
-                            inputNewUserview uaddr
+                SR.Types.WalletOpenedWithoutUserCheck uaddr ->
+                    greetingView "User unchecked "
 
-                        _ ->
-                            greetingView "Welcome back "
+                -- case uiState of
+                --     SR.Types.CreateNewUser ->
+                --         inputNewUserview uaddr
+                --     _ ->
+                --         greetingView "Welcome back "
+                SR.Types.WalletOpenedUserCheckDone user uaddr ->
+                    if user.username == "" then
+                        inputNewUserview uaddr
+
+                    else
+                        greetingView <| "Welcome back " ++ user.username
+
+        UserOps _ uaddr uname ->
+            let
+                addrAsStr =
+                    Eth.Utils.addressToString <| uaddr
+            in
+            userView addrAsStr uname
 
 
 
 -- viewUsersOrError : Model -> Element.Element Msg
 -- viewUsersOrError model =
 --     case model of
---         Greeting uList userState walletState uiState ->
---             case uList
+--         WalletOps userlist userState walletState uiState ->
+--             case userlist
 --             RemoteData.NotAsked ->
 --                 Element.text ""
 --             RemoteData.Loading ->
@@ -762,9 +779,28 @@ gotUserFromUserList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
 gotUserFromUserList userList uaddr =
     let
         _ =
-            Debug.log "userlist " userList
+            Debug.log "userlist "
+                userList
+
+        addrAsString =
+            Eth.Utils.addressToString uaddr
+
+        _ =
+            Debug.log "current address "
+                addrAsString
+
+        existingUserAddr =
+            --List.head <| List.filter (\r -> r.ethaddress >= "0xD99eB29299CEF8726fc688180B30E634827b3078") userList
+            List.head <| List.filter (\r -> r.ethaddress >= addrAsString) userList
     in
-    SR.Defaults.emptyUser
+    --existingUserFromUserList userList uaddr
+    --existingUserFromUserList "0xD99eB29299CEF8726fc688180B30E634827b3078" userList
+    case existingUserAddr of
+        Nothing ->
+            SR.Defaults.emptyUser
+
+        Just a ->
+            a
 
 
 extractPlayersFromWebData : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
@@ -856,13 +892,16 @@ gotHttpErr httperr =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
-        Greeting _ _ _ _ ->
+        WalletOps _ _ _ ->
             Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
 
-        GlobalRankings _ _ _ _ _ ->
+        GlobalRankings _ _ _ _ _ _ ->
             Sub.none
 
         SelectedRanking _ _ _ ->
+            Sub.none
+
+        UserOps _ _ _ ->
             Sub.none
 
 

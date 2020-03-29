@@ -106,7 +106,8 @@ type WalletState
     = Missing
     | Locked --Ports.EthNode
       --| Opened --Ports.EthNode Eth.Types.Address
-    | Opened Eth.Types.Address
+    | WalletOpenedWithoutUserCheck Eth.Types.Address
+    | WalletOpenedUserCheckDone User Eth.Types.Address
 
 
 
@@ -128,10 +129,10 @@ type UserState
 
 
 type UIState
-    = RenderAllRankings
+    = UIRenderAllRankings
     | CreateNewLadder
     | CreateNewUser
-    | UserInfo
+    | DisplayWalletInfoToUser
 
 
 type UserListState
