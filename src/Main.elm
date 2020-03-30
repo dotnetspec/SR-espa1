@@ -59,7 +59,7 @@ main =
 
 type Model
     = WalletOps SR.Types.UserState SR.Types.WalletState SR.Types.UIState
-    | UserOps (List SR.Types.User) Eth.Types.Address String
+    | UserOps (List SR.Types.User) Eth.Types.Address SR.Types.User
     | GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState Eth.Types.Address (List SR.Types.User)
     | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.RankingId
 
@@ -113,12 +113,12 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
             --case walletState of
             --SR.Types.WalletOpenedWithoutUserCheck uaddr ->
             -- let
-            --     userNameInList =
+            --     singleUserInList =
             --         gotUserFromUserList userlist uaddr
             --     _ =
-            --         Debug.log "userNameInList " userNameInList.username
+            --         Debug.log "singleUserInList " singleUserInList.username
             -- in
-            -- if userNameInList.username == "" then
+            -- if singleUserInList.username == "" then
             --( WalletOps [] (SR.Types.NewUser <| SR.Defaults.emptyUser) (SR.Types.WalletOpenedWithoutUserCheck uaddr) SR.Types.DisplayWalletInfoToUser, gotUserList )
             --( GlobalRankings [] "" "" SR.Types.CreateNewUser uaddr [], Cmd.none )
             -- else
@@ -136,9 +136,13 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                     handleMsg OpenWalletInstructions
 
                                 Just uaddr ->
+                                    let
+                                        userAddressAsString =
+                                            Eth.Utils.addressToString uaddr
+                                    in
                                     --handleMsg (WalletOpened a)
                                     --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser uaddr) (SR.Types.WalletOpenedWithoutUserCheck uaddr) SR.Types.DisplayWalletInfoToUser, gotUserList )
-                                    ( UserOps [] uaddr "no name", gotUserList )
+                                    ( UserOps [] uaddr SR.Defaults.emptyUser, gotUserList )
 
                         Rinkeby ->
                             case walletSentry_.account of
@@ -146,9 +150,15 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                     handleMsg OpenWalletInstructions
 
                                 Just uaddr ->
+                                    -- let
+                                    --     userAddressAsString =
+                                    --         Eth.Utils.addressToString uaddr
+                                    --     _ =
+                                    --         Debug.log "userAddressAsString " userAddressAsString
+                                    -- in
                                     --handleMsg (WalletOpened a)
                                     --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser uaddr) (SR.Types.WalletOpenedWithoutUserCheck uaddr) SR.Types.DisplayWalletInfoToUser, gotUserList )
-                                    ( UserOps [] uaddr "no name", gotUserList )
+                                    ( UserOps [] uaddr SR.Defaults.emptyUser, gotUserList )
 
                         _ ->
                             let
@@ -188,19 +198,16 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     --( GlobalRankings  "" "" SR.Types.UIRenderAllRankings "", gotRankingList )
                     ( GlobalRankings [] "" "" SR.Types.UIRenderAllRankings (Internal.Address "") [], gotRankingList )
 
-                UsersReceived userList ->
-                    let
-                        _ =
-                            Debug.log "users as remote data " userList
-
-                        usersAsJustList =
-                            extractUsersFromWebData userList
-
-                        _ =
-                            Debug.log "users as list " userList
-                    in
-                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") (SR.Types.WalletOpenedUserCheckDone SR.Defaults.emptyUser <| Internal.Address "") SR.Types.DisplayWalletInfoToUser, Cmd.none )
-
+                -- UsersReceived userList ->
+                --     let
+                --         _ =
+                --             Debug.log "users as remote data " userList
+                --         usersAsJustList =
+                --             extractUsersFromWebData userList
+                --         _ =
+                --             Debug.log "users as list " userList
+                --     in
+                --     ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") (SR.Types.WalletOpenedUserCheckDone SR.Defaults.emptyUser <| Internal.Address "") SR.Types.DisplayWalletInfoToUser, Cmd.none )
                 NameInputChg namefield ->
                     ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.DisplayWalletInfoToUser, Cmd.none )
 
@@ -221,15 +228,24 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
         UserOps _ uaddr _ ->
             case msgOfTransitonThatAlreadyHappened of
                 UsersReceived userlist ->
-                    let
-                        usersAsJustList =
-                            extractUsersFromWebData userlist
-
-                        -- _ =
-                        --     Debug.log "users as list " usersAsJustList
-                    in
+                    --let
+                    -- _ =
+                    --     Debug.log "uaddr in UserOps " uaddr
+                    -- userAddressAsString =
+                    --     Eth.Utils.addressToString uaddr
+                    -- singleUserInList =
+                    --     gotUserFromUserList usersAsJustList uaddr
+                    -- _ =
+                    --     Debug.log "singleUserInList " singleUserInList.username
+                    -- _ =
+                    --     Debug.log "addr " singleUserInList.ethaddress
+                    -- _ =
+                    --     Debug.log "uaddr " (Eth.Utils.addressToString uaddr)
+                    -- _ =
+                    --     Debug.log "users as list " usersAsJustList
+                    --in
                     --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") (SR.Types.WalletOpenedUserCheckDone SR.Defaults.emptyUser <| Internal.Address "") SR.Types.DisplayWalletInfoToUser, Cmd.none )
-                    ( UserOps usersAsJustList uaddr "no name yet", Cmd.none )
+                    ( UserOps (extractUsersFromWebData userlist) uaddr (singleUserInList userlist uaddr), Cmd.none )
 
                 _ ->
                     ( GlobalRankings [] "" "" SR.Types.UIRenderAllRankings (Internal.Address "") [], Cmd.none )
@@ -305,6 +321,52 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( SelectedRanking globalList lPlayer (Internal.RankingId ""), Cmd.none )
 
 
+singleUserInList : RemoteData.WebData (List SR.Types.User) -> Eth.Types.Address -> SR.Types.User
+singleUserInList userlist uaddr =
+    gotUserFromUserList (extractUsersFromWebData <| userlist) uaddr
+
+
+
+-- usersAsJustList : RemoteData.WebData List SR.Types.User -> List SR.Types.User
+-- usersAsJustList userlist =
+--     extractUsersFromWebData userlist
+
+
+gotUserFromUserList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
+gotUserFromUserList userList uaddr =
+    let
+        _ =
+            Debug.log "userlist "
+                userList
+
+        -- addrAsString =
+        --     Eth.Utils.addressToString uaddr
+        _ =
+            Debug.log "addr in gotUser... "
+                (Eth.Utils.addressToString
+                    uaddr
+                )
+
+        existingUser =
+            --List.head <| List.filter (\r -> r.ethaddress == (Eth.Utils.addressToString uaddr |> Debug.log "uaddr argument: ")) userList
+            List.head <|
+                List.filter (\r -> r.ethaddress == (Eth.Utils.addressToString <| uaddr))
+                    userList
+
+        _ =
+            Debug.log
+                "existingUser "
+                existingUser
+    in
+    --existingUser
+    case existingUser of
+        Nothing ->
+            SR.Defaults.emptyUser
+
+        Just a ->
+            a
+
+
 addedUAddrToNewEmptyUser : Eth.Types.Address -> SR.Types.User
 addedUAddrToNewEmptyUser uaddr =
     let
@@ -354,12 +416,12 @@ greetingHeading greetingStr =
         ]
 
 
-userHeading : String -> String -> Element Msg
-userHeading uaddr uname =
+userHeading : String -> Element Msg
+userHeading uname =
     Element.column Grid.section <|
         [ Element.el Heading.h2 <| Element.text "Username"
         , Element.column Card.fill
-            [ Element.el Heading.h4 <| Element.text <| uname ++ uaddr
+            [ Element.el Heading.h4 <| Element.text <| uname
             ]
         ]
 
@@ -685,7 +747,9 @@ userView uaddr uname =
         Element.column
             Framework.container
             [ Element.el Heading.h4 <| Element.text "SportRank"
-            , userHeading uaddr uname
+
+            --, userHeading uaddr uname
+            , userHeading uname
             ]
 
 
@@ -735,9 +799,11 @@ view model =
         UserOps _ uaddr uname ->
             let
                 addrAsStr =
-                    Eth.Utils.addressToString <| uaddr
+                    Eth.Utils.addressToString uaddr
+
+                --Eth.Utils.addressToString <| uaddr
             in
-            userView addrAsStr uname
+            userView addrAsStr uname.username
 
 
 
@@ -773,34 +839,7 @@ view model =
 --     SR.Types.ExistingUser a ->
 --         greetingView "Welcome back "
 -- Helper functions
-
-
-gotUserFromUserList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
-gotUserFromUserList userList uaddr =
-    let
-        _ =
-            Debug.log "userlist "
-                userList
-
-        addrAsString =
-            Eth.Utils.addressToString uaddr
-
-        _ =
-            Debug.log "current address "
-                addrAsString
-
-        existingUserAddr =
-            --List.head <| List.filter (\r -> r.ethaddress >= "0xD99eB29299CEF8726fc688180B30E634827b3078") userList
-            List.head <| List.filter (\r -> r.ethaddress >= addrAsString) userList
-    in
-    --existingUserFromUserList userList uaddr
-    --existingUserFromUserList "0xD99eB29299CEF8726fc688180B30E634827b3078" userList
-    case existingUserAddr of
-        Nothing ->
-            SR.Defaults.emptyUser
-
-        Just a ->
-            a
+--gotUserFromUserList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
 
 
 extractPlayersFromWebData : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
