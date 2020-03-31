@@ -60,7 +60,7 @@ main =
 type Model
     = WalletOps SR.Types.WalletState
     | UserOps SR.Types.UserState (List SR.Types.User) Eth.Types.Address SR.Types.User SR.Types.UIState
-    | GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState Eth.Types.Address (List SR.Types.User)
+    | GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState Eth.Types.Address (List SR.Types.User) SR.Types.User
     | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.RankingId
     | Failure String
 
@@ -154,7 +154,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
             case msgOfTransitonThatAlreadyHappened of
                 UsersReceived userlist ->
                     if isUserInList (singleUserInList userlist uaddr) then
-                        ( GlobalRankings [] "" "" SR.Types.UIRenderAllRankings (Internal.Address "") [], gotRankingList )
+                        ( GlobalRankings [] "" "" SR.Types.UIRenderAllRankings (Internal.Address "") [] (singleUserInList userlist uaddr), gotRankingList )
 
                     else
                         ( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) (extractUsersFromWebData userlist) uaddr (singleUserInList userlist uaddr) SR.Types.CreateNewUser, Cmd.none )
@@ -162,14 +162,14 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 _ ->
                     ( Failure "UsersReceived", Cmd.none )
 
-        GlobalRankings lrankingInfo nameStr descStr uiState rnkOwnerAddr userList ->
+        GlobalRankings lrankingInfo nameStr descStr uiState rnkOwnerAddr userList user ->
             case msgOfTransitonThatAlreadyHappened of
                 GotGlobalRankingsJson rmtrnkingdata ->
                     let
                         rankingsAsJustList =
                             extractRankingsFromWebData rmtrnkingdata
                     in
-                    ( GlobalRankings rankingsAsJustList "" "" uiState rnkOwnerAddr userList, Cmd.none )
+                    ( GlobalRankings rankingsAsJustList "" "" uiState rnkOwnerAddr userList user, Cmd.none )
 
                 GotRankingId rnkidstr ->
                     ( SelectedRanking lrankingInfo [] rnkidstr, fetchedSingleRanking rnkidstr )
@@ -181,34 +181,34 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 -- the globalList is preserved
                 SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
                     case currentmodel of
-                        GlobalRankings globalList newrankingName newRankingDesc _ rnkowneraddr _ ->
+                        GlobalRankings globalList newrankingName newRankingDesc _ rnkowneraddr _ userRec ->
                             --todo: this is just holding code - needs re-factor
-                            ( GlobalRankings globalList newrankingName newRankingDesc SR.Types.UIRenderAllRankings rnkowneraddr userList, Cmd.none )
+                            ( GlobalRankings globalList newrankingName newRankingDesc SR.Types.UIRenderAllRankings rnkowneraddr userList userRec, Cmd.none )
 
                         _ ->
-                            ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings (Internal.Address "") userList, Cmd.none )
+                            ( Failure "SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId", Cmd.none )
 
                 SentUserInfoAndDecodedResponseToNewUser serverResponse ->
                     case currentmodel of
-                        GlobalRankings globalList newrankingName newRankingDesc _ rnkowneraddr _ ->
+                        GlobalRankings globalList newrankingName newRankingDesc _ rnkowneraddr _ userRec ->
                             --todo: this is just holding code - needs re-factor
-                            ( GlobalRankings globalList newrankingName newRankingDesc SR.Types.UIRenderAllRankings rnkowneraddr userList, Cmd.none )
+                            ( GlobalRankings globalList newrankingName newRankingDesc SR.Types.UIRenderAllRankings rnkowneraddr userList userRec, Cmd.none )
 
                         _ ->
-                            ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings (Internal.Address "") userList, Cmd.none )
+                            ( Failure "SentUserInfoAndDecodedResponseToNewUser", Cmd.none )
 
                 ResetToShowGlobal globalList rnkowneraddr ->
-                    ( GlobalRankings globalList "" "" SR.Types.UIRenderAllRankings rnkowneraddr userList, Cmd.none )
+                    ( GlobalRankings globalList "" "" SR.Types.UIRenderAllRankings rnkowneraddr userList user, Cmd.none )
 
                 Fail str ->
                     let
                         _ =
                             Debug.log "GlobalRankings fail " str
                     in
-                    ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings (Internal.Address "") userList, Cmd.none )
+                    ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings (Internal.Address "") userList user, Cmd.none )
 
                 _ ->
-                    ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings (Internal.Address "") userList, Cmd.none )
+                    ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings (Internal.Address "") userList user, Cmd.none )
 
         SelectedRanking globalList lPlayer intrankingId ->
             case msgOfTransitonThatAlreadyHappened of
@@ -220,7 +220,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( SelectedRanking globalList playerAsJustList (Internal.RankingId ""), Cmd.none )
 
                 ResetToShowGlobal _ rnkowneraddr ->
-                    ( GlobalRankings globalList "" "" SR.Types.UIRenderAllRankings rnkowneraddr [ SR.Defaults.emptyUser ], Cmd.none )
+                    ( GlobalRankings globalList "" "" SR.Types.UIRenderAllRankings rnkowneraddr [ SR.Defaults.emptyUser ] SR.Defaults.emptyUser, Cmd.none )
 
                 Fail str ->
                     let
@@ -299,16 +299,20 @@ userHeading uname =
         ]
 
 
-globalHeading : Eth.Types.Address -> Element Msg
-globalHeading uaddr =
-    let
-        uaddrStr =
-            Eth.Utils.addressToString uaddr
-    in
+
+--globalHeading : Eth.Types.Address -> Element Msg
+
+
+globalHeading : SR.Types.User -> Element Msg
+globalHeading user =
+    -- let
+    --     uaddrStr =
+    --         Eth.Utils.addressToString uaddr
+    -- in
     Element.column Grid.section <|
         [ Element.el Heading.h5 <| Element.text "Global Rankings"
         , Element.column Card.fill
-            [ Element.el Heading.h4 <| Element.text uaddrStr
+            [ Element.el Heading.h4 <| Element.text user.username
             ]
         ]
 
@@ -511,13 +515,13 @@ inputNewUser uaddr =
         ]
 
 
-globalResponsiveview : List SR.Types.RankingInfo -> Eth.Types.Address -> Html Msg
-globalResponsiveview rankingList uaddr =
+globalResponsiveview : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> Html Msg
+globalResponsiveview rankingList uaddr user =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
             [ Element.el Heading.h4 <| Element.text "SportRank"
-            , globalHeading uaddr
+            , globalHeading user
             , homebutton rankingList uaddr
 
             --, group
@@ -577,13 +581,13 @@ greetingView greetingMsg =
 view : Model -> Html Msg
 view model =
     case model of
-        GlobalRankings globalList _ _ uiState uaddr userlist ->
+        GlobalRankings globalList _ _ uiState uaddr userlist userRec ->
             case uiState of
                 SR.Types.CreateNewUser ->
                     inputNewUserview uaddr
 
                 _ ->
-                    globalResponsiveview globalList uaddr
+                    globalResponsiveview globalList uaddr userRec
 
         SelectedRanking globalList playerList rnkid ->
             selectedResponsiveview globalList playerList
@@ -710,7 +714,7 @@ subscriptions model =
         UserOps _ _ _ _ _ ->
             Sub.none
 
-        GlobalRankings _ _ _ _ _ _ ->
+        GlobalRankings _ _ _ _ _ _ _ ->
             Sub.none
 
         SelectedRanking _ _ _ ->
