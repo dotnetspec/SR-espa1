@@ -150,24 +150,14 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 _ ->
                     ( Failure "WalletOps", Cmd.none )
 
-        UserOps userState _ uaddr _ uiState ->
+        UserOps _ _ uaddr _ uiState ->
             case msgOfTransitonThatAlreadyHappened of
                 UsersReceived userlist ->
-                    ( UserOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") (extractUsersFromWebData userlist) uaddr (singleUserInList userlist uaddr) SR.Types.DisplayWalletInfoToUser, Cmd.none )
+                    if isUserInList (singleUserInList userlist uaddr) then
+                        ( GlobalRankings [] "" "" SR.Types.UIRenderAllRankings (Internal.Address "") [], gotRankingList )
 
-                NewUser ->
-                    let
-                        _ =
-                            Debug.log "New user " "str"
-                    in
-                    ( WalletOps (SR.Types.WalletOpenedWithoutUserCheck <| Internal.Address ""), Cmd.none )
-
-                ExistingUser uname ->
-                    let
-                        _ =
-                            Debug.log "ExistingUser " "str"
-                    in
-                    ( GlobalRankings [] "" "" SR.Types.UIRenderAllRankings (Internal.Address "") [], gotRankingList )
+                    else
+                        ( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) (extractUsersFromWebData userlist) uaddr (singleUserInList userlist uaddr) SR.Types.CreateNewUser, Cmd.none )
 
                 _ ->
                     ( Failure "UsersReceived", Cmd.none )
@@ -244,6 +234,15 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
         Failure str ->
             ( Failure <| "Model failure : " ++ str, Cmd.none )
+
+
+isUserInList : SR.Types.User -> Bool
+isUserInList user =
+    if user.username == "" then
+        False
+
+    else
+        True
 
 
 singleUserInList : RemoteData.WebData (List SR.Types.User) -> Eth.Types.Address -> SR.Types.User
@@ -575,18 +574,6 @@ greetingView greetingMsg =
             ]
 
 
-userView : String -> String -> Html Msg
-userView uaddr uname =
-    Framework.responsiveLayout [] <|
-        Element.column
-            Framework.container
-            [ Element.el Heading.h4 <| Element.text "SportRank"
-
-            --, userHeading uaddr uname
-            , userHeading uname
-            ]
-
-
 view : Model -> Html Msg
 view model =
     case model of
@@ -601,13 +588,7 @@ view model =
         SelectedRanking globalList playerList rnkid ->
             selectedResponsiveview globalList playerList
 
-        -- WalletOps _ _ ->
-        --     greetingView "WalletOps"
         WalletOps walletState ->
-            --let
-            -- _ =
-            --     Debug.log "user list in view : " userList
-            --in
             case walletState of
                 SR.Types.Locked ->
                     greetingView "OpenWalletInstructions"
@@ -618,11 +599,6 @@ view model =
                 SR.Types.WalletOpenedWithoutUserCheck uaddr ->
                     greetingView "User unchecked "
 
-                -- case uiState of
-                --     SR.Types.CreateNewUser ->
-                --         inputNewUserview uaddr
-                --     _ ->
-                --         greetingView "Welcome back "
                 SR.Types.WalletOpenedUserCheckDone user uaddr ->
                     if user.username == "" then
                         inputNewUserview uaddr
@@ -631,7 +607,12 @@ view model =
                         greetingView <| "Welcome back " ++ user.username
 
         UserOps userState _ uaddr uname uiState ->
-            userView (Eth.Utils.addressToString uaddr) uname.username
+            case uiState of
+                SR.Types.CreateNewUser ->
+                    inputNewUserview uaddr
+
+                _ ->
+                    greetingView <| "Wrong UserOps view : "
 
         Failure str ->
             greetingView <| "Model failure : " ++ str
