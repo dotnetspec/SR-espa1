@@ -62,10 +62,10 @@ type Model
     | UserOps (List SR.Types.User) Eth.Types.Address SR.Types.User SR.Types.UIState
     | GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState Eth.Types.Address (List SR.Types.User)
     | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.RankingId
+    | Failure String
 
 
 
---| Failure String
 --init : Commands msg -> Flags -> ( Model, Cmd Msg )
 
 
@@ -322,6 +322,9 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                 _ ->
                     ( SelectedRanking globalList lPlayer (Internal.RankingId ""), Cmd.none )
+
+        Failure str ->
+            ( Failure <| "Model failure : " ++ str, Cmd.none )
 
 
 singleUserInList : RemoteData.WebData (List SR.Types.User) -> Eth.Types.Address -> SR.Types.User
@@ -751,6 +754,9 @@ view model =
             in
             userView addrAsStr uname.username
 
+        Failure str ->
+            greetingView <| "Model failure : " ++ str
+
 
 
 -- viewUsersOrError : Model -> Element.Element Msg
@@ -887,6 +893,9 @@ subscriptions model =
             Sub.none
 
         SelectedRanking _ _ _ ->
+            Sub.none
+
+        Failure _ ->
             Sub.none
 
 
