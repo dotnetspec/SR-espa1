@@ -92,6 +92,7 @@ type Msg
     = WalletStatus Eth.Sentry.Wallet.WalletSentry
     | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
     | SentUserInfoAndDecodedResponseToNewUser (RemoteData.WebData (List SR.Types.User))
+    | ChangedUIStateToCreateNew (List SR.Types.RankingInfo) Eth.Types.Address SR.Types.User
     | NewRankingRequestedByConfirmBtnClicked
       --| PollBlock (Result Http.Error Int)
       --| TxSentryMsg Eth.Sentry.Tx.Msg
@@ -201,6 +202,9 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 ResetToShowGlobal globalList rnkowneraddr userRec ->
                     ( GlobalRankings globalList "" "" SR.Types.UIRenderAllRankings rnkowneraddr userList userRec, Cmd.none )
 
+                ChangedUIStateToCreateNew globalList rnkowneraddr userRec ->
+                    ( GlobalRankings globalList "" "" SR.Types.CreateNewLadder rnkowneraddr userList userRec, Cmd.none )
+
                 NewRankingRequestedByConfirmBtnClicked ->
                     ( Failure "Error in NewRankingRequestedByConfirmBtnClicked", Cmd.none )
 
@@ -294,26 +298,8 @@ greetingHeading greetingStr =
         ]
 
 
-userHeading : String -> Element Msg
-userHeading uname =
-    Element.column Grid.section <|
-        [ Element.el Heading.h2 <| Element.text "Username"
-        , Element.column Card.fill
-            [ Element.el Heading.h4 <| Element.text <| uname
-            ]
-        ]
-
-
-
---globalHeading : Eth.Types.Address -> Element Msg
-
-
 globalHeading : SR.Types.User -> Element Msg
 globalHeading user =
-    -- let
-    --     uaddrStr =
-    --         Eth.Utils.addressToString uaddr
-    -- in
     Element.column Grid.section <|
         [ Element.el Heading.h5 <| Element.text "Global Rankings"
         , Element.column Card.fill
@@ -439,28 +425,29 @@ insertPlayerList playerInfoList =
     mapOutPlayerList
 
 
-newrankingbuttons : Element Msg
-newrankingbuttons =
-    Element.column Grid.section <|
-        [ Element.el Heading.h6 <| Element.text "Click to continue ..."
-        , Element.column (Card.simple ++ Grid.simple) <|
-            [ Element.wrappedRow Grid.simple <|
-                [ Input.button (Button.simple ++ Color.simple) <|
-                    { onPress = Nothing
-                    , label = Element.text "Create New"
-                    }
-                , Input.button (Button.simple ++ Color.success) <|
-                    { onPress = Nothing
-                    , label = Element.text "Button.fill"
-                    }
-                ]
-            ]
-        , Element.column Grid.simple <|
-            [ Element.paragraph [] <|
-                List.singleton <|
-                    Element.text "Button attributes can be combined with other attributes."
-            ]
-        ]
+
+-- newrankingbuttons : Element Msg
+-- newrankingbuttons =
+--     Element.column Grid.section <|
+--         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+--         , Element.column (Card.simple ++ Grid.simple) <|
+--             [ Element.wrappedRow Grid.simple <|
+--                 [ Input.button (Button.simple ++ Color.simple) <|
+--                     { onPress = ChangedUIStateToCreateNew
+--                     , label = Element.text "Create New"
+--                     }
+--                 -- , Input.button (Button.simple ++ Color.success) <|
+--                 --     { onPress = Nothing
+--                 --     , label = Element.text "Button.fill"
+--                 --     }
+--                 ]
+--             ]
+--         , Element.column Grid.simple <|
+--             [ Element.paragraph [] <|
+--                 List.singleton <|
+--                     Element.text "Button attributes can be combined with other attributes."
+--             ]
+--         ]
 
 
 globalhomebutton : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> Element Msg
@@ -474,7 +461,7 @@ globalhomebutton rankingList uaddr user =
                     , label = Element.text "Home"
                     }
                 , Input.button (Button.simple ++ Color.simple) <|
-                    { onPress = Nothing
+                    { onPress = Just <| ChangedUIStateToCreateNew rankingList uaddr user
                     , label = Element.text "Create New"
                     }
                 ]
@@ -511,6 +498,30 @@ selectedhomebutton rankingList uaddr user =
         ]
 
 
+newrankinhomebutton : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> Element Msg
+newrankinhomebutton rankingList uaddr user =
+    Element.column Grid.section <|
+        [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+        , Element.column (Card.simple ++ Grid.simple) <|
+            [ Element.wrappedRow Grid.simple <|
+                [ Input.button (Button.simple ++ Color.simple) <|
+                    { onPress = Just <| ResetToShowGlobal rankingList uaddr user
+                    , label = Element.text "Home"
+                    }
+                , Input.button (Button.simple ++ Color.info) <|
+                    { onPress = Just <| ChangedUIStateToCreateNew rankingList uaddr user
+                    , label = Element.text "Create New"
+                    }
+                ]
+            ]
+        , Element.column Grid.simple <|
+            [ Element.paragraph [] <|
+                List.singleton <|
+                    Element.text "Button attributes can be combined with other attributes."
+            ]
+        ]
+
+
 inputNewUser : Eth.Types.Address -> Element Msg
 inputNewUser uaddr =
     Element.column Grid.section <|
@@ -528,6 +539,39 @@ inputNewUser uaddr =
                     , text = "Input.simple"
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Input.label"
+                    , spellcheck = False
+                    }
+                ]
+            ]
+        , Element.paragraph [] <|
+            List.singleton <|
+                Element.text "Input attributes can be combined with other attributes."
+        , Element.paragraph (Card.fill ++ Color.warning) <|
+            [ Element.el [ Font.bold ] <| Element.text "Warning: "
+            , Element.paragraph [] <|
+                List.singleton <|
+                    Element.text "color changing attributes need to come before the Input attribute."
+            ]
+        ]
+
+
+inputNewLadder : SR.Types.User -> Element Msg
+inputNewLadder user =
+    Element.column Grid.section <|
+        [ Element.el Heading.h2 <| Element.text "New Ladder Details"
+        , Element.wrappedRow (Card.fill ++ Grid.simple)
+            [ Element.column Grid.simple
+                [ Input.text Input.simple
+                    { onChange = NameInputChg
+                    , text = "Name"
+                    , placeholder = Nothing
+                    , label = Input.labelLeft Input.label <| Element.text "Name:"
+                    }
+                , Input.multiline Input.simple
+                    { onChange = NameInputChg
+                    , text = "Description"
+                    , placeholder = Nothing
+                    , label = Input.labelLeft Input.label <| Element.text "Description:"
                     , spellcheck = False
                     }
                 ]
@@ -597,6 +641,24 @@ inputNewUserview uaddr =
             ]
 
 
+inputNewLadderview : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> Html Msg
+inputNewLadderview rankingList uaddr user =
+    Framework.responsiveLayout [] <|
+        Element.column
+            Framework.container
+            [ Element.el Heading.h4 <| Element.text "New User Input"
+
+            --, selectedHeading
+            , newrankinhomebutton rankingList uaddr user
+
+            --, group
+            --, color
+            --, grid
+            --, playerbuttons playerList
+            , inputNewLadder user
+            ]
+
+
 greetingView : String -> Html Msg
 greetingView greetingMsg =
     Framework.responsiveLayout [] <|
@@ -614,6 +676,9 @@ view model =
             case uiState of
                 SR.Types.CreateNewUser ->
                     inputNewUserview uaddr
+
+                SR.Types.CreateNewLadder ->
+                    inputNewLadderview globalList uaddr userRec
 
                 _ ->
                     globalResponsiveview globalList uaddr userRec
