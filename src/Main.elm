@@ -96,6 +96,7 @@ type Msg
     | NewRankingRequestedByConfirmBtnClicked
       --| PollBlock (Result Http.Error Int)
       --| TxSentryMsg Eth.Sentry.Tx.Msg
+    | AddedNewRankingToGlobalList (RemoteData.WebData (List SR.Types.RankingInfo))
     | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
     | GotRankingId Internal.RankingId
     | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
@@ -103,9 +104,11 @@ type Msg
     | MissingWalletInstructions
     | OpenWalletInstructions
     | NewUser
-    | NameInputChg String
+    | UserNameInputChg String
     | ResetToShowGlobal (List SR.Types.RankingInfo) Eth.Types.Address SR.Types.User
     | ExistingUser Eth.Types.Address
+    | LadderNameInputChg String
+    | LadderDescInputChg String
     | Fail String
 
 
@@ -143,9 +146,8 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Locked, Cmd.none )
                     ( WalletOps SR.Types.Locked, Cmd.none )
 
-                NameInputChg namefield ->
-                    ( WalletOps SR.Types.Missing, Cmd.none )
-
+                -- NameInputChg namefield ->
+                --     ( WalletOps SR.Types.Missing, Cmd.none )
                 Fail str ->
                     ( Failure "WalletOps", Cmd.none )
 
@@ -180,39 +182,50 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 -- it had the Http.expectStringResponse in it
                 -- it's already created the new ranking with current player as the first entry
                 -- the result now is the ranking id only at this point which was pulled out by the decoder
-                -- the globalList is preserved
+                -- the lrankingInfo is preserved
                 SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
-                    case currentmodel of
-                        GlobalRankings globalList newrankingName newRankingDesc _ rnkowneraddr _ userRec ->
-                            --todo: this is just holding code - needs re-factor
-                            ( GlobalRankings globalList newrankingName newRankingDesc SR.Types.UIRenderAllRankings rnkowneraddr userList userRec, Cmd.none )
+                    --AllRankingsJson lrankingInfo newrankingName newRankingDesc _ rnkOwnerAddr ->
+                    ( GlobalRankings lrankingInfo "" "" SR.Types.CreateNewLadder rnkOwnerAddr userList user
+                    , addedNewRankingListEntryInGlobal idValueFromDecoder lrankingInfo nameStr descStr (Eth.Utils.addressToString rnkOwnerAddr)
+                    )
 
-                        _ ->
-                            ( Failure "SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId", Cmd.none )
-
+                -- _ ->
+                --     ( Failure "SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId", Cmd.none )
                 SentUserInfoAndDecodedResponseToNewUser serverResponse ->
-                    case currentmodel of
-                        GlobalRankings globalList newrankingName newRankingDesc _ rnkowneraddr _ userRec ->
-                            --todo: this is just holding code - needs re-factor
-                            ( GlobalRankings globalList newrankingName newRankingDesc SR.Types.UIRenderAllRankings rnkowneraddr userList userRec, Cmd.none )
+                    -- case currentmodel of
+                    --     GlobalRankings lrankingInfo newrankingName newRankingDesc _ rnkowneraddr _ userRec ->
+                    --todo: this is just holding code - needs re-factor
+                    ( GlobalRankings lrankingInfo nameStr descStr SR.Types.UIRenderAllRankings rnkOwnerAddr userList user, Cmd.none )
 
-                        _ ->
-                            ( Failure "SentUserInfoAndDecodedResponseToNewUser", Cmd.none )
+                -- _ ->
+                --     ( Failure "SentUserInfoAndDecodedResponseToNewUser", Cmd.none )
+                ResetToShowGlobal lrankingInfoForReset rnkowneraddr userRec ->
+                    ( GlobalRankings lrankingInfoForReset "" "" SR.Types.UIRenderAllRankings rnkowneraddr userList userRec, Cmd.none )
 
-                ResetToShowGlobal globalList rnkowneraddr userRec ->
-                    ( GlobalRankings globalList "" "" SR.Types.UIRenderAllRankings rnkowneraddr userList userRec, Cmd.none )
-
-                ChangedUIStateToCreateNew globalList rnkowneraddr userRec ->
-                    ( GlobalRankings globalList "" "" SR.Types.CreateNewLadder rnkowneraddr userList userRec, Cmd.none )
+                ChangedUIStateToCreateNew lrankingInfoChgToCreateNew rnkowneraddr userRec ->
+                    ( GlobalRankings lrankingInfoChgToCreateNew "" "" SR.Types.CreateNewLadder rnkowneraddr userList userRec, Cmd.none )
 
                 NewRankingRequestedByConfirmBtnClicked ->
-                    ( Failure "Error in NewRankingRequestedByConfirmBtnClicked", Cmd.none )
+                    ( GlobalRankings lrankingInfo "new" "new" SR.Types.CreateNewLadder rnkOwnerAddr userList user, createNewPlayerListWithCurrentUser )
 
-                -- case previousmodel of
-                --     AllRankingsJson globalList newrankingName newRankingDesc _ rnkowner ->
-                --         ( AllRankingsJson globalList newrankingName newRankingDesc SR.Types.CreateNewLadder rnkowner, createNewPlayerListWithCurrentUser )
-                -- _ ->
-                --     ( Failure "Error in NewRankingRequestedByConfirmBtnClicked", Cmd.none )
+                AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
+                    --( AllRankingsJson updatedListAfterNewEntryAddedToGlobalList "" "" SR.Types.RenderAllRankings "", Cmd.none )
+                    ( GlobalRankings (extractRankingsFromWebData <| updatedListAfterNewEntryAddedToGlobalList) "" "" SR.Types.UIRenderAllRankings rnkOwnerAddr userList user, Cmd.none )
+
+                LadderNameInputChg namefield ->
+                    --AllRankingsJson list _ desc _ rnkowner ->
+                    --( AllRankingsJson list namefield desc SR.Types.CreateNewLadder rnkowner, Cmd.none )
+                    ( GlobalRankings lrankingInfo nameStr descStr SR.Types.CreateNewLadder rnkOwnerAddr userList user, Cmd.none )
+
+                LadderDescInputChg descfield ->
+                    --AllRankingsJson list name _ _ rnkowner ->
+                    --( AllRankingsJson list name descfield SR.Types.CreateNewLadder rnkowner, Cmd.none )
+                    ( GlobalRankings lrankingInfo nameStr descStr SR.Types.CreateNewLadder rnkOwnerAddr userList user, Cmd.none )
+
+                --todo: this needs to be linked to user - don't confuse with new ladder
+                UserNameInputChg namefield ->
+                    ( GlobalRankings lrankingInfo namefield namefield SR.Types.CreateNewUser rnkOwnerAddr userList user, Cmd.none )
+
                 Fail str ->
                     let
                         _ =
@@ -223,17 +236,17 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 _ ->
                     ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings (Internal.Address "") userList user, Cmd.none )
 
-        SelectedRanking globalList lPlayer intrankingId userRec ->
+        SelectedRanking lrankingInfo lPlayer intrankingId userRec ->
             case msgOfTransitonThatAlreadyHappened of
                 PlayersReceived players ->
                     let
                         playerAsJustList =
                             extractPlayersFromWebData players
                     in
-                    ( SelectedRanking globalList playerAsJustList (Internal.RankingId "") userRec, Cmd.none )
+                    ( SelectedRanking lrankingInfo playerAsJustList (Internal.RankingId "") userRec, Cmd.none )
 
                 ResetToShowGlobal _ rnkowneraddr user ->
-                    ( GlobalRankings globalList "" "" SR.Types.UIRenderAllRankings rnkowneraddr [ SR.Defaults.emptyUser ] user, Cmd.none )
+                    ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings rnkowneraddr [ SR.Defaults.emptyUser ] user, Cmd.none )
 
                 Fail str ->
                     ( Failure <| "Fail failure : " ++ str, Cmd.none )
@@ -509,7 +522,7 @@ newrankinhomebutton rankingList uaddr user =
                     , label = Element.text "Home"
                     }
                 , Input.button (Button.simple ++ Color.info) <|
-                    { onPress = Just <| ChangedUIStateToCreateNew rankingList uaddr user
+                    { onPress = Just <| NewRankingRequestedByConfirmBtnClicked
                     , label = Element.text "Create New"
                     }
                 ]
@@ -529,13 +542,13 @@ inputNewUser uaddr =
         , Element.wrappedRow (Card.fill ++ Grid.simple)
             [ Element.column Grid.simple
                 [ Input.text Input.simple
-                    { onChange = NameInputChg
+                    { onChange = UserNameInputChg
                     , text = "Username"
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Username"
                     }
                 , Input.multiline Input.simple
-                    { onChange = NameInputChg
+                    { onChange = UserNameInputChg
                     , text = "Input.simple"
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Input.label"
@@ -547,10 +560,10 @@ inputNewUser uaddr =
             List.singleton <|
                 Element.text "Input attributes can be combined with other attributes."
         , Element.paragraph (Card.fill ++ Color.warning) <|
-            [ Element.el [ Font.bold ] <| Element.text "Warning: "
+            [ Element.el [ Font.bold ] <| Element.text "Please note: "
             , Element.paragraph [] <|
                 List.singleton <|
-                    Element.text "color changing attributes need to come before the Input attribute."
+                    Element.text "Clicking 'Create New' interacts with your Ethereum wallet"
             ]
         ]
 
@@ -562,13 +575,13 @@ inputNewLadder user =
         , Element.wrappedRow (Card.fill ++ Grid.simple)
             [ Element.column Grid.simple
                 [ Input.text Input.simple
-                    { onChange = NameInputChg
+                    { onChange = LadderNameInputChg
                     , text = "Name"
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Name:"
                     }
                 , Input.multiline Input.simple
-                    { onChange = NameInputChg
+                    { onChange = LadderNameInputChg
                     , text = "Description"
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Description:"
@@ -580,10 +593,10 @@ inputNewLadder user =
             List.singleton <|
                 Element.text "Input attributes can be combined with other attributes."
         , Element.paragraph (Card.fill ++ Color.warning) <|
-            [ Element.el [ Font.bold ] <| Element.text "Warning: "
+            [ Element.el [ Font.bold ] <| Element.text "Please note: "
             , Element.paragraph [] <|
                 List.singleton <|
-                    Element.text "color changing attributes need to come before the Input attribute."
+                    Element.text "Clicking 'Create New' interacts with your Ethereum wallet"
             ]
         ]
 
@@ -607,13 +620,13 @@ globalResponsiveview rankingList uaddr user =
 
 
 selectedResponsiveview : List SR.Types.RankingInfo -> List SR.Types.Player -> SR.Types.User -> Html Msg
-selectedResponsiveview globalList playerList user =
+selectedResponsiveview lrankingInfo playerList user =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
             [ Element.el Heading.h4 <| Element.text "SportRank"
             , selectedHeading user
-            , selectedhomebutton globalList (Internal.Address "") user
+            , selectedhomebutton lrankingInfo (Internal.Address "") user
 
             --, group
             --, color
@@ -632,7 +645,7 @@ inputNewUserview uaddr =
             [ Element.el Heading.h4 <| Element.text "New User Input"
 
             --, selectedHeading
-            --, homebutton globalList (Internal.Address "")
+            --, homebutton lrankingInfo (Internal.Address "")
             --, group
             --, color
             --, grid
@@ -672,19 +685,19 @@ greetingView greetingMsg =
 view : Model -> Html Msg
 view model =
     case model of
-        GlobalRankings globalList _ _ uiState uaddr userlist userRec ->
+        GlobalRankings lrankingInfo _ _ uiState uaddr userlist userRec ->
             case uiState of
                 SR.Types.CreateNewUser ->
                     inputNewUserview uaddr
 
                 SR.Types.CreateNewLadder ->
-                    inputNewLadderview globalList uaddr userRec
+                    inputNewLadderview lrankingInfo uaddr userRec
 
                 _ ->
-                    globalResponsiveview globalList uaddr userRec
+                    globalResponsiveview lrankingInfo uaddr userRec
 
-        SelectedRanking globalList playerList rnkid userRec ->
-            selectedResponsiveview globalList playerList userRec
+        SelectedRanking lrankingInfo playerList rnkid userRec ->
+            selectedResponsiveview lrankingInfo playerList userRec
 
         WalletOps walletState ->
             case walletState of
@@ -1005,3 +1018,151 @@ createNewUser =
         , tracker = Nothing
         , url = SR.Constants.jsonbinUrlForCreateNewEntryAndRespond
         }
+
+
+
+-- this also has to be done when a new ranking is created.
+
+
+addedNewRankingListEntryInGlobal : RemoteData.WebData SR.Types.RankingId -> List SR.Types.RankingInfo -> String -> String -> String -> Cmd Msg
+addedNewRankingListEntryInGlobal newrankingid lrankingInfo newName newDesc rankingowneraddress =
+    let
+        secretKey =
+            Http.header
+                "secret-key"
+                "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
+
+        binName =
+            Http.header
+                "name"
+                "Global"
+
+        containerId =
+            Http.header
+                "collection-id"
+                "5d7deab3371673119fab12a6"
+
+        _ =
+            Debug.log "new ranking owner address in addedNewRankingListEntryInGlobal: " "it will go here"
+
+        -- justGlobalList =
+        --     gotRankingListFromRemData lrankingInfo
+        newRankingInfo =
+            { id = gotNewRankingIdFromWebData newrankingid
+            , active = True
+            , rankingname = newName
+            , rankingdesc = newDesc
+            , rankingowneraddr = rankingowneraddress
+            }
+
+        globalListWithJsonObjAdded =
+            --newRankingInfo :: justGlobalList
+            newRankingInfo :: lrankingInfo
+    in
+    --AddedNewRankingToGlobalList is the Msg handled by update whenever a request is made
+    --RemoteData is used throughout the module, including update
+    -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
+    -- the Decoder decodes what comes back in the response
+    Http.request
+        { body =
+            Http.jsonBody <| jsonEncodeNewGlobalRankingList globalListWithJsonObjAdded
+        , expect = Http.expectJson (RemoteData.fromResult >> AddedNewRankingToGlobalList) SR.Decode.decodeNewRankingListServerResponse
+        , headers = [ secretKey, binName, containerId ]
+        , method = "PUT"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = SR.Constants.globalJsonbinRankingUpdateLink
+        }
+
+
+jsonEncodeNewGlobalRankingList : List SR.Types.RankingInfo -> Json.Encode.Value
+jsonEncodeNewGlobalRankingList lrankingInfo =
+    let
+        encodeAglobalRankingObj : SR.Types.RankingInfo -> Json.Encode.Value
+        encodeAglobalRankingObj rankingInfo =
+            Json.Encode.object
+                [ ( "id", Json.Encode.string rankingInfo.id )
+                , ( "active", Json.Encode.bool rankingInfo.active )
+                , ( "rankingname", Json.Encode.string rankingInfo.rankingname )
+                , ( "rankingdesc", Json.Encode.string rankingInfo.rankingdesc )
+                , ( "rankingowneraddr", Json.Encode.string rankingInfo.rankingowneraddr )
+                ]
+
+        encodedList =
+            Json.Encode.list encodeAglobalRankingObj lrankingInfo
+
+        _ =
+            Debug.log "encode the list: " encodedList
+    in
+    encodedList
+
+
+gotRankingListFromRemData : RemoteData.WebData (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
+gotRankingListFromRemData globalList =
+    case globalList of
+        RemoteData.Success a ->
+            a
+
+        RemoteData.NotAsked ->
+            [ SR.Defaults.emptyRankingInfo
+            ]
+
+        RemoteData.Loading ->
+            [ SR.Defaults.emptyRankingInfo
+            ]
+
+        RemoteData.Failure err ->
+            case err of
+                Http.BadUrl s ->
+                    [ SR.Defaults.emptyRankingInfo
+                    ]
+
+                Http.Timeout ->
+                    [ SR.Defaults.emptyRankingInfo
+                    ]
+
+                Http.NetworkError ->
+                    [ SR.Defaults.emptyRankingInfo
+                    ]
+
+                Http.BadStatus statuscode ->
+                    [ SR.Defaults.emptyRankingInfo
+                    ]
+
+                Http.BadBody s ->
+                    [ SR.Defaults.emptyRankingInfo
+                    ]
+
+
+gotNewRankingIdFromWebData : RemoteData.WebData SR.Types.RankingId -> String
+gotNewRankingIdFromWebData rankingIdremdata =
+    case rankingIdremdata of
+        RemoteData.Success a ->
+            case a of
+                b ->
+                    case b of
+                        SR.Types.RankingId c ->
+                            c
+
+        RemoteData.NotAsked ->
+            "Initialising."
+
+        RemoteData.Loading ->
+            "Loading."
+
+        RemoteData.Failure err ->
+            case err of
+                Http.BadUrl s ->
+                    "Bad Url"
+
+                Http.Timeout ->
+                    "Timeout"
+
+                Http.NetworkError ->
+                    "Network Err"
+
+                Http.BadStatus statuscode ->
+                    String.fromInt <| statuscode
+
+                Http.BadBody s ->
+                    "BadBody " ++ s

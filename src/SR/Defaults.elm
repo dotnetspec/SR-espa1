@@ -44,8 +44,8 @@ emptyUser =
 emptyRankingInfo =
     { id = "0"
     , active = False
-    , name = ""
-    , desc = ""
+    , rankingname = ""
+    , rankingdesc = ""
     , rankingowneraddr = ""
     }
 
