@@ -61,7 +61,7 @@ type Model
     = WalletOps SR.Types.WalletState
     | UserOps SR.Types.UserState (List SR.Types.User) Eth.Types.Address SR.Types.User SR.Types.UIState
     | GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState Eth.Types.Address (List SR.Types.User) SR.Types.User
-    | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.RankingId
+    | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.RankingId SR.Types.User
     | Failure String
 
 
@@ -172,7 +172,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( GlobalRankings rankingsAsJustList "" "" uiState rnkOwnerAddr userList user, Cmd.none )
 
                 GotRankingId rnkidstr ->
-                    ( SelectedRanking lrankingInfo [] rnkidstr, fetchedSingleRanking rnkidstr )
+                    ( SelectedRanking lrankingInfo [] rnkidstr user, fetchedSingleRanking rnkidstr )
 
                 -- this is the response from createNewPlayerListWithCurrentUser Cmd
                 -- it had the Http.expectStringResponse in it
@@ -210,27 +210,23 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 _ ->
                     ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings (Internal.Address "") userList user, Cmd.none )
 
-        SelectedRanking globalList lPlayer intrankingId ->
+        SelectedRanking globalList lPlayer intrankingId userRec ->
             case msgOfTransitonThatAlreadyHappened of
                 PlayersReceived players ->
                     let
                         playerAsJustList =
                             extractPlayersFromWebData players
                     in
-                    ( SelectedRanking globalList playerAsJustList (Internal.RankingId ""), Cmd.none )
+                    ( SelectedRanking globalList playerAsJustList (Internal.RankingId "") userRec, Cmd.none )
 
                 ResetToShowGlobal _ rnkowneraddr ->
                     ( GlobalRankings globalList "" "" SR.Types.UIRenderAllRankings rnkowneraddr [ SR.Defaults.emptyUser ] SR.Defaults.emptyUser, Cmd.none )
 
                 Fail str ->
-                    let
-                        _ =
-                            Debug.log "SelectedRanking fail " str
-                    in
-                    ( SelectedRanking globalList lPlayer (Internal.RankingId ""), Cmd.none )
+                    ( Failure <| "Fail failure : " ++ str, Cmd.none )
 
                 _ ->
-                    ( SelectedRanking globalList lPlayer (Internal.RankingId ""), Cmd.none )
+                    ( Failure <| "Fall thru failure : ", Cmd.none )
 
         Failure str ->
             ( Failure <| "Model failure : " ++ str, Cmd.none )
@@ -317,12 +313,12 @@ globalHeading user =
         ]
 
 
-selectedHeading : Element Msg
-selectedHeading =
+selectedHeading : SR.Types.User -> Element Msg
+selectedHeading user =
     Element.column Grid.section <|
         [ Element.el Heading.h2 <| Element.text "Selected Ranking"
         , Element.column Card.fill
-            [ Element.el Heading.h4 <| Element.text "Username"
+            [ Element.el Heading.h4 <| Element.text user.username
             ]
         ]
 
@@ -533,13 +529,13 @@ globalResponsiveview rankingList uaddr user =
             ]
 
 
-selectedResponsiveview : List SR.Types.RankingInfo -> List SR.Types.Player -> Html Msg
-selectedResponsiveview globalList playerList =
+selectedResponsiveview : List SR.Types.RankingInfo -> List SR.Types.Player -> SR.Types.User -> Html Msg
+selectedResponsiveview globalList playerList user =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
             [ Element.el Heading.h4 <| Element.text "SportRank"
-            , selectedHeading
+            , selectedHeading user
             , homebutton globalList (Internal.Address "")
 
             --, group
@@ -589,8 +585,8 @@ view model =
                 _ ->
                     globalResponsiveview globalList uaddr userRec
 
-        SelectedRanking globalList playerList rnkid ->
-            selectedResponsiveview globalList playerList
+        SelectedRanking globalList playerList rnkid userRec ->
+            selectedResponsiveview globalList playerList userRec
 
         WalletOps walletState ->
             case walletState of
@@ -717,7 +713,7 @@ subscriptions model =
         GlobalRankings _ _ _ _ _ _ _ ->
             Sub.none
 
-        SelectedRanking _ _ _ ->
+        SelectedRanking _ _ _ _ ->
             Sub.none
 
         Failure _ ->
