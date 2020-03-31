@@ -335,30 +335,12 @@ singleUserInList userlist uaddr =
 gotUserFromUserList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
 gotUserFromUserList userList uaddr =
     let
-        _ =
-            Debug.log "userlist "
-                userList
-
-        -- addrAsString =
-        --     Eth.Utils.addressToString uaddr
-        _ =
-            Debug.log "addr in gotUser... "
-                (Eth.Utils.addressToString
-                    uaddr
-                )
-
         existingUser =
             --List.head <| List.filter (\r -> r.ethaddress == (Eth.Utils.addressToString uaddr |> Debug.log "uaddr argument: ")) userList
             List.head <|
-                List.filter (\r -> r.ethaddress == (Eth.Utils.addressToString <| uaddr))
+                List.filter (\r -> r.ethaddress == (String.toLower <| Eth.Utils.addressToString <| uaddr))
                     userList
-
-        _ =
-            Debug.log
-                "existingUser "
-                existingUser
     in
-    --existingUser
     case existingUser of
         Nothing ->
             SR.Defaults.emptyUser
@@ -1067,7 +1049,7 @@ createNewPlayerListWithCurrentUser =
                   , ( "rank", Json.Encode.int 1 )
                   , ( "name", Json.Encode.string "" )
                   , ( "playerid", Json.Encode.int 1 )
-                  , ( "currentchallengeraddress", Json.Encode.string "" )
+                  , ( "currentchallengeraddress", Json.Encode.string (String.toLower "") )
                   ]
                 ]
     in
@@ -1110,7 +1092,7 @@ createNewUser =
                 [ [ ( "datestamp", Json.Encode.int 1569839363942 )
                   , ( "active", Json.Encode.bool True )
                   , ( "username", Json.Encode.string "" )
-                  , ( "ethaddress", Json.Encode.string "" )
+                  , ( "ethaddress", Json.Encode.string (String.toLower "") )
                   , ( "description", Json.Encode.string "" )
                   , ( "email", Json.Encode.string "" )
                   , ( "mobile", Json.Encode.string "" )
