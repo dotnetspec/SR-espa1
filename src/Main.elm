@@ -58,20 +58,21 @@ main =
 
 
 type Model
-    = WalletOps SR.Types.UserState SR.Types.WalletState SR.Types.UIState
-    | UserOps (List SR.Types.User) Eth.Types.Address SR.Types.User
+    = WalletOps SR.Types.UserState SR.Types.WalletState
+    | UserOps (List SR.Types.User) Eth.Types.Address SR.Types.User SR.Types.UIState
     | GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState Eth.Types.Address (List SR.Types.User)
     | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.RankingId
 
 
 
+--| Failure String
 --init : Commands msg -> Flags -> ( Model, Cmd Msg )
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( --WalletOps [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.UIRenderAllRankings
-      WalletOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Missing SR.Types.DisplayWalletInfoToUser
+      WalletOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Missing
     , Cmd.batch
         [ Ports.log "Sending out msg from init "
 
@@ -109,7 +110,7 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msgOfTransitonThatAlreadyHappened currentmodel =
     case currentmodel of
-        WalletOps userState walletState uiState ->
+        WalletOps userState walletState ->
             --case walletState of
             --SR.Types.WalletOpenedWithoutUserCheck uaddr ->
             -- let
@@ -119,13 +120,13 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
             --         Debug.log "singleUserInList " singleUserInList.username
             -- in
             -- if singleUserInList.username == "" then
-            --( WalletOps [] (SR.Types.NewUser <| SR.Defaults.emptyUser) (SR.Types.WalletOpenedWithoutUserCheck uaddr) SR.Types.DisplayWalletInfoToUser, gotUserList )
+            --( WalletOps [] (SR.Types.NewUser <| SR.Defaults.emptyUser) (SR.Types.WalletOpenedWithoutUserCheck uaddr), gotUserList )
             --( GlobalRankings [] "" "" SR.Types.CreateNewUser uaddr [], Cmd.none )
             -- else
             --     ( GlobalRankings [] "" "" SR.Types.UIRenderAllRankings uaddr userlist, gotRankingList )
             --SR.Types.WalletOpenedUserCheckDone user uaddr ->
             --( GlobalRankings [] "" "" SR.Types.UIRenderAllRankings uaddr [], gotRankingList )
-            --( WalletOps [] (SR.Types.NewUser <| uaddr) (SR.Types.WalletOpenedWithoutUserCheck uaddr) SR.Types.DisplayWalletInfoToUser, Cmd.none)
+            --( WalletOps [] (SR.Types.NewUser <| uaddr) (SR.Types.WalletOpenedWithoutUserCheck uaddr), Cmd.none)
             --_ ->
             case msgOfTransitonThatAlreadyHappened of
                 WalletStatus walletSentry_ ->
@@ -141,8 +142,8 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                             Eth.Utils.addressToString uaddr
                                     in
                                     --handleMsg (WalletOpened a)
-                                    --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser uaddr) (SR.Types.WalletOpenedWithoutUserCheck uaddr) SR.Types.DisplayWalletInfoToUser, gotUserList )
-                                    ( UserOps [] uaddr SR.Defaults.emptyUser, gotUserList )
+                                    --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser uaddr) (SR.Types.WalletOpenedWithoutUserCheck uaddr), gotUserList )
+                                    ( UserOps [] uaddr SR.Defaults.emptyUser SR.Types.DisplayWalletInfoToUser, gotUserList )
 
                         Rinkeby ->
                             case walletSentry_.account of
@@ -157,8 +158,8 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                     --         Debug.log "userAddressAsString " userAddressAsString
                                     -- in
                                     --handleMsg (WalletOpened a)
-                                    --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser uaddr) (SR.Types.WalletOpenedWithoutUserCheck uaddr) SR.Types.DisplayWalletInfoToUser, gotUserList )
-                                    ( UserOps [] uaddr SR.Defaults.emptyUser, gotUserList )
+                                    --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser uaddr) (SR.Types.WalletOpenedWithoutUserCheck uaddr), gotUserList )
+                                    ( UserOps [] uaddr SR.Defaults.emptyUser SR.Types.DisplayWalletInfoToUser, gotUserList )
 
                         _ ->
                             let
@@ -175,19 +176,19 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 -- PollBlock (Err error) ->
                 --     ( model, Cmd.none )
                 MissingWalletInstructions ->
-                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.DisplayWalletInfoToUser, Cmd.none )
+                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing, Cmd.none )
 
                 OpenWalletInstructions ->
-                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Locked SR.Types.DisplayWalletInfoToUser, Cmd.none )
+                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Locked, Cmd.none )
 
                 --WalletOpened uaddr ->
-                --( WalletOps  (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.WalletOpenedWithoutUserCheck uaddr SR.Types.DisplayWalletInfoToUser, Cmd.none )
+                --( WalletOps  (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.WalletOpenedWithoutUserCheck uaddr, Cmd.none )
                 NewUser ->
                     let
                         _ =
                             Debug.log "New user " "str"
                     in
-                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") (SR.Types.WalletOpenedWithoutUserCheck <| Internal.Address "") SR.Types.CreateNewUser, Cmd.none )
+                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") (SR.Types.WalletOpenedWithoutUserCheck <| Internal.Address ""), Cmd.none )
 
                 ExistingUser uname ->
                     let
@@ -207,25 +208,25 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 --         _ =
                 --             Debug.log "users as list " userList
                 --     in
-                --     ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") (SR.Types.WalletOpenedUserCheckDone SR.Defaults.emptyUser <| Internal.Address "") SR.Types.DisplayWalletInfoToUser, Cmd.none )
+                --     ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") (SR.Types.WalletOpenedUserCheckDone SR.Defaults.emptyUser <| Internal.Address ""), Cmd.none )
                 NameInputChg namefield ->
-                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.DisplayWalletInfoToUser, Cmd.none )
+                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing, Cmd.none )
 
                 Fail str ->
                     let
                         _ =
                             Debug.log "GlobalRankings fail " str
                     in
-                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.DisplayWalletInfoToUser, Cmd.none )
+                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing, Cmd.none )
 
                 _ ->
                     let
                         _ =
                             Debug.log "WalletOps fall through " "str"
                     in
-                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.DisplayWalletInfoToUser, Cmd.none )
+                    ( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing, Cmd.none )
 
-        UserOps _ uaddr _ ->
+        UserOps _ uaddr _ uiState ->
             case msgOfTransitonThatAlreadyHappened of
                 UsersReceived userlist ->
                     --let
@@ -234,7 +235,8 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     -- userAddressAsString =
                     --     Eth.Utils.addressToString uaddr
                     -- singleUserInList =
-                    --     gotUserFromUserList usersAsJustList uaddr
+                    --     --gotUserFromUserList
+                    --     usersAsJustList uaddr
                     -- _ =
                     --     Debug.log "singleUserInList " singleUserInList.username
                     -- _ =
@@ -244,9 +246,10 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     -- _ =
                     --     Debug.log "users as list " usersAsJustList
                     --in
-                    --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") (SR.Types.WalletOpenedUserCheckDone SR.Defaults.emptyUser <| Internal.Address "") SR.Types.DisplayWalletInfoToUser, Cmd.none )
-                    ( UserOps (extractUsersFromWebData userlist) uaddr (singleUserInList userlist uaddr), Cmd.none )
+                    --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") (SR.Types.WalletOpenedUserCheckDone SR.Defaults.emptyUser <| Internal.Address ""), Cmd.none )
+                    ( UserOps (extractUsersFromWebData userlist) uaddr (singleUserInList userlist uaddr) SR.Types.DisplayWalletInfoToUser, Cmd.none )
 
+                --( UserOps (extractUsersFromWebData userlist) uaddr singleUserInList SR.Types.Open, Cmd.none )
                 _ ->
                     ( GlobalRankings [] "" "" SR.Types.UIRenderAllRankings (Internal.Address "") [], Cmd.none )
 
@@ -365,10 +368,10 @@ handleMsg : Msg -> ( Model, Cmd Msg )
 handleMsg msg =
     case msg of
         MissingWalletInstructions ->
-            ( WalletOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Missing SR.Types.DisplayWalletInfoToUser, Cmd.none )
+            ( WalletOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Missing, Cmd.none )
 
         OpenWalletInstructions ->
-            ( WalletOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Locked SR.Types.DisplayWalletInfoToUser, Cmd.none )
+            ( WalletOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Locked, Cmd.none )
 
         -- NewUser ->
         --     ( WalletOps [] (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Missing SR.Types.CreateNewUser, Cmd.none )
@@ -385,7 +388,7 @@ handleMsg msg =
                 _ =
                     Debug.log "in handle msg fall thur " "str"
             in
-            ( WalletOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Missing SR.Types.DisplayWalletInfoToUser, Cmd.none )
+            ( WalletOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Types.Missing, Cmd.none )
 
 
 greetingHeading : String -> Element Msg
@@ -421,10 +424,6 @@ globalHeading uaddr =
               Element.el Heading.h4 <| Element.text uaddrStr
             ]
         ]
-
-
-
---Just (GotRankingId (Internal.RankingId <| String.fromInt playerObj.id))
 
 
 selectedHeading : Element Msg
@@ -592,41 +591,6 @@ homebutton rankingList uaddr =
         ]
 
 
-
--- () means there is a value there, but you don't care what it is
--- input : Element ()
--- input =
---     Element.column Grid.section <|
---         [ Element.el Heading.h2 <| Element.text "Input"
---         , Element.wrappedRow (Card.fill ++ Grid.simple)
---             [ Element.column Grid.simple
---                 [ Input.text Input.simple
---                     { onChange = always ()
---                     , text = "Input.simple"
---                     , placeholder = Nothing
---                     , label = Input.labelLeft Input.label <| Element.text "Input.label"
---                     }
---                 , Input.multiline Input.simple
---                     { onChange = always ()
---                     , text = "Input.simple"
---                     , placeholder = Nothing
---                     , label = Input.labelLeft Input.label <| Element.text "Input.label"
---                     , spellcheck = False
---                     }
---                 ]
---             ]
---         , Element.paragraph [] <|
---             List.singleton <|
---                 Element.text "Input attributes can be combined with other attributes."
---         , Element.paragraph (Card.fill ++ Color.warning) <|
---             [ Element.el [ Font.bold ] <| Element.text "Warning: "
---             , Element.paragraph [] <|
---                 List.singleton <|
---                     Element.text "color changing attributes need to come before the Input attribute."
---             ]
---         ]
-
-
 inputNewUser : Eth.Types.Address -> Element Msg
 inputNewUser uaddr =
     Element.column Grid.section <|
@@ -751,7 +715,7 @@ view model =
 
         -- WalletOps _ _ ->
         --     greetingView "WalletOps"
-        WalletOps userState walletState uiState ->
+        WalletOps userState walletState ->
             --let
             -- _ =
             --     Debug.log "user list in view : " userList
@@ -778,7 +742,7 @@ view model =
                     else
                         greetingView <| "Welcome back " ++ user.username
 
-        UserOps _ uaddr uname ->
+        UserOps _ uaddr uname uiState ->
             let
                 addrAsStr =
                     Eth.Utils.addressToString uaddr
@@ -874,10 +838,10 @@ extractUsersFromWebData remData =
             []
 
         RemoteData.Success users ->
-            let
-                _ =
-                    Debug.log "http " "success"
-            in
+            -- let
+            --     _ =
+            --         Debug.log "http " "success"
+            -- in
             users
 
         RemoteData.Failure httpError ->
@@ -913,16 +877,16 @@ gotHttpErr httperr =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
-        WalletOps _ _ _ ->
+        WalletOps _ _ ->
             Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+
+        UserOps _ _ _ _ ->
+            Sub.none
 
         GlobalRankings _ _ _ _ _ _ ->
             Sub.none
 
         SelectedRanking _ _ _ ->
-            Sub.none
-
-        UserOps _ _ _ ->
             Sub.none
 
 
