@@ -92,6 +92,7 @@ type Msg
     = WalletStatus Eth.Sentry.Wallet.WalletSentry
     | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
     | SentUserInfoAndDecodedResponseToNewUser (RemoteData.WebData (List SR.Types.User))
+    | NewRankingRequestedByConfirmBtnClicked
       --| PollBlock (Result Http.Error Int)
       --| TxSentryMsg Eth.Sentry.Tx.Msg
     | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
@@ -200,6 +201,14 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 ResetToShowGlobal globalList rnkowneraddr userRec ->
                     ( GlobalRankings globalList "" "" SR.Types.UIRenderAllRankings rnkowneraddr userList userRec, Cmd.none )
 
+                NewRankingRequestedByConfirmBtnClicked ->
+                    ( Failure "Error in NewRankingRequestedByConfirmBtnClicked", Cmd.none )
+
+                -- case previousmodel of
+                --     AllRankingsJson globalList newrankingName newRankingDesc _ rnkowner ->
+                --         ( AllRankingsJson globalList newrankingName newRankingDesc SR.Types.CreateNewLadder rnkowner, createNewPlayerListWithCurrentUser )
+                -- _ ->
+                --     ( Failure "Error in NewRankingRequestedByConfirmBtnClicked", Cmd.none )
                 Fail str ->
                     let
                         _ =
@@ -454,8 +463,8 @@ newrankingbuttons =
         ]
 
 
-homebutton : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> Element Msg
-homebutton rankingList uaddr user =
+globalhomebutton : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> Element Msg
+globalhomebutton rankingList uaddr user =
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
@@ -464,9 +473,33 @@ homebutton rankingList uaddr user =
                     { onPress = Just <| ResetToShowGlobal rankingList uaddr user
                     , label = Element.text "Home"
                     }
-                , Input.button (Button.simple ++ Color.success) <|
+                , Input.button (Button.simple ++ Color.simple) <|
                     { onPress = Nothing
-                    , label = Element.text "Button.fill"
+                    , label = Element.text "Create New"
+                    }
+                ]
+            ]
+        , Element.column Grid.simple <|
+            [ Element.paragraph [] <|
+                List.singleton <|
+                    Element.text "Button attributes can be combined with other attributes."
+            ]
+        ]
+
+
+selectedhomebutton : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> Element Msg
+selectedhomebutton rankingList uaddr user =
+    Element.column Grid.section <|
+        [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+        , Element.column (Card.simple ++ Grid.simple) <|
+            [ Element.wrappedRow Grid.simple <|
+                [ Input.button (Button.simple ++ Color.simple) <|
+                    { onPress = Just <| ResetToShowGlobal rankingList uaddr user
+                    , label = Element.text "Home"
+                    }
+                , Input.button (Button.simple ++ Color.disabled) <|
+                    { onPress = Nothing
+                    , label = Element.text "Create New"
                     }
                 ]
             ]
@@ -518,7 +551,7 @@ globalResponsiveview rankingList uaddr user =
             Framework.container
             [ Element.el Heading.h4 <| Element.text "SportRank"
             , globalHeading user
-            , homebutton rankingList uaddr user
+            , globalhomebutton rankingList uaddr user
 
             --, group
             --, color
@@ -536,7 +569,7 @@ selectedResponsiveview globalList playerList user =
             Framework.container
             [ Element.el Heading.h4 <| Element.text "SportRank"
             , selectedHeading user
-            , homebutton globalList (Internal.Address "") user
+            , selectedhomebutton globalList (Internal.Address "") user
 
             --, group
             --, color
