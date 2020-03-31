@@ -102,7 +102,7 @@ type Msg
     | OpenWalletInstructions
     | NewUser
     | NameInputChg String
-    | ResetToShowGlobal (List SR.Types.RankingInfo) Eth.Types.Address
+    | ResetToShowGlobal (List SR.Types.RankingInfo) Eth.Types.Address SR.Types.User
     | ExistingUser Eth.Types.Address
     | Fail String
 
@@ -197,8 +197,8 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         _ ->
                             ( Failure "SentUserInfoAndDecodedResponseToNewUser", Cmd.none )
 
-                ResetToShowGlobal globalList rnkowneraddr ->
-                    ( GlobalRankings globalList "" "" SR.Types.UIRenderAllRankings rnkowneraddr userList user, Cmd.none )
+                ResetToShowGlobal globalList rnkowneraddr userRec ->
+                    ( GlobalRankings globalList "" "" SR.Types.UIRenderAllRankings rnkowneraddr userList userRec, Cmd.none )
 
                 Fail str ->
                     let
@@ -219,8 +219,8 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     in
                     ( SelectedRanking globalList playerAsJustList (Internal.RankingId "") userRec, Cmd.none )
 
-                ResetToShowGlobal _ rnkowneraddr ->
-                    ( GlobalRankings globalList "" "" SR.Types.UIRenderAllRankings rnkowneraddr [ SR.Defaults.emptyUser ] SR.Defaults.emptyUser, Cmd.none )
+                ResetToShowGlobal _ rnkowneraddr user ->
+                    ( GlobalRankings globalList "" "" SR.Types.UIRenderAllRankings rnkowneraddr [ SR.Defaults.emptyUser ] user, Cmd.none )
 
                 Fail str ->
                     ( Failure <| "Fail failure : " ++ str, Cmd.none )
@@ -454,14 +454,14 @@ newrankingbuttons =
         ]
 
 
-homebutton : List SR.Types.RankingInfo -> Eth.Types.Address -> Element Msg
-homebutton rankingList uaddr =
+homebutton : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> Element Msg
+homebutton rankingList uaddr user =
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
                 [ Input.button (Button.simple ++ Color.simple) <|
-                    { onPress = Just <| ResetToShowGlobal rankingList uaddr
+                    { onPress = Just <| ResetToShowGlobal rankingList uaddr user
                     , label = Element.text "Home"
                     }
                 , Input.button (Button.simple ++ Color.success) <|
@@ -518,7 +518,7 @@ globalResponsiveview rankingList uaddr user =
             Framework.container
             [ Element.el Heading.h4 <| Element.text "SportRank"
             , globalHeading user
-            , homebutton rankingList uaddr
+            , homebutton rankingList uaddr user
 
             --, group
             --, color
@@ -536,7 +536,7 @@ selectedResponsiveview globalList playerList user =
             Framework.container
             [ Element.el Heading.h4 <| Element.text "SportRank"
             , selectedHeading user
-            , homebutton globalList (Internal.Address "")
+            , homebutton globalList (Internal.Address "") user
 
             --, group
             --, color
