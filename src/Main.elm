@@ -58,7 +58,7 @@ main =
 
 
 type Model
-    = WalletOps SR.Types.WalletState
+    = WalletOps SR.Types.WalletState TxRecord SR.Types.Challenge
     | UserOps SR.Types.UserState (List SR.Types.User) Eth.Types.Address SR.Types.User SR.Types.UIState
     | GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState Eth.Types.Address (List SR.Types.User) SR.Types.User
     | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.RankingId SR.Types.User
@@ -72,7 +72,7 @@ type Model
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( --WalletOps [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.UIRenderAllRankings
-      WalletOps SR.Types.Missing
+      WalletOps SR.Types.Missing emptyTxRecord SR.Defaults.emptyChallenge
     , Cmd.batch
         [ Ports.log "Sending out msg from init "
 
@@ -80,6 +80,37 @@ init _ =
         , Cmd.none
         ]
     )
+
+
+emptyTxRecord : TxRecord
+emptyTxRecord =
+    let
+        node =
+            --Net.toNetworkId networkId
+            Net.toNetworkId 4
+                |> Ports.ethNode
+    in
+    { txSentry = Eth.Sentry.Tx.init ( Ports.txOut, Ports.txIn ) TxSentryMsg node.http
+    , account = Nothing
+    , node = node
+    , blockNumber = Nothing
+    , txHash = Nothing
+    , tx = Nothing
+    , txReceipt = Nothing
+    , errors = []
+    }
+
+
+type alias TxRecord =
+    { txSentry : Eth.Sentry.Tx.TxSentry Msg
+    , account : Maybe Eth.Types.Address
+    , node : Ports.EthNode
+    , blockNumber : Maybe Int
+    , txHash : Maybe Eth.Types.TxHash
+    , tx : Maybe Eth.Types.Tx
+    , txReceipt : Maybe Eth.Types.TxReceipt
+    , errors : List String
+    }
 
 
 
@@ -95,7 +126,12 @@ type Msg
     | ChangedUIStateToCreateNew (List SR.Types.RankingInfo) Eth.Types.Address SR.Types.User
     | NewRankingRequestedByConfirmBtnClicked
       --| PollBlock (Result Http.Error Int)
-      --| TxSentryMsg Eth.Sentry.Tx.Msg
+    | InitTx
+    | WatchTxHash (Result String Eth.Types.TxHash)
+    | WatchTx (Result String Eth.Types.Tx)
+    | WatchTxReceipt (Result String Eth.Types.TxReceipt)
+    | TrackTx Eth.Sentry.Tx.TxTracker
+    | TxSentryMsg Eth.Sentry.Tx.Msg
     | AddedNewRankingToGlobalList (RemoteData.WebData (List SR.Types.RankingInfo))
     | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
     | GotRankingId Internal.RankingId
@@ -109,20 +145,23 @@ type Msg
     | ExistingUser Eth.Types.Address
     | LadderNameInputChg String
     | LadderDescInputChg String
+    | ProcessResult SR.Types.ResultOfMatch
+    | ConfirmButtonClicked
+    | SentResultToJsonbin (Result Http.Error ())
     | Fail String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msgOfTransitonThatAlreadyHappened currentmodel =
     case currentmodel of
-        WalletOps walletState ->
+        WalletOps walletState txRec challenge ->
             case msgOfTransitonThatAlreadyHappened of
                 WalletStatus walletSentry_ ->
                     case walletSentry_.networkId of
                         Mainnet ->
                             case walletSentry_.account of
                                 Nothing ->
-                                    ( WalletOps SR.Types.Locked, Cmd.none )
+                                    ( WalletOps SR.Types.Locked txRec challenge, Cmd.none )
 
                                 Just uaddr ->
                                     ( UserOps (SR.Types.NewUser <| SR.Defaults.emptyUser) [] uaddr SR.Defaults.emptyUser SR.Types.DisplayWalletInfoToUser, gotUserList )
@@ -130,7 +169,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         Rinkeby ->
                             case walletSentry_.account of
                                 Nothing ->
-                                    ( WalletOps SR.Types.Locked, Cmd.none )
+                                    ( WalletOps SR.Types.Locked txRec challenge, Cmd.none )
 
                                 Just uaddr ->
                                     ( UserOps (SR.Types.NewUser <| SR.Defaults.emptyUser) [] uaddr SR.Defaults.emptyUser SR.Types.DisplayWalletInfoToUser, gotUserList )
@@ -140,14 +179,162 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                 _ =
                                     Debug.log "MissingWalletInstructions " "str"
                             in
-                            ( WalletOps SR.Types.Missing, Cmd.none )
+                            ( WalletOps SR.Types.Missing txRec challenge, Cmd.none )
 
                 OpenWalletInstructions ->
-                    --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Locked, Cmd.none )
-                    ( WalletOps SR.Types.Locked, Cmd.none )
+                    --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Locked txRec challenge, Cmd.none )
+                    ( WalletOps SR.Types.Locked txRec challenge, Cmd.none )
 
-                -- NameInputChg namefield ->
-                --     ( WalletOps SR.Types.Missing, Cmd.none )
+                TxSentryMsg subMsg ->
+                    let
+                        ( subModel, subCmd ) =
+                            Eth.Sentry.Tx.update subMsg txRec.txSentry
+                    in
+                    --( { txRec | txSentry = subModel }, subCmd )
+                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = subModel } challenge, subCmd )
+
+                InitTx ->
+                    let
+                        txParams =
+                            { to = txRec.account
+                            , from = txRec.account
+                            , gas = Nothing
+                            , gasPrice = Just <| Eth.Units.gwei 4
+                            , value = Just <| Eth.Units.gwei 1
+                            , data = Nothing
+                            , nonce = Nothing
+                            }
+
+                        ( newSentry, sentryCmd ) =
+                            Eth.Sentry.Tx.customSend
+                                txRec.txSentry
+                                { onSign = Just WatchTxHash
+                                , onBroadcast = Just WatchTx
+                                , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                                }
+                                txParams
+                    in
+                    --( { txRec | txSentry = newSentry }, sentryCmd )
+                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = newSentry } challenge, sentryCmd )
+
+                ConfirmButtonClicked ->
+                    let
+                        txParams =
+                            { to = txRec.account
+                            , from = txRec.account
+                            , gas = Nothing
+                            , gasPrice = Just <| Eth.Units.gwei 4
+                            , value = Just <| Eth.Units.gwei 1
+                            , data = Nothing
+                            , nonce = Nothing
+                            }
+
+                        ( newSentry, sentryCmd ) =
+                            Eth.Sentry.Tx.customSend
+                                txRec.txSentry
+                                { onSign = Just WatchTxHash
+                                , onBroadcast = Just WatchTx
+                                , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                                }
+                                txParams
+                    in
+                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = newSentry } challenge, Cmd.batch [ sentryCmd, postResultToJsonbin <| Internal.RankingId challenge.rankingid ] )
+
+                WatchTxHash (Ok txHash) ->
+                    --( { txRec | txHash = Just txHash }, Cmd.none )
+                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txHash = Just txHash } challenge, Cmd.none )
+
+                WatchTxHash (Err err) ->
+                    --( { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
+                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors } challenge, Cmd.none )
+
+                WatchTx (Ok tx) ->
+                    WalletOps SR.Types.WalletOpenedAndOperational { txRec | tx = Just tx } challenge
+                        |> update (ProcessResult SR.Types.Won)
+
+                WatchTx (Err err) ->
+                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | errors = ("Error Retrieving Tx: " ++ err) :: txRec.errors } challenge, Cmd.none )
+
+                --( { txRec | errors = ("Error Retrieving Tx: " ++ err) :: txRec.errors }, Cmd.none )
+                WatchTxReceipt (Ok txReceipt) ->
+                    WalletOps SR.Types.WalletOpenedAndOperational { txRec | txReceipt = Just txReceipt } challenge
+                        |> update (ProcessResult SR.Types.Won)
+
+                WatchTxReceipt (Err err) ->
+                    -- ( { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
+                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors } challenge, Cmd.none )
+
+                -- TrackTx blockDepth ->
+                --     ( { txRec | blockDepth = Just blockDepth }, Cmd.none )
+                ProcessResult result ->
+                    let
+                        whoHigher =
+                            isOpponentHigherRank challenge.player challenge.opponent
+
+                        _ =
+                            Debug.log "made it to process result!" 8
+                    in
+                    case result of
+                        SR.Types.Won ->
+                            case whoHigher of
+                                SR.Types.OpponentRankHigher ->
+                                    --nb. higher rank is a lower number and vice versa!
+                                    ( WalletOps SR.Types.WalletOpenedAndOperational
+                                        txRec
+                                        { challenge
+                                            | playerRank = challenge.opponentRank
+                                            , opponentRank = challenge.opponentRank + 1
+                                            , playerStatus = SR.Types.Available
+                                            , opponentStatus = SR.Types.Available
+                                        }
+                                    , Cmd.none
+                                    )
+
+                                SR.Types.OpponentRankLower ->
+                                    --nb. higher rank is a lower number and vice versa!
+                                    ( WalletOps SR.Types.WalletOpenedAndOperational
+                                        txRec
+                                        { challenge | playerStatus = SR.Types.Available, opponentStatus = SR.Types.Available }
+                                    , Cmd.none
+                                    )
+
+                        SR.Types.Lost ->
+                            case whoHigher of
+                                SR.Types.OpponentRankHigher ->
+                                    --nb. higher rank is a lower number and vice versa!
+                                    ( WalletOps SR.Types.WalletOpenedAndOperational
+                                        txRec
+                                        { challenge | playerStatus = SR.Types.Available, opponentStatus = SR.Types.Available }
+                                    , Cmd.none
+                                    )
+
+                                SR.Types.OpponentRankLower ->
+                                    --nb. higher rank is a lower number and vice versa!
+                                    ( WalletOps SR.Types.WalletOpenedAndOperational
+                                        txRec
+                                        { challenge
+                                            | opponentRank = challenge.playerRank
+                                            , playerRank = challenge.opponentRank + 1
+                                            , playerStatus = SR.Types.Available
+                                            , opponentStatus = SR.Types.Available
+                                        }
+                                    , Cmd.none
+                                    )
+
+                        SR.Types.Undecided ->
+                            ( WalletOps SR.Types.WalletOpenedAndOperational
+                                txRec
+                                challenge
+                            , Cmd.none
+                            )
+
+                SentResultToJsonbin a ->
+                    ( WalletOps SR.Types.WalletOpenedAndOperational
+                        txRec
+                        challenge
+                    , Cmd.none
+                    )
+
                 Fail str ->
                     ( Failure "WalletOps", Cmd.none )
 
@@ -256,6 +443,17 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
         Failure str ->
             ( Failure <| "Model failure : " ++ str, Cmd.none )
+
+
+isOpponentHigherRank : SR.Types.Player -> SR.Types.Opponent -> SR.Types.OpponentRelativeRank
+isOpponentHigherRank player opponent =
+    -- nb. if player rank is 'higher' than opponent his rank integer will actually be 'less than' opponent
+    -- we go by the integer ...
+    if player.rank > opponent.rank then
+        SR.Types.OpponentRankHigher
+
+    else
+        SR.Types.OpponentRankLower
 
 
 isUserInList : SR.Types.User -> Bool
@@ -699,7 +897,7 @@ view model =
         SelectedRanking lrankingInfo playerList rnkid userRec ->
             selectedResponsiveview lrankingInfo playerList userRec
 
-        WalletOps walletState ->
+        WalletOps walletState txRec challenge ->
             case walletState of
                 SR.Types.Locked ->
                     greetingView "OpenWalletInstructions"
@@ -716,6 +914,9 @@ view model =
 
                     else
                         greetingView <| "Welcome back " ++ user.username
+
+                SR.Types.WalletOpenedAndOperational ->
+                    greetingView "WalletOpenedAndOperational"
 
         UserOps userState _ uaddr uname uiState ->
             case uiState of
@@ -815,8 +1016,11 @@ gotHttpErr httperr =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
-        WalletOps _ ->
-            Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+        WalletOps _ txRec _ ->
+            Sub.batch
+                [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+                , Eth.Sentry.Tx.listen txRec.txSentry
+                ]
 
         UserOps _ _ _ _ _ ->
             Sub.none
@@ -1166,3 +1370,32 @@ gotNewRankingIdFromWebData rankingIdremdata =
 
                 Http.BadBody s ->
                     "BadBody " ++ s
+
+
+postResultToJsonbin : Internal.RankingId -> Cmd Msg
+postResultToJsonbin (Internal.RankingId rankingId) =
+    let
+        _ =
+            Debug.log "rankingid in postResultToJsonbin" rankingId
+
+        headerKey =
+            Http.header
+                "secret-key"
+                "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
+    in
+    --PlayersReceived is the Msg handled by update whenever a request is made
+    --RemoteData is used throughout the module, including update
+    Http.request
+        { body = Http.emptyBody
+
+        --body = Http.jsonBody (playerEncoder rankingData)
+        -- , expect =
+        --     SR.Decode.ladderOfPlayersDecoder
+        --         |> Http.expectJson (RemoteData.fromResult >> SentResultToJsonbin)
+        , expect = Http.expectWhatever SentResultToJsonbin
+        , headers = [ headerKey ]
+        , method = "PUT"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = "https://api.jsonbin.io/b/" ++ rankingId
+        }

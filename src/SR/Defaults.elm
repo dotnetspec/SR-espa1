@@ -1,6 +1,6 @@
 module SR.Defaults exposing
     ( emptyPlayer
-    , emptyRankingInfo, emptyUser, secretKey
+    , emptyChallenge, emptyRankingInfo, emptyUser, secretKey
     )
 
 {-| Default values.
@@ -47,6 +47,29 @@ emptyRankingInfo =
     , rankingname = ""
     , rankingdesc = ""
     , rankingowneraddr = ""
+    }
+
+
+emptyChallenge =
+    { playerid = 0
+    , player = emptyPlayer
+    , opponent = emptyPlayer
+    , playerRank = 0
+    , opponentRank = 0
+    , playerStatus = Unavailable
+    , opponentStatus = Unavailable
+    , rankingid = ""
+    }
+
+
+type alias Challenge =
+    { playerid : Int
+    , player : Player
+    , opponent : Player
+    , playerRank : Int
+    , opponentRank : Int
+    , playerStatus : PlayerAvailability
+    , opponentStatus : PlayerAvailability
     }
 
 

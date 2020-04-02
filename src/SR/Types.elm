@@ -2,7 +2,8 @@ module SR.Types exposing
     ( PlayerId, RankingId(..)
     , Player, Opponent, OpponentRelativeRank(..), Options, PlayerAvailability(..), ResultOfMatch(..), SRState(..), UserState(..), WalletState(..)
     , UIState(..)
-    ,  CreateNewLadderFormFields
+    ,  Challenge
+      , CreateNewLadderFormFields
       , ModalState(..)
       , NewRankingListServerResponse
       , RankingInfo
@@ -108,6 +109,7 @@ type WalletState
       --| Opened --Ports.EthNode Eth.Types.Address
     | WalletOpenedWithoutUserCheck Eth.Types.Address
     | WalletOpenedUserCheckDone User Eth.Types.Address
+    | WalletOpenedAndOperational
 
 
 
@@ -155,7 +157,7 @@ type alias CreateNewLadderFormFields =
 
 
 type Options
-    = Challenge
+    = MatchChallenge
     | Result
 
 
@@ -186,6 +188,18 @@ type alias Player =
     , name : String
     , id : Int
     , currentchallengeraddress : String
+    }
+
+
+type alias Challenge =
+    { playerid : Int
+    , player : Player
+    , opponent : Player
+    , playerRank : Int
+    , opponentRank : Int
+    , playerStatus : PlayerAvailability
+    , opponentStatus : PlayerAvailability
+    , rankingid : String
     }
 
 
