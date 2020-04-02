@@ -4,6 +4,7 @@ import Browser
 import Element exposing (Element)
 import Element.Font as Font
 import Element.Input as Input
+import Eth
 import Eth.Net as Net exposing (NetworkId(..))
 import Eth.Sentry.Tx
 import Eth.Sentry.Wallet
@@ -58,10 +59,10 @@ main =
 
 
 type Model
-    = WalletOps SR.Types.WalletState TxRecord SR.Types.Challenge
+    = WalletOps SR.Types.WalletState TxRecord
     | UserOps SR.Types.UserState (List SR.Types.User) Eth.Types.Address SR.Types.User SR.Types.UIState
-    | GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState Eth.Types.Address (List SR.Types.User) SR.Types.User
-    | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.RankingId SR.Types.User
+    | GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState Eth.Types.Address (List SR.Types.User) SR.Types.User TxRecord
+    | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.RankingId SR.Types.User SR.Types.Challenge TxRecord
     | Failure String
 
 
@@ -71,13 +72,20 @@ type Model
 
 init : () -> ( Model, Cmd Msg )
 init _ =
+    let
+        node =
+            --Net.toNetworkId networkId
+            --currently hardcode
+            Net.toNetworkId 4
+                |> Ports.ethNode
+    in
     ( --WalletOps [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.UIRenderAllRankings
-      WalletOps SR.Types.Missing emptyTxRecord SR.Defaults.emptyChallenge
+      WalletOps SR.Types.Missing emptyTxRecord
     , Cmd.batch
         [ Ports.log "Sending out msg from init "
+        , Task.attempt PollBlock (Eth.getBlockNumber node.http)
 
-        --, gotUserList
-        , Cmd.none
+        --, Cmd.none
         ]
     )
 
@@ -129,7 +137,7 @@ type Msg
     | SentUserInfoAndDecodedResponseToNewUser (RemoteData.WebData (List SR.Types.User))
     | ChangedUIStateToCreateNew (List SR.Types.RankingInfo) Eth.Types.Address SR.Types.User
     | NewRankingRequestedByConfirmBtnClicked
-      --| PollBlock (Result Http.Error Int)
+    | PollBlock (Result Http.Error Int)
       --| InitTx
     | WatchTxHash (Result String Eth.Types.TxHash)
     | WatchTx (Result String Eth.Types.Tx)
@@ -158,67 +166,39 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msgOfTransitonThatAlreadyHappened currentmodel =
     case currentmodel of
-        WalletOps walletState txRec challenge ->
+        WalletOps walletState txRec ->
             case msgOfTransitonThatAlreadyHappened of
                 WalletStatus walletSentry_ ->
                     case walletSentry_.networkId of
                         Mainnet ->
                             case walletSentry_.account of
                                 Nothing ->
-                                    ( WalletOps SR.Types.Locked txRec challenge, Cmd.none )
+                                    ( WalletOps SR.Types.Locked txRec, Cmd.none )
 
                                 Just uaddr ->
                                     ( UserOps (SR.Types.NewUser <| SR.Defaults.emptyUser) [] uaddr SR.Defaults.emptyUser SR.Types.DisplayWalletInfoToUser, gotUserList )
 
+                        --( WalletOps (SR.Types.WalletOpenedWithoutUserCheck uaddr)
                         Rinkeby ->
                             case walletSentry_.account of
                                 Nothing ->
-                                    ( WalletOps SR.Types.Locked txRec challenge, Cmd.none )
+                                    ( WalletOps SR.Types.Locked txRec, Cmd.none )
 
                                 Just uaddr ->
                                     ( UserOps (SR.Types.NewUser <| SR.Defaults.emptyUser) [] uaddr SR.Defaults.emptyUser SR.Types.DisplayWalletInfoToUser, gotUserList )
 
+                        --( WalletOps (SR.Types.WalletOpenedWithoutUserCheck uaddr) { txRec | account = walletSentry_.account, node = Ports.ethNode walletSentry_.networkId } challenge, gotUserList )
                         _ ->
                             let
                                 _ =
                                     Debug.log "MissingWalletInstructions " "str"
                             in
-                            ( WalletOps SR.Types.Missing txRec challenge, Cmd.none )
+                            ( WalletOps SR.Types.Missing emptyTxRecord, Cmd.none )
 
                 OpenWalletInstructions ->
-                    --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Locked txRec challenge, Cmd.none )
-                    ( WalletOps SR.Types.Locked txRec challenge, Cmd.none )
+                    --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Locked , Cmd.none )
+                    ( WalletOps SR.Types.Locked emptyTxRecord, Cmd.none )
 
-                TxSentryMsg subMsg ->
-                    let
-                        ( subModel, subCmd ) =
-                            Eth.Sentry.Tx.update subMsg txRec.txSentry
-                    in
-                    --( { txRec | txSentry = subModel }, subCmd )
-                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = subModel } challenge, subCmd )
-
-                -- InitTx ->
-                --     let
-                --         txParams =
-                --             { to = txRec.account
-                --             , from = txRec.account
-                --             , gas = Nothing
-                --             , gasPrice = Just <| Eth.Units.gwei 4
-                --             , value = Just <| Eth.Units.gwei 1
-                --             , data = Nothing
-                --             , nonce = Nothing
-                --             }
-                --         ( newSentry, sentryCmd ) =
-                --             Eth.Sentry.Tx.customSend
-                --                 txRec.txSentry
-                --                 { onSign = Just WatchTxHash
-                --                 , onBroadcast = Just WatchTx
-                --                 , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
-                --                 }
-                --                 txParams
-                --     in
-                --     --( { txRec | txSentry = newSentry }, sentryCmd )
-                --     ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = newSentry } challenge, sentryCmd )
                 ConfirmButtonClicked ->
                     let
                         _ =
@@ -244,34 +224,155 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                 txParams
                     in
                     --( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = newSentry } challenge, Cmd.batch [ sentryCmd, postResultToJsonbin <| Internal.RankingId challenge.rankingid ] )
-                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = newSentry } challenge, sentryCmd )
+                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = newSentry }, sentryCmd )
+
+                PollBlock (Ok blockNumber) ->
+                    -- ( { txRec | blockNumber = Just blockNumber }
+                    -- , Task.attempt PollBlock <|
+                    --     Task.andThen (\_ -> Eth.getBlockNumber txRec.node.http) (Process.sleep 1000)
+                    -- )
+                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | blockNumber = Just blockNumber }
+                    , Task.attempt PollBlock <|
+                        Task.andThen (\_ -> Eth.getBlockNumber txRec.node.http) (Process.sleep 1000)
+                    )
+
+                PollBlock (Err error) ->
+                    ( WalletOps SR.Types.WalletOpenedAndOperational txRec, Cmd.none )
 
                 WatchTxHash (Ok txHash) ->
                     --( { txRec | txHash = Just txHash }, Cmd.none )
-                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txHash = Just txHash } challenge, Cmd.none )
+                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txHash = Just txHash }, Cmd.none )
 
                 WatchTxHash (Err err) ->
                     --( { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
-                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors } challenge, Cmd.none )
+                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
 
                 WatchTx (Ok tx) ->
-                    WalletOps SR.Types.WalletOpenedAndOperational { txRec | tx = Just tx } challenge
+                    WalletOps SR.Types.WalletOpenedAndOperational { txRec | tx = Just tx }
                         |> update (ProcessResult SR.Types.Won)
 
                 WatchTx (Err err) ->
-                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | errors = ("Error Retrieving Tx: " ++ err) :: txRec.errors } challenge, Cmd.none )
+                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | errors = ("Error Retrieving Tx: " ++ err) :: txRec.errors }, Cmd.none )
 
                 --( { txRec | errors = ("Error Retrieving Tx: " ++ err) :: txRec.errors }, Cmd.none )
                 WatchTxReceipt (Ok txReceipt) ->
-                    WalletOps SR.Types.WalletOpenedAndOperational { txRec | txReceipt = Just txReceipt } challenge
+                    WalletOps SR.Types.WalletOpenedAndOperational { txRec | txReceipt = Just txReceipt }
                         |> update (ProcessResult SR.Types.Won)
 
                 WatchTxReceipt (Err err) ->
                     -- ( { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
-                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors } challenge, Cmd.none )
+                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
 
                 -- TrackTx blockDepth ->
                 --     ( { txRec | blockDepth = Just blockDepth }, Cmd.none )
+                Fail str ->
+                    ( Failure <| "WalletOps 1" ++ str, Cmd.none )
+
+                _ ->
+                    ( Failure "WalletOps 2", Cmd.none )
+
+        UserOps _ _ uaddr _ uiState ->
+            case msgOfTransitonThatAlreadyHappened of
+                UsersReceived userlist ->
+                    if isUserInList (singleUserInList userlist uaddr) then
+                        ( GlobalRankings [] "" "" SR.Types.UIRenderAllRankings (Internal.Address "") [] (singleUserInList userlist uaddr) emptyTxRecord, gotRankingList )
+
+                    else
+                        ( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) (extractUsersFromWebData userlist) uaddr (singleUserInList userlist uaddr) SR.Types.CreateNewUser, Cmd.none )
+
+                _ ->
+                    ( Failure "UsersReceived", Cmd.none )
+
+        GlobalRankings lrankingInfo nameStr descStr uiState rnkOwnerAddr userList user txRec ->
+            case msgOfTransitonThatAlreadyHappened of
+                GotGlobalRankingsJson rmtrnkingdata ->
+                    let
+                        rankingsAsJustList =
+                            extractRankingsFromWebData rmtrnkingdata
+                    in
+                    ( GlobalRankings rankingsAsJustList "" "" uiState rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
+
+                GotRankingId rnkidstr ->
+                    ( SelectedRanking lrankingInfo [] rnkidstr user SR.Defaults.emptyChallenge emptyTxRecord, fetchedSingleRanking rnkidstr )
+
+                -- this is the response from createNewPlayerListWithCurrentUser Cmd
+                -- it had the Http.expectStringResponse in it
+                -- it's already created the new ranking with current player as the first entry
+                -- the result now is the ranking id only at this point which was pulled out by the decoder
+                -- the lrankingInfo is preserved
+                SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
+                    --AllRankingsJson lrankingInfo newrankingName newRankingDesc _ rnkOwnerAddr ->
+                    ( GlobalRankings lrankingInfo "" "" SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord
+                    , addedNewRankingListEntryInGlobal idValueFromDecoder lrankingInfo nameStr descStr (Eth.Utils.addressToString rnkOwnerAddr)
+                    )
+
+                -- _ ->
+                --     ( Failure "SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId", Cmd.none )
+                SentUserInfoAndDecodedResponseToNewUser serverResponse ->
+                    -- case currentmodel of
+                    --     GlobalRankings lrankingInfo newrankingName newRankingDesc _ rnkowneraddr _ userRec ->
+                    --todo: this is just holding code - needs re-factor
+                    ( GlobalRankings lrankingInfo nameStr descStr SR.Types.UIRenderAllRankings rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
+
+                -- _ ->
+                --     ( Failure "SentUserInfoAndDecodedResponseToNewUser", Cmd.none )
+                ResetToShowGlobal lrankingInfoForReset rnkowneraddr userRec ->
+                    ( GlobalRankings lrankingInfoForReset "" "" SR.Types.UIRenderAllRankings rnkowneraddr userList userRec emptyTxRecord, Cmd.none )
+
+                ChangedUIStateToCreateNew lrankingInfoChgToCreateNew rnkowneraddr userRec ->
+                    ( GlobalRankings lrankingInfoChgToCreateNew "" "" SR.Types.CreateNewLadder rnkowneraddr userList userRec emptyTxRecord, Cmd.none )
+
+                NewRankingRequestedByConfirmBtnClicked ->
+                    ( GlobalRankings lrankingInfo "new" "new" SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord, createNewPlayerListWithCurrentUser )
+
+                AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
+                    --( AllRankingsJson updatedListAfterNewEntryAddedToGlobalList "" "" SR.Types.RenderAllRankings "", Cmd.none )
+                    ( GlobalRankings (extractRankingsFromWebData <| updatedListAfterNewEntryAddedToGlobalList) "" "" SR.Types.UIRenderAllRankings rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
+
+                LadderNameInputChg namefield ->
+                    --AllRankingsJson list _ desc _ rnkowner ->
+                    --( AllRankingsJson list namefield desc SR.Types.CreateNewLadder rnkowner, Cmd.none )
+                    ( GlobalRankings lrankingInfo nameStr descStr SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
+
+                LadderDescInputChg descfield ->
+                    --AllRankingsJson list name _ _ rnkowner ->
+                    --( AllRankingsJson list name descfield SR.Types.CreateNewLadder rnkowner, Cmd.none )
+                    ( GlobalRankings lrankingInfo nameStr descStr SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
+
+                --todo: this needs to be linked to user - don't confuse with new ladder
+                UserNameInputChg namefield ->
+                    ( GlobalRankings lrankingInfo namefield namefield SR.Types.CreateNewUser rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
+
+                Fail str ->
+                    let
+                        _ =
+                            Debug.log "GlobalRankings fail " str
+                    in
+                    ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings (Internal.Address "") userList user emptyTxRecord, Cmd.none )
+
+                _ ->
+                    ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings (Internal.Address "") userList user emptyTxRecord, Cmd.none )
+
+        SelectedRanking lrankingInfo lPlayer intrankingId userRec challenge txRec ->
+            case msgOfTransitonThatAlreadyHappened of
+                PlayersReceived players ->
+                    let
+                        playerAsJustList =
+                            extractPlayersFromWebData players
+                    in
+                    ( SelectedRanking lrankingInfo playerAsJustList (Internal.RankingId "") userRec SR.Defaults.emptyChallenge emptyTxRecord, Cmd.none )
+
+                ResetToShowGlobal _ rnkowneraddr user ->
+                    ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings rnkowneraddr [ SR.Defaults.emptyUser ] user emptyTxRecord, Cmd.none )
+
+                TxSentryMsg subMsg ->
+                    let
+                        ( subModel, subCmd ) =
+                            Eth.Sentry.Tx.update subMsg txRec.txSentry
+                    in
+                    --( { txRec | txSentry = subModel }, subCmd )
+                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = subModel }, subCmd )
+
                 ProcessResult result ->
                     let
                         whoHigher =
@@ -285,22 +386,28 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                             case whoHigher of
                                 SR.Types.OpponentRankHigher ->
                                     --nb. higher rank is a lower number and vice versa!
-                                    ( WalletOps SR.Types.WalletOpenedAndOperational
-                                        txRec
+                                    ( SelectedRanking lrankingInfo
+                                        lPlayer
+                                        intrankingId
+                                        userRec
                                         { challenge
                                             | playerRank = challenge.opponentRank
                                             , opponentRank = challenge.opponentRank + 1
                                             , playerStatus = SR.Types.Available
                                             , opponentStatus = SR.Types.Available
                                         }
+                                        txRec
                                     , Cmd.none
                                     )
 
                                 SR.Types.OpponentRankLower ->
                                     --nb. higher rank is a lower number and vice versa!
-                                    ( WalletOps SR.Types.WalletOpenedAndOperational
-                                        txRec
+                                    ( SelectedRanking lrankingInfo
+                                        lPlayer
+                                        intrankingId
+                                        userRec
                                         { challenge | playerStatus = SR.Types.Available, opponentStatus = SR.Types.Available }
+                                        txRec
                                     , Cmd.none
                                     )
 
@@ -308,138 +415,50 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                             case whoHigher of
                                 SR.Types.OpponentRankHigher ->
                                     --nb. higher rank is a lower number and vice versa!
-                                    ( WalletOps SR.Types.WalletOpenedAndOperational
-                                        txRec
+                                    ( SelectedRanking lrankingInfo
+                                        lPlayer
+                                        intrankingId
+                                        userRec
                                         { challenge | playerStatus = SR.Types.Available, opponentStatus = SR.Types.Available }
+                                        txRec
                                     , Cmd.none
                                     )
 
                                 SR.Types.OpponentRankLower ->
                                     --nb. higher rank is a lower number and vice versa!
-                                    ( WalletOps SR.Types.WalletOpenedAndOperational
-                                        txRec
+                                    ( SelectedRanking lrankingInfo
+                                        lPlayer
+                                        intrankingId
+                                        userRec
                                         { challenge
                                             | opponentRank = challenge.playerRank
                                             , playerRank = challenge.opponentRank + 1
                                             , playerStatus = SR.Types.Available
                                             , opponentStatus = SR.Types.Available
                                         }
+                                        txRec
                                     , Cmd.none
                                     )
 
                         SR.Types.Undecided ->
-                            ( WalletOps SR.Types.WalletOpenedAndOperational
-                                txRec
+                            ( SelectedRanking lrankingInfo
+                                lPlayer
+                                intrankingId
+                                userRec
                                 challenge
+                                txRec
                             , Cmd.none
                             )
 
                 SentResultToJsonbin a ->
-                    ( WalletOps SR.Types.WalletOpenedAndOperational
-                        txRec
+                    ( SelectedRanking lrankingInfo
+                        lPlayer
+                        intrankingId
+                        userRec
                         challenge
+                        txRec
                     , Cmd.none
                     )
-
-                Fail str ->
-                    ( Failure "WalletOps", Cmd.none )
-
-                _ ->
-                    ( Failure "WalletOps", Cmd.none )
-
-        UserOps _ _ uaddr _ uiState ->
-            case msgOfTransitonThatAlreadyHappened of
-                UsersReceived userlist ->
-                    if isUserInList (singleUserInList userlist uaddr) then
-                        ( GlobalRankings [] "" "" SR.Types.UIRenderAllRankings (Internal.Address "") [] (singleUserInList userlist uaddr), gotRankingList )
-
-                    else
-                        ( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) (extractUsersFromWebData userlist) uaddr (singleUserInList userlist uaddr) SR.Types.CreateNewUser, Cmd.none )
-
-                _ ->
-                    ( Failure "UsersReceived", Cmd.none )
-
-        GlobalRankings lrankingInfo nameStr descStr uiState rnkOwnerAddr userList user ->
-            case msgOfTransitonThatAlreadyHappened of
-                GotGlobalRankingsJson rmtrnkingdata ->
-                    let
-                        rankingsAsJustList =
-                            extractRankingsFromWebData rmtrnkingdata
-                    in
-                    ( GlobalRankings rankingsAsJustList "" "" uiState rnkOwnerAddr userList user, Cmd.none )
-
-                GotRankingId rnkidstr ->
-                    ( SelectedRanking lrankingInfo [] rnkidstr user, fetchedSingleRanking rnkidstr )
-
-                -- this is the response from createNewPlayerListWithCurrentUser Cmd
-                -- it had the Http.expectStringResponse in it
-                -- it's already created the new ranking with current player as the first entry
-                -- the result now is the ranking id only at this point which was pulled out by the decoder
-                -- the lrankingInfo is preserved
-                SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
-                    --AllRankingsJson lrankingInfo newrankingName newRankingDesc _ rnkOwnerAddr ->
-                    ( GlobalRankings lrankingInfo "" "" SR.Types.CreateNewLadder rnkOwnerAddr userList user
-                    , addedNewRankingListEntryInGlobal idValueFromDecoder lrankingInfo nameStr descStr (Eth.Utils.addressToString rnkOwnerAddr)
-                    )
-
-                -- _ ->
-                --     ( Failure "SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId", Cmd.none )
-                SentUserInfoAndDecodedResponseToNewUser serverResponse ->
-                    -- case currentmodel of
-                    --     GlobalRankings lrankingInfo newrankingName newRankingDesc _ rnkowneraddr _ userRec ->
-                    --todo: this is just holding code - needs re-factor
-                    ( GlobalRankings lrankingInfo nameStr descStr SR.Types.UIRenderAllRankings rnkOwnerAddr userList user, Cmd.none )
-
-                -- _ ->
-                --     ( Failure "SentUserInfoAndDecodedResponseToNewUser", Cmd.none )
-                ResetToShowGlobal lrankingInfoForReset rnkowneraddr userRec ->
-                    ( GlobalRankings lrankingInfoForReset "" "" SR.Types.UIRenderAllRankings rnkowneraddr userList userRec, Cmd.none )
-
-                ChangedUIStateToCreateNew lrankingInfoChgToCreateNew rnkowneraddr userRec ->
-                    ( GlobalRankings lrankingInfoChgToCreateNew "" "" SR.Types.CreateNewLadder rnkowneraddr userList userRec, Cmd.none )
-
-                NewRankingRequestedByConfirmBtnClicked ->
-                    ( GlobalRankings lrankingInfo "new" "new" SR.Types.CreateNewLadder rnkOwnerAddr userList user, createNewPlayerListWithCurrentUser )
-
-                AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
-                    --( AllRankingsJson updatedListAfterNewEntryAddedToGlobalList "" "" SR.Types.RenderAllRankings "", Cmd.none )
-                    ( GlobalRankings (extractRankingsFromWebData <| updatedListAfterNewEntryAddedToGlobalList) "" "" SR.Types.UIRenderAllRankings rnkOwnerAddr userList user, Cmd.none )
-
-                LadderNameInputChg namefield ->
-                    --AllRankingsJson list _ desc _ rnkowner ->
-                    --( AllRankingsJson list namefield desc SR.Types.CreateNewLadder rnkowner, Cmd.none )
-                    ( GlobalRankings lrankingInfo nameStr descStr SR.Types.CreateNewLadder rnkOwnerAddr userList user, Cmd.none )
-
-                LadderDescInputChg descfield ->
-                    --AllRankingsJson list name _ _ rnkowner ->
-                    --( AllRankingsJson list name descfield SR.Types.CreateNewLadder rnkowner, Cmd.none )
-                    ( GlobalRankings lrankingInfo nameStr descStr SR.Types.CreateNewLadder rnkOwnerAddr userList user, Cmd.none )
-
-                --todo: this needs to be linked to user - don't confuse with new ladder
-                UserNameInputChg namefield ->
-                    ( GlobalRankings lrankingInfo namefield namefield SR.Types.CreateNewUser rnkOwnerAddr userList user, Cmd.none )
-
-                Fail str ->
-                    let
-                        _ =
-                            Debug.log "GlobalRankings fail " str
-                    in
-                    ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings (Internal.Address "") userList user, Cmd.none )
-
-                _ ->
-                    ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings (Internal.Address "") userList user, Cmd.none )
-
-        SelectedRanking lrankingInfo lPlayer intrankingId userRec ->
-            case msgOfTransitonThatAlreadyHappened of
-                PlayersReceived players ->
-                    let
-                        playerAsJustList =
-                            extractPlayersFromWebData players
-                    in
-                    ( SelectedRanking lrankingInfo playerAsJustList (Internal.RankingId "") userRec, Cmd.none )
-
-                ResetToShowGlobal _ rnkowneraddr user ->
-                    ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings rnkowneraddr [ SR.Defaults.emptyUser ] user, Cmd.none )
 
                 Fail str ->
                     ( Failure <| "Fail failure : " ++ str, Cmd.none )
@@ -448,7 +467,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( Failure <| "Fall thru failure : ", Cmd.none )
 
         Failure str ->
-            ( Failure <| "Model failure : " ++ str, Cmd.none )
+            ( Failure <| "Model failure in selected ranking: " ++ str, Cmd.none )
 
 
 isOpponentHigherRank : SR.Types.Player -> SR.Types.Opponent -> SR.Types.OpponentRelativeRank
@@ -882,7 +901,7 @@ greetingView greetingMsg =
 view : Model -> Html Msg
 view model =
     case model of
-        GlobalRankings lrankingInfo _ _ uiState uaddr userlist userRec ->
+        GlobalRankings lrankingInfo _ _ uiState uaddr userlist userRec txRec ->
             case uiState of
                 SR.Types.CreateNewUser ->
                     inputNewUserview uaddr
@@ -893,10 +912,10 @@ view model =
                 _ ->
                     globalResponsiveview lrankingInfo uaddr userRec
 
-        SelectedRanking lrankingInfo playerList rnkid userRec ->
+        SelectedRanking lrankingInfo playerList rnkid userRec connect txRec ->
             selectedResponsiveview lrankingInfo playerList userRec
 
-        WalletOps walletState txRec challenge ->
+        WalletOps walletState txRec ->
             case walletState of
                 SR.Types.Locked ->
                     greetingView "OpenWalletInstructions"
@@ -1015,7 +1034,7 @@ gotHttpErr httperr =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
-        WalletOps _ txRec _ ->
+        WalletOps _ txRec ->
             Sub.batch
                 [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
                 , Eth.Sentry.Tx.listen txRec.txSentry
@@ -1024,10 +1043,10 @@ subscriptions model =
         UserOps _ _ _ _ _ ->
             Sub.none
 
-        GlobalRankings _ _ _ _ _ _ _ ->
+        GlobalRankings _ _ _ _ _ _ _ _ ->
             Sub.none
 
-        SelectedRanking _ _ _ _ ->
+        SelectedRanking _ _ _ _ _ _ ->
             Sub.none
 
         Failure _ ->
