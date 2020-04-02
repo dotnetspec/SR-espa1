@@ -97,7 +97,9 @@ emptyTxRecord =
     , txHash = Nothing
     , tx = Nothing
     , txReceipt = Nothing
+    , blockDepth = Nothing
     , errors = []
+    , incomingData = ""
     }
 
 
@@ -109,7 +111,9 @@ type alias TxRecord =
     , txHash : Maybe Eth.Types.TxHash
     , tx : Maybe Eth.Types.Tx
     , txReceipt : Maybe Eth.Types.TxReceipt
+    , blockDepth : Maybe Eth.Sentry.Tx.TxTracker
     , errors : List String
+    , incomingData : String
     }
 
 
@@ -126,7 +130,7 @@ type Msg
     | ChangedUIStateToCreateNew (List SR.Types.RankingInfo) Eth.Types.Address SR.Types.User
     | NewRankingRequestedByConfirmBtnClicked
       --| PollBlock (Result Http.Error Int)
-    | InitTx
+      --| InitTx
     | WatchTxHash (Result String Eth.Types.TxHash)
     | WatchTx (Result String Eth.Types.Tx)
     | WatchTxReceipt (Result String Eth.Types.TxReceipt)
@@ -193,30 +197,28 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     --( { txRec | txSentry = subModel }, subCmd )
                     ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = subModel } challenge, subCmd )
 
-                InitTx ->
-                    let
-                        txParams =
-                            { to = txRec.account
-                            , from = txRec.account
-                            , gas = Nothing
-                            , gasPrice = Just <| Eth.Units.gwei 4
-                            , value = Just <| Eth.Units.gwei 1
-                            , data = Nothing
-                            , nonce = Nothing
-                            }
-
-                        ( newSentry, sentryCmd ) =
-                            Eth.Sentry.Tx.customSend
-                                txRec.txSentry
-                                { onSign = Just WatchTxHash
-                                , onBroadcast = Just WatchTx
-                                , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
-                                }
-                                txParams
-                    in
-                    --( { txRec | txSentry = newSentry }, sentryCmd )
-                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = newSentry } challenge, sentryCmd )
-
+                -- InitTx ->
+                --     let
+                --         txParams =
+                --             { to = txRec.account
+                --             , from = txRec.account
+                --             , gas = Nothing
+                --             , gasPrice = Just <| Eth.Units.gwei 4
+                --             , value = Just <| Eth.Units.gwei 1
+                --             , data = Nothing
+                --             , nonce = Nothing
+                --             }
+                --         ( newSentry, sentryCmd ) =
+                --             Eth.Sentry.Tx.customSend
+                --                 txRec.txSentry
+                --                 { onSign = Just WatchTxHash
+                --                 , onBroadcast = Just WatchTx
+                --                 , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                --                 }
+                --                 txParams
+                --     in
+                --     --( { txRec | txSentry = newSentry }, sentryCmd )
+                --     ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = newSentry } challenge, sentryCmd )
                 ConfirmButtonClicked ->
                     let
                         _ =

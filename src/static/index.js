@@ -35,8 +35,8 @@ window.ports = {
                     : console.warn(`I didn't recognize action "${action}".`)
             )
             // next line commented to enable walletSentry until we're ready to implement txSentry
-            // ,
-            // elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, web3)
+            ,
+            elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, web3)
             , elm_ethereum_ports.walletSentry(app.ports.walletSentry, web3)
         )
 }
