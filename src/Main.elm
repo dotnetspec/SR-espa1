@@ -219,6 +219,9 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                 ConfirmButtonClicked ->
                     let
+                        _ =
+                            Debug.log "confirm " "btn"
+
                         txParams =
                             { to = txRec.account
                             , from = txRec.account
@@ -238,7 +241,8 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                 }
                                 txParams
                     in
-                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = newSentry } challenge, Cmd.batch [ sentryCmd, postResultToJsonbin <| Internal.RankingId challenge.rankingid ] )
+                    --( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = newSentry } challenge, Cmd.batch [ sentryCmd, postResultToJsonbin <| Internal.RankingId challenge.rankingid ] )
+                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = newSentry } challenge, sentryCmd )
 
                 WatchTxHash (Ok txHash) ->
                     --( { txRec | txHash = Just txHash }, Cmd.none )
@@ -570,10 +574,11 @@ rankingbuttons rankingList =
         [ Element.el Heading.h5 <| Element.text "Global Rankings"
         , Element.column (Card.simple ++ Grid.simple) <|
             insertRankingList rankingList
-        , Element.column Grid.simple <|
-            [ Element.paragraph [] <|
+        , Element.paragraph (Card.fill ++ Color.warning) <|
+            [ Element.el [ Font.bold ] <| Element.text "Please note: "
+            , Element.paragraph [] <|
                 List.singleton <|
-                    Element.text "Button attributes can be combined with other attributes."
+                    Element.text "Clicking 'Create New' interacts with your Ethereum wallet"
             ]
         ]
 
@@ -605,10 +610,11 @@ playerbuttons playerInfoList =
         [ Element.el Heading.h2 <| Element.text "Selected Ranking"
         , Element.column (Card.simple ++ Grid.simple) <|
             insertPlayerList playerInfoList
-        , Element.column Grid.simple <|
-            [ Element.paragraph [] <|
+        , Element.paragraph (Card.fill ++ Color.warning) <|
+            [ Element.el [ Font.bold ] <| Element.text "Please note: "
+            , Element.paragraph [] <|
                 List.singleton <|
-                    Element.text "Button attributes can be combined with other attributes."
+                    Element.text "Clicking 'Create New' interacts with your Ethereum wallet"
             ]
         ]
 
@@ -677,11 +683,6 @@ globalhomebutton rankingList uaddr user =
                     }
                 ]
             ]
-        , Element.column Grid.simple <|
-            [ Element.paragraph [] <|
-                List.singleton <|
-                    Element.text "Button attributes can be combined with other attributes."
-            ]
         ]
 
 
@@ -720,15 +721,17 @@ newrankinhomebutton rankingList uaddr user =
                     , label = Element.text "Home"
                     }
                 , Input.button (Button.simple ++ Color.info) <|
-                    { onPress = Just <| NewRankingRequestedByConfirmBtnClicked
+                    { --onPress = Just <| NewRankingRequestedByConfirmBtnClicked
+                      onPress = Just <| ConfirmButtonClicked
                     , label = Element.text "Create New"
                     }
                 ]
             ]
-        , Element.column Grid.simple <|
-            [ Element.paragraph [] <|
+        , Element.paragraph (Card.fill ++ Color.warning) <|
+            [ Element.el [ Font.bold ] <| Element.text "Please note: "
+            , Element.paragraph [] <|
                 List.singleton <|
-                    Element.text "Button attributes can be combined with other attributes."
+                    Element.text "Clicking 'Create New' interacts with your Ethereum wallet"
             ]
         ]
 
@@ -754,15 +757,15 @@ inputNewUser uaddr =
                     }
                 ]
             ]
-        , Element.paragraph [] <|
-            List.singleton <|
-                Element.text "Input attributes can be combined with other attributes."
         , Element.paragraph (Card.fill ++ Color.warning) <|
             [ Element.el [ Font.bold ] <| Element.text "Please note: "
             , Element.paragraph [] <|
                 List.singleton <|
                     Element.text "Clicking 'Create New' interacts with your Ethereum wallet"
             ]
+        , Element.paragraph [] <|
+            List.singleton <|
+                Element.text "Input attributes can be combined with other attributes."
         ]
 
 
@@ -790,12 +793,6 @@ inputNewLadder user =
         , Element.paragraph [] <|
             List.singleton <|
                 Element.text "Input attributes can be combined with other attributes."
-        , Element.paragraph (Card.fill ++ Color.warning) <|
-            [ Element.el [ Font.bold ] <| Element.text "Please note: "
-            , Element.paragraph [] <|
-                List.singleton <|
-                    Element.text "Clicking 'Create New' interacts with your Ethereum wallet"
-            ]
         ]
 
 
@@ -857,7 +854,7 @@ inputNewLadderview rankingList uaddr user =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
-            [ Element.el Heading.h4 <| Element.text "New User Input"
+            [ Element.el Heading.h4 <| Element.text "Create New Ladder Ranking"
 
             --, selectedHeading
             , newrankinhomebutton rankingList uaddr user
