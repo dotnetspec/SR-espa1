@@ -160,6 +160,8 @@ type Msg
     | ProcessResult SR.Types.ResultOfMatch
     | ConfirmButtonClicked
     | SentResultToJsonbin (Result Http.Error ())
+    | NewUserNameInputChg String
+    | NewUserDescInputChg String
     | Fail String
 
 
@@ -243,7 +245,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 _ ->
                     ( Failure "WalletOps 2", Cmd.none )
 
-        UserOps _ _ uaddr _ uiState ->
+        UserOps userState _ uaddr _ uiState ->
             case msgOfTransitonThatAlreadyHappened of
                 UsersReceived userlist ->
                     if isUserInList (singleUserInList userlist uaddr) then
@@ -252,6 +254,22 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     else
                         --( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) (extractUsersFromWebData userlist) uaddr (singleUserInList userlist uaddr) SR.Types.CreateNewUser, Cmd.none )
                         ( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) [] uaddr SR.Defaults.emptyUser SR.Types.CreateNewUser, Cmd.none )
+
+                NewUserNameInputChg namefield ->
+                    case userState of
+                        SR.Types.NewUser user ->
+                            ( UserOps (SR.Types.NewUser { user | username = namefield }) [] uaddr SR.Defaults.emptyUser SR.Types.CreateNewUser, Cmd.none )
+
+                        SR.Types.ExistingUser _ ->
+                            ( Failure "NewUserNameInputChg", Cmd.none )
+
+                NewUserDescInputChg descfield ->
+                    case userState of
+                        SR.Types.NewUser user ->
+                            ( UserOps (SR.Types.NewUser { user | description = descfield }) [] uaddr SR.Defaults.emptyUser SR.Types.CreateNewUser, Cmd.none )
+
+                        SR.Types.ExistingUser _ ->
+                            ( Failure "NewUserNameInputChg", Cmd.none )
 
                 _ ->
                     --todo: better logic. This should go to failure model rather than fall thru to UserOps
@@ -297,9 +315,8 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 ChangedUIStateToCreateNew lrankingInfoChgToCreateNew rnkowneraddr userRec ->
                     ( GlobalRankings lrankingInfoChgToCreateNew "" "" SR.Types.CreateNewLadder rnkowneraddr userList userRec emptyTxRecord, Cmd.none )
 
-                NewRankingRequestedByConfirmBtnClicked ->
-                    ( GlobalRankings lrankingInfo "new" "new" SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord, createNewPlayerListWithCurrentUser )
-
+                -- NewRankingRequestedByConfirmBtnClicked ->
+                --     ( GlobalRankings lrankingInfo "new" "new" SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord, createNewPlayerListWithCurrentUser )
                 AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
                     --( AllRankingsJson updatedListAfterNewEntryAddedToGlobalList "" "" SR.Types.RenderAllRankings "", Cmd.none )
                     ( GlobalRankings (extractRankingsFromWebData <| updatedListAfterNewEntryAddedToGlobalList) "" "" SR.Types.UIRenderAllRankings rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
@@ -315,10 +332,10 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( GlobalRankings lrankingInfo nameStr descStr SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
 
                 --todo: this needs to be linked to user - don't confuse with new ladder
-                UserNameInputChg namefield ->
-                    ( GlobalRankings lrankingInfo namefield namefield SR.Types.CreateNewUser rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
-
-                ConfirmButtonClicked ->
+                -- UserNameInputChg namefield ->
+                --     ( GlobalRankings lrankingInfo namefield namefield SR.Types.CreateNewUser rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
+                --ConfirmButtonClicked ->
+                NewRankingRequestedByConfirmBtnClicked ->
                     let
                         _ =
                             Debug.log "confirm " "btn"
@@ -342,7 +359,8 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                 }
                                 txParams
                     in
-                    ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings rnkOwnerAddr userList user { txRec | txSentry = newSentry }, sentryCmd )
+                    --( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings rnkOwnerAddr userList user { txRec | txSentry = newSentry }, sentryCmd )
+                    ( GlobalRankings lrankingInfo "new" "new" SR.Types.CreateNewLadder rnkOwnerAddr userList user { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewPlayerListWithCurrentUser ] )
 
                 Fail str ->
                     let
@@ -719,8 +737,9 @@ newrankinhomebutton rankingList uaddr user =
                     , label = Element.text "Home"
                     }
                 , Input.button (Button.simple ++ Color.info) <|
-                    { --onPress = Just <| NewRankingRequestedByConfirmBtnClicked
-                      onPress = Just <| ConfirmButtonClicked
+                    { onPress = Just <| NewRankingRequestedByConfirmBtnClicked
+
+                    --onPress = Just <| ConfirmButtonClicked
                     , label = Element.text "Create New"
                     }
                 ]
@@ -762,21 +781,25 @@ newuserhomebutton uaddr =
         ]
 
 
-inputNewUser : Eth.Types.Address -> Element Msg
-inputNewUser uaddr =
+inputNewUser : Eth.Types.Address -> SR.Types.User -> Element Msg
+inputNewUser uaddr user =
+    let
+        _ =
+            Debug.log "uname input1 " <| user.description ++ user.username
+    in
     Element.column Grid.section <|
         [ Element.el Heading.h2 <| Element.text "New User Details"
         , Element.wrappedRow (Card.fill ++ Grid.simple)
             [ Element.column Grid.simple
                 [ Input.text Input.simple
-                    { onChange = UserNameInputChg
-                    , text = "Username"
+                    { onChange = NewUserNameInputChg
+                    , text = user.username
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Username"
                     }
                 , Input.multiline Input.simple
-                    { onChange = UserNameInputChg
-                    , text = "Profile"
+                    { onChange = NewUserDescInputChg
+                    , text = user.description
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Description"
                     , spellcheck = False
@@ -852,14 +875,14 @@ selectedResponsiveview lrankingInfo playerList user =
             ]
 
 
-inputNewUserview : Eth.Types.Address -> Html Msg
-inputNewUserview uaddr =
+inputNewUserview : Eth.Types.Address -> SR.Types.User -> Html Msg
+inputNewUserview uaddr user =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
             [ Element.el Heading.h4 <| Element.text "New User Input"
             , newuserhomebutton uaddr
-            , inputNewUser uaddr
+            , inputNewUser uaddr user
             ]
 
 
@@ -897,7 +920,7 @@ view model =
         GlobalRankings lrankingInfo _ _ uiState uaddr userlist userRec txRec ->
             case uiState of
                 SR.Types.CreateNewUser ->
-                    inputNewUserview uaddr
+                    inputNewUserview uaddr userRec
 
                 SR.Types.CreateNewLadder ->
                     inputNewLadderview lrankingInfo uaddr userRec
@@ -921,7 +944,7 @@ view model =
 
                 SR.Types.WalletOpenedUserCheckDone user uaddr ->
                     if user.username == "" then
-                        inputNewUserview uaddr
+                        inputNewUserview uaddr user
 
                     else
                         greetingView <| "Welcome back " ++ user.username
@@ -932,7 +955,12 @@ view model =
         UserOps userState _ uaddr uname uiState ->
             case uiState of
                 SR.Types.CreateNewUser ->
-                    inputNewUserview uaddr
+                    case userState of
+                        SR.Types.NewUser user ->
+                            inputNewUserview uaddr user
+
+                        _ ->
+                            greetingView <| "Wrong UserOps view : "
 
                 _ ->
                     greetingView <| "Wrong UserOps view : "
