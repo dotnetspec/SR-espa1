@@ -178,7 +178,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                 Just uaddr ->
                                     ( UserOps (SR.Types.NewUser <| SR.Defaults.emptyUser) [] uaddr SR.Defaults.emptyUser SR.Types.DisplayWalletInfoToUser, gotUserList )
 
-                        --( WalletOps (SR.Types.WalletOpenedWithoutUserCheck uaddr)
                         Rinkeby ->
                             case walletSentry_.account of
                                 Nothing ->
@@ -198,33 +197,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 OpenWalletInstructions ->
                     --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Locked , Cmd.none )
                     ( WalletOps SR.Types.Locked emptyTxRecord, Cmd.none )
-
-                ConfirmButtonClicked ->
-                    let
-                        _ =
-                            Debug.log "confirm " "btn"
-
-                        txParams =
-                            { to = txRec.account
-                            , from = txRec.account
-                            , gas = Nothing
-                            , gasPrice = Just <| Eth.Units.gwei 4
-                            , value = Just <| Eth.Units.gwei 1
-                            , data = Nothing
-                            , nonce = Nothing
-                            }
-
-                        ( newSentry, sentryCmd ) =
-                            Eth.Sentry.Tx.customSend
-                                txRec.txSentry
-                                { onSign = Just WatchTxHash
-                                , onBroadcast = Just WatchTx
-                                , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
-                                }
-                                txParams
-                    in
-                    --( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = newSentry } challenge, Cmd.batch [ sentryCmd, postResultToJsonbin <| Internal.RankingId challenge.rankingid ] )
-                    ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = newSentry }, sentryCmd )
 
                 PollBlock (Ok blockNumber) ->
                     -- ( { txRec | blockNumber = Just blockNumber }
@@ -343,6 +315,32 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 UserNameInputChg namefield ->
                     ( GlobalRankings lrankingInfo namefield namefield SR.Types.CreateNewUser rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
 
+                ConfirmButtonClicked ->
+                    let
+                        _ =
+                            Debug.log "confirm " "btn"
+
+                        txParams =
+                            { to = txRec.account
+                            , from = txRec.account
+                            , gas = Nothing
+                            , gasPrice = Just <| Eth.Units.gwei 4
+                            , value = Just <| Eth.Units.gwei 1
+                            , data = Nothing
+                            , nonce = Nothing
+                            }
+
+                        ( newSentry, sentryCmd ) =
+                            Eth.Sentry.Tx.customSend
+                                txRec.txSentry
+                                { onSign = Just WatchTxHash
+                                , onBroadcast = Just WatchTx
+                                , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                                }
+                                txParams
+                    in
+                    ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings rnkOwnerAddr userList user { txRec | txSentry = newSentry }, sentryCmd )
+
                 Fail str ->
                     let
                         _ =
@@ -450,6 +448,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                             , Cmd.none
                             )
 
+                --( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = newSentry } challenge, Cmd.batch [ sentryCmd, postResultToJsonbin <| Internal.RankingId challenge.rankingid ] )
                 SentResultToJsonbin a ->
                     ( SelectedRanking lrankingInfo
                         lPlayer
@@ -661,31 +660,6 @@ insertPlayerList playerInfoList =
                 playerInfoList
     in
     mapOutPlayerList
-
-
-
--- newrankingbuttons : Element Msg
--- newrankingbuttons =
---     Element.column Grid.section <|
---         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
---         , Element.column (Card.simple ++ Grid.simple) <|
---             [ Element.wrappedRow Grid.simple <|
---                 [ Input.button (Button.simple ++ Color.simple) <|
---                     { onPress = ChangedUIStateToCreateNew
---                     , label = Element.text "Create New"
---                     }
---                 -- , Input.button (Button.simple ++ Color.success) <|
---                 --     { onPress = Nothing
---                 --     , label = Element.text "Button.fill"
---                 --     }
---                 ]
---             ]
---         , Element.column Grid.simple <|
---             [ Element.paragraph [] <|
---                 List.singleton <|
---                     Element.text "Button attributes can be combined with other attributes."
---             ]
---         ]
 
 
 globalhomebutton : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> Element Msg
