@@ -68,6 +68,7 @@ type Model
 
 -- Msg is a description of the transition that already happened
 -- Messages that delivered the response (orign doc says 'will deliver')
+-- The messages use RemoteData. The model does not (strip out)
 
 
 type Msg

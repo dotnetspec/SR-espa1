@@ -1,8 +1,9 @@
 module SR.Constants exposing
     ( globalJsonbinRankingReadLink
     , globalJsonbinRankingUpdateLink
+    , jsonbinPlayersReadLink
     , jsonbinUrlForCreateNewEntryAndRespond
-    , jsonbinUsersReadLink
+    , jsonbinUsersReadBinLink
     )
 
 
@@ -11,8 +12,13 @@ globalJsonbinRankingReadLink =
     "https://api.jsonbin.io/b/5e66ec74a030db370e1b23fc/latest"
 
 
-jsonbinUsersReadLink : String
-jsonbinUsersReadLink =
+jsonbinPlayersReadLink : String
+jsonbinPlayersReadLink =
+    "https://api.jsonbin.io/b/5e4cf5f54d073155b0dca915/latest"
+
+
+jsonbinUsersReadBinLink : String
+jsonbinUsersReadBinLink =
     "https://api.jsonbin.io/b/5e4cf5f54d073155b0dca915/latest"
 
 

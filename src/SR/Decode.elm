@@ -1,6 +1,7 @@
 module SR.Decode exposing
     ( rankingsDecoder
     ,  decodeNewRankingListServerResponse
+      , decodeNewUserListServerResponse
       , ladderOfPlayersDecoder
       , listOfUsersDecoder
         -- ,
@@ -30,15 +31,15 @@ ladderOfPlayersDecoder =
 playerDecoder : Json.Decode.Decoder SR.Types.Player
 playerDecoder =
     Json.Decode.succeed SR.Types.Player
-        |> Json.Decode.Pipeline.required "DATESTAMP" Json.Decode.int
-        |> Json.Decode.Pipeline.required "ACTIVE" Json.Decode.bool
-        |> Json.Decode.Pipeline.required "CURRENTCHALLENGERNAME" Json.Decode.string
-        |> Json.Decode.Pipeline.required "CURRENTCHALLENGERID" Json.Decode.int
-        |> Json.Decode.Pipeline.required "ADDRESS" Json.Decode.string
-        |> Json.Decode.Pipeline.required "RANK" Json.Decode.int
-        |> Json.Decode.Pipeline.required "NAME" Json.Decode.string
-        |> Json.Decode.Pipeline.required "PLAYERID" Json.Decode.int
-        |> Json.Decode.Pipeline.required "CURRENTCHALLENGERADDRESS" Json.Decode.string
+        |> Json.Decode.Pipeline.required "datestamp" Json.Decode.int
+        |> Json.Decode.Pipeline.required "active" Json.Decode.bool
+        |> Json.Decode.Pipeline.required "currentchallengername" Json.Decode.string
+        |> Json.Decode.Pipeline.required "currentchallengerid" Json.Decode.int
+        |> Json.Decode.Pipeline.required "address" Json.Decode.string
+        |> Json.Decode.Pipeline.required "rank" Json.Decode.int
+        |> Json.Decode.Pipeline.required "name" Json.Decode.string
+        |> Json.Decode.Pipeline.required "playerid" Json.Decode.int
+        |> Json.Decode.Pipeline.required "currentchallengeraddress" Json.Decode.string
 
 
 rankingsDecoder : Json.Decode.Decoder (List SR.Types.RankingInfo)
@@ -92,3 +93,8 @@ userDecoder =
         |> Json.Decode.Pipeline.required "description" Json.Decode.string
         |> Json.Decode.Pipeline.required "email" Json.Decode.string
         |> Json.Decode.Pipeline.required "mobile" Json.Decode.string
+
+
+decodeNewUserListServerResponse : Decoder (List SR.Types.User)
+decodeNewUserListServerResponse =
+    Json.Decode.field "data" (Json.Decode.list userDecoder)

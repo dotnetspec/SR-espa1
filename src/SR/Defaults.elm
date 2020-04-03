@@ -1,6 +1,6 @@
 module SR.Defaults exposing
     ( emptyPlayer
-    , emptyRankingInfo, emptyUser
+    , emptyChallenge, emptyRankingInfo, emptyUser, secretKey
     )
 
 {-| Default values.
@@ -10,6 +10,7 @@ For those withDefault shenanigans.
 
 -}
 
+import Http
 import Internal.Types as Internal
 import SR.Types exposing (..)
 
@@ -43,7 +44,36 @@ emptyUser =
 emptyRankingInfo =
     { id = "0"
     , active = False
-    , name = ""
-    , desc = ""
+    , rankingname = ""
+    , rankingdesc = ""
     , rankingowneraddr = ""
     }
+
+
+emptyChallenge =
+    { playerid = 0
+    , player = emptyPlayer
+    , opponent = emptyPlayer
+    , playerRank = 0
+    , opponentRank = 0
+    , playerStatus = Unavailable
+    , opponentStatus = Unavailable
+    , rankingid = ""
+    }
+
+
+type alias Challenge =
+    { playerid : Int
+    , player : Player
+    , opponent : Player
+    , playerRank : Int
+    , opponentRank : Int
+    , playerStatus : PlayerAvailability
+    , opponentStatus : PlayerAvailability
+    }
+
+
+secretKey =
+    Http.header
+        "secret-key"
+        "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
