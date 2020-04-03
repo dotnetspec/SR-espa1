@@ -246,10 +246,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
         UserOps _ _ uaddr _ uiState ->
             case msgOfTransitonThatAlreadyHappened of
                 UsersReceived userlist ->
-                    let
-                        _ =
-                            Debug.log "uaddr" uaddr
-                    in
                     if isUserInList (singleUserInList userlist uaddr) then
                         ( GlobalRankings [] "" "" SR.Types.UIRenderAllRankings (Internal.Address "") [] (singleUserInList userlist uaddr) emptyTxRecord, gotRankingList )
 
@@ -259,6 +255,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                 _ ->
                     --todo: better logic. This should go to failure model rather than fall thru to UserOps
+                    -- but currently logic needs to do this
                     ( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) [] uaddr SR.Defaults.emptyUser SR.Types.CreateNewUser, Cmd.none )
 
         GlobalRankings lrankingInfo nameStr descStr uiState rnkOwnerAddr userList user txRec ->
@@ -737,6 +734,34 @@ newrankinhomebutton rankingList uaddr user =
         ]
 
 
+newuserhomebutton : Eth.Types.Address -> Element Msg
+newuserhomebutton uaddr =
+    Element.column Grid.section <|
+        [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+        , Element.column (Card.simple ++ Grid.simple) <|
+            [ Element.wrappedRow Grid.simple <|
+                [ Input.button (Button.simple ++ Color.disabled) <|
+                    { --onPress = Just <| ResetToShowGlobal rankingList uaddr user
+                      onPress = Nothing
+                    , label = Element.text "Home"
+                    }
+                , Input.button (Button.simple ++ Color.info) <|
+                    { onPress = Nothing
+
+                    --onPress = Just <| ConfirmNewUserButtonClicked
+                    , label = Element.text "Create New"
+                    }
+                ]
+            ]
+        , Element.paragraph (Card.fill ++ Color.warning) <|
+            [ Element.el [ Font.bold ] <| Element.text "Please note: "
+            , Element.paragraph [] <|
+                List.singleton <|
+                    Element.text "Clicking 'Create New' interacts with your Ethereum wallet"
+            ]
+        ]
+
+
 inputNewUser : Eth.Types.Address -> Element Msg
 inputNewUser uaddr =
     Element.column Grid.section <|
@@ -751,18 +776,12 @@ inputNewUser uaddr =
                     }
                 , Input.multiline Input.simple
                     { onChange = UserNameInputChg
-                    , text = "Input.simple"
+                    , text = "Profile"
                     , placeholder = Nothing
-                    , label = Input.labelLeft Input.label <| Element.text "Input.label"
+                    , label = Input.labelLeft Input.label <| Element.text "Description"
                     , spellcheck = False
                     }
                 ]
-            ]
-        , Element.paragraph (Card.fill ++ Color.warning) <|
-            [ Element.el [ Font.bold ] <| Element.text "Please note: "
-            , Element.paragraph [] <|
-                List.singleton <|
-                    Element.text "Clicking 'Create New' interacts with your Ethereum wallet"
             ]
         , Element.paragraph [] <|
             List.singleton <|
@@ -839,13 +858,7 @@ inputNewUserview uaddr =
         Element.column
             Framework.container
             [ Element.el Heading.h4 <| Element.text "New User Input"
-
-            --, selectedHeading
-            --, homebutton lrankingInfo (Internal.Address "")
-            --, group
-            --, color
-            --, grid
-            --, playerbuttons playerList
+            , newuserhomebutton uaddr
             , inputNewUser uaddr
             ]
 
