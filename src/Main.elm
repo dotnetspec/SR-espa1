@@ -246,14 +246,20 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
         UserOps _ _ uaddr _ uiState ->
             case msgOfTransitonThatAlreadyHappened of
                 UsersReceived userlist ->
+                    let
+                        _ =
+                            Debug.log "uaddr" uaddr
+                    in
                     if isUserInList (singleUserInList userlist uaddr) then
                         ( GlobalRankings [] "" "" SR.Types.UIRenderAllRankings (Internal.Address "") [] (singleUserInList userlist uaddr) emptyTxRecord, gotRankingList )
 
                     else
-                        ( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) (extractUsersFromWebData userlist) uaddr (singleUserInList userlist uaddr) SR.Types.CreateNewUser, Cmd.none )
+                        --( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) (extractUsersFromWebData userlist) uaddr (singleUserInList userlist uaddr) SR.Types.CreateNewUser, Cmd.none )
+                        ( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) [] uaddr SR.Defaults.emptyUser SR.Types.CreateNewUser, Cmd.none )
 
                 _ ->
-                    ( Failure "UsersReceived", Cmd.none )
+                    --todo: better logic. This should go to failure model rather than fall thru to UserOps
+                    ( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) [] uaddr SR.Defaults.emptyUser SR.Types.CreateNewUser, Cmd.none )
 
         GlobalRankings lrankingInfo nameStr descStr uiState rnkOwnerAddr userList user txRec ->
             case msgOfTransitonThatAlreadyHappened of
@@ -919,7 +925,7 @@ view model =
                     greetingView <| "Wrong UserOps view : "
 
         Failure str ->
-            greetingView <| "Model failure : " ++ str
+            greetingView <| "Model failure in view: " ++ str
 
 
 
