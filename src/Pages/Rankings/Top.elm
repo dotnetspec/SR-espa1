@@ -68,6 +68,7 @@ type Model
 
 -- Msg is a description of the transition that already happened
 -- Messages that delivered the response (orign doc says 'will deliver')
+-- The messages use RemoteData. The model does not (strip out)
 
 
 type Msg
@@ -586,7 +587,7 @@ rankingNameCol _ str =
                      --, Border.widthXY 2 2
                     ]
                     { url = "/rankings/" ++ rankingInfo.id
-                    , label = Element.text rankingInfo.name
+                    , label = Element.text rankingInfo.rankingname
                     }
                 ]
     }
@@ -610,7 +611,7 @@ rankingDescCol _ str =
                  -- , spacing 5
                  --, alignLeft
                 ]
-                [ Element.text rankingInfo.desc
+                [ Element.text rankingInfo.rankingdesc
                 ]
     }
 

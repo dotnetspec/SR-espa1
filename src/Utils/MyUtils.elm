@@ -26,6 +26,10 @@ stringFromMaybeString str =
             a
 
 
+
+-- this is for Maybe Address - potential re-factor
+
+
 addressToString : Maybe Eth.Types.Address -> String
 addressToString addr =
     case addr of
