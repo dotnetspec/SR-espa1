@@ -13,16 +13,22 @@ module Global exposing
 
 --n.b 'as Routes' alias was rm here:
 
+import Eth.Net exposing (NetworkId(..))
+import Eth.Sentry.Wallet
+import Eth.Types
 import Generated.Routes exposing (Route)
+import Ports
+import SR.Types
 
 
 
--- if you needed to you could define a GlobalVariant here
+-- if you needed to you could define a GlobalModel variant here
 -- that could be accessed via a PageContext which might be defined as context.global
 
 
 type Model
-    = Failure String
+    = GlobalModel SR.Types.UserState
+    | Failure String
 
 
 type alias Flags =
@@ -32,6 +38,8 @@ type alias Flags =
 type Msg
     = Fail String
     | NoOp
+      --| GotExistingUserAddressInGlobal SR.Types.UserState
+    | WalletStatus Eth.Sentry.Wallet.WalletSentry
 
 
 type alias Commands msg =
@@ -59,6 +67,31 @@ init _ _ =
 update : Commands msg -> Msg -> Model -> ( Model, Cmd Msg, Cmd msg )
 update _ msg model =
     case msg of
+        -- GotExistingUserAddressInGlobal useraddress ->
+        --     ( GlobalModel useraddress, Cmd.none, Cmd.none )
+        WalletStatus walletSentry_ ->
+            case walletSentry_.networkId of
+                Mainnet ->
+                    case walletSentry_.account of
+                        Nothing ->
+                            ( GlobalModel SR.Types.NewUser, Cmd.none, Cmd.none )
+
+                        Just useraddress ->
+                            --handleMsg (SR.Types.NewUser a)
+                            ( GlobalModel (SR.Types.ExistingUser useraddress), Cmd.none, Cmd.none )
+
+                Rinkeby ->
+                    case walletSentry_.account of
+                        Nothing ->
+                            ( GlobalModel SR.Types.NewUser, Cmd.none, Cmd.none )
+
+                        Just useraddress ->
+                            --handleMsg (SR.Types.ExistingUser a)
+                            ( GlobalModel (SR.Types.ExistingUser useraddress), Cmd.none, Cmd.none )
+
+                _ ->
+                    ( GlobalModel SR.Types.NewUser, Cmd.none, Cmd.none )
+
         Fail str ->
             ( Failure str, Cmd.none, Cmd.none )
 
@@ -68,4 +101,5 @@ update _ msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    --Sub.none
+    Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)

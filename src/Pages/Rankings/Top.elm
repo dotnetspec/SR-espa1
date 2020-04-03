@@ -5,6 +5,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
+import Eth.Types
 import Framework
 import Framework.Button
 import Framework.Card as Card
@@ -27,6 +28,7 @@ import SR.Defaults
 import SR.Types
 import Spa.Page
 import Ui
+import Utils.MyUtils
 import Utils.Spa exposing (Page)
 
 
@@ -34,7 +36,7 @@ page : Page Params.Top Model Msg model msg appMsg
 page =
     Spa.Page.element
         { title = always "Rankings.Top"
-        , init = always init
+        , init = init
         , update = always update
         , subscriptions = always subscriptions
         , view = always view
@@ -59,13 +61,14 @@ page =
 
 
 type Model
-    = AllRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo)) String String SR.Types.UIState
+    = AllRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo)) String String SR.Types.UIState String
     | ModelFailure String
 
 
 
 -- Msg is a description of the transition that already happened
 -- Messages that delivered the response (orign doc says 'will deliver')
+-- The messages use RemoteData. The model does not (strip out)
 
 
 type Msg
@@ -84,23 +87,26 @@ type Msg
 -- this accesses COLLECTION RECORDS - GLOBAL - public bin
 
 
-init : Params.Top -> ( Model, Cmd Msg )
-init _ =
-    -- let
-    --     uname =
-    --         case context.global of
-    --             Global.GlobalVariant wSentry uName ->
-    --                 case uName of
-    --                     SR.Types.NewUser ->
-    --                         "Hello New User"
-    --                     SR.Types.ExistingUser str ->
-    --                         "temp value whilst sort Top.elm"
-    --             Global.Failure str ->
-    --                 str
-    --     _ =
-    --         Debug.log "username " ++ uname
-    -- in
-    ( AllRankingsJson RemoteData.Loading "" "" SR.Types.RenderAllRankings
+init : Utils.Spa.PageContext -> Params.Top -> ( Model, Cmd Msg )
+init context _ =
+    let
+        uaddr =
+            case context.global of
+                Global.GlobalModel userState ->
+                    case userState of
+                        SR.Types.NewUser ->
+                            ""
+
+                        SR.Types.ExistingUser a ->
+                            Utils.MyUtils.addressToString <| Just a
+
+                Global.Failure str ->
+                    "failed"
+
+        _ =
+            Debug.log "useraddress " uaddr
+    in
+    ( AllRankingsJson RemoteData.Loading "" "" SR.Types.RenderAllRankings uaddr
     , -- nb. getRankingList is an expression not a function
       getRankingList
     )
@@ -192,8 +198,8 @@ createNewPlayerListWithCurrentUser =
 -- this also has to be done when a new ranking is created.
 
 
-addedNewRankingListEntryInGlobal : RemoteData.WebData SR.Types.RankingId -> RemoteData.WebData (List SR.Types.RankingInfo) -> String -> String -> Cmd Msg
-addedNewRankingListEntryInGlobal newrankingid globalList newName newDesc =
+addedNewRankingListEntryInGlobal : RemoteData.WebData SR.Types.RankingId -> RemoteData.WebData (List SR.Types.RankingInfo) -> String -> String -> String -> Cmd Msg
+addedNewRankingListEntryInGlobal newrankingid globalList newName newDesc rankingowneraddress =
     let
         secretKey =
             Http.header
@@ -221,7 +227,7 @@ addedNewRankingListEntryInGlobal newrankingid globalList newName newDesc =
             , active = True
             , name = newName
             , desc = newDesc
-            , rankingowneraddr = "0x847700B781667abdD98E1393420754E503dca5b7"
+            , rankingowneraddr = rankingowneraddress
             }
 
         globalListWithJsonObjAdded =
@@ -307,34 +313,45 @@ update msgOfTransitonThatAlreadyHappened previousmodel =
         GotJsonbinAllRankings rmtdata ->
             case rmtdata of
                 RemoteData.Success a ->
-                    ( AllRankingsJson (RemoteData.Success a) "" "" SR.Types.RenderAllRankings, Cmd.none )
+                    case previousmodel of
+                        AllRankingsJson globalList _ _ _ rnkowner ->
+                            ( AllRankingsJson (RemoteData.Success a) "" "" SR.Types.RenderAllRankings rnkowner, Cmd.none )
+
+                        _ ->
+                            ( ModelFailure "Error in SwitchedToNewEmptyAndFilledGlobalList", Cmd.none )
 
                 RemoteData.Failure e ->
-                    ( AllRankingsJson (RemoteData.Failure e) "" "" SR.Types.RenderAllRankings, Cmd.none )
+                    ( AllRankingsJson (RemoteData.Failure e) "" "" SR.Types.RenderAllRankings "", Cmd.none )
 
                 RemoteData.NotAsked ->
-                    ( AllRankingsJson RemoteData.NotAsked "" "" SR.Types.RenderAllRankings, Cmd.none )
+                    ( AllRankingsJson RemoteData.NotAsked "" "" SR.Types.RenderAllRankings "", Cmd.none )
 
                 RemoteData.Loading ->
-                    ( AllRankingsJson RemoteData.Loading "" "" SR.Types.RenderAllRankings, Cmd.none )
+                    ( AllRankingsJson RemoteData.Loading "" "" SR.Types.RenderAllRankings "", Cmd.none )
 
         ChangedUIStateToCreateNew ->
             case previousmodel of
-                AllRankingsJson globalList _ _ _ ->
-                    ( AllRankingsJson globalList "" "" SR.Types.CreateNewLadder, Cmd.none )
+                AllRankingsJson globalList _ _ _ rnkowner ->
+                    ( AllRankingsJson globalList "" "" SR.Types.CreateNewLadder rnkowner, Cmd.none )
 
                 _ ->
                     ( ModelFailure "Error in SwitchedToNewEmptyAndFilledGlobalList", Cmd.none )
 
         UserChangedUIStateToRenderAll globalList ->
-            ( AllRankingsJson globalList "" "" SR.Types.RenderAllRankings, Cmd.none )
+            --( AllRankingsJson globalList "" "" SR.Types.RenderAllRankings, Cmd.none )
+            case previousmodel of
+                AllRankingsJson _ _ _ _ rnkowner ->
+                    ( AllRankingsJson globalList "" "" SR.Types.RenderAllRankings rnkowner, Cmd.none )
+
+                _ ->
+                    ( ModelFailure "Error in SwitchedToNewEmptyAndFilledGlobalList", Cmd.none )
 
         --this fires the createNewPlayerListWithCurrentUser Cmd
         -- from the button (which only accepts Msg not Cmd.Msg)
         NewRankingRequestedByConfirmBtnClicked ->
             case previousmodel of
-                AllRankingsJson globalList newrankingName newRankingDesc _ ->
-                    ( AllRankingsJson globalList newrankingName newRankingDesc SR.Types.CreateNewLadder, createNewPlayerListWithCurrentUser )
+                AllRankingsJson globalList newrankingName newRankingDesc _ rnkowner ->
+                    ( AllRankingsJson globalList newrankingName newRankingDesc SR.Types.CreateNewLadder rnkowner, createNewPlayerListWithCurrentUser )
 
                 _ ->
                     ( ModelFailure "Error in NewRankingRequestedByConfirmBtnClicked", Cmd.none )
@@ -346,27 +363,27 @@ update msgOfTransitonThatAlreadyHappened previousmodel =
         -- the globalList is preserved
         SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
             case previousmodel of
-                AllRankingsJson globalList newrankingName newRankingDesc _ ->
-                    ( AllRankingsJson globalList newrankingName newRankingDesc SR.Types.CreateNewLadder, addedNewRankingListEntryInGlobal idValueFromDecoder globalList newrankingName newRankingDesc )
+                AllRankingsJson globalList newrankingName newRankingDesc _ rnkowneraddr ->
+                    ( AllRankingsJson globalList newrankingName newRankingDesc SR.Types.CreateNewLadder rnkowneraddr, addedNewRankingListEntryInGlobal idValueFromDecoder globalList newrankingName newRankingDesc rnkowneraddr )
 
                 _ ->
                     ( ModelFailure "Error in SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId", Cmd.none )
 
         AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
-            ( AllRankingsJson updatedListAfterNewEntryAddedToGlobalList "" "" SR.Types.RenderAllRankings, Cmd.none )
+            ( AllRankingsJson updatedListAfterNewEntryAddedToGlobalList "" "" SR.Types.RenderAllRankings "", Cmd.none )
 
         NameInputChg namefield ->
             case previousmodel of
-                AllRankingsJson list _ desc _ ->
-                    ( AllRankingsJson list namefield desc SR.Types.CreateNewLadder, Cmd.none )
+                AllRankingsJson list _ desc _ rnkowner ->
+                    ( AllRankingsJson list namefield desc SR.Types.CreateNewLadder rnkowner, Cmd.none )
 
                 _ ->
                     ( ModelFailure "Error in InputChg", Cmd.none )
 
         DescInputChg descfield ->
             case previousmodel of
-                AllRankingsJson list name _ _ ->
-                    ( AllRankingsJson list name descfield SR.Types.CreateNewLadder, Cmd.none )
+                AllRankingsJson list name _ _ rnkowner ->
+                    ( AllRankingsJson list name descfield SR.Types.CreateNewLadder rnkowner, Cmd.none )
 
                 _ ->
                     ( ModelFailure "Error in InputChg", Cmd.none )
@@ -425,12 +442,12 @@ listOfElementmsgs model =
 
 gotGroupView : Model -> Element Msg
 gotGroupView model =
-    -- let
-    --     _ =
-    --         Debug.log "new ranking owner address in gotGroupView: " "it will go here"
-    -- in
+    let
+        _ =
+            Debug.log "new ranking owner address in gotGroupView: " "it will go here"
+    in
     case model of
-        AllRankingsJson rnkingList _ _ _ ->
+        AllRankingsJson rnkingList _ _ _ rnkowner ->
             Element.column Grid.section <|
                 [ Element.el Heading.h2 <| Element.text "Username"
                 , Element.column Grid.simple <|
@@ -477,7 +494,7 @@ gotGroupView model =
 currentView : Model -> Element Msg
 currentView model =
     case model of
-        AllRankingsJson rmtData _ _ uiState ->
+        AllRankingsJson rmtData _ _ uiState rnkowner ->
             case rmtData of
                 RemoteData.NotAsked ->
                     Element.text ""
@@ -570,7 +587,7 @@ rankingNameCol _ str =
                      --, Border.widthXY 2 2
                     ]
                     { url = "/rankings/" ++ rankingInfo.id
-                    , label = Element.text rankingInfo.name
+                    , label = Element.text rankingInfo.rankingname
                     }
                 ]
     }
@@ -594,7 +611,7 @@ rankingDescCol _ str =
                  -- , spacing 5
                  --, alignLeft
                 ]
-                [ Element.text rankingInfo.desc
+                [ Element.text rankingInfo.rankingdesc
                 ]
     }
 
@@ -644,7 +661,7 @@ input model rankings =
     let
         updatedname =
             case model of
-                AllRankingsJson _ b c _ ->
+                AllRankingsJson _ b c _ rnkowner ->
                     b
 
                 ModelFailure s ->
@@ -652,7 +669,7 @@ input model rankings =
 
         updateddesc =
             case model of
-                AllRankingsJson _ b c _ ->
+                AllRankingsJson _ b c _ rnkowner ->
                     c
 
                 ModelFailure s ->

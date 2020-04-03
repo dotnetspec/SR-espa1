@@ -1,14 +1,19 @@
-module Utils.MyUtils exposing (stringFromBool, stringFromMaybeString)
+module Utils.MyUtils exposing (addressToString, stringFromBool, stringFromMaybeString)
+
+import Eth.Types
+import Eth.Utils
 
 
 stringFromBool : Bool -> String
 stringFromBool bool =
-    case bool of
-        True ->
-            "True"
+    if
+        bool
+            == True
+    then
+        "True"
 
-        False ->
-            "False"
+    else
+        "False"
 
 
 stringFromMaybeString : Maybe String -> String
@@ -19,6 +24,20 @@ stringFromMaybeString str =
 
         Just a ->
             a
+
+
+
+-- this is for Maybe Address - potential re-factor
+
+
+addressToString : Maybe Eth.Types.Address -> String
+addressToString addr =
+    case addr of
+        Nothing ->
+            "No address"
+
+        Just a ->
+            Eth.Utils.addressToString a
 
 
 

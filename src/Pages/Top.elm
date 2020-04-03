@@ -51,7 +51,7 @@ init context _ =
 
 
 -- UPDATE
--- Msg is a description of the transition that needs to happen
+-- Msg is a description of the transition that needed to happen
 
 
 type Msg
@@ -68,7 +68,7 @@ type Msg
 
 
 -- Update needs to take two things: a message (which
--- is a description of the transition that needs to happen),
+-- is a description of the transition that needed to happen),
 --  and the model (which is the model before the update is applied),
 --  and it will return a new model.
 
@@ -170,8 +170,8 @@ handleMsg msg =
         NewUser ->
             ( Greeting SR.Types.NewUser SR.Types.Opened, Cmd.none, Cmd.none )
 
-        ExistingUser uname ->
-            ( Greeting (SR.Types.ExistingUser uname) SR.Types.Opened, Cmd.none, Cmd.none )
+        ExistingUser uaddr ->
+            ( Greeting (SR.Types.ExistingUser uaddr) SR.Types.Opened, Cmd.none, Cmd.none )
 
         _ ->
             ( Failure "Something wrong with Msg", Cmd.none, Cmd.none )
