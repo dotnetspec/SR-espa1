@@ -61,7 +61,7 @@ main =
 type Model
     = WalletOps SR.Types.WalletState TxRecord
     | UserOps SR.Types.UserState (List SR.Types.User) Eth.Types.Address SR.Types.User SR.Types.UIState
-    | GlobalRankings (List SR.Types.RankingInfo) String String SR.Types.UIState Eth.Types.Address (List SR.Types.User) SR.Types.User TxRecord
+    | GlobalRankings (List SR.Types.RankingInfo) SR.Types.LadderState SR.Types.UIState Eth.Types.Address (List SR.Types.User) SR.Types.User TxRecord
     | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.RankingId SR.Types.User SR.Types.Challenge TxRecord
     | Failure String
 
@@ -138,7 +138,6 @@ type Msg
     | ChangedUIStateToCreateNew (List SR.Types.RankingInfo) Eth.Types.Address SR.Types.User
     | NewRankingRequestedByConfirmBtnClicked
     | PollBlock (Result Http.Error Int)
-      --| InitTx
     | WatchTxHash (Result String Eth.Types.TxHash)
     | WatchTx (Result String Eth.Types.Tx)
     | WatchTxReceipt (Result String Eth.Types.TxReceipt)
@@ -152,13 +151,11 @@ type Msg
     | MissingWalletInstructions
     | OpenWalletInstructions
     | NewUser
-    | UserNameInputChg String
     | ResetToShowGlobal (List SR.Types.RankingInfo) Eth.Types.Address SR.Types.User
     | ExistingUser Eth.Types.Address
     | LadderNameInputChg String
     | LadderDescInputChg String
     | ProcessResult SR.Types.ResultOfMatch
-    | ConfirmButtonClicked
     | SentResultToJsonbin (Result Http.Error ())
     | NewUserNameInputChg String
     | NewUserDescInputChg String
@@ -249,7 +246,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
             case msgOfTransitonThatAlreadyHappened of
                 UsersReceived userlist ->
                     if isUserInList (singleUserInList userlist uaddr) then
-                        ( GlobalRankings [] "" "" SR.Types.UIRenderAllRankings (Internal.Address "") [] (singleUserInList userlist uaddr) emptyTxRecord, gotRankingList )
+                        ( GlobalRankings [] (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings (Internal.Address "") [] (singleUserInList userlist uaddr) emptyTxRecord, gotRankingList )
 
                     else
                         --( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) (extractUsersFromWebData userlist) uaddr (singleUserInList userlist uaddr) SR.Types.CreateNewUser, Cmd.none )
@@ -276,14 +273,14 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     -- but currently logic needs to do this
                     ( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) [] uaddr SR.Defaults.emptyUser SR.Types.CreateNewUser, Cmd.none )
 
-        GlobalRankings lrankingInfo nameStr descStr uiState rnkOwnerAddr userList user txRec ->
+        GlobalRankings lrankingInfo ladderState uiState rnkOwnerAddr userList user txRec ->
             case msgOfTransitonThatAlreadyHappened of
                 GotGlobalRankingsJson rmtrnkingdata ->
                     let
                         rankingsAsJustList =
                             extractRankingsFromWebData rmtrnkingdata
                     in
-                    ( GlobalRankings rankingsAsJustList "" "" uiState rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
+                    ( GlobalRankings rankingsAsJustList (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) uiState rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
 
                 GotRankingId rnkidstr ->
                     ( SelectedRanking lrankingInfo [] rnkidstr user SR.Defaults.emptyChallenge emptyTxRecord, fetchedSingleRanking rnkidstr )
@@ -295,9 +292,16 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 -- the lrankingInfo is preserved
                 SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
                     --AllRankingsJson lrankingInfo newrankingName newRankingDesc _ rnkOwnerAddr ->
-                    ( GlobalRankings lrankingInfo "" "" SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord
-                    , addedNewRankingListEntryInGlobal idValueFromDecoder lrankingInfo nameStr descStr (Eth.Utils.addressToString rnkOwnerAddr)
-                    )
+                    case ladderState of
+                        SR.Types.NewLadder rnkInfo ->
+                            ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord
+                            , addedNewRankingListEntryInGlobal idValueFromDecoder lrankingInfo rnkInfo (Eth.Utils.addressToString rnkOwnerAddr)
+                            )
+
+                        SR.Types.ExistingLadder rnkInfo ->
+                            ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord
+                            , addedNewRankingListEntryInGlobal idValueFromDecoder lrankingInfo rnkInfo (Eth.Utils.addressToString rnkOwnerAddr)
+                            )
 
                 -- _ ->
                 --     ( Failure "SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId", Cmd.none )
@@ -305,31 +309,47 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     -- case currentmodel of
                     --     GlobalRankings lrankingInfo newrankingName newRankingDesc _ rnkowneraddr _ userRec ->
                     --todo: this is just holding code - needs re-factor
-                    ( GlobalRankings lrankingInfo nameStr descStr SR.Types.UIRenderAllRankings rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
+                    case ladderState of
+                        SR.Types.NewLadder rnkInfo ->
+                            ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
+
+                        SR.Types.ExistingLadder rnkInfo ->
+                            ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
 
                 -- _ ->
                 --     ( Failure "SentUserInfoAndDecodedResponseToNewUser", Cmd.none )
                 ResetToShowGlobal lrankingInfoForReset rnkowneraddr userRec ->
-                    ( GlobalRankings lrankingInfoForReset "" "" SR.Types.UIRenderAllRankings rnkowneraddr userList userRec emptyTxRecord, Cmd.none )
+                    ( GlobalRankings lrankingInfoForReset (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings rnkowneraddr userList userRec emptyTxRecord, Cmd.none )
 
                 ChangedUIStateToCreateNew lrankingInfoChgToCreateNew rnkowneraddr userRec ->
-                    ( GlobalRankings lrankingInfoChgToCreateNew "" "" SR.Types.CreateNewLadder rnkowneraddr userList userRec emptyTxRecord, Cmd.none )
+                    ( GlobalRankings lrankingInfoChgToCreateNew (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.CreateNewLadder rnkowneraddr userList userRec emptyTxRecord, Cmd.none )
 
                 -- NewRankingRequestedByConfirmBtnClicked ->
                 --     ( GlobalRankings lrankingInfo "new" "new" SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord, createNewPlayerListWithCurrentUser )
                 AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
-                    --( AllRankingsJson updatedListAfterNewEntryAddedToGlobalList "" "" SR.Types.RenderAllRankings "", Cmd.none )
-                    ( GlobalRankings (extractRankingsFromWebData <| updatedListAfterNewEntryAddedToGlobalList) "" "" SR.Types.UIRenderAllRankings rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
+                    --( AllRankingsJson updatedListAfterNewEntryAddedToGlobalList (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.RenderAllRankings "", Cmd.none )
+                    ( GlobalRankings (extractRankingsFromWebData <| updatedListAfterNewEntryAddedToGlobalList) (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
 
                 LadderNameInputChg namefield ->
                     --AllRankingsJson list _ desc _ rnkowner ->
                     --( AllRankingsJson list namefield desc SR.Types.CreateNewLadder rnkowner, Cmd.none )
-                    ( GlobalRankings lrankingInfo nameStr descStr SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
+                    case ladderState of
+                        SR.Types.NewLadder ladder ->
+                            ( GlobalRankings lrankingInfo (SR.Types.NewLadder { ladder | rankingname = namefield }) SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
+
+                        SR.Types.ExistingLadder ladder ->
+                            ( GlobalRankings lrankingInfo (SR.Types.NewLadder { ladder | rankingname = namefield }) SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
 
                 LadderDescInputChg descfield ->
                     --AllRankingsJson list name _ _ rnkowner ->
                     --( AllRankingsJson list name descfield SR.Types.CreateNewLadder rnkowner, Cmd.none )
-                    ( GlobalRankings lrankingInfo nameStr descStr SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
+                    --( GlobalRankings lrankingInfo nameStr descfield SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
+                    case ladderState of
+                        SR.Types.NewLadder ladder ->
+                            ( GlobalRankings lrankingInfo (SR.Types.NewLadder { ladder | rankingdesc = descfield }) SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
+
+                        SR.Types.ExistingLadder ladder ->
+                            ( GlobalRankings lrankingInfo (SR.Types.NewLadder { ladder | rankingdesc = descfield }) SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
 
                 --todo: this needs to be linked to user - don't confuse with new ladder
                 -- UserNameInputChg namefield ->
@@ -360,17 +380,17 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                 txParams
                     in
                     --( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings rnkOwnerAddr userList user { txRec | txSentry = newSentry }, sentryCmd )
-                    ( GlobalRankings lrankingInfo "new" "new" SR.Types.CreateNewLadder rnkOwnerAddr userList user { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewPlayerListWithCurrentUser ] )
+                    ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.CreateNewLadder rnkOwnerAddr userList user { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewPlayerListWithCurrentUser ] )
 
                 Fail str ->
                     let
                         _ =
                             Debug.log "GlobalRankings fail " str
                     in
-                    ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings (Internal.Address "") userList user emptyTxRecord, Cmd.none )
+                    ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings (Internal.Address "") userList user emptyTxRecord, Cmd.none )
 
                 _ ->
-                    ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings (Internal.Address "") userList user emptyTxRecord, Cmd.none )
+                    ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings (Internal.Address "") userList user emptyTxRecord, Cmd.none )
 
         SelectedRanking lrankingInfo lPlayer intrankingId userRec challenge txRec ->
             case msgOfTransitonThatAlreadyHappened of
@@ -382,7 +402,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( SelectedRanking lrankingInfo playerAsJustList (Internal.RankingId "") userRec SR.Defaults.emptyChallenge emptyTxRecord, Cmd.none )
 
                 ResetToShowGlobal _ rnkowneraddr user ->
-                    ( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings rnkowneraddr [ SR.Defaults.emptyUser ] user emptyTxRecord, Cmd.none )
+                    ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings rnkowneraddr [ SR.Defaults.emptyUser ] user emptyTxRecord, Cmd.none )
 
                 TxSentryMsg subMsg ->
                     let
@@ -812,21 +832,25 @@ inputNewUser uaddr user =
         ]
 
 
-inputNewLadder : SR.Types.User -> Element Msg
-inputNewLadder user =
+inputNewLadder : SR.Types.RankingInfo -> Element Msg
+inputNewLadder newladder =
+    let
+        _ =
+            Debug.log "" newladder.rankingdesc
+    in
     Element.column Grid.section <|
         [ Element.el Heading.h2 <| Element.text "New Ladder Details"
         , Element.wrappedRow (Card.fill ++ Grid.simple)
             [ Element.column Grid.simple
                 [ Input.text Input.simple
                     { onChange = LadderNameInputChg
-                    , text = "Name"
+                    , text = newladder.rankingname
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Name:"
                     }
                 , Input.multiline Input.simple
-                    { onChange = LadderNameInputChg
-                    , text = "Description"
+                    { onChange = LadderDescInputChg
+                    , text = newladder.rankingdesc
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Description:"
                     , spellcheck = False
@@ -886,8 +910,8 @@ inputNewUserview uaddr user =
             ]
 
 
-inputNewLadderview : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> Html Msg
-inputNewLadderview rankingList uaddr user =
+inputNewLadderview : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> SR.Types.RankingInfo -> Html Msg
+inputNewLadderview rankingList uaddr user rnkInfo =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
@@ -900,7 +924,7 @@ inputNewLadderview rankingList uaddr user =
             --, color
             --, grid
             --, playerbuttons playerList
-            , inputNewLadder user
+            , inputNewLadder rnkInfo
             ]
 
 
@@ -917,14 +941,20 @@ greetingView greetingMsg =
 view : Model -> Html Msg
 view model =
     case model of
-        GlobalRankings lrankingInfo _ _ uiState uaddr userlist userRec txRec ->
+        GlobalRankings lrankingInfo ladderState uiState uaddr userlist userRec txRec ->
             case uiState of
                 SR.Types.CreateNewUser ->
                     inputNewUserview uaddr userRec
 
                 SR.Types.CreateNewLadder ->
-                    inputNewLadderview lrankingInfo uaddr userRec
+                    case ladderState of
+                        SR.Types.NewLadder newLadder ->
+                            inputNewLadderview lrankingInfo uaddr userRec newLadder
 
+                        SR.Types.ExistingLadder existingLadder ->
+                            inputNewLadderview lrankingInfo uaddr userRec existingLadder
+
+                --inputNewLadderview lrankingInfo uaddr userRec SR.Types.ExistingLadder existingLadder
                 _ ->
                     globalResponsiveview lrankingInfo uaddr userRec
 
@@ -1064,7 +1094,7 @@ subscriptions model =
         UserOps _ _ _ _ _ ->
             Sub.none
 
-        GlobalRankings _ _ _ _ _ _ _ _ ->
+        GlobalRankings _ _ _ _ _ _ _ ->
             Sub.none
 
         SelectedRanking _ _ _ _ _ _ ->
@@ -1267,8 +1297,8 @@ createNewUser =
 -- this also has to be done when a new ranking is created.
 
 
-addedNewRankingListEntryInGlobal : RemoteData.WebData SR.Types.RankingId -> List SR.Types.RankingInfo -> String -> String -> String -> Cmd Msg
-addedNewRankingListEntryInGlobal newrankingid lrankingInfo newName newDesc rankingowneraddress =
+addedNewRankingListEntryInGlobal : RemoteData.WebData SR.Types.RankingId -> List SR.Types.RankingInfo -> SR.Types.RankingInfo -> String -> Cmd Msg
+addedNewRankingListEntryInGlobal newrankingid lrankingInfo rnkInfo rankingowneraddress =
     let
         secretKey =
             Http.header
@@ -1293,8 +1323,8 @@ addedNewRankingListEntryInGlobal newrankingid lrankingInfo newName newDesc ranki
         newRankingInfo =
             { id = gotNewRankingIdFromWebData newrankingid
             , active = True
-            , rankingname = newName
-            , rankingdesc = newDesc
+            , rankingname = rnkInfo.rankingname
+            , rankingdesc = rnkInfo.rankingdesc
             , rankingowneraddr = rankingowneraddress
             }
 
