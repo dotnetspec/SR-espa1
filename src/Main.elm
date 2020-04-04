@@ -136,7 +136,7 @@ type Msg
     | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
     | SentUserInfoAndDecodedResponseToNewUser (RemoteData.WebData (List SR.Types.User))
     | ChangedUIStateToCreateNew (List SR.Types.RankingInfo) Eth.Types.Address SR.Types.User
-    | NewRankingRequestedByConfirmBtnClicked
+    | NewRankingRequestedByConfirmBtnClicked SR.Types.RankingInfo
     | PollBlock (Result Http.Error Int)
     | WatchTxHash (Result String Eth.Types.TxHash)
     | WatchTx (Result String Eth.Types.Tx)
@@ -309,13 +309,12 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     -- case currentmodel of
                     --     GlobalRankings lrankingInfo newrankingName newRankingDesc _ rnkowneraddr _ userRec ->
                     --todo: this is just holding code - needs re-factor
-                    case ladderState of
-                        SR.Types.NewLadder rnkInfo ->
-                            ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
+                    --case ladderState of
+                    --SR.Types.NewLadder rnkInfo ->
+                    ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
 
-                        SR.Types.ExistingLadder rnkInfo ->
-                            ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
-
+                -- SR.Types.ExistingLadder rnkInfo ->
+                --     ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
                 -- _ ->
                 --     ( Failure "SentUserInfoAndDecodedResponseToNewUser", Cmd.none )
                 ResetToShowGlobal lrankingInfoForReset rnkowneraddr userRec ->
@@ -331,8 +330,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( GlobalRankings (extractRankingsFromWebData <| updatedListAfterNewEntryAddedToGlobalList) (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
 
                 LadderNameInputChg namefield ->
-                    --AllRankingsJson list _ desc _ rnkowner ->
-                    --( AllRankingsJson list namefield desc SR.Types.CreateNewLadder rnkowner, Cmd.none )
                     case ladderState of
                         SR.Types.NewLadder ladder ->
                             ( GlobalRankings lrankingInfo (SR.Types.NewLadder { ladder | rankingname = namefield }) SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
@@ -341,9 +338,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                             ( GlobalRankings lrankingInfo (SR.Types.NewLadder { ladder | rankingname = namefield }) SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
 
                 LadderDescInputChg descfield ->
-                    --AllRankingsJson list name _ _ rnkowner ->
-                    --( AllRankingsJson list name descfield SR.Types.CreateNewLadder rnkowner, Cmd.none )
-                    --( GlobalRankings lrankingInfo nameStr descfield SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
                     case ladderState of
                         SR.Types.NewLadder ladder ->
                             ( GlobalRankings lrankingInfo (SR.Types.NewLadder { ladder | rankingdesc = descfield }) SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
@@ -351,11 +345,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         SR.Types.ExistingLadder ladder ->
                             ( GlobalRankings lrankingInfo (SR.Types.NewLadder { ladder | rankingdesc = descfield }) SR.Types.CreateNewLadder rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
 
-                --todo: this needs to be linked to user - don't confuse with new ladder
-                -- UserNameInputChg namefield ->
-                --     ( GlobalRankings lrankingInfo namefield namefield SR.Types.CreateNewUser rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
-                --ConfirmButtonClicked ->
-                NewRankingRequestedByConfirmBtnClicked ->
+                NewRankingRequestedByConfirmBtnClicked newLadder ->
                     let
                         _ =
                             Debug.log "confirm " "btn"
@@ -380,7 +370,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                 txParams
                     in
                     --( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings rnkOwnerAddr userList user { txRec | txSentry = newSentry }, sentryCmd )
-                    ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.CreateNewLadder rnkOwnerAddr userList user { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewPlayerListWithCurrentUser ] )
+                    ( GlobalRankings lrankingInfo (SR.Types.NewLadder newLadder) SR.Types.CreateNewLadder rnkOwnerAddr userList user { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewPlayerListWithCurrentUser user ] )
 
                 Fail str ->
                     let
@@ -399,7 +389,8 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         playerAsJustList =
                             extractPlayersFromWebData players
                     in
-                    ( SelectedRanking lrankingInfo playerAsJustList (Internal.RankingId "") userRec SR.Defaults.emptyChallenge emptyTxRecord, Cmd.none )
+                    --( SelectedRanking lrankingInfo playerAsJustList (Internal.RankingId "") userRec SR.Defaults.emptyChallenge emptyTxRecord, Cmd.none )
+                    ( SelectedRanking lrankingInfo playerAsJustList intrankingId userRec SR.Defaults.emptyChallenge emptyTxRecord, Cmd.none )
 
                 ResetToShowGlobal _ rnkowneraddr user ->
                     ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings rnkowneraddr [ SR.Defaults.emptyUser ] user emptyTxRecord, Cmd.none )
@@ -510,60 +501,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
             ( Failure <| "Model failure in selected ranking: " ++ str, Cmd.none )
 
 
-isOpponentHigherRank : SR.Types.Player -> SR.Types.Opponent -> SR.Types.OpponentRelativeRank
-isOpponentHigherRank player opponent =
-    -- nb. if player rank is 'higher' than opponent his rank integer will actually be 'less than' opponent
-    -- we go by the integer ...
-    if player.rank > opponent.rank then
-        SR.Types.OpponentRankHigher
-
-    else
-        SR.Types.OpponentRankLower
-
-
-isUserInList : SR.Types.User -> Bool
-isUserInList user =
-    if user.username == "" then
-        False
-
-    else
-        True
-
-
-singleUserInList : RemoteData.WebData (List SR.Types.User) -> Eth.Types.Address -> SR.Types.User
-singleUserInList userlist uaddr =
-    gotUserFromUserList (extractUsersFromWebData <| userlist) uaddr
-
-
-gotUserFromUserList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
-gotUserFromUserList userList uaddr =
-    let
-        existingUser =
-            --List.head <| List.filter (\r -> r.ethaddress == (Eth.Utils.addressToString uaddr |> Debug.log "uaddr argument: ")) userList
-            List.head <|
-                List.filter (\r -> r.ethaddress == (String.toLower <| Eth.Utils.addressToString <| uaddr))
-                    userList
-    in
-    case existingUser of
-        Nothing ->
-            SR.Defaults.emptyUser
-
-        Just a ->
-            a
-
-
-addedUAddrToNewEmptyUser : Eth.Types.Address -> SR.Types.User
-addedUAddrToNewEmptyUser uaddr =
-    let
-        newEmptyUser =
-            SR.Defaults.emptyUser
-
-        newUser =
-            { newEmptyUser | ethaddress = Eth.Utils.addressToString uaddr }
-    in
-    newUser
-
-
 greetingHeading : String -> Element Msg
 greetingHeading greetingStr =
     Element.column Grid.section <|
@@ -584,12 +521,15 @@ globalHeading user =
         ]
 
 
-selectedHeading : SR.Types.User -> Element Msg
-selectedHeading user =
+selectedHeading : SR.Types.User -> SR.Types.RankingInfo -> Element Msg
+selectedHeading user rnkInfo =
     Element.column Grid.section <|
-        [ Element.el Heading.h2 <| Element.text "Selected Ranking"
+        [ Element.el Heading.h5 <|
+            Element.text (user.username ++ " you selected ranking")
         , Element.column Card.fill
-            [ Element.el Heading.h4 <| Element.text user.username
+            [ Element.el Heading.h4 <|
+                Element.text rnkInfo.rankingname
+            , Element.text rnkInfo.rankingdesc
             ]
         ]
 
@@ -746,8 +686,8 @@ selectedhomebutton rankingList uaddr user =
         ]
 
 
-newrankinhomebutton : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> Element Msg
-newrankinhomebutton rankingList uaddr user =
+newrankinhomebutton : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> SR.Types.RankingInfo -> Element Msg
+newrankinhomebutton rankingList uaddr user newLadder =
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
@@ -757,7 +697,7 @@ newrankinhomebutton rankingList uaddr user =
                     , label = Element.text "Home"
                     }
                 , Input.button (Button.simple ++ Color.info) <|
-                    { onPress = Just <| NewRankingRequestedByConfirmBtnClicked
+                    { onPress = Just <| NewRankingRequestedByConfirmBtnClicked newLadder
 
                     --onPress = Just <| ConfirmButtonClicked
                     , label = Element.text "Create New"
@@ -834,10 +774,6 @@ inputNewUser uaddr user =
 
 inputNewLadder : SR.Types.RankingInfo -> Element Msg
 inputNewLadder newladder =
-    let
-        _ =
-            Debug.log "" newladder.rankingdesc
-    in
     Element.column Grid.section <|
         [ Element.el Heading.h2 <| Element.text "New Ladder Details"
         , Element.wrappedRow (Card.fill ++ Grid.simple)
@@ -881,21 +817,15 @@ globalResponsiveview rankingList uaddr user =
             ]
 
 
-selectedResponsiveview : List SR.Types.RankingInfo -> List SR.Types.Player -> SR.Types.User -> Html Msg
-selectedResponsiveview lrankingInfo playerList user =
+selectedResponsiveview : List SR.Types.RankingInfo -> List SR.Types.Player -> Internal.RankingId -> SR.Types.User -> Html Msg
+selectedResponsiveview lrankingInfo playerList rnkid user =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
             [ Element.el Heading.h4 <| Element.text "SportRank"
-            , selectedHeading user
+            , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkid
             , selectedhomebutton lrankingInfo (Internal.Address "") user
-
-            --, group
-            --, color
-            --, grid
             , playerbuttons playerList
-
-            --, input
             ]
 
 
@@ -918,7 +848,7 @@ inputNewLadderview rankingList uaddr user rnkInfo =
             [ Element.el Heading.h4 <| Element.text "Create New Ladder Ranking"
 
             --, selectedHeading
-            , newrankinhomebutton rankingList uaddr user
+            , newrankinhomebutton rankingList uaddr user rnkInfo
 
             --, group
             --, color
@@ -959,7 +889,7 @@ view model =
                     globalResponsiveview lrankingInfo uaddr userRec
 
         SelectedRanking lrankingInfo playerList rnkid userRec connect txRec ->
-            selectedResponsiveview lrankingInfo playerList userRec
+            selectedResponsiveview lrankingInfo playerList rnkid userRec
 
         WalletOps walletState txRec ->
             case walletState of
@@ -999,8 +929,100 @@ view model =
             greetingView <| "Model failure in view: " ++ str
 
 
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    case model of
+        WalletOps _ txRec ->
+            Sub.batch
+                [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+                , Eth.Sentry.Tx.listen txRec.txSentry
+                ]
+
+        UserOps _ _ _ _ _ ->
+            Sub.none
+
+        GlobalRankings _ _ _ _ _ _ _ ->
+            Sub.none
+
+        SelectedRanking _ _ _ _ _ _ ->
+            Sub.none
+
+        Failure _ ->
+            Sub.none
+
+
 
 --Helper functions
+
+
+isOpponentHigherRank : SR.Types.Player -> SR.Types.Opponent -> SR.Types.OpponentRelativeRank
+isOpponentHigherRank player opponent =
+    -- nb. if player rank is 'higher' than opponent his rank integer will actually be 'less than' opponent
+    -- we go by the integer ...
+    if player.rank > opponent.rank then
+        SR.Types.OpponentRankHigher
+
+    else
+        SR.Types.OpponentRankLower
+
+
+isUserInList : SR.Types.User -> Bool
+isUserInList user =
+    if user.username == "" then
+        False
+
+    else
+        True
+
+
+singleUserInList : RemoteData.WebData (List SR.Types.User) -> Eth.Types.Address -> SR.Types.User
+singleUserInList userlist uaddr =
+    gotUserFromUserList (extractUsersFromWebData <| userlist) uaddr
+
+
+gotUserFromUserList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
+gotUserFromUserList userList uaddr =
+    let
+        existingUser =
+            --List.head <| List.filter (\r -> r.ethaddress == (Eth.Utils.addressToString uaddr |> Debug.log "uaddr argument: ")) userList
+            List.head <|
+                List.filter (\r -> r.ethaddress == (String.toLower <| Eth.Utils.addressToString <| uaddr))
+                    userList
+    in
+    case existingUser of
+        Nothing ->
+            SR.Defaults.emptyUser
+
+        Just a ->
+            a
+
+
+addedUAddrToNewEmptyUser : Eth.Types.Address -> SR.Types.User
+addedUAddrToNewEmptyUser uaddr =
+    let
+        newEmptyUser =
+            SR.Defaults.emptyUser
+
+        newUser =
+            { newEmptyUser | ethaddress = Eth.Utils.addressToString uaddr }
+    in
+    newUser
+
+
+gotRankingFromRankingList : List SR.Types.RankingInfo -> Internal.RankingId -> SR.Types.RankingInfo
+gotRankingFromRankingList rankingList (Internal.RankingId rnkid) =
+    let
+        existingRanking =
+            List.head <|
+                List.filter (\r -> r.id == String.toLower rnkid)
+                    rankingList
+    in
+    case existingRanking of
+        Nothing ->
+            SR.Defaults.emptyRankingInfo
+
+        Just a ->
+            a
 
 
 extractPlayersFromWebData : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
@@ -1082,33 +1104,7 @@ gotHttpErr httperr =
             "BadBody " ++ s
 
 
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    case model of
-        WalletOps _ txRec ->
-            Sub.batch
-                [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
-                , Eth.Sentry.Tx.listen txRec.txSentry
-                ]
 
-        UserOps _ _ _ _ _ ->
-            Sub.none
-
-        GlobalRankings _ _ _ _ _ _ _ ->
-            Sub.none
-
-        SelectedRanking _ _ _ _ _ _ ->
-            Sub.none
-
-        Failure _ ->
-            Sub.none
-
-
-
---  Sub.batch
---     [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
---     , Eth.Sentry.Tx.listen model.txSentry
---     ]
 -- Http ops
 
 
@@ -1137,28 +1133,6 @@ gotUserList =
         , tracker = Nothing
         , url = SR.Constants.jsonbinUsersReadBinLink
         }
-
-
-
--- expectJson : (Result Http.Error a -> msg) -> Json.Decode.Decoder a -> Http.Expect msg
--- expectJson toMsg decoder =
---     Http.expectStringResponse toMsg <|
---         \response ->
---             case response of
---                 Http.BadUrl_ url ->
---                     Err (Http.BadUrl url)
---                 Http.Timeout_ ->
---                     Err Http.Timeout
---                 Http.NetworkError_ ->
---                     Err Http.NetworkError
---                 Http.BadStatus_ metadata body ->
---                     Err (Http.BadStatus metadata.statusCode)
---                 Http.GoodStatus_ metadata body ->
---                     case Json.Decode.decodeString decoder body of
---                         Ok value ->
---                             Ok value
---                         Err err ->
---                             Err (Http.BadBody (Json.Decode.errorToString err))
 
 
 fetchedSingleRanking : Internal.RankingId -> Cmd Msg
@@ -1202,8 +1176,8 @@ gotRankingList =
         }
 
 
-createNewPlayerListWithCurrentUser : Cmd Msg
-createNewPlayerListWithCurrentUser =
+createNewPlayerListWithCurrentUser : SR.Types.User -> Cmd Msg
+createNewPlayerListWithCurrentUser user =
     let
         binName =
             Http.header
@@ -1223,9 +1197,9 @@ createNewPlayerListWithCurrentUser =
                   , ( "active", Json.Encode.bool True )
                   , ( "currentchallengername", Json.Encode.string "" )
                   , ( "currentchallengerid", Json.Encode.int 0 )
-                  , ( "address", Json.Encode.string "" )
+                  , ( "address", Json.Encode.string user.ethaddress )
                   , ( "rank", Json.Encode.int 1 )
-                  , ( "name", Json.Encode.string "" )
+                  , ( "name", Json.Encode.string user.username )
                   , ( "playerid", Json.Encode.int 1 )
                   , ( "currentchallengeraddress", Json.Encode.string (String.toLower "") )
                   ]
@@ -1452,7 +1426,6 @@ postResultToJsonbin (Internal.RankingId rankingId) =
                 "secret-key"
                 "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
     in
-    --PlayersReceived is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
     Http.request
         { body = Http.emptyBody
