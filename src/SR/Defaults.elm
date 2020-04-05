@@ -1,6 +1,6 @@
 module SR.Defaults exposing
     ( emptyPlayer
-    , emptyChallenge, emptyRankingInfo, emptyUser, secretKey
+    , emptyActiveUser, emptyChallenge, emptyRankingInfo, emptyUser, secretKey
     )
 
 {-| Default values.
@@ -33,6 +33,18 @@ emptyUser : SR.Types.User
 emptyUser =
     { datestamp = 123456
     , active = False
+    , username = ""
+    , ethaddress = ""
+    , description = ""
+    , email = ""
+    , mobile = ""
+    }
+
+
+emptyActiveUser : SR.Types.User
+emptyActiveUser =
+    { datestamp = 123456
+    , active = True
     , username = ""
     , ethaddress = ""
     , description = ""
