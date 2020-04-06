@@ -4,6 +4,7 @@ module SR.Types exposing
     , UIState(..)
     ,  Challenge
       , CreateNewLadderFormFields
+      , LadderState(..)
       , ModalState(..)
       , NewRankingListServerResponse
       , RankingInfo
@@ -11,7 +12,6 @@ module SR.Types exposing
         --, JsonApiURLs(..)
       , User
       , UserListState(..)
-      , Username(..)
 
     )
 
@@ -128,6 +128,11 @@ type SRState
 type UserState
     = ExistingUser User
     | NewUser User
+
+
+type LadderState
+    = ExistingLadder RankingInfo
+    | NewLadder RankingInfo
 
 
 type UIState
