@@ -60,7 +60,7 @@ main =
 
 type Model
     = WalletOps SR.Types.WalletState TxRecord
-    | UserOps (List SR.Types.RankingInfo) SR.Types.UserState (List SR.Types.User) Eth.Types.Address SR.Types.User SR.Types.UIState TxRecord
+    | UserOps SR.Types.UserState (List SR.Types.User) Eth.Types.Address SR.Types.User SR.Types.UIState TxRecord
     | GlobalRankings (List SR.Types.RankingInfo) SR.Types.LadderState SR.Types.UIState Eth.Types.Address (List SR.Types.User) SR.Types.User TxRecord
     | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.RankingId SR.Types.User SR.Types.Challenge TxRecord
     | Failure String
@@ -159,7 +159,7 @@ type Msg
     | SentResultToJsonbin (Result Http.Error ())
     | NewUserNameInputChg String
     | NewUserDescInputChg String
-    | NewUserRequested (List SR.Types.RankingInfo) Eth.Types.Address SR.Types.User
+    | NewUserRequested Eth.Types.Address SR.Types.User
     | Fail String
 
 
@@ -176,7 +176,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                     ( WalletOps SR.Types.Locked txRec, Cmd.none )
 
                                 Just uaddr ->
-                                    ( UserOps [] (SR.Types.NewUser <| SR.Defaults.emptyUser) [] uaddr SR.Defaults.emptyUser SR.Types.DisplayWalletInfoToUser txRec, gotUserList )
+                                    ( UserOps (SR.Types.NewUser <| SR.Defaults.emptyUser) [] uaddr SR.Defaults.emptyUser SR.Types.DisplayWalletInfoToUser txRec, gotUserList )
 
                         Rinkeby ->
                             case walletSentry_.account of
@@ -184,7 +184,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                     ( WalletOps SR.Types.Locked txRec, Cmd.none )
 
                                 Just uaddr ->
-                                    ( UserOps [ SR.Defaults.emptyRankingInfo ] (SR.Types.NewUser <| SR.Defaults.emptyUser) [] uaddr SR.Defaults.emptyUser SR.Types.DisplayWalletInfoToUser txRec, Cmd.batch [ gotUserList, gotRankingList ] )
+                                    ( UserOps (SR.Types.NewUser <| SR.Defaults.emptyUser) [] uaddr SR.Defaults.emptyUser SR.Types.DisplayWalletInfoToUser txRec, gotUserList )
 
                         --( WalletOps (SR.Types.WalletOpenedWithoutUserCheck uaddr) { txRec | account = walletSentry_.account, node = Ports.ethNode walletSentry_.networkId } challenge, gotUserList )
                         _ ->
@@ -243,10 +243,10 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 _ ->
                     ( Failure "WalletOps 2", Cmd.none )
 
-        UserOps globalList userState userList uaddr updatedUser uiState txRec ->
+        UserOps userState userList uaddr updatedUser uiState txRec ->
             case msgOfTransitonThatAlreadyHappened of
                 PollBlock (Ok blockNumber) ->
-                    ( UserOps globalList
+                    ( UserOps
                         (SR.Types.NewUser updatedUser)
                         userList
                         uaddr
@@ -285,7 +285,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         --         Debug.log "isUserInList NOT" (extractUsersFromWebData userlist)
                         -- in
                         --( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) (extractUsersFromWebData userlist) uaddr (singleUserInList userlist uaddr) SR.Types.CreateNewUser, Cmd.none )
-                        ( UserOps globalList (SR.Types.NewUser userWithUpdatedAddr) (extractUsersFromWebData userlist) uaddr userWithUpdatedAddr SR.Types.CreateNewUser txRec, Cmd.none )
+                        ( UserOps (SR.Types.NewUser userWithUpdatedAddr) (extractUsersFromWebData userlist) uaddr userWithUpdatedAddr SR.Types.CreateNewUser txRec, Cmd.none )
 
                 NewUserNameInputChg namefield ->
                     -- let
@@ -294,7 +294,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     -- in
                     case userState of
                         SR.Types.NewUser user ->
-                            ( UserOps globalList (SR.Types.NewUser { user | username = namefield }) userList uaddr SR.Defaults.emptyUser SR.Types.CreateNewUser txRec, Cmd.none )
+                            ( UserOps (SR.Types.NewUser { user | username = namefield }) userList uaddr SR.Defaults.emptyUser SR.Types.CreateNewUser txRec, Cmd.none )
 
                         SR.Types.ExistingUser _ ->
                             ( Failure "NewUserNameInputChg", Cmd.none )
@@ -302,12 +302,12 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 NewUserDescInputChg descfield ->
                     case userState of
                         SR.Types.NewUser user ->
-                            ( UserOps globalList (SR.Types.NewUser { user | description = descfield }) userList uaddr SR.Defaults.emptyUser SR.Types.CreateNewUser txRec, Cmd.none )
+                            ( UserOps (SR.Types.NewUser { user | description = descfield }) userList uaddr SR.Defaults.emptyUser SR.Types.CreateNewUser txRec, Cmd.none )
 
                         SR.Types.ExistingUser _ ->
                             ( Failure "NewUserNameInputChg", Cmd.none )
 
-                NewUserRequested globalLst useraddr userInfo ->
+                NewUserRequested useraddr userInfo ->
                     let
                         -- _ =
                         --     Debug.log "user list " userList
@@ -335,12 +335,12 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         userWithUpdatedAddr =
                             { userInfo | ethaddress = Eth.Utils.addressToString useraddr }
                     in
-                    ( GlobalRankings globalLst (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings (Internal.Address "") [] SR.Defaults.emptyUser { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewUser userList userWithUpdatedAddr, gotRankingList ] )
+                    ( GlobalRankings [] (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings (Internal.Address "") [] SR.Defaults.emptyUser { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewUser userList userWithUpdatedAddr, gotRankingList ] )
 
                 _ ->
                     --todo: better logic. This should go to failure model rather than fall thru to UserOps
                     -- but currently logic needs to do this
-                    ( UserOps globalList (SR.Types.NewUser SR.Defaults.emptyUser) [] uaddr SR.Defaults.emptyUser SR.Types.CreateNewUser txRec, Cmd.none )
+                    ( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) [] uaddr SR.Defaults.emptyUser SR.Types.CreateNewUser txRec, Cmd.none )
 
         GlobalRankings lrankingInfo ladderState uiState rnkOwnerAddr userList user txRec ->
             case msgOfTransitonThatAlreadyHappened of
@@ -765,12 +765,12 @@ newrankinhomebutton rankingList uaddr user newLadder =
         ]
 
 
-newuserConfirmPanel : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> Element Msg
-newuserConfirmPanel globalList uaddr user =
-    let
-        _ =
-            Debug.log "globalList" globalList
-    in
+newuserConfirmPanel : Eth.Types.Address -> SR.Types.User -> Element Msg
+newuserConfirmPanel uaddr user =
+    -- let
+    --     _ =
+    --         Debug.log "globalList" globalList
+    -- in
     Element.column Grid.section <|
         [ Element.paragraph (Card.fill ++ Color.warning) <|
             [ Element.el [ Font.bold ] <| Element.text "Please note: "
@@ -788,7 +788,7 @@ newuserConfirmPanel globalList uaddr user =
                     }
                 , Input.button (Button.simple ++ Color.info) <|
                     { --onPress = Nothing
-                      onPress = Just <| NewUserRequested globalList uaddr user
+                      onPress = Just <| NewUserRequested uaddr user
                     , label = Element.text "Register"
                     }
                 ]
@@ -884,14 +884,14 @@ selectedResponsiveview lrankingInfo playerList rnkid user =
             ]
 
 
-inputNewUserview : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> Html Msg
-inputNewUserview globalList uaddr user =
+inputNewUserview : Eth.Types.Address -> SR.Types.User -> Html Msg
+inputNewUserview uaddr user =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
             [ Element.el Heading.h4 <| Element.text "SportRank"
             , inputNewUser uaddr user
-            , newuserConfirmPanel globalList uaddr user
+            , newuserConfirmPanel uaddr user
             ]
 
 
@@ -929,7 +929,7 @@ view model =
         GlobalRankings lrankingInfo ladderState uiState uaddr userlist userRec txRec ->
             case uiState of
                 SR.Types.CreateNewUser ->
-                    inputNewUserview lrankingInfo uaddr userRec
+                    inputNewUserview uaddr userRec
 
                 SR.Types.CreateNewLadder ->
                     case ladderState of
@@ -959,7 +959,7 @@ view model =
 
                 SR.Types.WalletOpenedUserCheckDone user uaddr ->
                     if user.username == "" then
-                        inputNewUserview [] uaddr user
+                        inputNewUserview uaddr user
 
                     else
                         greetingView <| "Welcome back " ++ user.username
@@ -967,7 +967,7 @@ view model =
                 SR.Types.WalletOpenedAndOperational ->
                     greetingView "WalletOpenedAndOperational"
 
-        UserOps glbalList userState userList uaddr uname uiState _ ->
+        UserOps userState userList uaddr uname uiState _ ->
             case uiState of
                 SR.Types.CreateNewUser ->
                     case userState of
@@ -976,7 +976,7 @@ view model =
                             --     _ =
                             --         Debug.log "in view" userList
                             -- in
-                            inputNewUserview glbalList uaddr user
+                            inputNewUserview uaddr user
 
                         _ ->
                             greetingView <| "Wrong UserOps view : "
@@ -997,7 +997,7 @@ subscriptions model =
                 , Eth.Sentry.Tx.listen txRec.txSentry
                 ]
 
-        UserOps _ _ _ _ _ _ _ ->
+        UserOps _ _ _ _ _ _ ->
             Sub.none
 
         GlobalRankings _ _ _ _ _ _ _ ->
