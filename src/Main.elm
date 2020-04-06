@@ -62,7 +62,7 @@ type Model
     = WalletOps SR.Types.WalletState TxRecord
     | UserOps SR.Types.UserState (List SR.Types.User) Eth.Types.Address SR.Types.User SR.Types.UIState TxRecord
     | GlobalRankings (List SR.Types.RankingInfo) SR.Types.LadderState SR.Types.UIState Eth.Types.Address (List SR.Types.User) SR.Types.User TxRecord
-    | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.RankingId SR.Types.User SR.Types.Challenge TxRecord
+    | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.RankingId SR.Types.User SR.Types.Challenge SR.Types.UIState TxRecord
     | Failure String
 
 
@@ -332,7 +332,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( GlobalRankings rankingsAsJustList (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) uiState rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
 
                 GotRankingId rnkidstr ->
-                    ( SelectedRanking lrankingInfo [] rnkidstr user SR.Defaults.emptyChallenge emptyTxRecord, fetchedSingleRanking rnkidstr )
+                    ( SelectedRanking lrankingInfo [] rnkidstr user SR.Defaults.emptyChallenge uiState emptyTxRecord, fetchedSingleRanking rnkidstr )
 
                 -- this is the response from createNewPlayerListWithCurrentUser Cmd
                 -- it had the Http.expectStringResponse in it
@@ -416,14 +416,14 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 _ ->
                     ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings (Internal.Address "") userList user emptyTxRecord, Cmd.none )
 
-        SelectedRanking lrankingInfo lPlayer intrankingId userRec challenge txRec ->
+        SelectedRanking lrankingInfo lPlayer intrankingId userRec challenge uiState txRec ->
             case msgOfTransitonThatAlreadyHappened of
                 PlayersReceived players ->
                     let
                         playerAsJustList =
                             extractPlayersFromWebData players
                     in
-                    ( SelectedRanking lrankingInfo playerAsJustList intrankingId userRec SR.Defaults.emptyChallenge emptyTxRecord, Cmd.none )
+                    ( SelectedRanking lrankingInfo playerAsJustList intrankingId userRec SR.Defaults.emptyChallenge uiState emptyTxRecord, Cmd.none )
 
                 ResetToShowGlobal _ rnkowneraddr user ->
                     ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings rnkowneraddr [ SR.Defaults.emptyUser ] user emptyTxRecord, Cmd.none )
@@ -458,6 +458,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                             , playerStatus = SR.Types.Available
                                             , opponentStatus = SR.Types.Available
                                         }
+                                        uiState
                                         txRec
                                     , Cmd.none
                                     )
@@ -469,6 +470,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                         intrankingId
                                         userRec
                                         { challenge | playerStatus = SR.Types.Available, opponentStatus = SR.Types.Available }
+                                        uiState
                                         txRec
                                     , Cmd.none
                                     )
@@ -482,6 +484,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                         intrankingId
                                         userRec
                                         { challenge | playerStatus = SR.Types.Available, opponentStatus = SR.Types.Available }
+                                        uiState
                                         txRec
                                     , Cmd.none
                                     )
@@ -498,6 +501,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                             , playerStatus = SR.Types.Available
                                             , opponentStatus = SR.Types.Available
                                         }
+                                        uiState
                                         txRec
                                     , Cmd.none
                                     )
@@ -508,6 +512,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                 intrankingId
                                 userRec
                                 challenge
+                                uiState
                                 txRec
                             , Cmd.none
                             )
@@ -519,6 +524,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         intrankingId
                         userRec
                         challenge
+                        uiState
                         txRec
                     , Cmd.none
                     )
@@ -919,12 +925,16 @@ view model =
                         SR.Types.ExistingLadder existingLadder ->
                             inputNewLadderview lrankingInfo uaddr userRec existingLadder
 
-                --inputNewLadderview lrankingInfo uaddr userRec SR.Types.ExistingLadder existingLadder
                 _ ->
                     globalResponsiveview lrankingInfo uaddr userRec
 
-        SelectedRanking lrankingInfo playerList rnkid userRec connect txRec ->
-            selectedResponsiveview lrankingInfo playerList rnkid userRec
+        SelectedRanking lrankingInfo playerList rnkid userRec connect uiState txRec ->
+            case uiState of
+                SR.Types.UISelectedRankingUserIsOwner ->
+                    selectedResponsiveview lrankingInfo playerList rnkid userRec
+
+                _ ->
+                    selectedResponsiveview lrankingInfo playerList rnkid userRec
 
         WalletOps walletState txRec ->
             case walletState of
@@ -983,7 +993,7 @@ subscriptions model =
         GlobalRankings _ _ _ _ _ _ _ ->
             Sub.none
 
-        SelectedRanking _ _ _ _ _ _ ->
+        SelectedRanking _ _ _ _ _ _ _ ->
             Sub.none
 
         Failure _ ->

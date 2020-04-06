@@ -140,6 +140,7 @@ type UIState
     | CreateNewLadder
     | CreateNewUser
     | DisplayWalletInfoToUser
+    | UISelectedRankingUserIsOwner
 
 
 type UserListState
