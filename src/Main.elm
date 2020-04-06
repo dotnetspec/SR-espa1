@@ -261,37 +261,19 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                 UsersReceived userlist ->
                     let
-                        -- _ =
-                        --     Debug.log "userlist in usersreceived" userlist
                         updateUserAddr =
                             SR.Defaults.emptyActiveUser
 
                         userWithUpdatedAddr =
                             { updateUserAddr | ethaddress = Eth.Utils.addressToString uaddr }
-
-                        _ =
-                            Debug.log "added addr into new user addr field " userWithUpdatedAddr
                     in
                     if isUserInList userlist uaddr then
-                        -- let
-                        --     _ =
-                        --         Debug.log "isUserInList" userlist
-                        -- in
                         ( GlobalRankings [] (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings (Internal.Address "") (extractUsersFromWebData userlist) (singleUserInList userlist uaddr) emptyTxRecord, gotRankingList )
 
                     else
-                        -- let
-                        --     _ =
-                        --         Debug.log "isUserInList NOT" (extractUsersFromWebData userlist)
-                        -- in
-                        --( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) (extractUsersFromWebData userlist) uaddr (singleUserInList userlist uaddr) SR.Types.CreateNewUser, Cmd.none )
                         ( UserOps (SR.Types.NewUser userWithUpdatedAddr) (extractUsersFromWebData userlist) uaddr userWithUpdatedAddr SR.Types.CreateNewUser txRec, Cmd.none )
 
                 NewUserNameInputChg namefield ->
-                    -- let
-                    --     _ =
-                    --         Debug.log "userlist in NewUserNameInputChg" userList
-                    -- in
                     case userState of
                         SR.Types.NewUser user ->
                             ( UserOps (SR.Types.NewUser { user | username = namefield }) userList uaddr SR.Defaults.emptyUser SR.Types.CreateNewUser txRec, Cmd.none )
@@ -309,8 +291,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                 NewUserRequested useraddr userInfo ->
                     let
-                        -- _ =
-                        --     Debug.log "user list " userList
                         txParams =
                             { to = txRec.account
                             , from = txRec.account
@@ -335,7 +315,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         userWithUpdatedAddr =
                             { userInfo | ethaddress = Eth.Utils.addressToString useraddr }
                     in
-                    ( GlobalRankings [] (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings (Internal.Address "") [] SR.Defaults.emptyUser { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewUser userList userWithUpdatedAddr, gotRankingList ] )
+                    ( GlobalRankings [] (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings (Internal.Address "") [] userWithUpdatedAddr { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewUser userList userWithUpdatedAddr, gotRankingList ] )
 
                 _ ->
                     --todo: better logic. This should go to failure model rather than fall thru to UserOps
