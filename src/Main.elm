@@ -422,8 +422,15 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     let
                         playerAsJustList =
                             extractPlayersFromWebData players
+
+                        userOwner =
+                            isUserSelectedOwner (extractPlayersFromWebData players) userRec
                     in
-                    ( SelectedRanking lrankingInfo playerAsJustList intrankingId userRec SR.Defaults.emptyChallenge uiState emptyTxRecord, Cmd.none )
+                    if userOwner == True then
+                        ( SelectedRanking lrankingInfo playerAsJustList intrankingId userRec SR.Defaults.emptyChallenge SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, Cmd.none )
+
+                    else
+                        ( SelectedRanking lrankingInfo playerAsJustList intrankingId userRec SR.Defaults.emptyChallenge uiState emptyTxRecord, Cmd.none )
 
                 ResetToShowGlobal _ rnkowneraddr user ->
                     ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings rnkowneraddr [ SR.Defaults.emptyUser ] user emptyTxRecord, Cmd.none )
@@ -724,6 +731,34 @@ selectedhomebutton rankingList uaddr user =
         ]
 
 
+selecteduserIsOwnerhomebutton : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> Element Msg
+selecteduserIsOwnerhomebutton rankingList uaddr user =
+    Element.column Grid.section <|
+        [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+        , Element.column (Card.simple ++ Grid.simple) <|
+            [ Element.wrappedRow Grid.simple <|
+                [ Input.button (Button.simple ++ Color.simple) <|
+                    { onPress = Just <| ResetToShowGlobal rankingList uaddr user
+                    , label = Element.text "Home"
+                    }
+                , Input.button (Button.simple ++ Color.disabled) <|
+                    { onPress = Nothing
+                    , label = Element.text "Create New"
+                    }
+                , Input.button (Button.simple ++ Color.danger) <|
+                    { onPress = Nothing
+                    , label = Element.text "Delete"
+                    }
+                ]
+            ]
+        , Element.column Grid.simple <|
+            [ Element.paragraph [] <|
+                List.singleton <|
+                    Element.text "Button attributes can be combined with other attributes."
+            ]
+        ]
+
+
 newrankinhomebutton : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> SR.Types.RankingInfo -> Element Msg
 newrankinhomebutton rankingList uaddr user newLadder =
     Element.column Grid.section <|
@@ -870,6 +905,18 @@ selectedResponsiveview lrankingInfo playerList rnkid user =
             ]
 
 
+selectedUserIsOwnerView : List SR.Types.RankingInfo -> List SR.Types.Player -> Internal.RankingId -> SR.Types.User -> Html Msg
+selectedUserIsOwnerView lrankingInfo playerList rnkid user =
+    Framework.responsiveLayout [] <|
+        Element.column
+            Framework.container
+            [ Element.el Heading.h4 <| Element.text "SportRank - Owner"
+            , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkid
+            , selecteduserIsOwnerhomebutton lrankingInfo (Internal.Address "") user
+            , playerbuttons playerList
+            ]
+
+
 inputNewUserview : Eth.Types.Address -> SR.Types.User -> Html Msg
 inputNewUserview uaddr user =
     Framework.responsiveLayout [] <|
@@ -931,7 +978,7 @@ view model =
         SelectedRanking lrankingInfo playerList rnkid userRec connect uiState txRec ->
             case uiState of
                 SR.Types.UISelectedRankingUserIsOwner ->
-                    selectedResponsiveview lrankingInfo playerList rnkid userRec
+                    selectedUserIsOwnerView lrankingInfo playerList rnkid userRec
 
                 _ ->
                     selectedResponsiveview lrankingInfo playerList rnkid userRec
@@ -1002,6 +1049,24 @@ subscriptions model =
 
 
 --Helper functions
+
+
+isUserSelectedOwner : List SR.Types.Player -> SR.Types.User -> Bool
+isUserSelectedOwner lplayers user =
+    let
+        existingUser =
+            --List.head <| List.filter (\r -> r.ethaddress == (Eth.Utils.addressToString uaddr |> Debug.log "uaddr argument: ")) userList
+            List.head <|
+                List.filter (\r -> r.address == (String.toLower <| user.ethaddress))
+                    lplayers
+    in
+    case existingUser of
+        Nothing ->
+            --SR.Defaults.emptyUser
+            False
+
+        Just a ->
+            True
 
 
 isOpponentHigherRank : SR.Types.Player -> SR.Types.Opponent -> SR.Types.OpponentRelativeRank
