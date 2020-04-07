@@ -598,6 +598,10 @@ globalHeading user =
 
 selectedHeading : SR.Types.User -> SR.Types.RankingInfo -> Element Msg
 selectedHeading user rnkInfo =
+    let
+        _ =
+            Debug.log "rank id " rnkInfo.id
+    in
     Element.column Grid.section <|
         [ Element.el Heading.h5 <|
             Element.text (user.username ++ " you selected ranking")
@@ -766,9 +770,6 @@ selecteduserIsOwnerhomebutton rankingList uaddr user =
     let
         _ =
             Debug.log " uaddr " uaddr
-
-        _ =
-            Debug.log " user " user
     in
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
@@ -1105,8 +1106,11 @@ isRankingIdInList rankingid rankingInfo =
 isUserSelectedOwner : List SR.Types.Player -> SR.Types.User -> Bool
 isUserSelectedOwner lplayers user =
     let
+        _ =
+            Debug.log "usr " user.ethaddress
+    in
+    let
         existingUser =
-            --List.head <| List.filter (\r -> r.ethaddress == (Eth.Utils.addressToString uaddr |> Debug.log "uaddr argument: ")) userList
             List.head <|
                 List.filter (\r -> r.address == (String.toLower <| user.ethaddress))
                     lplayers
@@ -1243,10 +1247,6 @@ extractUsersFromWebData remData =
             []
 
         RemoteData.Success users ->
-            -- let
-            --     _ =
-            --         Debug.log "extracted users " users
-            -- in
             users
 
         RemoteData.Failure httpError ->
@@ -1396,10 +1396,6 @@ createNewPlayerListWithCurrentUser user =
 createNewUser : List SR.Types.User -> SR.Types.User -> Cmd Msg
 createNewUser originaluserlist newuserinfo =
     let
-        -- _ =
-        --     Debug.log "user " newuserinfo
-        -- _ =
-        --     Debug.log "originaluserlist " originaluserlist
         binName =
             Http.header
                 "name"
@@ -1410,19 +1406,6 @@ createNewUser originaluserlist newuserinfo =
                 "collection-id"
                 "5e4cf4ba4d073155b0dca8b8"
 
-        -- newUser : Json.Encode.Value
-        -- newUser =
-        --     Json.Encode.list
-        --         Json.Encode.object
-        --         [ [ ( "datestamp", Json.Encode.int 1569839363942 )
-        --           , ( "active", Json.Encode.bool True )
-        --           , ( "username", Json.Encode.string newuserinfo.username )
-        --           , ( "ethaddress", Json.Encode.string (String.toLower newuserinfo.ethaddress) )
-        --           , ( "description", Json.Encode.string newuserinfo.description )
-        --           , ( "email", Json.Encode.string newuserinfo.email )
-        --           , ( "mobile", Json.Encode.string newuserinfo.mobile )
-        --           ]
-        --         ]
         newUser =
             { datestamp = 123456789
             , active = True
@@ -1498,11 +1481,6 @@ addedNewRankingListEntryInGlobal newrankingid lrankingInfo rnkInfo rankingownera
                 "collection-id"
                 "5d7deab3371673119fab12a6"
 
-        _ =
-            Debug.log "new ranking owner address in addedNewRankingListEntryInGlobal: " "it will go here"
-
-        -- justGlobalList =
-        --     gotRankingListFromRemData lrankingInfo
         newRankingInfo =
             { id = gotNewRankingIdFromWebData newrankingid
             , active = True
@@ -1512,7 +1490,6 @@ addedNewRankingListEntryInGlobal newrankingid lrankingInfo rnkInfo rankingownera
             }
 
         globalListWithJsonObjAdded =
-            --newRankingInfo :: justGlobalList
             newRankingInfo :: lrankingInfo
     in
     --AddedNewRankingToGlobalList is the Msg handled by update whenever a request is made
