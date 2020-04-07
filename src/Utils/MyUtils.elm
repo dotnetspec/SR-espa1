@@ -1,7 +1,22 @@
-module Utils.MyUtils exposing (addressToString, stringFromBool, stringFromMaybeString)
+module Utils.MyUtils exposing (addressFromStringResult, addressToString, stringFromBool, stringFromMaybeString)
 
 import Eth.Types
 import Eth.Utils
+import Internal.Types
+
+
+addressFromStringResult : String -> Internal.Types.Address
+addressFromStringResult uaddr =
+    let
+        addrFromStringResult =
+            Eth.Utils.toAddress uaddr
+    in
+    case addrFromStringResult of
+        Result.Ok a ->
+            a
+
+        _ ->
+            Internal.Types.Address ""
 
 
 stringFromBool : Bool -> String

@@ -144,6 +144,9 @@ type Msg
     | TrackTx Eth.Sentry.Tx.TxTracker
     | TxSentryMsg Eth.Sentry.Tx.Msg
     | AddedNewRankingToGlobalList (RemoteData.WebData (List SR.Types.RankingInfo))
+    | DeletedRanking Eth.Types.Address
+    | DeletedRankingFromGlobalList (RemoteData.WebData (List SR.Types.RankingInfo))
+    | DeletedSingleRankingFromJsonBin (RemoteData.WebData (List SR.Types.RankingInfo))
     | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
     | GotRankingId Internal.RankingId
     | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
@@ -536,8 +539,35 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     , Cmd.none
                     )
 
+                DeletedRanking uaddr ->
+                    ( SelectedRanking lrankingInfo
+                        lPlayer
+                        intrankingId
+                        userRec
+                        challenge
+                        uiState
+                        txRec
+                    , deleteSelectedRankingFromJsonBin intrankingId
+                    )
+
+                DeletedSingleRankingFromJsonBin result ->
+                    --( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) uiState (Utils.MyUtils.addressFromStringResult userRec.ethaddress) [] userRec emptyTxRecord, Cmd.none )
+                    ( SelectedRanking lrankingInfo
+                        lPlayer
+                        intrankingId
+                        userRec
+                        challenge
+                        uiState
+                        txRec
+                    , deleteSelectedRankingFromGlobalList intrankingId lrankingInfo userRec.ethaddress
+                    )
+
                 Fail str ->
                     ( Failure <| "Fail failure : " ++ str, Cmd.none )
+
+                DeletedRankingFromGlobalList updatedListAfterRankingDeletedFromGlobalList ->
+                    --( GlobalRankings (extractRankingsFromWebData <| updatedListAfterRankingDeletedFromGlobalList) (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
+                    ( GlobalRankings (extractRankingsFromWebData <| updatedListAfterRankingDeletedFromGlobalList) (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings (Utils.MyUtils.addressFromStringResult userRec.ethaddress) [ SR.Defaults.emptyUser ] userRec emptyTxRecord, Cmd.none )
 
                 _ ->
                     ( Failure <| "Fall thru failure : ", Cmd.none )
@@ -746,7 +776,7 @@ selecteduserIsOwnerhomebutton rankingList uaddr user =
                     , label = Element.text "Create New"
                     }
                 , Input.button (Button.simple ++ Color.danger) <|
-                    { onPress = Nothing
+                    { onPress = Just <| DeletedRanking uaddr
                     , label = Element.text "Delete"
                     }
                 ]
@@ -1049,6 +1079,36 @@ subscriptions model =
 
 
 --Helper functions
+
+
+filterSelectedRankingOutOfGlobalList : String -> List SR.Types.RankingInfo -> List SR.Types.RankingInfo
+filterSelectedRankingOutOfGlobalList rankingid lrankinginfo =
+    List.filterMap
+        (isRankingIdInList
+            rankingid
+        )
+        lrankinginfo
+
+
+
+--(\rankinfo -> isRankingIdInList rankinfo "5e8aa4825eb7f3517e299b7b")
+--(\r -> r.id /= rankingId)
+--in
+-- isTeen : Int -> Maybe Int
+-- isTeen n =
+--  if 13 <= n && n <= 19 then
+--    Just n
+--  else
+--    Nothing
+
+
+isRankingIdInList : String -> SR.Types.RankingInfo -> Maybe SR.Types.RankingInfo
+isRankingIdInList rankingid rankingInfo =
+    if rankingInfo.id /= rankingid then
+        Just rankingInfo
+
+    else
+        Nothing
 
 
 isUserSelectedOwner : List SR.Types.Player -> SR.Types.User -> Bool
@@ -1599,4 +1659,47 @@ postResultToJsonbin (Internal.RankingId rankingId) =
         , timeout = Nothing
         , tracker = Nothing
         , url = "https://api.jsonbin.io/b/" ++ rankingId
+        }
+
+
+
+--deleteSelectedRankingFromJsonBin : Internal.RankingId -> List SR.Types.RankingInfo -> SR.Types.RankingInfo -> String -> Cmd Msg
+--deleteSelectedRankingFromJsonBin (Internal.RankingId rankingId) lrankingInfo rnkInfo rankingowneraddress =
+
+
+deleteSelectedRankingFromJsonBin : Internal.RankingId -> Cmd Msg
+deleteSelectedRankingFromJsonBin (Internal.RankingId rankingId) =
+    -- the Decoder decodes what comes back in the response
+    Http.request
+        { body =
+            --Http.jsonBody <| jsonEncodeNewGlobalRankingList globalListWithDeletedRankingInfoRemoved
+            Http.emptyBody
+        , expect = Http.expectJson (RemoteData.fromResult >> DeletedSingleRankingFromJsonBin) SR.Decode.decodeNewRankingListServerResponse
+        , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
+        , method = "DELETE"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = "https://api.jsonbin.io/b/" ++ rankingId
+        }
+
+
+deleteSelectedRankingFromGlobalList : Internal.RankingId -> List SR.Types.RankingInfo -> String -> Cmd Msg
+deleteSelectedRankingFromGlobalList (Internal.RankingId rankingId) lrankingInfo rankingowneraddress =
+    let
+        globalListWithDeletedRankingInfoRemoved =
+            filterSelectedRankingOutOfGlobalList rankingId lrankingInfo
+    in
+    --AddedNewRankingToGlobalList is the Msg handled by update whenever a request is made
+    --RemoteData is used throughout the module, including update
+    -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
+    -- the Decoder decodes what comes back in the response
+    Http.request
+        { body =
+            Http.jsonBody <| jsonEncodeNewGlobalRankingList globalListWithDeletedRankingInfoRemoved
+        , expect = Http.expectJson (RemoteData.fromResult >> DeletedRankingFromGlobalList) SR.Decode.decodeNewRankingListServerResponse
+        , headers = [ SR.Defaults.secretKey, SR.Defaults.globalBinName, SR.Defaults.globalContainerId ]
+        , method = "PUT"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = SR.Constants.globalJsonbinRankingUpdateLink
         }
