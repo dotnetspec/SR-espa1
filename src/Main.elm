@@ -21,7 +21,7 @@ import Framework.Heading as Heading
 import Framework.Input as Input
 import Html exposing (Html)
 import Http
-import Internal.Types as Internal
+import Internal.Types
 import Json.Decode
 import Json.Decode.Pipeline
 import Json.Encode
@@ -31,6 +31,7 @@ import RemoteData
 import SR.Constants
 import SR.Decode
 import SR.Defaults
+import SR.ListOps
 import SR.Types
 import Task
 import Ui
@@ -62,7 +63,7 @@ type Model
     = WalletOps SR.Types.WalletState TxRecord
     | UserOps SR.Types.UserState (List SR.Types.User) Eth.Types.Address SR.Types.User SR.Types.UIState TxRecord
     | GlobalRankings (List SR.Types.RankingInfo) SR.Types.LadderState SR.Types.UIState Eth.Types.Address (List SR.Types.User) SR.Types.User TxRecord
-    | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.RankingId SR.Types.User SR.Types.Challenge SR.Types.UIState TxRecord
+    | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.Types.RankingId SR.Types.User SR.Types.Challenge SR.Types.UIState TxRecord
     | Failure String
 
 
@@ -79,7 +80,7 @@ init _ =
             Net.toNetworkId 4
                 |> Ports.ethNode
     in
-    ( --WalletOps [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Missing SR.Types.UIRenderAllRankings
+    ( --WalletOps [] (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Types.Address "") SR.Types.Missing SR.Types.UIRenderAllRankings
       WalletOps SR.Types.Missing emptyTxRecord
     , Cmd.batch
         [ Ports.log "Sending out msg from init "
@@ -148,7 +149,8 @@ type Msg
     | DeletedRankingFromGlobalList (RemoteData.WebData (List SR.Types.RankingInfo))
     | DeletedSingleRankingFromJsonBin (RemoteData.WebData (List SR.Types.RankingInfo))
     | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
-    | GotRankingId Internal.RankingId
+    | GotRankingId Internal.Types.RankingId
+    | GotRankingIdAndRankingOwnerAddr Internal.Types.RankingId String
     | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
     | UsersReceived (RemoteData.WebData (List SR.Types.User))
     | MissingWalletInstructions
@@ -163,6 +165,8 @@ type Msg
     | NewUserNameInputChg String
     | NewUserDescInputChg String
     | NewUserRequested Eth.Types.Address SR.Types.User
+    | ClickedJoinSelected
+    | ReturnFromJoin (RemoteData.WebData (List SR.Types.Player))
     | Fail String
 
 
@@ -198,7 +202,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                             ( WalletOps SR.Types.Missing emptyTxRecord, Cmd.none )
 
                 OpenWalletInstructions ->
-                    --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Address "") SR.Types.Locked , Cmd.none )
+                    --( WalletOps (SR.Types.NewUser <| addedUAddrToNewEmptyUser <| Internal.Types.Address "") SR.Types.Locked , Cmd.none )
                     ( WalletOps SR.Types.Locked emptyTxRecord, Cmd.none )
 
                 PollBlock (Ok blockNumber) ->
@@ -271,10 +275,10 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                             { updateUserAddr | ethaddress = Eth.Utils.addressToString uaddr }
                     in
                     if isUserInList userlist uaddr then
-                        ( GlobalRankings [] (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings (Internal.Address "") (extractUsersFromWebData userlist) (singleUserInList userlist uaddr) emptyTxRecord, gotRankingList )
+                        ( GlobalRankings [] (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings (Internal.Types.Address "") (Utils.MyUtils.extractUsersFromWebData userlist) (SR.ListOps.singleUserInList userlist uaddr) emptyTxRecord, gotRankingList )
 
                     else
-                        ( UserOps (SR.Types.NewUser userWithUpdatedAddr) (extractUsersFromWebData userlist) uaddr userWithUpdatedAddr SR.Types.CreateNewUser txRec, Cmd.none )
+                        ( UserOps (SR.Types.NewUser userWithUpdatedAddr) (Utils.MyUtils.extractUsersFromWebData userlist) uaddr userWithUpdatedAddr SR.Types.CreateNewUser txRec, Cmd.none )
 
                 NewUserNameInputChg namefield ->
                     case userState of
@@ -318,7 +322,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         userWithUpdatedAddr =
                             { userInfo | ethaddress = Eth.Utils.addressToString useraddr }
                     in
-                    ( GlobalRankings [] (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings (Internal.Address "") [] userWithUpdatedAddr { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewUser userList userWithUpdatedAddr, gotRankingList ] )
+                    ( GlobalRankings [] (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings (Internal.Types.Address "") [] userWithUpdatedAddr { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewUser userList userWithUpdatedAddr, gotRankingList ] )
 
                 _ ->
                     --todo: better logic. This should go to failure model rather than fall thru to UserOps
@@ -336,6 +340,10 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                 GotRankingId rnkidstr ->
                     ( SelectedRanking lrankingInfo [] rnkidstr user SR.Defaults.emptyChallenge uiState emptyTxRecord, fetchedSingleRanking rnkidstr )
+
+                GotRankingIdAndRankingOwnerAddr rnkidstr rnkownerstr ->
+                    --( SelectedRanking lrankingInfo [] rnkidstr user SR.Defaults.emptyChallenge uiState emptyTxRecord, fetchedSingleRanking rnkidstr )
+                    ( updateSelectedRankingUIState rnkidstr rnkownerstr currentmodel, fetchedSingleRanking rnkidstr )
 
                 -- this is the response from createNewPlayerListWithCurrentUser Cmd
                 -- it had the Http.expectStringResponse in it
@@ -406,7 +414,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                 }
                                 txParams
                     in
-                    --( GlobalRankings lrankingInfo "" "" SR.Types.UIRenderAllRankings rnkOwnerAddr userList user { txRec | txSentry = newSentry }, sentryCmd )
                     ( GlobalRankings lrankingInfo (SR.Types.NewLadder newLadder) SR.Types.CreateNewLadder rnkOwnerAddr userList user { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewPlayerListWithCurrentUser user ] )
 
                 Fail str ->
@@ -414,10 +421,10 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         _ =
                             Debug.log "GlobalRankings fail " str
                     in
-                    ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings (Internal.Address "") userList user emptyTxRecord, Cmd.none )
+                    ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings (Internal.Types.Address "") userList user emptyTxRecord, Cmd.none )
 
                 _ ->
-                    ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings (Internal.Address "") userList user emptyTxRecord, Cmd.none )
+                    ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings (Internal.Types.Address "") userList user emptyTxRecord, Cmd.none )
 
         SelectedRanking lrankingInfo lPlayer intrankingId userRec challenge uiState txRec ->
             case msgOfTransitonThatAlreadyHappened of
@@ -427,7 +434,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                             extractPlayersFromWebData players
 
                         userOwner =
-                            isUserSelectedOwner (extractPlayersFromWebData players) userRec
+                            SR.ListOps.isUserSelectedOwner (extractPlayersFromWebData players) userRec
                     in
                     if userOwner == True then
                         ( SelectedRanking lrankingInfo playerAsJustList intrankingId userRec SR.Defaults.emptyChallenge SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, Cmd.none )
@@ -527,7 +534,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                             , Cmd.none
                             )
 
-                --( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = newSentry } challenge, Cmd.batch [ sentryCmd, postResultToJsonbin <| Internal.RankingId challenge.rankingid ] )
                 SentResultToJsonbin a ->
                     ( SelectedRanking lrankingInfo
                         lPlayer
@@ -551,7 +557,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     )
 
                 DeletedSingleRankingFromJsonBin result ->
-                    --( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) uiState (Utils.MyUtils.addressFromStringResult userRec.ethaddress) [] userRec emptyTxRecord, Cmd.none )
                     ( SelectedRanking lrankingInfo
                         lPlayer
                         intrankingId
@@ -566,14 +571,42 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( Failure <| "Fail failure : " ++ str, Cmd.none )
 
                 DeletedRankingFromGlobalList updatedListAfterRankingDeletedFromGlobalList ->
-                    --( GlobalRankings (extractRankingsFromWebData <| updatedListAfterRankingDeletedFromGlobalList) (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings rnkOwnerAddr userList user emptyTxRecord, Cmd.none )
                     ( GlobalRankings (extractRankingsFromWebData <| updatedListAfterRankingDeletedFromGlobalList) (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings (Utils.MyUtils.addressFromStringResult userRec.ethaddress) [ SR.Defaults.emptyUser ] userRec emptyTxRecord, Cmd.none )
+
+                ClickedJoinSelected ->
+                    --( Failure <| "Fall thru failure : ", addCurrentUserToPlayerList intrankingId lPlayer userRec )
+                    ( SelectedRanking lrankingInfo lPlayer intrankingId userRec SR.Defaults.emptyChallenge uiState emptyTxRecord, addCurrentUserToPlayerList intrankingId lPlayer userRec )
+
+                ReturnFromJoin response ->
+                    let
+                        _ =
+                            Debug.log "join response " response
+                    in
+                    ( Failure <| "Return from Join : ", Cmd.none )
 
                 _ ->
                     ( Failure <| "Fall thru failure : ", Cmd.none )
 
         Failure str ->
             ( Failure <| "Model failure in selected ranking: " ++ str, Cmd.none )
+
+
+updateSelectedRankingUIState : Internal.Types.RankingId -> String -> Model -> Model
+updateSelectedRankingUIState rnkid rnkownerStr currentmodel =
+    case currentmodel of
+        GlobalRankings lrankingInfo ladderState uiState someAddress challenge user txRec ->
+            let
+                _ =
+                    Debug.log "isUserSelectedOwnerOfRanking" <| SR.ListOps.isUserSelectedOwnerOfRanking rnkid lrankingInfo user
+            in
+            if SR.ListOps.isUserSelectedOwnerOfRanking rnkid lrankingInfo user then
+                SelectedRanking lrankingInfo [] rnkid user SR.Defaults.emptyChallenge SR.Types.UISelectedRankingUserIsOwner emptyTxRecord
+
+            else
+                SelectedRanking lrankingInfo [] rnkid user SR.Defaults.emptyChallenge uiState emptyTxRecord
+
+        _ ->
+            Failure <| "updateSelectedRankingUIState : "
 
 
 greetingHeading : String -> Element Msg
@@ -613,41 +646,6 @@ selectedHeading user rnkInfo =
         ]
 
 
-group : Element msg
-group =
-    Element.column Grid.section <|
-        [ Element.el Heading.h2 <| Element.text "Group"
-        , Element.column (Card.fill ++ Grid.simple)
-            [ Element.wrappedRow Grid.simple
-                [ Element.el (Card.fill ++ Group.left) <| Element.text "Group.left"
-                , Element.el (Card.fill ++ Group.center) <| Element.text "Group.center"
-                , Element.el (Card.fill ++ Group.right) <| Element.text "Group.right"
-                , Element.el (Card.fill ++ Group.top) <| Element.text "Group.top"
-                , Element.el (Card.fill ++ Group.bottom) <| Element.text "Group.bottom"
-                ]
-            ]
-        ]
-
-
-grid : Element msg
-grid =
-    Element.column Grid.section <|
-        [ Element.el Heading.h2 <| Element.text "Grid"
-        , Element.column Grid.simple <|
-            [ Element.wrappedRow Grid.simple
-                [ Element.column (Card.simple ++ Grid.simple) <|
-                    [ Element.el Heading.h3 <| Element.text "Grid.simple"
-                    , Element.row Grid.simple <|
-                        [ Element.el Card.simple <| Element.text "item"
-                        , Element.el Card.simple <| Element.text "item"
-                        , Element.el Card.simple <| Element.text "item"
-                        ]
-                    ]
-                ]
-            ]
-        ]
-
-
 rankingbuttons : List SR.Types.RankingInfo -> Element Msg
 rankingbuttons rankingList =
     Element.column Grid.section <|
@@ -665,9 +663,13 @@ rankingbuttons rankingList =
 
 addRankingInfoToAnyElText : SR.Types.RankingInfo -> Element Msg
 addRankingInfoToAnyElText rankingobj =
+    let
+        _ =
+            Debug.log "rankingInfo" rankingobj
+    in
     Element.column Grid.simple <|
         [ Input.button (Button.fill ++ Color.info) <|
-            { onPress = Just (GotRankingId (Internal.RankingId rankingobj.id))
+            { onPress = Just (GotRankingIdAndRankingOwnerAddr (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr)
             , label = Element.text rankingobj.rankingname
             }
         ]
@@ -703,9 +705,7 @@ addPlayerInfoToAnyElText : SR.Types.Player -> Element Msg
 addPlayerInfoToAnyElText playerObj =
     Element.column Grid.simple <|
         [ Input.button (Button.fill ++ Color.info) <|
-            { onPress = Just (GotRankingId (Internal.RankingId <| String.fromInt playerObj.id))
-
-            --onPress = Nothing
+            { onPress = Just (GotRankingId (Internal.Types.RankingId <| String.fromInt playerObj.id))
             , label = Element.text playerObj.name
             }
         ]
@@ -741,8 +741,8 @@ globalhomebutton rankingList uaddr user =
         ]
 
 
-selectedhomebutton : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> Element Msg
-selectedhomebutton rankingList uaddr user =
+selectedhomebuttons : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> Element Msg
+selectedhomebuttons rankingList uaddr user =
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
@@ -751,9 +751,9 @@ selectedhomebutton rankingList uaddr user =
                     { onPress = Just <| ResetToShowGlobal rankingList uaddr user
                     , label = Element.text "Home"
                     }
-                , Input.button (Button.simple ++ Color.disabled) <|
-                    { onPress = Nothing
-                    , label = Element.text "Create New"
+                , Input.button (Button.simple ++ Color.simple) <|
+                    { onPress = Just ClickedJoinSelected
+                    , label = Element.text "Join"
                     }
                 ]
             ]
@@ -778,10 +778,6 @@ selecteduserIsOwnerhomebutton rankingList uaddr user =
                 [ Input.button (Button.simple ++ Color.simple) <|
                     { onPress = Just <| ResetToShowGlobal rankingList uaddr user
                     , label = Element.text "Home"
-                    }
-                , Input.button (Button.simple ++ Color.disabled) <|
-                    { onPress = Nothing
-                    , label = Element.text "Create New"
                     }
                 , Input.button (Button.simple ++ Color.danger) <|
                     { onPress = Just <| DeletedRanking uaddr
@@ -809,8 +805,6 @@ newrankinhomebutton rankingList uaddr user newLadder =
                     }
                 , Input.button (Button.simple ++ Color.info) <|
                     { onPress = Just <| NewRankingRequestedByConfirmBtnClicked newLadder
-
-                    --onPress = Just <| ConfirmButtonClicked
                     , label = Element.text "Create New"
                     }
                 ]
@@ -826,10 +820,6 @@ newrankinhomebutton rankingList uaddr user newLadder =
 
 newuserConfirmPanel : Eth.Types.Address -> SR.Types.User -> Element Msg
 newuserConfirmPanel uaddr user =
-    -- let
-    --     _ =
-    --         Debug.log "globalList" globalList
-    -- in
     Element.column Grid.section <|
         [ Element.paragraph (Card.fill ++ Color.warning) <|
             [ Element.el [ Font.bold ] <| Element.text "Please note: "
@@ -841,13 +831,11 @@ newuserConfirmPanel uaddr user =
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
                 [ Input.button (Button.simple ++ Color.disabled) <|
-                    { --onPress = Just <| ResetToShowGlobal rankingList uaddr user
-                      onPress = Nothing
+                    { onPress = Nothing
                     , label = Element.text "Home"
                     }
                 , Input.button (Button.simple ++ Color.info) <|
-                    { --onPress = Nothing
-                      onPress = Just <| NewUserRequested uaddr user
+                    { onPress = Just <| NewUserRequested uaddr user
                     , label = Element.text "Register"
                     }
                 ]
@@ -917,36 +905,30 @@ globalResponsiveview rankingList uaddr user =
             [ Element.el Heading.h4 <| Element.text "SportRank"
             , globalHeading user
             , globalhomebutton rankingList uaddr user
-
-            --, group
-            --, color
-            --, grid
             , rankingbuttons rankingList
-
-            --, input
             ]
 
 
-selectedResponsiveview : List SR.Types.RankingInfo -> List SR.Types.Player -> Internal.RankingId -> SR.Types.User -> Html Msg
-selectedResponsiveview lrankingInfo playerList rnkid user =
+selectedRankingView : List SR.Types.RankingInfo -> List SR.Types.Player -> Internal.Types.RankingId -> SR.Types.User -> Html Msg
+selectedRankingView lrankingInfo playerList rnkid user =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
             [ Element.el Heading.h4 <| Element.text "SportRank"
             , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkid
-            , selectedhomebutton lrankingInfo (Internal.Address "") user
+            , selectedhomebuttons lrankingInfo (Internal.Types.Address "") user
             , playerbuttons playerList
             ]
 
 
-selectedUserIsOwnerView : List SR.Types.RankingInfo -> List SR.Types.Player -> Internal.RankingId -> SR.Types.User -> Html Msg
+selectedUserIsOwnerView : List SR.Types.RankingInfo -> List SR.Types.Player -> Internal.Types.RankingId -> SR.Types.User -> Html Msg
 selectedUserIsOwnerView lrankingInfo playerList rnkid user =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
             [ Element.el Heading.h4 <| Element.text "SportRank - Owner"
             , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkid
-            , selecteduserIsOwnerhomebutton lrankingInfo (Internal.Address "") user
+            , selecteduserIsOwnerhomebutton lrankingInfo (Internal.Types.Address "") user
             , playerbuttons playerList
             ]
 
@@ -968,14 +950,7 @@ inputNewLadderview rankingList uaddr user rnkInfo =
         Element.column
             Framework.container
             [ Element.el Heading.h4 <| Element.text "Create New Ladder Ranking"
-
-            --, selectedHeading
             , newrankinhomebutton rankingList uaddr user rnkInfo
-
-            --, group
-            --, color
-            --, grid
-            --, playerbuttons playerList
             , inputNewLadder rnkInfo
             ]
 
@@ -1015,7 +990,7 @@ view model =
                     selectedUserIsOwnerView lrankingInfo playerList rnkid userRec
 
                 _ ->
-                    selectedResponsiveview lrankingInfo playerList rnkid userRec
+                    selectedRankingView lrankingInfo playerList rnkid userRec
 
         WalletOps walletState txRec ->
             case walletState of
@@ -1043,10 +1018,6 @@ view model =
                 SR.Types.CreateNewUser ->
                     case userState of
                         SR.Types.NewUser user ->
-                            -- let
-                            --     _ =
-                            --         Debug.log "in view" userList
-                            -- in
                             inputNewUserview uaddr user
 
                         _ ->
@@ -1085,44 +1056,6 @@ subscriptions model =
 --Helper functions
 
 
-filterSelectedRankingOutOfGlobalList : String -> List SR.Types.RankingInfo -> List SR.Types.RankingInfo
-filterSelectedRankingOutOfGlobalList rankingid lrankinginfo =
-    List.filterMap
-        (isRankingIdInList
-            rankingid
-        )
-        lrankinginfo
-
-
-isRankingIdInList : String -> SR.Types.RankingInfo -> Maybe SR.Types.RankingInfo
-isRankingIdInList rankingid rankingInfo =
-    if rankingInfo.id /= rankingid then
-        Just rankingInfo
-
-    else
-        Nothing
-
-
-isUserSelectedOwner : List SR.Types.Player -> SR.Types.User -> Bool
-isUserSelectedOwner lplayers user =
-    let
-        _ =
-            Debug.log "usr " user.ethaddress
-    in
-    let
-        existingUser =
-            List.head <|
-                List.filter (\r -> r.address == (String.toLower <| user.ethaddress))
-                    lplayers
-    in
-    case existingUser of
-        Nothing ->
-            False
-
-        Just a ->
-            True
-
-
 isOpponentHigherRank : SR.Types.Player -> SR.Types.Opponent -> SR.Types.OpponentRelativeRank
 isOpponentHigherRank player opponent =
     -- nb. if player rank is 'higher' than opponent his rank integer will actually be 'less than' opponent
@@ -1138,35 +1071,13 @@ isUserInList : RemoteData.WebData (List SR.Types.User) -> Eth.Types.Address -> B
 isUserInList userlist uaddr =
     let
         gotSingleUserFromList =
-            singleUserInList userlist uaddr
+            SR.ListOps.singleUserInList userlist uaddr
     in
     if gotSingleUserFromList.ethaddress == "" then
         False
 
     else
         True
-
-
-singleUserInList : RemoteData.WebData (List SR.Types.User) -> Eth.Types.Address -> SR.Types.User
-singleUserInList userlist uaddr =
-    gotUserFromUserList (extractUsersFromWebData <| userlist) uaddr
-
-
-gotUserFromUserList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
-gotUserFromUserList userList uaddr =
-    let
-        existingUser =
-            --List.head <| List.filter (\r -> r.ethaddress == (Eth.Utils.addressToString uaddr |> Debug.log "uaddr argument: ")) userList
-            List.head <|
-                List.filter (\r -> r.ethaddress == (String.toLower <| Eth.Utils.addressToString <| uaddr))
-                    userList
-    in
-    case existingUser of
-        Nothing ->
-            SR.Defaults.emptyUser
-
-        Just a ->
-            a
 
 
 addedUAddrToNewEmptyUser : Eth.Types.Address -> SR.Types.User
@@ -1181,8 +1092,8 @@ addedUAddrToNewEmptyUser uaddr =
     newUser
 
 
-gotRankingFromRankingList : List SR.Types.RankingInfo -> Internal.RankingId -> SR.Types.RankingInfo
-gotRankingFromRankingList rankingList (Internal.RankingId rnkid) =
+gotRankingFromRankingList : List SR.Types.RankingInfo -> Internal.Types.RankingId -> SR.Types.RankingInfo
+gotRankingFromRankingList rankingList (Internal.Types.RankingId rnkid) =
     let
         existingRanking =
             List.head <|
@@ -1229,74 +1140,16 @@ extractRankingsFromWebData remData =
             []
 
 
-extractUsersFromWebData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
-extractUsersFromWebData remData =
-    case remData of
-        RemoteData.NotAsked ->
-            let
-                _ =
-                    Debug.log "http err" "not asked"
-            in
-            []
-
-        RemoteData.Loading ->
-            let
-                _ =
-                    Debug.log "http err" "loading"
-            in
-            []
-
-        RemoteData.Success users ->
-            users
-
-        RemoteData.Failure httpError ->
-            let
-                _ =
-                    Debug.log "http err" gotHttpErr <| httpError
-            in
-            []
-
-
-gotHttpErr : Http.Error -> String
-gotHttpErr httperr =
-    case httperr of
-        Http.BadUrl s ->
-            "Bad" ++ s
-
-        Http.Timeout ->
-            "Timeout"
-
-        Http.NetworkError ->
-            "Network Err"
-
-        Http.BadStatus statuscode ->
-            String.fromInt <| statuscode
-
-        Http.BadBody s ->
-            "BadBody " ++ s
-
-
 
 -- Http ops
 
 
 gotUserList : Cmd Msg
 gotUserList =
-    let
-        binName =
-            Http.header
-                "name"
-                "Users"
-
-        containerId =
-            Http.header
-                "collection-id"
-                "5e4cf4ba4d073155b0dca8b8"
-    in
     Http.request
         { body = Http.emptyBody
         , expect = Http.expectJson (RemoteData.fromResult >> UsersReceived) SR.Decode.listOfUsersDecoder
-        , headers = [ SR.Defaults.secretKey, binName, containerId ]
+        , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
         , method = "GET"
         , timeout = Nothing
         , tracker = Nothing
@@ -1304,8 +1157,8 @@ gotUserList =
         }
 
 
-fetchedSingleRanking : Internal.RankingId -> Cmd Msg
-fetchedSingleRanking (Internal.RankingId rankingId) =
+fetchedSingleRanking : Internal.Types.RankingId -> Cmd Msg
+fetchedSingleRanking (Internal.Types.RankingId rankingId) =
     --PlayersReceived is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
     Http.request
@@ -1323,21 +1176,10 @@ fetchedSingleRanking (Internal.RankingId rankingId) =
 
 gotRankingList : Cmd Msg
 gotRankingList =
-    let
-        binName =
-            Http.header
-                "name"
-                "Global"
-
-        containerId =
-            Http.header
-                "collection-id"
-                "5d7deab3371673119fab12a6"
-    in
     Http.request
         { body = Http.emptyBody
         , expect = Http.expectJson (RemoteData.fromResult >> GotGlobalRankingsJson) SR.Decode.rankingsDecoder
-        , headers = [ SR.Defaults.secretKey, binName, containerId ]
+        , headers = [ SR.Defaults.secretKey, SR.Defaults.globalContainerId, SR.Defaults.globalContainerId ]
         , method = "GET"
         , timeout = Nothing
         , tracker = Nothing
@@ -1348,16 +1190,6 @@ gotRankingList =
 createNewPlayerListWithCurrentUser : SR.Types.User -> Cmd Msg
 createNewPlayerListWithCurrentUser user =
     let
-        binName =
-            Http.header
-                "name"
-                "Selected"
-
-        containerId =
-            Http.header
-                "collection-id"
-                "5d7deb68371673119fab12d7"
-
         idJsonObj : Json.Encode.Value
         idJsonObj =
             Json.Encode.list
@@ -1382,10 +1214,7 @@ createNewPlayerListWithCurrentUser user =
         { body =
             Http.jsonBody <| idJsonObj
         , expect = Http.expectJson (RemoteData.fromResult >> SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId) SR.Decode.newRankingIdDecoder
-
-        -- at this point we don't have the ranking id, it's in the ranking object
-        --, expect = Http.expectJson (RemoteData.fromResult >> SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId RemoteData.NotAsked) SR.Decode.newRankingDecoder
-        , headers = [ SR.Defaults.secretKey, binName, containerId ]
+        , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedContainerId, SR.Defaults.selectedContainerId ]
         , method = "POST"
         , timeout = Nothing
         , tracker = Nothing
@@ -1396,16 +1225,6 @@ createNewPlayerListWithCurrentUser user =
 createNewUser : List SR.Types.User -> SR.Types.User -> Cmd Msg
 createNewUser originaluserlist newuserinfo =
     let
-        binName =
-            Http.header
-                "name"
-                "Users"
-
-        containerId =
-            Http.header
-                "collection-id"
-                "5e4cf4ba4d073155b0dca8b8"
-
         newUser =
             { datestamp = 123456789
             , active = True
@@ -1427,7 +1246,7 @@ createNewUser originaluserlist newuserinfo =
         { body =
             Http.jsonBody <| jsonEncodeNewUsersList userListWithJsonObjAdded
         , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
-        , headers = [ SR.Defaults.secretKey, binName, containerId ]
+        , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
         , method = "PUT"
         , timeout = Nothing
         , tracker = Nothing
@@ -1460,27 +1279,74 @@ jsonEncodeNewUsersList luserInfo =
 
 
 
--- this also has to be done when a new ranking is created.
+--intrankingId lPlayer userRec
+-- addCurrentUserToPlayerList : RemoteData.WebData SR.Types.RankingId -> List SR.Types.RankingInfo -> SR.Types.RankingInfo -> String -> Cmd Msg
+-- addCurrentUserToPlayerList newrankingid lrankingInfo rnkInfo rankingowneraddress =
+
+
+addCurrentUserToPlayerList : Internal.Types.RankingId -> List SR.Types.Player -> SR.Types.User -> Cmd Msg
+addCurrentUserToPlayerList (Internal.Types.RankingId intrankingId) lPlayer userRec =
+    let
+        newPlayer =
+            { datestamp = 12345
+            , active = True
+            , currentchallengername = "Available"
+            , currentchallengerid = 0
+            , address = userRec.ethaddress
+            , rank = 0
+            , name = "Unidentified"
+            , id = List.length lPlayer + 1
+            , currentchallengeraddress = ""
+            }
+
+        selectedRankingListWithNewPlayerJsonObjAdded =
+            newPlayer :: lPlayer
+    in
+    --AddedNewRankingToGlobalList is the Msg handled by update whenever a request is made
+    --RemoteData is used throughout the module, including update
+    -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
+    -- the Decoder decodes what comes back in the response
+    Http.request
+        { body =
+            Http.jsonBody <| jsonEncodeNewSelectedRankingPlayerList selectedRankingListWithNewPlayerJsonObjAdded
+        , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromJoin) SR.Decode.decodeNewPlayerListServerResponse
+        , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
+        , method = "PUT"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = SR.Constants.jsonbinUrlStubForUpdateExistingBinAndRespond ++ intrankingId
+        }
+
+
+jsonEncodeNewSelectedRankingPlayerList : List SR.Types.Player -> Json.Encode.Value
+jsonEncodeNewSelectedRankingPlayerList lplayers =
+    let
+        encodePlayerObj : SR.Types.Player -> Json.Encode.Value
+        encodePlayerObj player =
+            Json.Encode.object
+                [ ( "datestamp", Json.Encode.int 123456 )
+                , ( "active", Json.Encode.bool True )
+                , ( "currentchallengername", Json.Encode.string "" )
+                , ( "currentchallengerid", Json.Encode.int 0 )
+                , ( "address", Json.Encode.string (String.toLower player.address) )
+                , ( "rank", Json.Encode.int 1 )
+                , ( "name", Json.Encode.string player.name )
+                , ( "playerid", Json.Encode.int 1 )
+                , ( "currentchallengeraddress", Json.Encode.string (String.toLower "") )
+                ]
+
+        encodedList =
+            Json.Encode.list encodePlayerObj lplayers
+
+        _ =
+            Debug.log "encode the list: " encodedList
+    in
+    encodedList
 
 
 addedNewRankingListEntryInGlobal : RemoteData.WebData SR.Types.RankingId -> List SR.Types.RankingInfo -> SR.Types.RankingInfo -> String -> Cmd Msg
 addedNewRankingListEntryInGlobal newrankingid lrankingInfo rnkInfo rankingowneraddress =
     let
-        secretKey =
-            Http.header
-                "secret-key"
-                "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
-
-        binName =
-            Http.header
-                "name"
-                "Global"
-
-        containerId =
-            Http.header
-                "collection-id"
-                "5d7deab3371673119fab12a6"
-
         newRankingInfo =
             { id = gotNewRankingIdFromWebData newrankingid
             , active = True
@@ -1500,7 +1366,7 @@ addedNewRankingListEntryInGlobal newrankingid lrankingInfo rnkInfo rankingownera
         { body =
             Http.jsonBody <| jsonEncodeNewGlobalRankingList globalListWithJsonObjAdded
         , expect = Http.expectJson (RemoteData.fromResult >> AddedNewRankingToGlobalList) SR.Decode.decodeNewRankingListServerResponse
-        , headers = [ secretKey, binName, containerId ]
+        , headers = [ SR.Defaults.secretKey, SR.Defaults.globalBinName, SR.Defaults.globalContainerId ]
         , method = "PUT"
         , timeout = Nothing
         , tracker = Nothing
@@ -1601,8 +1467,8 @@ gotNewRankingIdFromWebData rankingIdremdata =
                     "BadBody " ++ s
 
 
-postResultToJsonbin : Internal.RankingId -> Cmd Msg
-postResultToJsonbin (Internal.RankingId rankingId) =
+postResultToJsonbin : Internal.Types.RankingId -> Cmd Msg
+postResultToJsonbin (Internal.Types.RankingId rankingId) =
     let
         _ =
             Debug.log "rankingid in postResultToJsonbin" rankingId
@@ -1612,14 +1478,8 @@ postResultToJsonbin (Internal.RankingId rankingId) =
                 "secret-key"
                 "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
     in
-    --RemoteData is used throughout the module, including update
     Http.request
         { body = Http.emptyBody
-
-        --body = Http.jsonBody (playerEncoder rankingData)
-        -- , expect =
-        --     SR.Decode.ladderOfPlayersDecoder
-        --         |> Http.expectJson (RemoteData.fromResult >> SentResultToJsonbin)
         , expect = Http.expectWhatever SentResultToJsonbin
         , headers = [ headerKey ]
         , method = "PUT"
@@ -1629,17 +1489,11 @@ postResultToJsonbin (Internal.RankingId rankingId) =
         }
 
 
-
---deleteSelectedRankingFromJsonBin : Internal.RankingId -> List SR.Types.RankingInfo -> SR.Types.RankingInfo -> String -> Cmd Msg
---deleteSelectedRankingFromJsonBin (Internal.RankingId rankingId) lrankingInfo rnkInfo rankingowneraddress =
-
-
-deleteSelectedRankingFromJsonBin : Internal.RankingId -> Cmd Msg
-deleteSelectedRankingFromJsonBin (Internal.RankingId rankingId) =
+deleteSelectedRankingFromJsonBin : Internal.Types.RankingId -> Cmd Msg
+deleteSelectedRankingFromJsonBin (Internal.Types.RankingId rankingId) =
     -- the Decoder decodes what comes back in the response
     Http.request
         { body =
-            --Http.jsonBody <| jsonEncodeNewGlobalRankingList globalListWithDeletedRankingInfoRemoved
             Http.emptyBody
         , expect = Http.expectJson (RemoteData.fromResult >> DeletedSingleRankingFromJsonBin) SR.Decode.decodeNewRankingListServerResponse
         , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
@@ -1650,13 +1504,13 @@ deleteSelectedRankingFromJsonBin (Internal.RankingId rankingId) =
         }
 
 
-deleteSelectedRankingFromGlobalList : Internal.RankingId -> List SR.Types.RankingInfo -> String -> Cmd Msg
-deleteSelectedRankingFromGlobalList (Internal.RankingId rankingId) lrankingInfo rankingowneraddress =
+deleteSelectedRankingFromGlobalList : Internal.Types.RankingId -> List SR.Types.RankingInfo -> String -> Cmd Msg
+deleteSelectedRankingFromGlobalList (Internal.Types.RankingId rankingId) lrankingInfo rankingowneraddress =
     let
         globalListWithDeletedRankingInfoRemoved =
-            filterSelectedRankingOutOfGlobalList rankingId lrankingInfo
+            SR.ListOps.filterSelectedRankingOutOfGlobalList rankingId lrankingInfo
     in
-    --AddedNewRankingToGlobalList is the Msg handled by update whenever a request is made
+    --DeletedRankingFromGlobalList is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
     -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
     -- the Decoder decodes what comes back in the response
