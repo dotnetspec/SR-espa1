@@ -763,6 +763,13 @@ selectedhomebutton rankingList uaddr user =
 
 selecteduserIsOwnerhomebutton : List SR.Types.RankingInfo -> Eth.Types.Address -> SR.Types.User -> Element Msg
 selecteduserIsOwnerhomebutton rankingList uaddr user =
+    let
+        _ =
+            Debug.log " uaddr " uaddr
+
+        _ =
+            Debug.log " user " user
+    in
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
@@ -849,10 +856,6 @@ newuserConfirmPanel uaddr user =
 
 inputNewUser : Eth.Types.Address -> SR.Types.User -> Element Msg
 inputNewUser uaddr user =
-    let
-        _ =
-            Debug.log "uname input1 " <| user.username ++ user.description
-    in
     Element.column Grid.section <|
         [ Element.el Heading.h5 <| Element.text "New User Details"
         , Element.wrappedRow (Card.fill ++ Grid.simple)
@@ -1090,18 +1093,6 @@ filterSelectedRankingOutOfGlobalList rankingid lrankinginfo =
         lrankinginfo
 
 
-
---(\rankinfo -> isRankingIdInList rankinfo "5e8aa4825eb7f3517e299b7b")
---(\r -> r.id /= rankingId)
---in
--- isTeen : Int -> Maybe Int
--- isTeen n =
---  if 13 <= n && n <= 19 then
---    Just n
---  else
---    Nothing
-
-
 isRankingIdInList : String -> SR.Types.RankingInfo -> Maybe SR.Types.RankingInfo
 isRankingIdInList rankingid rankingInfo =
     if rankingInfo.id /= rankingid then
@@ -1122,7 +1113,6 @@ isUserSelectedOwner lplayers user =
     in
     case existingUser of
         Nothing ->
-            --SR.Defaults.emptyUser
             False
 
         Just a ->
@@ -1376,7 +1366,7 @@ createNewPlayerListWithCurrentUser user =
                   , ( "active", Json.Encode.bool True )
                   , ( "currentchallengername", Json.Encode.string "" )
                   , ( "currentchallengerid", Json.Encode.int 0 )
-                  , ( "address", Json.Encode.string user.ethaddress )
+                  , ( "address", Json.Encode.string (String.toLower user.ethaddress) )
                   , ( "rank", Json.Encode.int 1 )
                   , ( "name", Json.Encode.string user.username )
                   , ( "playerid", Json.Encode.int 1 )
