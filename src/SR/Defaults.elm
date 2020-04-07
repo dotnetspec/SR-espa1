@@ -1,6 +1,6 @@
 module SR.Defaults exposing
     ( emptyPlayer
-    , emptyActiveUser, emptyChallenge, emptyRankingInfo, emptyUser, secretKey
+    , emptyActiveUser, emptyChallenge, emptyRankingInfo, emptyUser, globalBinName, globalContainerId, secretKey, selectedBinName, selectedContainerId
     )
 
 {-| Default values.
@@ -89,3 +89,27 @@ secretKey =
     Http.header
         "secret-key"
         "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
+
+
+selectedContainerId =
+    Http.header
+        "collection-id"
+        "5d7deb68371673119fab12d7"
+
+
+selectedBinName =
+    Http.header
+        "name"
+        "Selected"
+
+
+globalBinName =
+    Http.header
+        "name"
+        "Global"
+
+
+globalContainerId =
+    Http.header
+        "collection-id"
+        "5d7deab3371673119fab12a6"
