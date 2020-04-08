@@ -10,6 +10,7 @@ For those withDefault shenanigans.
 
 -}
 
+import Eth.Types exposing (..)
 import Http
 import Internal.Types as Internal
 import SR.Types exposing (..)

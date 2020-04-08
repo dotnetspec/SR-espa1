@@ -36,6 +36,7 @@ gotUserFromUserList userList uaddr =
             --List.head <| List.filter (\r -> r.ethaddress == (Eth.Utils.addressToString uaddr |> Debug.log "uaddr argument: ")) userList
             List.head <|
                 List.filter (\r -> r.ethaddress == (String.toLower <| Eth.Utils.addressToString <| uaddr))
+                    --List.filter (\r -> r.ethaddress == uaddr)
                     userList
     in
     case existingUser of
@@ -55,16 +56,26 @@ isUserSelectedOwnerOfRanking : Internal.Types.RankingId -> List SR.Types.Ranking
 isUserSelectedOwnerOfRanking (Internal.Types.RankingId rnkid) lrnkInfo user =
     let
         filteredList =
-            filterSelectedRankingOutOfGlobalList rnkid lrnkInfo
+            findSelectedRankingInGlobalList rnkid lrnkInfo
 
         filteredRec =
             List.head filteredList
+
+        _ =
+            Debug.log "filteredRec" filteredRec
     in
     case filteredRec of
         Nothing ->
             False
 
         Just a ->
+            let
+                _ =
+                    Debug.log "filteredRec owner" a.rankingowneraddr
+
+                _ =
+                    Debug.log "filteredRec user" user.ethaddress
+            in
             if a.rankingowneraddr == user.ethaddress then
                 True
 
@@ -79,6 +90,24 @@ isUserSelectedOwnerOfRanking (Internal.Types.RankingId rnkid) lrnkInfo user =
 filterSelectedRankingOutOfGlobalList : String -> List SR.Types.RankingInfo -> List SR.Types.RankingInfo
 filterSelectedRankingOutOfGlobalList rankingid lrankinginfo =
     List.filterMap
+        (doesCurrentRankingIdNOTMatchId
+            rankingid
+        )
+        lrankinginfo
+
+
+doesCurrentRankingIdNOTMatchId : String -> SR.Types.RankingInfo -> Maybe SR.Types.RankingInfo
+doesCurrentRankingIdNOTMatchId rankingid rankingInfo =
+    if rankingInfo.id /= rankingid then
+        Just rankingInfo
+
+    else
+        Nothing
+
+
+findSelectedRankingInGlobalList : String -> List SR.Types.RankingInfo -> List SR.Types.RankingInfo
+findSelectedRankingInGlobalList rankingid lrankinginfo =
+    List.filterMap
         (isRankingIdInList
             rankingid
         )
@@ -87,7 +116,7 @@ filterSelectedRankingOutOfGlobalList rankingid lrankinginfo =
 
 isRankingIdInList : String -> SR.Types.RankingInfo -> Maybe SR.Types.RankingInfo
 isRankingIdInList rankingid rankingInfo =
-    if rankingInfo.id /= rankingid then
+    if rankingInfo.id == rankingid then
         Just rankingInfo
 
     else
