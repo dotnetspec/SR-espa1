@@ -584,22 +584,10 @@ updateSelectedRankingUIState : Internal.Types.RankingId -> String -> Model -> Mo
 updateSelectedRankingUIState rnkid rnkownerStr currentmodel =
     case currentmodel of
         GlobalRankings lrankingInfo ladderState uiState challenge user txRec ->
-            let
-                _ =
-                    Debug.log "isUserSelectedOwnerOfRanking" <| SR.ListOps.isUserSelectedOwnerOfRanking rnkid lrankingInfo user
-            in
             if SR.ListOps.isUserSelectedOwnerOfRanking rnkid lrankingInfo user then
-                let
-                    _ =
-                        Debug.log "true branch" <| SR.ListOps.isUserSelectedOwnerOfRanking rnkid lrankingInfo user
-                in
                 SelectedRanking lrankingInfo [] rnkid user SR.Defaults.emptyChallenge SR.Types.UISelectedRankingUserIsOwner emptyTxRecord
 
             else
-                let
-                    _ =
-                        Debug.log "false branch" <| SR.ListOps.isUserSelectedOwnerOfRanking rnkid lrankingInfo user
-                in
                 SelectedRanking lrankingInfo [] rnkid user SR.Defaults.emptyChallenge uiState emptyTxRecord
 
         _ ->
@@ -660,10 +648,6 @@ rankingbuttons rankingList =
 
 addRankingInfoToAnyElText : SR.Types.RankingInfo -> Element Msg
 addRankingInfoToAnyElText rankingobj =
-    let
-        _ =
-            Debug.log "rankingInfo" rankingobj
-    in
     Element.column Grid.simple <|
         [ Input.button (Button.fill ++ Color.info) <|
             { onPress = Just (GotRankingIdAndRankingOwnerAddr (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr)

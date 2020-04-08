@@ -60,22 +60,12 @@ isUserSelectedOwnerOfRanking (Internal.Types.RankingId rnkid) lrnkInfo user =
 
         filteredRec =
             List.head filteredList
-
-        _ =
-            Debug.log "filteredRec" filteredRec
     in
     case filteredRec of
         Nothing ->
             False
 
         Just a ->
-            let
-                _ =
-                    Debug.log "filteredRec owner" a.rankingowneraddr
-
-                _ =
-                    Debug.log "filteredRec user" user.ethaddress
-            in
             if a.rankingowneraddr == user.ethaddress then
                 True
 
