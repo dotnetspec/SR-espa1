@@ -1,4 +1,4 @@
-module SR.ListOps exposing (filterSelectedRankingOutOfGlobalList, gotRankingFromRankingList, gotUserFromUserList, isUserSelectedOwner, isUserSelectedOwnerOfRanking, singleUserInList)
+module SR.ListOps exposing (filterSelectedRankingOutOfGlobalList, gotRankingFromRankingList, gotUserFromUserList, isUserSelectedOwnerOfRanking, singleUserInList)
 
 import Eth.Types
 import Eth.Utils
@@ -52,45 +52,28 @@ singleUserInList userlist uaddr =
 
 
 isUserSelectedOwnerOfRanking : Internal.Types.RankingId -> List SR.Types.RankingInfo -> SR.Types.User -> Bool
-isUserSelectedOwnerOfRanking rnkid lrnkInfo user =
-    if List.length (extractedSingleRankingFromRankingListWithRankingId rnkid lrnkInfo user) > 0 then
-        True
-
-    else
-        False
-
-
-isUserSelectedOwner : List SR.Types.Player -> SR.Types.User -> Bool
-isUserSelectedOwner lplayers user =
+isUserSelectedOwnerOfRanking (Internal.Types.RankingId rnkid) lrnkInfo user =
     let
-        _ =
-            Debug.log "usr " user.ethaddress
+        filteredList =
+            filterSelectedRankingOutOfGlobalList rnkid lrnkInfo
+
+        filteredRec =
+            List.head filteredList
     in
-    let
-        existingUser =
-            List.head <|
-                List.filter (\r -> r.address == (String.toLower <| user.ethaddress))
-                    lplayers
-    in
-    case existingUser of
+    case filteredRec of
         Nothing ->
             False
 
         Just a ->
-            True
+            if a.rankingowneraddr == user.ethaddress then
+                True
+
+            else
+                False
 
 
 
 --internal
-
-
-extractedSingleRankingFromRankingListWithRankingId : Internal.Types.RankingId -> List SR.Types.RankingInfo -> SR.Types.User -> List SR.Types.RankingInfo
-extractedSingleRankingFromRankingListWithRankingId rnkid lrnkInfo user =
-    [ SR.Defaults.emptyRankingInfo ]
-
-
-
---[]
 
 
 filterSelectedRankingOutOfGlobalList : String -> List SR.Types.RankingInfo -> List SR.Types.RankingInfo

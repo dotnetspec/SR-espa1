@@ -429,18 +429,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
         SelectedRanking lrankingInfo lPlayer intrankingId userRec challenge uiState txRec ->
             case msgOfTransitonThatAlreadyHappened of
                 PlayersReceived players ->
-                    let
-                        playerAsJustList =
-                            extractPlayersFromWebData players
-
-                        userOwner =
-                            SR.ListOps.isUserSelectedOwner (extractPlayersFromWebData players) userRec
-                    in
-                    if userOwner == True then
-                        ( SelectedRanking lrankingInfo playerAsJustList intrankingId userRec SR.Defaults.emptyChallenge SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, Cmd.none )
-
-                    else
-                        ( SelectedRanking lrankingInfo playerAsJustList intrankingId userRec SR.Defaults.emptyChallenge uiState emptyTxRecord, Cmd.none )
+                    ( SelectedRanking lrankingInfo (extractPlayersFromWebData players) intrankingId userRec SR.Defaults.emptyChallenge uiState emptyTxRecord, Cmd.none )
 
                 ResetToShowGlobal _ rnkowneraddr user ->
                     ( GlobalRankings lrankingInfo (SR.Types.NewLadder SR.Defaults.emptyRankingInfo) SR.Types.UIRenderAllRankings rnkowneraddr [ SR.Defaults.emptyUser ] user emptyTxRecord, Cmd.none )
@@ -600,9 +589,17 @@ updateSelectedRankingUIState rnkid rnkownerStr currentmodel =
                     Debug.log "isUserSelectedOwnerOfRanking" <| SR.ListOps.isUserSelectedOwnerOfRanking rnkid lrankingInfo user
             in
             if SR.ListOps.isUserSelectedOwnerOfRanking rnkid lrankingInfo user then
+                let
+                    _ =
+                        Debug.log "true branch" <| SR.ListOps.isUserSelectedOwnerOfRanking rnkid lrankingInfo user
+                in
                 SelectedRanking lrankingInfo [] rnkid user SR.Defaults.emptyChallenge SR.Types.UISelectedRankingUserIsOwner emptyTxRecord
 
             else
+                let
+                    _ =
+                        Debug.log "false branch" <| SR.ListOps.isUserSelectedOwnerOfRanking rnkid lrankingInfo user
+                in
                 SelectedRanking lrankingInfo [] rnkid user SR.Defaults.emptyChallenge uiState emptyTxRecord
 
         _ ->
