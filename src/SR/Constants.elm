@@ -3,6 +3,7 @@ module SR.Constants exposing
     , globalJsonbinRankingUpdateLink
     , jsonbinPlayersReadLink
     , jsonbinUrlForCreateNewBinAndRespond
+    , jsonbinUrlStubForUpdateExistingBinAndRespond
     , jsonbinUrlUpdateWithNewUserAndRespond
     , jsonbinUsersReadBinLink
     )
@@ -36,6 +37,11 @@ jsonbinUrlUpdateWithNewUserAndRespond =
 
 jsonbinUrlForCreateNewBinAndRespond : String
 jsonbinUrlForCreateNewBinAndRespond =
+    "https://api.jsonbin.io/b/"
+
+
+jsonbinUrlStubForUpdateExistingBinAndRespond : String
+jsonbinUrlStubForUpdateExistingBinAndRespond =
     "https://api.jsonbin.io/b/"
 
 

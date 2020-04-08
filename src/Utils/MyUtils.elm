@@ -1,8 +1,39 @@
-module Utils.MyUtils exposing (addressFromStringResult, addressToString, stringFromBool, stringFromMaybeString)
+module Utils.MyUtils exposing (addressFromStringResult, addressToString, extractUsersFromWebData, stringFromBool, stringFromMaybeString)
 
 import Eth.Types
 import Eth.Utils
+import Http
 import Internal.Types
+import RemoteData
+import SR.Types
+
+
+extractUsersFromWebData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
+extractUsersFromWebData remData =
+    case remData of
+        RemoteData.NotAsked ->
+            let
+                _ =
+                    Debug.log "http err" "not asked"
+            in
+            []
+
+        RemoteData.Loading ->
+            let
+                _ =
+                    Debug.log "http err" "loading"
+            in
+            []
+
+        RemoteData.Success users ->
+            users
+
+        RemoteData.Failure httpError ->
+            let
+                _ =
+                    Debug.log "http err" gotHttpErr <| httpError
+            in
+            []
 
 
 addressFromStringResult : String -> Internal.Types.Address
@@ -53,6 +84,29 @@ addressToString addr =
 
         Just a ->
             Eth.Utils.addressToString a
+
+
+
+-- internal
+
+
+gotHttpErr : Http.Error -> String
+gotHttpErr httperr =
+    case httperr of
+        Http.BadUrl s ->
+            "Bad" ++ s
+
+        Http.Timeout ->
+            "Timeout"
+
+        Http.NetworkError ->
+            "Network Err"
+
+        Http.BadStatus statuscode ->
+            String.fromInt <| statuscode
+
+        Http.BadBody s ->
+            "BadBody " ++ s
 
 
 

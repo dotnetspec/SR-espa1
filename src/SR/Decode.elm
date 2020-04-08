@@ -1,15 +1,6 @@
 module SR.Decode exposing
     ( rankingsDecoder
-    ,  decodeNewRankingListServerResponse
-      , decodeNewUserListServerResponse
-      , ladderOfPlayersDecoder
-      , listOfUsersDecoder
-        -- ,
-        -- newRankingDecoder
-      , newRankingIdDecoder
-      , playerDecoder
-      , userDecoder
-
+    , decodeNewPlayerListServerResponse, decodeNewRankingListServerResponse, decodeNewUserListServerResponse, ladderOfPlayersDecoder, listOfUsersDecoder, newRankingIdDecoder, playerDecoder, userDecoder
     )
 
 {-|
@@ -98,3 +89,8 @@ userDecoder =
 decodeNewUserListServerResponse : Decoder (List SR.Types.User)
 decodeNewUserListServerResponse =
     Json.Decode.field "data" (Json.Decode.list userDecoder)
+
+
+decodeNewPlayerListServerResponse : Decoder (List SR.Types.Player)
+decodeNewPlayerListServerResponse =
+    Json.Decode.field "data" (Json.Decode.list playerDecoder)
