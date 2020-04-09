@@ -1,4 +1,4 @@
-module SR.ListOps exposing (filterSelectedRankingOutOfGlobalList, gotRankingFromRankingList, gotUserFromUserList, isUserMemberOfSelectedRanking, isUserSelectedOwnerOfRanking, singleUserInList, sortPlayerListByRank)
+module SR.ListOps exposing (filterSelectedRankingOutOfGlobalList, gotCurrentUserAsPlayerFromPlayerList, gotRankingFromRankingList, gotUserFromUserList, isUserMemberOfSelectedRanking, isUserSelectedOwnerOfRanking, singleUserInList, sortPlayerListByRank)
 
 import Eth.Types
 import Eth.Utils
@@ -12,6 +12,9 @@ import Utils.MyUtils
 
 
 --external
+-- gotCurrentUserAsPlayerFromPlayerList : List SR.Types.Player -> SR.Types.User -> SR.Types.Player
+-- gotCurrentUserAsPlayerFromPlayerList lplayer user =
+--     SR.Defaults.emptyPlayer
 
 
 sortPlayerListByRank : List SR.Types.Player -> List SR.Types.Player
@@ -51,6 +54,22 @@ gotRankingFromRankingList rankingList (Internal.Types.RankingId rnkid) =
     case existingRanking of
         Nothing ->
             SR.Defaults.emptyRankingInfo
+
+        Just a ->
+            a
+
+
+gotCurrentUserAsPlayerFromPlayerList : List SR.Types.Player -> SR.Types.User -> SR.Types.Player
+gotCurrentUserAsPlayerFromPlayerList lPlayer userRec =
+    let
+        existingPlayer =
+            List.head <|
+                List.filter (\r -> r.address == (String.toLower <| userRec.ethaddress))
+                    lPlayer
+    in
+    case existingPlayer of
+        Nothing ->
+            SR.Defaults.emptyPlayer
 
         Just a ->
             a

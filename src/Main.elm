@@ -168,6 +168,7 @@ type Msg
     | NewUserRequested SR.Types.User
     | ClickedJoinSelected
     | ReturnFromJoin (RemoteData.WebData (List SR.Types.Player))
+    | ChallengeOpponentClicked SR.Types.Player
     | Fail String
 
 
@@ -551,6 +552,9 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 Fail str ->
                     ( Failure <| "Fail failure : " ++ str, Cmd.none )
 
+                ChallengeOpponentClicked opponentAsPlayerRec ->
+                    ( updatedSelectedForChallenge currentmodel lPlayer opponentAsPlayerRec userRec, Cmd.none )
+
                 DeletedRankingFromGlobalList updatedListAfterRankingDeletedFromGlobalList ->
                     ( GlobalRankings (Utils.MyUtils.extractRankingsFromWebData <| updatedListAfterRankingDeletedFromGlobalList) SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings [ SR.Defaults.emptyUser ] userRec emptyTxRecord, Cmd.none )
 
@@ -570,6 +574,32 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 extractAndSortPlayerList : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
 extractAndSortPlayerList rdlPlayer =
     SR.ListOps.sortPlayerListByRank <| Utils.MyUtils.extractPlayersFromWebData rdlPlayer
+
+
+updatedSelectedForChallenge : Model -> List SR.Types.Player -> SR.Types.Player -> SR.Types.User -> Model
+updatedSelectedForChallenge currentmodel lplayer opponentRec user =
+    let
+        playerRec =
+            SR.ListOps.gotCurrentUserAsPlayerFromPlayerList lplayer user
+    in
+    case currentmodel of
+        SelectedRanking lrankingInfo lplayers rnkInfo userRec _ _ txRec ->
+            let
+                newChallenge =
+                    { playerid = playerRec.id
+                    , player = playerRec
+                    , opponent = opponentRec
+                    , playerRank = playerRec.rank
+                    , opponentRank = opponentRec.rank
+                    , playerStatus = SR.Types.Unavailable
+                    , opponentStatus = SR.Types.Unavailable
+                    , rankingid = rnkInfo.id
+                    }
+            in
+            SelectedRanking lrankingInfo lplayers rnkInfo userRec newChallenge SR.Types.UIChallenge txRec
+
+        _ ->
+            Failure <| "updatedSelectedForChallenge : "
 
 
 updateSelectedRankingPlayerList : Model -> List SR.Types.Player -> Model
@@ -617,7 +647,7 @@ view model =
                 _ ->
                     globalResponsiveview lrankingInfo userRec
 
-        SelectedRanking lrankingInfo playerList rnkInfo userRec connect uiState txRec ->
+        SelectedRanking lrankingInfo playerList rnkInfo userRec challenge uiState txRec ->
             let
                 _ =
                     Debug.log "rankinfo " rnkInfo
@@ -628,6 +658,10 @@ view model =
 
                 SR.Types.UISelectedRankingUserIsPlayer ->
                     selectedUserIsPlayerView lrankingInfo playerList rnkInfo userRec
+
+                SR.Types.UIChallenge ->
+                    --selectedUserIsPlayerView lrankingInfo playerList rnkInfo userRec
+                    greetingView <| "You are \nchallenging " ++ challenge.opponent.address ++ "you are \n" ++ challenge.player.name
 
                 _ ->
                     selectedRankingView lrankingInfo playerList rnkInfo userRec
@@ -760,7 +794,7 @@ addPlayerInfoToAnyElText user playerObj =
     else
         Element.column Grid.simple <|
             [ Input.button (Button.fill ++ Color.info) <|
-                { onPress = Just (GotRankingId (Internal.Types.RankingId <| String.fromInt playerObj.id))
+                { onPress = Just <| ChallengeOpponentClicked playerObj
                 , label = Element.text <| String.fromInt playerObj.rank ++ ". " ++ playerObj.name ++ " vs " ++ playerAvailability
                 }
             ]

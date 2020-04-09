@@ -143,6 +143,7 @@ type UIState
     | UISelectedRankingUserIsOwner
     | UISelectedRankingUserIsPlayer
     | UISelectedRankingUserIsNeitherOwnerNorPlayer
+    | UIChallenge
 
 
 type UserListState
