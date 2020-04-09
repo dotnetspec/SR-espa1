@@ -739,12 +739,12 @@ insertRankingList rnkgInfoList =
     mapOutRankingList
 
 
-playerbuttons : List SR.Types.Player -> Element Msg
-playerbuttons playerInfoList =
+playerbuttons : SR.Types.User -> List SR.Types.Player -> Element Msg
+playerbuttons user playerInfoList =
     Element.column Grid.section <|
         [ Element.el Heading.h2 <| Element.text "Selected Ranking"
         , Element.column (Card.simple ++ Grid.simple) <|
-            insertPlayerList playerInfoList
+            insertPlayerList user playerInfoList
         , Element.paragraph (Card.fill ++ Color.warning) <|
             [ Element.el [ Font.bold ] <| Element.text "Please note: "
             , Element.paragraph [] <|
@@ -754,8 +754,8 @@ playerbuttons playerInfoList =
         ]
 
 
-addPlayerInfoToAnyElText : SR.Types.Player -> Element Msg
-addPlayerInfoToAnyElText playerObj =
+addPlayerInfoToAnyElText : SR.Types.User -> SR.Types.Player -> Element Msg
+addPlayerInfoToAnyElText user playerObj =
     let
         playerAvailability =
             if playerObj.currentchallengername == "" then
@@ -763,21 +763,39 @@ addPlayerInfoToAnyElText playerObj =
 
             else
                 playerObj.currentchallengername
+
+        isPlayerCurrentUser =
+            if playerObj.address == user.ethaddress then
+                True
+
+            else
+                False
     in
-    Element.column Grid.simple <|
-        [ Input.button (Button.fill ++ Color.info) <|
-            { onPress = Just (GotRankingId (Internal.Types.RankingId <| String.fromInt playerObj.id))
-            , label = Element.text <| String.fromInt playerObj.rank ++ ". " ++ playerObj.name ++ " vs " ++ playerAvailability
-            }
-        ]
+    if isPlayerCurrentUser then
+        Element.column Grid.simple <|
+            [ Input.button (Button.fill ++ Color.disabled) <|
+                { onPress = Nothing
+                , label = Element.text <| String.fromInt playerObj.rank ++ ". " ++ playerObj.name ++ " vs " ++ playerAvailability
+                }
+            ]
+
+    else
+        Element.column Grid.simple <|
+            [ Input.button (Button.fill ++ Color.info) <|
+                { onPress = Just (GotRankingId (Internal.Types.RankingId <| String.fromInt playerObj.id))
+                , label = Element.text <| String.fromInt playerObj.rank ++ ". " ++ playerObj.name ++ " vs " ++ playerAvailability
+                }
+            ]
 
 
-insertPlayerList : List SR.Types.Player -> List (Element Msg)
-insertPlayerList playerInfoList =
+insertPlayerList : SR.Types.User -> List SR.Types.Player -> List (Element Msg)
+insertPlayerList user playerInfoList =
     let
         mapOutPlayerList =
             List.map
-                addPlayerInfoToAnyElText
+                (addPlayerInfoToAnyElText
+                    user
+                )
                 playerInfoList
     in
     mapOutPlayerList
@@ -994,7 +1012,7 @@ selectedRankingView lrankingInfo playerList rnkid user =
             [ Element.el Heading.h4 <| Element.text "SportRank"
             , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkid
             , selectedhomebuttons lrankingInfo user
-            , playerbuttons playerList
+            , playerbuttons user playerList
             ]
 
 
@@ -1006,7 +1024,7 @@ selectedUserIsOwnerView lrankingInfo playerList rnkid user =
             [ Element.el Heading.h4 <| Element.text "SportRank - Owner"
             , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkid
             , selecteduserIsOwnerhomebutton lrankingInfo user
-            , playerbuttons playerList
+            , playerbuttons user playerList
             ]
 
 
@@ -1018,7 +1036,7 @@ selectedUserIsPlayerView lrankingInfo playerList rnkid user =
             [ Element.el Heading.h4 <| Element.text "SportRank - Owner"
             , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkid
             , selecteduserIsPlayerHomebutton lrankingInfo user
-            , playerbuttons playerList
+            , playerbuttons user playerList
             ]
 
 
