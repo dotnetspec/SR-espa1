@@ -15,7 +15,23 @@ import Utils.MyUtils
 
 isUserMemberOfSelectedRanking : List SR.Types.Player -> SR.Types.User -> Bool
 isUserMemberOfSelectedRanking lplayer user =
-    True
+    let
+        filteredList =
+            findPlayerInList user lplayer
+
+        filteredRec =
+            List.head filteredList
+    in
+    case filteredRec of
+        Nothing ->
+            False
+
+        Just a ->
+            if a.address == user.ethaddress then
+                True
+
+            else
+                False
 
 
 gotRankingFromRankingList : List SR.Types.RankingInfo -> Internal.Types.RankingId -> SR.Types.RankingInfo
@@ -110,9 +126,27 @@ findSelectedRankingInGlobalList rankingid lrankinginfo =
 
 
 isRankingIdInList : String -> SR.Types.RankingInfo -> Maybe SR.Types.RankingInfo
-isRankingIdInList rankingid rankingInfo =
-    if rankingInfo.id == rankingid then
-        Just rankingInfo
+isRankingIdInList rankingid rnk =
+    if rnk.id == rankingid then
+        Just rnk
+
+    else
+        Nothing
+
+
+findPlayerInList : SR.Types.User -> List SR.Types.Player -> List SR.Types.Player
+findPlayerInList user lPlayer =
+    List.filterMap
+        (isPlayerInList
+            user.ethaddress
+        )
+        lPlayer
+
+
+isPlayerInList : String -> SR.Types.Player -> Maybe SR.Types.Player
+isPlayerInList playerAddr player =
+    if player.address == playerAddr then
+        Just player
 
     else
         Nothing

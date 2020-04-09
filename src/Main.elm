@@ -753,10 +753,6 @@ selectedhomebuttons rankingList user =
 
 selecteduserIsOwnerhomebutton : List SR.Types.RankingInfo -> SR.Types.User -> Element Msg
 selecteduserIsOwnerhomebutton rankingList user =
-    -- let
-    --     _ =
-    --         Debug.log " uaddr " uaddr
-    -- in
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
@@ -768,6 +764,26 @@ selecteduserIsOwnerhomebutton rankingList user =
                 , Input.button (Button.simple ++ Color.danger) <|
                     { onPress = Just <| DeletedRanking user.ethaddress
                     , label = Element.text "Delete"
+                    }
+                ]
+            ]
+        , Element.column Grid.simple <|
+            [ Element.paragraph [] <|
+                List.singleton <|
+                    Element.text "Button attributes can be combined with other attributes."
+            ]
+        ]
+
+
+selecteduserIsPlayerHomebutton : List SR.Types.RankingInfo -> SR.Types.User -> Element Msg
+selecteduserIsPlayerHomebutton rankingList user =
+    Element.column Grid.section <|
+        [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+        , Element.column (Card.simple ++ Grid.simple) <|
+            [ Element.wrappedRow Grid.simple <|
+                [ Input.button (Button.simple ++ Color.simple) <|
+                    { onPress = Just <| ResetToShowGlobal rankingList user
+                    , label = Element.text "Home"
                     }
                 ]
             ]
@@ -919,6 +935,18 @@ selectedUserIsOwnerView lrankingInfo playerList rnkid user =
             ]
 
 
+selectedUserIsPlayerView : List SR.Types.RankingInfo -> List SR.Types.Player -> Internal.Types.RankingId -> SR.Types.User -> Html Msg
+selectedUserIsPlayerView lrankingInfo playerList rnkid user =
+    Framework.responsiveLayout [] <|
+        Element.column
+            Framework.container
+            [ Element.el Heading.h4 <| Element.text "SportRank - Owner"
+            , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkid
+            , selecteduserIsPlayerHomebutton lrankingInfo user
+            , playerbuttons playerList
+            ]
+
+
 inputNewUserview : SR.Types.User -> Html Msg
 inputNewUserview user =
     Framework.responsiveLayout [] <|
@@ -977,6 +1005,9 @@ view model =
             case uiState of
                 SR.Types.UISelectedRankingUserIsOwner ->
                     selectedUserIsOwnerView lrankingInfo playerList rnkid userRec
+
+                SR.Types.UISelectedRankingUserIsPlayer ->
+                    selectedUserIsPlayerView lrankingInfo playerList rnkid userRec
 
                 _ ->
                     selectedRankingView lrankingInfo playerList rnkid userRec
