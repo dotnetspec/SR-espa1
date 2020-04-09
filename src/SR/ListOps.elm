@@ -78,11 +78,11 @@ singleUserInList userlist uaddr =
     gotUserFromUserList (Utils.MyUtils.extractUsersFromWebData <| userlist) uaddr
 
 
-isUserSelectedOwnerOfRanking : Internal.Types.RankingId -> List SR.Types.RankingInfo -> SR.Types.User -> Bool
-isUserSelectedOwnerOfRanking (Internal.Types.RankingId rnkid) lrnkInfo user =
+isUserSelectedOwnerOfRanking : SR.Types.RankingInfo -> List SR.Types.RankingInfo -> SR.Types.User -> Bool
+isUserSelectedOwnerOfRanking rnkInfo lrnkInfo user =
     let
         filteredList =
-            findSelectedRankingInGlobalList rnkid lrnkInfo
+            findSelectedRankingInGlobalList rnkInfo.id lrnkInfo
 
         filteredRec =
             List.head filteredList

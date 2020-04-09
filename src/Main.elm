@@ -64,8 +64,8 @@ type Model
     = WalletOps SR.Types.WalletState TxRecord
     | UserOps SR.Types.UserState (List SR.Types.User) Eth.Types.Address SR.Types.User SR.Types.UIState TxRecord
     | GlobalRankings (List SR.Types.RankingInfo) SR.Types.RankingInfo SR.Types.UIState (List SR.Types.User) SR.Types.User TxRecord
-    | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.Types.RankingId SR.Types.User SR.Types.Challenge SR.Types.UIState TxRecord
-      --| SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) SR.Types.RankingInfo SR.Types.User SR.Types.Challenge SR.Types.UIState TxRecord
+      --| SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.Types.RankingId SR.Types.User SR.Types.Challenge SR.Types.UIState TxRecord
+    | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) SR.Types.RankingInfo SR.Types.User SR.Types.Challenge SR.Types.UIState TxRecord
     | Failure String
 
 
@@ -336,10 +336,14 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( GlobalRankings (Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata) SR.Defaults.emptyRankingInfo uiState userList user emptyTxRecord, Cmd.none )
 
                 GotRankingId rnkidstr ->
-                    ( SelectedRanking lrankingInfo [] rnkidstr user SR.Defaults.emptyChallenge uiState emptyTxRecord, fetchedSingleRanking rnkidstr )
+                    ( SelectedRanking lrankingInfo [] { rnkInfo | id = Utils.MyUtils.stringFromRankingId rnkidstr } user SR.Defaults.emptyChallenge uiState emptyTxRecord, fetchedSingleRanking rnkidstr )
 
                 GotRankingIdAndRankingOwnerAddr rnkidstr rnkownerstr ->
-                    ( SelectedRanking lrankingInfo [] rnkidstr user SR.Defaults.emptyChallenge uiState emptyTxRecord, fetchedSingleRanking rnkidstr )
+                    let
+                        newRnkInfo =
+                            { rnkInfo | id = Utils.MyUtils.stringFromRankingId rnkidstr, rankingowneraddr = rnkownerstr }
+                    in
+                    ( SelectedRanking lrankingInfo [] newRnkInfo user SR.Defaults.emptyChallenge uiState emptyTxRecord, fetchedSingleRanking rnkidstr )
 
                 --( updateSelectedRankingUIState rnkidstr rnkownerstr currentmodel, fetchedSingleRanking rnkidstr )
                 -- this is the response from createNewPlayerListWithCurrentUser Cmd
@@ -419,11 +423,11 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 _ ->
                     ( GlobalRankings lrankingInfo SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings userList user emptyTxRecord, Cmd.none )
 
-        SelectedRanking lrankingInfo lPlayer intrankingId userRec challenge uiState txRec ->
+        SelectedRanking lrankingInfo lPlayer rnkInfo userRec challenge uiState txRec ->
             case msgOfTransitonThatAlreadyHappened of
                 PlayersReceived players ->
                     --( updateSelectedRankingUIState intrankingId currentmodel (Utils.MyUtils.extractPlayersFromWebData players), Cmd.none )
-                    ( updateSelectedRankingUIState intrankingId currentmodel (extractAndSortPlayerList players), Cmd.none )
+                    ( updateSelectedRankingUIState rnkInfo currentmodel (extractAndSortPlayerList players), Cmd.none )
 
                 ResetToShowGlobal _ user ->
                     ( GlobalRankings lrankingInfo SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings [ SR.Defaults.emptyUser ] user emptyTxRecord, Cmd.none )
@@ -450,7 +454,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                     --nb. higher rank is a lower number and vice versa!
                                     ( SelectedRanking lrankingInfo
                                         lPlayer
-                                        intrankingId
+                                        rnkInfo
                                         userRec
                                         { challenge
                                             | playerRank = challenge.opponentRank
@@ -467,7 +471,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                     --nb. higher rank is a lower number and vice versa!
                                     ( SelectedRanking lrankingInfo
                                         lPlayer
-                                        intrankingId
+                                        rnkInfo
                                         userRec
                                         { challenge | playerStatus = SR.Types.Available, opponentStatus = SR.Types.Available }
                                         uiState
@@ -481,7 +485,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                     --nb. higher rank is a lower number and vice versa!
                                     ( SelectedRanking lrankingInfo
                                         lPlayer
-                                        intrankingId
+                                        rnkInfo
                                         userRec
                                         { challenge | playerStatus = SR.Types.Available, opponentStatus = SR.Types.Available }
                                         uiState
@@ -493,7 +497,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                     --nb. higher rank is a lower number and vice versa!
                                     ( SelectedRanking lrankingInfo
                                         lPlayer
-                                        intrankingId
+                                        rnkInfo
                                         userRec
                                         { challenge
                                             | opponentRank = challenge.playerRank
@@ -509,7 +513,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         SR.Types.Undecided ->
                             ( SelectedRanking lrankingInfo
                                 lPlayer
-                                intrankingId
+                                rnkInfo
                                 userRec
                                 challenge
                                 uiState
@@ -520,7 +524,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 SentResultToJsonbin a ->
                     ( SelectedRanking lrankingInfo
                         lPlayer
-                        intrankingId
+                        rnkInfo
                         userRec
                         challenge
                         uiState
@@ -531,23 +535,23 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 DeletedRanking uaddr ->
                     ( SelectedRanking lrankingInfo
                         lPlayer
-                        intrankingId
+                        rnkInfo
                         userRec
                         challenge
                         uiState
                         txRec
-                    , deleteSelectedRankingFromJsonBin intrankingId
+                    , deleteSelectedRankingFromJsonBin rnkInfo.id
                     )
 
                 DeletedSingleRankingFromJsonBin result ->
                     ( SelectedRanking lrankingInfo
                         lPlayer
-                        intrankingId
+                        rnkInfo
                         userRec
                         challenge
                         uiState
                         txRec
-                    , deleteSelectedRankingFromGlobalList intrankingId lrankingInfo userRec.ethaddress
+                    , deleteSelectedRankingFromGlobalList rnkInfo.id lrankingInfo userRec.ethaddress
                     )
 
                 Fail str ->
@@ -557,7 +561,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( GlobalRankings (Utils.MyUtils.extractRankingsFromWebData <| updatedListAfterRankingDeletedFromGlobalList) SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings [ SR.Defaults.emptyUser ] userRec emptyTxRecord, Cmd.none )
 
                 ClickedJoinSelected ->
-                    ( currentmodel, addCurrentUserToPlayerList intrankingId lPlayer userRec )
+                    ( currentmodel, addCurrentUserToPlayerList rnkInfo.id lPlayer userRec )
 
                 ReturnFromJoin response ->
                     ( updateSelectedRankingPlayerList currentmodel (Utils.MyUtils.extractPlayersFromWebData response), Cmd.none )
@@ -584,18 +588,18 @@ updateSelectedRankingPlayerList currentmodel lplayers =
             Failure <| "updateSelectedRankingPlayerList : "
 
 
-updateSelectedRankingUIState : Internal.Types.RankingId -> Model -> List SR.Types.Player -> Model
-updateSelectedRankingUIState rnkid currentmodel lplayers =
+updateSelectedRankingUIState : SR.Types.RankingInfo -> Model -> List SR.Types.Player -> Model
+updateSelectedRankingUIState rnkInfo currentmodel lplayers =
     case currentmodel of
         SelectedRanking lrankingInfo lPlayer intrankingId userRec challenge uiState txRec ->
-            if SR.ListOps.isUserSelectedOwnerOfRanking rnkid lrankingInfo userRec then
-                SelectedRanking lrankingInfo lplayers rnkid userRec SR.Defaults.emptyChallenge SR.Types.UISelectedRankingUserIsOwner emptyTxRecord
+            if SR.ListOps.isUserSelectedOwnerOfRanking rnkInfo lrankingInfo userRec then
+                SelectedRanking lrankingInfo lplayers rnkInfo userRec SR.Defaults.emptyChallenge SR.Types.UISelectedRankingUserIsOwner emptyTxRecord
 
             else if SR.ListOps.isUserMemberOfSelectedRanking lplayers userRec then
-                SelectedRanking lrankingInfo lplayers rnkid userRec SR.Defaults.emptyChallenge SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord
+                SelectedRanking lrankingInfo lplayers rnkInfo userRec SR.Defaults.emptyChallenge SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord
 
             else
-                SelectedRanking lrankingInfo lplayers rnkid userRec SR.Defaults.emptyChallenge SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord
+                SelectedRanking lrankingInfo lplayers rnkInfo userRec SR.Defaults.emptyChallenge SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord
 
         _ ->
             Failure <| "updateSelectedRankingUIState : "
@@ -619,16 +623,16 @@ view model =
                 _ ->
                     globalResponsiveview lrankingInfo userRec
 
-        SelectedRanking lrankingInfo playerList rnkid userRec connect uiState txRec ->
+        SelectedRanking lrankingInfo playerList rnkInfo userRec connect uiState txRec ->
             case uiState of
                 SR.Types.UISelectedRankingUserIsOwner ->
-                    selectedUserIsOwnerView lrankingInfo playerList rnkid userRec
+                    selectedUserIsOwnerView lrankingInfo playerList rnkInfo userRec
 
                 SR.Types.UISelectedRankingUserIsPlayer ->
-                    selectedUserIsPlayerView lrankingInfo playerList rnkid userRec
+                    selectedUserIsPlayerView lrankingInfo playerList rnkInfo userRec
 
                 _ ->
-                    selectedRankingView lrankingInfo playerList rnkid userRec
+                    selectedRankingView lrankingInfo playerList rnkInfo userRec
 
         WalletOps walletState txRec ->
             case walletState of
@@ -1007,37 +1011,37 @@ globalResponsiveview rankingList user =
             ]
 
 
-selectedRankingView : List SR.Types.RankingInfo -> List SR.Types.Player -> Internal.Types.RankingId -> SR.Types.User -> Html Msg
-selectedRankingView lrankingInfo playerList rnkid user =
+selectedRankingView : List SR.Types.RankingInfo -> List SR.Types.Player -> SR.Types.RankingInfo -> SR.Types.User -> Html Msg
+selectedRankingView lrankingInfo playerList rnkInfo user =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
             [ Element.el Heading.h4 <| Element.text "SportRank"
-            , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkid
+            , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
             , selectedhomebuttons lrankingInfo user
             , playerbuttons user playerList
             ]
 
 
-selectedUserIsOwnerView : List SR.Types.RankingInfo -> List SR.Types.Player -> Internal.Types.RankingId -> SR.Types.User -> Html Msg
-selectedUserIsOwnerView lrankingInfo playerList rnkid user =
+selectedUserIsOwnerView : List SR.Types.RankingInfo -> List SR.Types.Player -> SR.Types.RankingInfo -> SR.Types.User -> Html Msg
+selectedUserIsOwnerView lrankingInfo playerList rnkInfo user =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
             [ Element.el Heading.h4 <| Element.text "SportRank - Owner"
-            , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkid
+            , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
             , selecteduserIsOwnerhomebutton lrankingInfo user
             , playerbuttons user playerList
             ]
 
 
-selectedUserIsPlayerView : List SR.Types.RankingInfo -> List SR.Types.Player -> Internal.Types.RankingId -> SR.Types.User -> Html Msg
-selectedUserIsPlayerView lrankingInfo playerList rnkid user =
+selectedUserIsPlayerView : List SR.Types.RankingInfo -> List SR.Types.Player -> SR.Types.RankingInfo -> SR.Types.User -> Html Msg
+selectedUserIsPlayerView lrankingInfo playerList rnkInfo user =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
             [ Element.el Heading.h4 <| Element.text "SportRank - Owner"
-            , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkid
+            , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
             , selecteduserIsPlayerHomebutton lrankingInfo user
             , playerbuttons user playerList
             ]
@@ -1137,8 +1141,8 @@ addedUAddrToNewEmptyUser uaddr =
     newUser
 
 
-gotRankingFromRankingList : List SR.Types.RankingInfo -> Internal.Types.RankingId -> SR.Types.RankingInfo
-gotRankingFromRankingList rankingList (Internal.Types.RankingId rnkid) =
+gotRankingFromRankingList : List SR.Types.RankingInfo -> String -> SR.Types.RankingInfo
+gotRankingFromRankingList rankingList rnkid =
     let
         existingRanking =
             List.head <|
@@ -1297,8 +1301,8 @@ jsonEncodeNewUsersList luserInfo =
 -- addCurrentUserToPlayerList newrankingid lrankingInfo rnkInfo rankingowneraddress =
 
 
-addCurrentUserToPlayerList : Internal.Types.RankingId -> List SR.Types.Player -> SR.Types.User -> Cmd Msg
-addCurrentUserToPlayerList (Internal.Types.RankingId intrankingId) lPlayer userRec =
+addCurrentUserToPlayerList : String -> List SR.Types.Player -> SR.Types.User -> Cmd Msg
+addCurrentUserToPlayerList intrankingId lPlayer userRec =
     let
         newPlayer =
             { datestamp = 12345
@@ -1511,8 +1515,8 @@ postResultToJsonbin (Internal.Types.RankingId rankingId) =
         }
 
 
-deleteSelectedRankingFromJsonBin : Internal.Types.RankingId -> Cmd Msg
-deleteSelectedRankingFromJsonBin (Internal.Types.RankingId rankingId) =
+deleteSelectedRankingFromJsonBin : String -> Cmd Msg
+deleteSelectedRankingFromJsonBin rankingId =
     -- the Decoder decodes what comes back in the response
     Http.request
         { body =
@@ -1526,8 +1530,8 @@ deleteSelectedRankingFromJsonBin (Internal.Types.RankingId rankingId) =
         }
 
 
-deleteSelectedRankingFromGlobalList : Internal.Types.RankingId -> List SR.Types.RankingInfo -> String -> Cmd Msg
-deleteSelectedRankingFromGlobalList (Internal.Types.RankingId rankingId) lrankingInfo rankingowneraddress =
+deleteSelectedRankingFromGlobalList : String -> List SR.Types.RankingInfo -> String -> Cmd Msg
+deleteSelectedRankingFromGlobalList rankingId lrankingInfo rankingowneraddress =
     let
         globalListWithDeletedRankingInfoRemoved =
             SR.ListOps.filterSelectedRankingOutOfGlobalList rankingId lrankingInfo
