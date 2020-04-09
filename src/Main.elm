@@ -561,21 +561,31 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( GlobalRankings (Utils.MyUtils.extractRankingsFromWebData <| updatedListAfterRankingDeletedFromGlobalList) SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings [ SR.Defaults.emptyUser ] userRec emptyTxRecord, Cmd.none )
 
                 ClickedJoinSelected ->
-                    --( Failure <| "Fall thru failure : ", addCurrentUserToPlayerList intrankingId lPlayer userRec )
-                    ( SelectedRanking lrankingInfo lPlayer intrankingId userRec SR.Defaults.emptyChallenge uiState emptyTxRecord, addCurrentUserToPlayerList intrankingId lPlayer userRec )
+                    --( SelectedRanking lrankingInfo lPlayer intrankingId userRec SR.Defaults.emptyChallenge uiState emptyTxRecord, addCurrentUserToPlayerList intrankingId lPlayer userRec )
+                    ( currentmodel, addCurrentUserToPlayerList intrankingId lPlayer userRec )
 
                 ReturnFromJoin response ->
                     let
                         _ =
                             Debug.log "join response " response
                     in
-                    ( Failure <| "Return from Join : ", Cmd.none )
+                    ( updateSelectedRankingPlayerList currentmodel (Utils.MyUtils.extractPlayersFromWebData response), Cmd.none )
 
                 _ ->
                     ( Failure <| "Fall thru failure : ", Cmd.none )
 
         Failure str ->
             ( Failure <| "Model failure in selected ranking: " ++ str, Cmd.none )
+
+
+updateSelectedRankingPlayerList : Model -> List SR.Types.Player -> Model
+updateSelectedRankingPlayerList currentmodel lplayers =
+    case currentmodel of
+        SelectedRanking lrankingInfo _ intrankingId userRec _ _ txRec ->
+            SelectedRanking lrankingInfo lplayers intrankingId userRec SR.Defaults.emptyChallenge SR.Types.UISelectedRankingUserIsPlayer txRec
+
+        _ ->
+            Failure <| "updateSelectedRankingPlayerList : "
 
 
 updateSelectedRankingUIState : Internal.Types.RankingId -> Model -> List SR.Types.Player -> Model
