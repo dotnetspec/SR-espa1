@@ -31,6 +31,7 @@ import RemoteData
 import SR.Constants
 import SR.Decode
 import SR.Defaults
+import SR.Elements
 import SR.ListOps
 import SR.Types
 import Task
@@ -64,6 +65,7 @@ type Model
     | UserOps SR.Types.UserState (List SR.Types.User) Eth.Types.Address SR.Types.User SR.Types.UIState TxRecord
     | GlobalRankings (List SR.Types.RankingInfo) SR.Types.RankingInfo SR.Types.UIState (List SR.Types.User) SR.Types.User TxRecord
     | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.Types.RankingId SR.Types.User SR.Types.Challenge SR.Types.UIState TxRecord
+      --| SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) SR.Types.RankingInfo SR.Types.User SR.Types.Challenge SR.Types.UIState TxRecord
     | Failure String
 
 
@@ -742,7 +744,8 @@ insertRankingList rnkgInfoList =
 playerbuttons : SR.Types.User -> List SR.Types.Player -> Element Msg
 playerbuttons user playerInfoList =
     Element.column Grid.section <|
-        [ Element.el Heading.h2 <| Element.text "Selected Ranking"
+        [ --Element.el Heading.h2 <| Element.text "Selected Ranking"
+          SR.Elements.selectedRankingHeaderEl SR.Defaults.emptyRankingInfo
         , Element.column (Card.simple ++ Grid.simple) <|
             insertPlayerList user playerInfoList
         , Element.paragraph (Card.fill ++ Color.warning) <|
