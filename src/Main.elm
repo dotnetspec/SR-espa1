@@ -152,7 +152,7 @@ type Msg
     | DeletedSingleRankingFromJsonBin (RemoteData.WebData (List SR.Types.RankingInfo))
     | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
     | GotRankingId Internal.Types.RankingId
-    | GotRankingIdAndRankingOwnerAddr Internal.Types.RankingId String
+    | GotRankingIdAndRankingOwnerAddr Internal.Types.RankingId String String
     | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
     | UsersReceived (RemoteData.WebData (List SR.Types.User))
     | MissingWalletInstructions
@@ -335,24 +335,19 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 GotGlobalRankingsJson rmtrnkingdata ->
                     ( GlobalRankings (Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata) SR.Defaults.emptyRankingInfo uiState userList user emptyTxRecord, Cmd.none )
 
-                GotRankingId rnkidstr ->
-                    ( SelectedRanking lrankingInfo [] { rnkInfo | id = Utils.MyUtils.stringFromRankingId rnkidstr } user SR.Defaults.emptyChallenge uiState emptyTxRecord, fetchedSingleRanking rnkidstr )
-
-                GotRankingIdAndRankingOwnerAddr rnkidstr rnkownerstr ->
+                GotRankingIdAndRankingOwnerAddr rnkidstr rnkownerstr rnknamestr ->
                     let
                         newRnkInfo =
-                            { rnkInfo | id = Utils.MyUtils.stringFromRankingId rnkidstr, rankingowneraddr = rnkownerstr }
+                            { rnkInfo | id = Utils.MyUtils.stringFromRankingId rnkidstr, rankingowneraddr = rnkownerstr, rankingname = rnknamestr }
                     in
                     ( SelectedRanking lrankingInfo [] newRnkInfo user SR.Defaults.emptyChallenge uiState emptyTxRecord, fetchedSingleRanking rnkidstr )
 
-                --( updateSelectedRankingUIState rnkidstr rnkownerstr currentmodel, fetchedSingleRanking rnkidstr )
                 -- this is the response from createNewPlayerListWithCurrentUser Cmd
                 -- it had the Http.expectStringResponse in it
                 -- it's already created the new ranking with current player as the first entry
                 -- the result now is the ranking id only at this point which was pulled out by the decoder
                 -- the lrankingInfo is preserved
                 SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
-                    --SR.Types.ExistingLadder rnkInfo ->
                     ( GlobalRankings lrankingInfo SR.Defaults.emptyRankingInfo SR.Types.CreateNewLadder userList user emptyTxRecord
                     , addedNewRankingListEntryInGlobal idValueFromDecoder lrankingInfo rnkInfo user.ethaddress
                     )
@@ -624,6 +619,10 @@ view model =
                     globalResponsiveview lrankingInfo userRec
 
         SelectedRanking lrankingInfo playerList rnkInfo userRec connect uiState txRec ->
+            let
+                _ =
+                    Debug.log "rankinfo " rnkInfo
+            in
             case uiState of
                 SR.Types.UISelectedRankingUserIsOwner ->
                     selectedUserIsOwnerView lrankingInfo playerList rnkInfo userRec
@@ -728,7 +727,7 @@ addRankingInfoToAnyElText : SR.Types.RankingInfo -> Element Msg
 addRankingInfoToAnyElText rankingobj =
     Element.column Grid.simple <|
         [ Input.button (Button.fill ++ Color.info) <|
-            { onPress = Just (GotRankingIdAndRankingOwnerAddr (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr)
+            { onPress = Just (GotRankingIdAndRankingOwnerAddr (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr rankingobj.rankingname)
             , label = Element.text rankingobj.rankingname
             }
         ]
@@ -745,11 +744,11 @@ insertRankingList rnkgInfoList =
     mapOutRankingList
 
 
-playerbuttons : SR.Types.User -> List SR.Types.Player -> Element Msg
-playerbuttons user playerInfoList =
+playerbuttons : SR.Types.User -> List SR.Types.Player -> SR.Types.RankingInfo -> Element Msg
+playerbuttons user playerInfoList rnkInfo =
     Element.column Grid.section <|
         [ --Element.el Heading.h2 <| Element.text "Selected Ranking"
-          SR.Elements.selectedRankingHeaderEl SR.Defaults.emptyRankingInfo
+          SR.Elements.selectedRankingHeaderEl rnkInfo
         , Element.column (Card.simple ++ Grid.simple) <|
             insertPlayerList user playerInfoList
         , Element.paragraph (Card.fill ++ Color.warning) <|
@@ -1019,7 +1018,7 @@ selectedRankingView lrankingInfo playerList rnkInfo user =
             [ Element.el Heading.h4 <| Element.text "SportRank"
             , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
             , selectedhomebuttons lrankingInfo user
-            , playerbuttons user playerList
+            , playerbuttons user playerList rnkInfo
             ]
 
 
@@ -1031,7 +1030,7 @@ selectedUserIsOwnerView lrankingInfo playerList rnkInfo user =
             [ Element.el Heading.h4 <| Element.text "SportRank - Owner"
             , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
             , selecteduserIsOwnerhomebutton lrankingInfo user
-            , playerbuttons user playerList
+            , playerbuttons user playerList rnkInfo
             ]
 
 
@@ -1043,7 +1042,7 @@ selectedUserIsPlayerView lrankingInfo playerList rnkInfo user =
             [ Element.el Heading.h4 <| Element.text "SportRank - Owner"
             , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
             , selecteduserIsPlayerHomebutton lrankingInfo user
-            , playerbuttons user playerList
+            , playerbuttons user playerList rnkInfo
             ]
 
 

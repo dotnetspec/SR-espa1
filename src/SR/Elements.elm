@@ -14,4 +14,4 @@ import Utils.MyUtils
 
 selectedRankingHeaderEl : SR.Types.RankingInfo -> Element msg
 selectedRankingHeaderEl rnkInfo =
-    Element.el Heading.h2 <| Element.text "Selected Ranking here"
+    Element.el Heading.h5 <| Element.text <| "Selected Ranking " ++ "-" ++ rnkInfo.rankingname
