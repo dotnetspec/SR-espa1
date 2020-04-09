@@ -209,6 +209,8 @@ type alias Challenge =
     , playerStatus : PlayerAvailability
     , opponentStatus : PlayerAvailability
     , rankingid : String
+    , opponentEmail : String
+    , opponentMobile : String
     }
 
 

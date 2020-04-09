@@ -72,6 +72,8 @@ emptyChallenge =
     , playerStatus = Unavailable
     , opponentStatus = Unavailable
     , rankingid = ""
+    , opponentEmail = ""
+    , opponentMobile = ""
     }
 
 

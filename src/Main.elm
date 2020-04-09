@@ -64,7 +64,7 @@ type Model
     = WalletOps SR.Types.WalletState TxRecord
     | UserOps SR.Types.UserState (List SR.Types.User) Eth.Types.Address SR.Types.User SR.Types.UIState TxRecord
     | GlobalRankings (List SR.Types.RankingInfo) SR.Types.RankingInfo SR.Types.UIState (List SR.Types.User) SR.Types.User TxRecord
-    | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) SR.Types.RankingInfo SR.Types.User SR.Types.Challenge SR.Types.UIState TxRecord
+    | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) SR.Types.RankingInfo SR.Types.User SR.Types.Challenge (List SR.Types.User) SR.Types.UIState TxRecord
     | Failure String
 
 
@@ -340,7 +340,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         newRnkInfo =
                             { rnkInfo | id = Utils.MyUtils.stringFromRankingId rnkidstr, rankingowneraddr = rnkownerstr, rankingname = rnknamestr }
                     in
-                    ( SelectedRanking lrankingInfo [] newRnkInfo user SR.Defaults.emptyChallenge uiState emptyTxRecord, fetchedSingleRanking rnkidstr )
+                    ( SelectedRanking lrankingInfo [] newRnkInfo user SR.Defaults.emptyChallenge userList uiState emptyTxRecord, fetchedSingleRanking rnkidstr )
 
                 -- this is the response from createNewPlayerListWithCurrentUser Cmd
                 -- it had the Http.expectStringResponse in it
@@ -418,7 +418,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 _ ->
                     ( GlobalRankings lrankingInfo SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings userList user emptyTxRecord, Cmd.none )
 
-        SelectedRanking lrankingInfo lPlayer rnkInfo userRec challenge uiState txRec ->
+        SelectedRanking lrankingInfo lPlayer rnkInfo userRec challenge luser uiState txRec ->
             case msgOfTransitonThatAlreadyHappened of
                 PlayersReceived players ->
                     --( updateSelectedRankingUIState intrankingId currentmodel (Utils.MyUtils.extractPlayersFromWebData players), Cmd.none )
@@ -457,6 +457,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                             , playerStatus = SR.Types.Available
                                             , opponentStatus = SR.Types.Available
                                         }
+                                        luser
                                         uiState
                                         txRec
                                     , Cmd.none
@@ -469,6 +470,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                         rnkInfo
                                         userRec
                                         { challenge | playerStatus = SR.Types.Available, opponentStatus = SR.Types.Available }
+                                        luser
                                         uiState
                                         txRec
                                     , Cmd.none
@@ -483,6 +485,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                         rnkInfo
                                         userRec
                                         { challenge | playerStatus = SR.Types.Available, opponentStatus = SR.Types.Available }
+                                        luser
                                         uiState
                                         txRec
                                     , Cmd.none
@@ -500,6 +503,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                             , playerStatus = SR.Types.Available
                                             , opponentStatus = SR.Types.Available
                                         }
+                                        luser
                                         uiState
                                         txRec
                                     , Cmd.none
@@ -511,6 +515,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                 rnkInfo
                                 userRec
                                 challenge
+                                luser
                                 uiState
                                 txRec
                             , Cmd.none
@@ -522,6 +527,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         rnkInfo
                         userRec
                         challenge
+                        luser
                         uiState
                         txRec
                     , Cmd.none
@@ -533,6 +539,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         rnkInfo
                         userRec
                         challenge
+                        luser
                         uiState
                         txRec
                     , deleteSelectedRankingFromJsonBin rnkInfo.id
@@ -544,6 +551,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         rnkInfo
                         userRec
                         challenge
+                        luser
                         uiState
                         txRec
                     , deleteSelectedRankingFromGlobalList rnkInfo.id lrankingInfo userRec.ethaddress
@@ -578,13 +586,15 @@ extractAndSortPlayerList rdlPlayer =
 
 updatedSelectedForChallenge : Model -> List SR.Types.Player -> SR.Types.Player -> SR.Types.User -> Model
 updatedSelectedForChallenge currentmodel lplayer opponentRec user =
-    let
-        playerRec =
-            SR.ListOps.gotCurrentUserAsPlayerFromPlayerList lplayer user
-    in
     case currentmodel of
-        SelectedRanking lrankingInfo lplayers rnkInfo userRec _ _ txRec ->
+        SelectedRanking lrankingInfo lplayers rnkInfo userRec _ luser _ txRec ->
             let
+                playerRec =
+                    SR.ListOps.gotCurrentUserAsPlayerFromPlayerList lplayer user
+
+                opponentUserRec =
+                    SR.ListOps.gotUserFromUserListStrAddress luser opponentRec.address
+
                 newChallenge =
                     { playerid = playerRec.id
                     , player = playerRec
@@ -594,9 +604,11 @@ updatedSelectedForChallenge currentmodel lplayer opponentRec user =
                     , playerStatus = SR.Types.Unavailable
                     , opponentStatus = SR.Types.Unavailable
                     , rankingid = rnkInfo.id
+                    , opponentEmail = opponentUserRec.email
+                    , opponentMobile = opponentUserRec.mobile
                     }
             in
-            SelectedRanking lrankingInfo lplayers rnkInfo userRec newChallenge SR.Types.UIChallenge txRec
+            SelectedRanking lrankingInfo lplayers rnkInfo userRec newChallenge luser SR.Types.UIChallenge txRec
 
         _ ->
             Failure <| "updatedSelectedForChallenge : "
@@ -605,8 +617,8 @@ updatedSelectedForChallenge currentmodel lplayer opponentRec user =
 updateSelectedRankingPlayerList : Model -> List SR.Types.Player -> Model
 updateSelectedRankingPlayerList currentmodel lplayers =
     case currentmodel of
-        SelectedRanking lrankingInfo _ intrankingId userRec _ _ txRec ->
-            SelectedRanking lrankingInfo lplayers intrankingId userRec SR.Defaults.emptyChallenge SR.Types.UISelectedRankingUserIsPlayer txRec
+        SelectedRanking lrankingInfo _ intrankingId userRec _ luser _ txRec ->
+            SelectedRanking lrankingInfo lplayers intrankingId userRec SR.Defaults.emptyChallenge luser SR.Types.UISelectedRankingUserIsPlayer txRec
 
         _ ->
             Failure <| "updateSelectedRankingPlayerList : "
@@ -615,15 +627,15 @@ updateSelectedRankingPlayerList currentmodel lplayers =
 updateSelectedRankingUIState : SR.Types.RankingInfo -> Model -> List SR.Types.Player -> Model
 updateSelectedRankingUIState rnkInfo currentmodel lplayers =
     case currentmodel of
-        SelectedRanking lrankingInfo lPlayer intrankingId userRec challenge uiState txRec ->
+        SelectedRanking lrankingInfo lPlayer intrankingId userRec challenge luser uiState txRec ->
             if SR.ListOps.isUserSelectedOwnerOfRanking rnkInfo lrankingInfo userRec then
-                SelectedRanking lrankingInfo lplayers rnkInfo userRec SR.Defaults.emptyChallenge SR.Types.UISelectedRankingUserIsOwner emptyTxRecord
+                SelectedRanking lrankingInfo lplayers rnkInfo userRec SR.Defaults.emptyChallenge luser SR.Types.UISelectedRankingUserIsOwner emptyTxRecord
 
             else if SR.ListOps.isUserMemberOfSelectedRanking lplayers userRec then
-                SelectedRanking lrankingInfo lplayers rnkInfo userRec SR.Defaults.emptyChallenge SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord
+                SelectedRanking lrankingInfo lplayers rnkInfo userRec SR.Defaults.emptyChallenge luser SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord
 
             else
-                SelectedRanking lrankingInfo lplayers rnkInfo userRec SR.Defaults.emptyChallenge SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord
+                SelectedRanking lrankingInfo lplayers rnkInfo userRec SR.Defaults.emptyChallenge luser SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord
 
         _ ->
             Failure <| "updateSelectedRankingUIState : "
@@ -647,7 +659,7 @@ view model =
                 _ ->
                     globalResponsiveview lrankingInfo userRec
 
-        SelectedRanking lrankingInfo playerList rnkInfo userRec challenge uiState txRec ->
+        SelectedRanking lrankingInfo playerList rnkInfo userRec challenge luser uiState txRec ->
             let
                 _ =
                     Debug.log "rankinfo " rnkInfo
@@ -661,7 +673,7 @@ view model =
 
                 SR.Types.UIChallenge ->
                     --selectedUserIsPlayerView lrankingInfo playerList rnkInfo userRec
-                    greetingView <| "You are \nchallenging " ++ challenge.opponent.address ++ "you are \n" ++ challenge.player.name
+                    greetingView <| "You are \nchallenging " ++ challenge.opponent.name ++ "you are \n" ++ challenge.player.name ++ "your opponent email \nis " ++ challenge.opponentEmail
 
                 _ ->
                     selectedRankingView lrankingInfo playerList rnkInfo userRec
@@ -1088,7 +1100,7 @@ subscriptions model =
         GlobalRankings _ _ _ _ _ _ ->
             Sub.none
 
-        SelectedRanking _ _ _ _ _ _ _ ->
+        SelectedRanking _ _ _ _ _ _ _ _ ->
             Sub.none
 
         Failure _ ->

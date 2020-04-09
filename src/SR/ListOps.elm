@@ -1,4 +1,4 @@
-module SR.ListOps exposing (filterSelectedRankingOutOfGlobalList, gotCurrentUserAsPlayerFromPlayerList, gotRankingFromRankingList, gotUserFromUserList, isUserMemberOfSelectedRanking, isUserSelectedOwnerOfRanking, singleUserInList, sortPlayerListByRank)
+module SR.ListOps exposing (filterSelectedRankingOutOfGlobalList, gotCurrentUserAsPlayerFromPlayerList, gotRankingFromRankingList, gotUserFromUserList, gotUserFromUserListStrAddress, isUserMemberOfSelectedRanking, isUserSelectedOwnerOfRanking, singleUserInList, sortPlayerListByRank)
 
 import Eth.Types
 import Eth.Utils
@@ -70,6 +70,24 @@ gotCurrentUserAsPlayerFromPlayerList lPlayer userRec =
     case existingPlayer of
         Nothing ->
             SR.Defaults.emptyPlayer
+
+        Just a ->
+            a
+
+
+gotUserFromUserListStrAddress : List SR.Types.User -> String -> SR.Types.User
+gotUserFromUserListStrAddress userList uaddr =
+    let
+        existingUser =
+            --List.head <| List.filter (\r -> r.ethaddress == (Eth.Utils.addressToString uaddr |> Debug.log "uaddr argument: ")) userList
+            List.head <|
+                List.filter (\r -> r.ethaddress == (String.toLower <| uaddr))
+                    --List.filter (\r -> r.ethaddress == uaddr)
+                    userList
+    in
+    case existingUser of
+        Nothing ->
+            SR.Defaults.emptyUser
 
         Just a ->
             a
