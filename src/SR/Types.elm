@@ -141,6 +141,9 @@ type UIState
     | CreateNewUser
     | DisplayWalletInfoToUser
     | UISelectedRankingUserIsOwner
+    | UISelectedRankingUserIsPlayer
+    | UISelectedRankingUserIsNeitherOwnerNorPlayer
+    | UIChallenge
 
 
 type UserListState
@@ -206,6 +209,8 @@ type alias Challenge =
     , playerStatus : PlayerAvailability
     , opponentStatus : PlayerAvailability
     , rankingid : String
+    , opponentEmail : String
+    , opponentMobile : String
     }
 
 

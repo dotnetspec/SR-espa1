@@ -1,4 +1,4 @@
-module Utils.MyUtils exposing (addressFromStringResult, addressToString, extractUsersFromWebData, stringFromBool, stringFromMaybeString)
+module Utils.MyUtils exposing (addressFromStringResult, addressToString, extractPlayersFromWebData, extractRankingsFromWebData, extractUsersFromWebData, stringFromBool, stringFromMaybeString, stringFromRankingId)
 
 import Eth.Types
 import Eth.Utils
@@ -6,6 +6,43 @@ import Http
 import Internal.Types
 import RemoteData
 import SR.Types
+
+
+stringFromRankingId : Internal.Types.RankingId -> String
+stringFromRankingId (Internal.Types.RankingId rnkId) =
+    rnkId
+
+
+extractPlayersFromWebData : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
+extractPlayersFromWebData remData =
+    case remData of
+        RemoteData.NotAsked ->
+            []
+
+        RemoteData.Loading ->
+            []
+
+        RemoteData.Success players ->
+            players
+
+        RemoteData.Failure httpError ->
+            []
+
+
+extractRankingsFromWebData : RemoteData.WebData (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
+extractRankingsFromWebData remData =
+    case remData of
+        RemoteData.NotAsked ->
+            []
+
+        RemoteData.Loading ->
+            []
+
+        RemoteData.Success rankings ->
+            rankings
+
+        RemoteData.Failure httpError ->
+            []
 
 
 extractUsersFromWebData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
