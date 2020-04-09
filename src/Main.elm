@@ -1283,6 +1283,12 @@ addCurrentUserToPlayerList (Internal.Types.RankingId intrankingId) lPlayer userR
 
         selectedRankingListWithNewPlayerJsonObjAdded =
             newPlayer :: lPlayer
+
+        sortedSelectedRankingListWithNewPlayerJsonObjAdded =
+            SR.ListOps.sortPlayerListByRank selectedRankingListWithNewPlayerJsonObjAdded
+
+        _ =
+            Debug.log "sortedSelectedRankingListWithNewPlayerJsonObjAdded" sortedSelectedRankingListWithNewPlayerJsonObjAdded
     in
     --AddedNewRankingToGlobalList is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
@@ -1290,7 +1296,7 @@ addCurrentUserToPlayerList (Internal.Types.RankingId intrankingId) lPlayer userR
     -- the Decoder decodes what comes back in the response
     Http.request
         { body =
-            Http.jsonBody <| jsonEncodeNewSelectedRankingPlayerList selectedRankingListWithNewPlayerJsonObjAdded
+            Http.jsonBody <| jsonEncodeNewSelectedRankingPlayerList sortedSelectedRankingListWithNewPlayerJsonObjAdded
         , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromJoin) SR.Decode.decodeNewPlayerListServerResponse
         , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
         , method = "PUT"
