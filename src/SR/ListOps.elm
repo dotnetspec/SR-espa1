@@ -2,6 +2,7 @@ module SR.ListOps exposing (filterSelectedRankingOutOfGlobalList, gotRankingFrom
 
 import Eth.Types
 import Eth.Utils
+import Http
 import Internal.Types
 import RemoteData
 import SR.Defaults
@@ -155,3 +156,40 @@ isPlayerInList playerAddr player =
 
     else
         Nothing
+
+
+gotRankingListFromRemData : RemoteData.WebData (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
+gotRankingListFromRemData globalList =
+    case globalList of
+        RemoteData.Success a ->
+            a
+
+        RemoteData.NotAsked ->
+            [ SR.Defaults.emptyRankingInfo
+            ]
+
+        RemoteData.Loading ->
+            [ SR.Defaults.emptyRankingInfo
+            ]
+
+        RemoteData.Failure err ->
+            case err of
+                Http.BadUrl s ->
+                    [ SR.Defaults.emptyRankingInfo
+                    ]
+
+                Http.Timeout ->
+                    [ SR.Defaults.emptyRankingInfo
+                    ]
+
+                Http.NetworkError ->
+                    [ SR.Defaults.emptyRankingInfo
+                    ]
+
+                Http.BadStatus statuscode ->
+                    [ SR.Defaults.emptyRankingInfo
+                    ]
+
+                Http.BadBody s ->
+                    [ SR.Defaults.emptyRankingInfo
+                    ]

@@ -64,7 +64,6 @@ type Model
     = WalletOps SR.Types.WalletState TxRecord
     | UserOps SR.Types.UserState (List SR.Types.User) Eth.Types.Address SR.Types.User SR.Types.UIState TxRecord
     | GlobalRankings (List SR.Types.RankingInfo) SR.Types.RankingInfo SR.Types.UIState (List SR.Types.User) SR.Types.User TxRecord
-      --| SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) Internal.Types.RankingId SR.Types.User SR.Types.Challenge SR.Types.UIState TxRecord
     | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) SR.Types.RankingInfo SR.Types.User SR.Types.Challenge SR.Types.UIState TxRecord
     | Failure String
 
@@ -681,33 +680,6 @@ greetingHeading greetingStr =
         ]
 
 
-globalHeading : SR.Types.User -> Element Msg
-globalHeading user =
-    Element.column Grid.section <|
-        [ Element.el Heading.h5 <| Element.text "Global Rankings"
-        , Element.column Card.fill
-            [ Element.el Heading.h4 <| Element.text user.username
-            ]
-        ]
-
-
-selectedHeading : SR.Types.User -> SR.Types.RankingInfo -> Element Msg
-selectedHeading user rnkInfo =
-    let
-        _ =
-            Debug.log "rank id " rnkInfo.id
-    in
-    Element.column Grid.section <|
-        [ Element.el Heading.h5 <|
-            Element.text (user.username ++ " you selected ranking")
-        , Element.column Card.fill
-            [ Element.el Heading.h4 <|
-                Element.text rnkInfo.rankingname
-            , Element.text rnkInfo.rankingdesc
-            ]
-        ]
-
-
 rankingbuttons : List SR.Types.RankingInfo -> Element Msg
 rankingbuttons rankingList =
     Element.column Grid.section <|
@@ -842,11 +814,6 @@ selectedhomebuttons rankingList user =
                     }
                 ]
             ]
-        , Element.column Grid.simple <|
-            [ Element.paragraph [] <|
-                List.singleton <|
-                    Element.text "Button attributes can be combined with other attributes."
-            ]
         ]
 
 
@@ -866,11 +833,8 @@ selecteduserIsOwnerhomebutton rankingList user =
                     }
                 ]
             ]
-        , Element.column Grid.simple <|
-            [ Element.paragraph [] <|
-                List.singleton <|
-                    Element.text "Button attributes can be combined with other attributes."
-            ]
+
+        --, SR.Elements.simpleUserInfoText
         ]
 
 
@@ -885,11 +849,6 @@ selecteduserIsPlayerHomebutton rankingList user =
                     , label = Element.text "Home"
                     }
                 ]
-            ]
-        , Element.column Grid.simple <|
-            [ Element.paragraph [] <|
-                List.singleton <|
-                    Element.text "Button attributes can be combined with other attributes."
             ]
         ]
 
@@ -1003,8 +962,7 @@ globalResponsiveview rankingList user =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
-            [ Element.el Heading.h4 <| Element.text "SportRank"
-            , globalHeading user
+            [ Element.el Heading.h5 <| Element.text ("SportRank - " ++ user.username)
             , globalhomebutton rankingList user
             , rankingbuttons rankingList
             ]
@@ -1015,8 +973,9 @@ selectedRankingView lrankingInfo playerList rnkInfo user =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
-            [ Element.el Heading.h4 <| Element.text "SportRank"
-            , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
+            [ Element.el Heading.h4 <| Element.text ("SportRank - " ++ user.username)
+
+            --, selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
             , selectedhomebuttons lrankingInfo user
             , playerbuttons user playerList rnkInfo
             ]
@@ -1028,7 +987,8 @@ selectedUserIsOwnerView lrankingInfo playerList rnkInfo user =
         Element.column
             Framework.container
             [ Element.el Heading.h4 <| Element.text "SportRank - Owner"
-            , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
+
+            --, selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
             , selecteduserIsOwnerhomebutton lrankingInfo user
             , playerbuttons user playerList rnkInfo
             ]
@@ -1040,7 +1000,8 @@ selectedUserIsPlayerView lrankingInfo playerList rnkInfo user =
         Element.column
             Framework.container
             [ Element.el Heading.h4 <| Element.text "SportRank - Owner"
-            , selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
+
+            --, selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
             , selecteduserIsPlayerHomebutton lrankingInfo user
             , playerbuttons user playerList rnkInfo
             ]
@@ -1138,22 +1099,6 @@ addedUAddrToNewEmptyUser uaddr =
             { newEmptyUser | ethaddress = Eth.Utils.addressToString uaddr }
     in
     newUser
-
-
-gotRankingFromRankingList : List SR.Types.RankingInfo -> String -> SR.Types.RankingInfo
-gotRankingFromRankingList rankingList rnkid =
-    let
-        existingRanking =
-            List.head <|
-                List.filter (\r -> r.id == String.toLower rnkid)
-                    rankingList
-    in
-    case existingRanking of
-        Nothing ->
-            SR.Defaults.emptyRankingInfo
-
-        Just a ->
-            a
 
 
 
@@ -1419,43 +1364,6 @@ jsonEncodeNewGlobalRankingList lrankingInfo =
             Debug.log "encode the list: " encodedList
     in
     encodedList
-
-
-gotRankingListFromRemData : RemoteData.WebData (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
-gotRankingListFromRemData globalList =
-    case globalList of
-        RemoteData.Success a ->
-            a
-
-        RemoteData.NotAsked ->
-            [ SR.Defaults.emptyRankingInfo
-            ]
-
-        RemoteData.Loading ->
-            [ SR.Defaults.emptyRankingInfo
-            ]
-
-        RemoteData.Failure err ->
-            case err of
-                Http.BadUrl s ->
-                    [ SR.Defaults.emptyRankingInfo
-                    ]
-
-                Http.Timeout ->
-                    [ SR.Defaults.emptyRankingInfo
-                    ]
-
-                Http.NetworkError ->
-                    [ SR.Defaults.emptyRankingInfo
-                    ]
-
-                Http.BadStatus statuscode ->
-                    [ SR.Defaults.emptyRankingInfo
-                    ]
-
-                Http.BadBody s ->
-                    [ SR.Defaults.emptyRankingInfo
-                    ]
 
 
 gotNewRankingIdFromWebData : RemoteData.WebData SR.Types.RankingId -> String
