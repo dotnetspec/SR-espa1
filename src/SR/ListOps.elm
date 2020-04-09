@@ -1,4 +1,4 @@
-module SR.ListOps exposing (filterSelectedRankingOutOfGlobalList, gotRankingFromRankingList, gotUserFromUserList, isUserSelectedOwnerOfRanking, singleUserInList)
+module SR.ListOps exposing (filterSelectedRankingOutOfGlobalList, gotRankingFromRankingList, gotUserFromUserList, isUserMemberOfSelectedRanking, isUserSelectedOwnerOfRanking, singleUserInList)
 
 import Eth.Types
 import Eth.Utils
@@ -11,6 +11,11 @@ import Utils.MyUtils
 
 
 --external
+
+
+isUserMemberOfSelectedRanking : List SR.Types.Player -> SR.Types.User -> Bool
+isUserMemberOfSelectedRanking lplayer user =
+    True
 
 
 gotRankingFromRankingList : List SR.Types.RankingInfo -> Internal.Types.RankingId -> SR.Types.RankingInfo

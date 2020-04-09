@@ -141,6 +141,8 @@ type UIState
     | CreateNewUser
     | DisplayWalletInfoToUser
     | UISelectedRankingUserIsOwner
+    | UISelectedRankingUserIsPlayer
+    | UISelectedRankingUserIsNeitherOwnerNorPlayer
 
 
 type UserListState
