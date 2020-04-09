@@ -420,7 +420,8 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
         SelectedRanking lrankingInfo lPlayer intrankingId userRec challenge uiState txRec ->
             case msgOfTransitonThatAlreadyHappened of
                 PlayersReceived players ->
-                    ( updateSelectedRankingUIState intrankingId currentmodel (Utils.MyUtils.extractPlayersFromWebData players), Cmd.none )
+                    --( updateSelectedRankingUIState intrankingId currentmodel (Utils.MyUtils.extractPlayersFromWebData players), Cmd.none )
+                    ( updateSelectedRankingUIState intrankingId currentmodel (extractAndSortPlayerList players), Cmd.none )
 
                 ResetToShowGlobal _ user ->
                     ( GlobalRankings lrankingInfo SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings [ SR.Defaults.emptyUser ] user emptyTxRecord, Cmd.none )
@@ -566,6 +567,11 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
             ( Failure <| "Model failure in selected ranking: " ++ str, Cmd.none )
 
 
+extractAndSortPlayerList : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
+extractAndSortPlayerList rdlPlayer =
+    SR.ListOps.sortPlayerListByRank <| Utils.MyUtils.extractPlayersFromWebData rdlPlayer
+
+
 updateSelectedRankingPlayerList : Model -> List SR.Types.Player -> Model
 updateSelectedRankingPlayerList currentmodel lplayers =
     case currentmodel of
@@ -591,6 +597,73 @@ updateSelectedRankingUIState rnkid currentmodel lplayers =
 
         _ ->
             Failure <| "updateSelectedRankingUIState : "
+
+
+
+-- view
+
+
+view : Model -> Html Msg
+view model =
+    case model of
+        GlobalRankings lrankingInfo rnkInfo uiState userlist userRec txRec ->
+            case uiState of
+                SR.Types.CreateNewUser ->
+                    inputNewUserview userRec
+
+                SR.Types.CreateNewLadder ->
+                    inputNewLadderview lrankingInfo userRec rnkInfo
+
+                _ ->
+                    globalResponsiveview lrankingInfo userRec
+
+        SelectedRanking lrankingInfo playerList rnkid userRec connect uiState txRec ->
+            case uiState of
+                SR.Types.UISelectedRankingUserIsOwner ->
+                    selectedUserIsOwnerView lrankingInfo playerList rnkid userRec
+
+                SR.Types.UISelectedRankingUserIsPlayer ->
+                    selectedUserIsPlayerView lrankingInfo playerList rnkid userRec
+
+                _ ->
+                    selectedRankingView lrankingInfo playerList rnkid userRec
+
+        WalletOps walletState txRec ->
+            case walletState of
+                SR.Types.Locked ->
+                    greetingView "OpenWalletInstructions"
+
+                SR.Types.Missing ->
+                    greetingView "MissingWalletInstructions"
+
+                SR.Types.WalletOpenedWithoutUserCheck uaddr ->
+                    greetingView "User unchecked "
+
+                SR.Types.WalletOpenedUserCheckDone user uaddr ->
+                    if user.username == "" then
+                        inputNewUserview user
+
+                    else
+                        greetingView <| "Welcome back " ++ user.username
+
+                SR.Types.WalletOpenedAndOperational ->
+                    greetingView "WalletOpenedAndOperational"
+
+        UserOps userState userList uaddr uname uiState _ ->
+            case uiState of
+                SR.Types.CreateNewUser ->
+                    case userState of
+                        SR.Types.NewUser user ->
+                            inputNewUserview user
+
+                        _ ->
+                            greetingView <| "Loading ... "
+
+                _ ->
+                    greetingView <| "Loading ... "
+
+        Failure str ->
+            greetingView <| "Model failure in view: " ++ str
 
 
 greetingHeading : String -> Element Msg
@@ -979,69 +1052,6 @@ greetingView greetingMsg =
             [ Element.el Heading.h4 <| Element.text "SportRank"
             , greetingHeading greetingMsg
             ]
-
-
-view : Model -> Html Msg
-view model =
-    case model of
-        GlobalRankings lrankingInfo rnkInfo uiState userlist userRec txRec ->
-            case uiState of
-                SR.Types.CreateNewUser ->
-                    inputNewUserview userRec
-
-                SR.Types.CreateNewLadder ->
-                    inputNewLadderview lrankingInfo userRec rnkInfo
-
-                _ ->
-                    globalResponsiveview lrankingInfo userRec
-
-        SelectedRanking lrankingInfo playerList rnkid userRec connect uiState txRec ->
-            case uiState of
-                SR.Types.UISelectedRankingUserIsOwner ->
-                    selectedUserIsOwnerView lrankingInfo playerList rnkid userRec
-
-                SR.Types.UISelectedRankingUserIsPlayer ->
-                    selectedUserIsPlayerView lrankingInfo playerList rnkid userRec
-
-                _ ->
-                    selectedRankingView lrankingInfo playerList rnkid userRec
-
-        WalletOps walletState txRec ->
-            case walletState of
-                SR.Types.Locked ->
-                    greetingView "OpenWalletInstructions"
-
-                SR.Types.Missing ->
-                    greetingView "MissingWalletInstructions"
-
-                SR.Types.WalletOpenedWithoutUserCheck uaddr ->
-                    greetingView "User unchecked "
-
-                SR.Types.WalletOpenedUserCheckDone user uaddr ->
-                    if user.username == "" then
-                        inputNewUserview user
-
-                    else
-                        greetingView <| "Welcome back " ++ user.username
-
-                SR.Types.WalletOpenedAndOperational ->
-                    greetingView "WalletOpenedAndOperational"
-
-        UserOps userState userList uaddr uname uiState _ ->
-            case uiState of
-                SR.Types.CreateNewUser ->
-                    case userState of
-                        SR.Types.NewUser user ->
-                            inputNewUserview user
-
-                        _ ->
-                            greetingView <| "Loading ... "
-
-                _ ->
-                    greetingView <| "Loading ... "
-
-        Failure str ->
-            greetingView <| "Model failure in view: " ++ str
 
 
 subscriptions : Model -> Sub Msg
