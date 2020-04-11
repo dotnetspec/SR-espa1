@@ -2,7 +2,8 @@ module SR.Types exposing
     ( PlayerId, RankingId(..)
     , Player, Opponent, OpponentRelativeRank(..), Options, PlayerAvailability(..), ResultOfMatch(..), SRState(..), UserState(..), WalletState(..)
     , UIState(..)
-    ,  Challenge
+    ,  AllLists
+      , Challenge
       , CreateNewLadderFormFields
       , LadderState(..)
       , ModalState(..)
@@ -186,7 +187,15 @@ type PlayerAvailability
     | Unavailable
 
 
-{-| -}
+{--}
+type alias AllLists =
+    { globalRankings : List RankingInfo
+    , players : List Player
+    , users : List User
+    }
+--}
+
+
 type alias Player =
     { datestamp : Int
     , active : Bool

@@ -68,10 +68,6 @@ type Model
     | Failure String
 
 
-
---init : Commands msg -> Flags -> ( Model, Cmd Msg )
-
-
 init : () -> ( Model, Cmd Msg )
 init _ =
     let
