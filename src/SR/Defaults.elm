@@ -1,6 +1,6 @@
 module SR.Defaults exposing
     ( emptyPlayer
-    , emptyActiveUser, emptyChallenge, emptyRankingInfo, emptyUser, globalBinName, globalContainerId, secretKey, selectedBinName, selectedContainerId, userBinName, userContainerId
+    , emptyActiveUser, emptyAllLists, emptyChallenge, emptyRankingInfo, emptyUser, globalBinName, globalContainerId, secretKey, selectedBinName, selectedContainerId, userBinName, userContainerId
     )
 
 {-| Default values.
@@ -74,6 +74,13 @@ emptyChallenge =
     , rankingid = ""
     , opponentEmail = ""
     , opponentMobile = ""
+    }
+
+
+emptyAllLists =
+    { globalRankings = []
+    , players = []
+    , users = []
     }
 
 

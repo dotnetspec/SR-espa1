@@ -1,4 +1,4 @@
-module SR.ListOps exposing (filterSelectedRankingOutOfGlobalList, gotCurrentUserAsPlayerFromPlayerList, gotRankingFromRankingList, gotUserFromUserList, gotUserFromUserListStrAddress, isUserMemberOfSelectedRanking, isUserSelectedOwnerOfRanking, singleUserInList, sortPlayerListByRank)
+module SR.ListOps exposing (filterSelectedRankingOutOfGlobalList, gotCurrentUserAsPlayerFromPlayerList, gotRankingFromRankingList, gotUserFromUserList, gotUserFromUserListStrAddress, gotUserListFromRemData, isUserInList, isUserMemberOfSelectedRanking, isUserSelectedOwnerOfRanking, singleUserInList, sortPlayerListByRank)
 
 import Eth.Types
 import Eth.Utils
@@ -15,6 +15,19 @@ import Utils.MyUtils
 -- gotCurrentUserAsPlayerFromPlayerList : List SR.Types.Player -> SR.Types.User -> SR.Types.Player
 -- gotCurrentUserAsPlayerFromPlayerList lplayer user =
 --     SR.Defaults.emptyPlayer
+
+
+isUserInList : List SR.Types.User -> Eth.Types.Address -> Bool
+isUserInList userlist uaddr =
+    let
+        gotSingleUserFromList =
+            singleUserInList userlist uaddr
+    in
+    if gotSingleUserFromList.ethaddress == "" then
+        False
+
+    else
+        True
 
 
 sortPlayerListByRank : List SR.Types.Player -> List SR.Types.Player
@@ -111,9 +124,9 @@ gotUserFromUserList userList uaddr =
             a
 
 
-singleUserInList : RemoteData.WebData (List SR.Types.User) -> Eth.Types.Address -> SR.Types.User
+singleUserInList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
 singleUserInList userlist uaddr =
-    gotUserFromUserList (Utils.MyUtils.extractUsersFromWebData <| userlist) uaddr
+    gotUserFromUserList userlist uaddr
 
 
 isUserSelectedOwnerOfRanking : SR.Types.RankingInfo -> List SR.Types.RankingInfo -> SR.Types.User -> Bool
@@ -229,4 +242,41 @@ gotRankingListFromRemData globalList =
 
                 Http.BadBody s ->
                     [ SR.Defaults.emptyRankingInfo
+                    ]
+
+
+gotUserListFromRemData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
+gotUserListFromRemData userList =
+    case userList of
+        RemoteData.Success a ->
+            a
+
+        RemoteData.NotAsked ->
+            [ SR.Defaults.emptyUser
+            ]
+
+        RemoteData.Loading ->
+            [ SR.Defaults.emptyUser
+            ]
+
+        RemoteData.Failure err ->
+            case err of
+                Http.BadUrl s ->
+                    [ SR.Defaults.emptyUser
+                    ]
+
+                Http.Timeout ->
+                    [ SR.Defaults.emptyUser
+                    ]
+
+                Http.NetworkError ->
+                    [ SR.Defaults.emptyUser
+                    ]
+
+                Http.BadStatus statuscode ->
+                    [ SR.Defaults.emptyUser
+                    ]
+
+                Http.BadBody s ->
+                    [ SR.Defaults.emptyUser
                     ]
