@@ -130,7 +130,7 @@ type Msg
     = WalletStatus Eth.Sentry.Wallet.WalletSentry
     | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
     | SentUserInfoAndDecodedResponseToNewUser (RemoteData.WebData (List SR.Types.User))
-    | ChangedUIStateToCreateNew (List SR.Types.RankingInfo) SR.Types.User
+    | ChangedUIStateToCreateNew
     | NewRankingRequestedByConfirmBtnClicked SR.Types.RankingInfo
     | PollBlock (Result Http.Error Int)
     | WatchTxHash (Result String Eth.Types.TxHash)
@@ -144,13 +144,14 @@ type Msg
     | DeletedSingleRankingFromJsonBin (RemoteData.WebData (List SR.Types.RankingInfo))
     | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
     | GotRankingId Internal.Types.RankingId
-    | GotRankingIdAndRankingOwnerAddr Internal.Types.RankingId String String
+    | GotRankingIdAndRankingOwnerAddrClicked Internal.Types.RankingId String String
     | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
     | UsersReceived (RemoteData.WebData (List SR.Types.User))
     | MissingWalletInstructions
     | OpenWalletInstructions
     | NewUser
-    | ResetToShowGlobal (List SR.Types.RankingInfo) SR.Types.User
+      --| ResetToShowGlobal (List SR.Types.RankingInfo) SR.Types.User
+    | ResetToShowGlobal
     | ExistingUser Eth.Types.Address
     | LadderNameInputChg String
     | LadderDescInputChg String
@@ -347,7 +348,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     in
                     ( GlobalRankings appInfo uiState addedRankingListToAllLists emptyTxRecord, Cmd.none )
 
-                GotRankingIdAndRankingOwnerAddr rnkidstr rnkownerstr rnknamestr ->
+                GotRankingIdAndRankingOwnerAddrClicked rnkidstr rnkownerstr rnknamestr ->
                     let
                         newSelectedRanking =
                             appInfo.selectedRanking
@@ -373,25 +374,11 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 SentUserInfoAndDecodedResponseToNewUser serverResponse ->
                     ( GlobalRankings appInfo SR.Types.UIRenderAllRankings allLists emptyTxRecord, Cmd.none )
 
-                ResetToShowGlobal lrankingInfoForReset userRec ->
-                    let
-                        resetGlobalRankingList =
-                            { allLists | globalRankings = lrankingInfoForReset }
+                ResetToShowGlobal ->
+                    ( GlobalRankings appInfo SR.Types.UIRenderAllRankings allLists emptyTxRecord, Cmd.none )
 
-                        newAppInfo =
-                            { appInfo | user = userRec }
-                    in
-                    ( GlobalRankings newAppInfo SR.Types.UIRenderAllRankings resetGlobalRankingList emptyTxRecord, Cmd.none )
-
-                ChangedUIStateToCreateNew lrankingInfoChgToCreateNew userRec ->
-                    let
-                        resetGlobalRankingListForCreateNew =
-                            { allLists | globalRankings = lrankingInfoChgToCreateNew }
-
-                        newAppInfo =
-                            { appInfo | user = userRec }
-                    in
-                    ( GlobalRankings newAppInfo SR.Types.CreateNewLadder resetGlobalRankingListForCreateNew emptyTxRecord, Cmd.none )
+                ChangedUIStateToCreateNew ->
+                    ( GlobalRankings appInfo SR.Types.CreateNewLadder allLists emptyTxRecord, Cmd.none )
 
                 AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
                     let
@@ -467,8 +454,8 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 PlayersReceived players ->
                     ( updateSelectedRankingUIState appInfo.selectedRanking currentmodel (extractAndSortPlayerList players), Cmd.none )
 
-                ResetToShowGlobal _ user ->
-                    ( GlobalRankings SR.Defaults.emptyAppInfo SR.Types.UIRenderAllRankings allLists emptyTxRecord, Cmd.none )
+                ResetToShowGlobal ->
+                    ( GlobalRankings appInfo SR.Types.UIRenderAllRankings allLists emptyTxRecord, Cmd.none )
 
                 TxSentryMsg subMsg ->
                     let
@@ -619,7 +606,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         resetGlobalRankingList =
                             { allLists | globalRankings = Utils.MyUtils.extractRankingsFromWebData <| updatedListAfterRankingDeletedFromGlobalList }
                     in
-                    ( GlobalRankings SR.Defaults.emptyAppInfo SR.Types.UIRenderAllRankings resetGlobalRankingList emptyTxRecord, Cmd.none )
+                    ( GlobalRankings appInfo SR.Types.UIRenderAllRankings resetGlobalRankingList emptyTxRecord, Cmd.none )
 
                 ClickedJoinSelected ->
                     ( currentmodel, addCurrentUserToPlayerList appInfo.selectedRanking.id allLists.players appInfo.user )
@@ -761,13 +748,17 @@ view model =
                     selectedUserIsOwnerView allLists.globalRankings allLists.players appInfo.selectedRanking appInfo.user
 
                 SR.Types.UISelectedRankingUserIsPlayer ->
+                    let
+                        _ =
+                            Debug.log "apinfo user name" appInfo.user.username
+                    in
                     selectedUserIsPlayerView allLists.globalRankings allLists.players appInfo.selectedRanking appInfo.user
 
                 SR.Types.UIChallenge ->
                     greetingView <| "You are \nchallenging " ++ appInfo.challenge.opponent.name ++ "you are \n" ++ appInfo.challenge.player.name ++ "your opponent email \nis " ++ appInfo.challenge.opponentEmail
 
                 _ ->
-                    selectedRankingView allLists.globalRankings allLists.players appInfo.selectedRanking appInfo.user
+                    selectedRankingView allLists.players appInfo.selectedRanking appInfo.user
 
         WalletOps walletState txRec ->
             case walletState of
@@ -836,7 +827,7 @@ addRankingInfoToAnyElText : SR.Types.RankingInfo -> Element Msg
 addRankingInfoToAnyElText rankingobj =
     Element.column Grid.simple <|
         [ Input.button (Button.fill ++ Color.info) <|
-            { onPress = Just (GotRankingIdAndRankingOwnerAddr (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr rankingobj.rankingname)
+            { onPress = Just (GotRankingIdAndRankingOwnerAddrClicked (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr rankingobj.rankingname)
             , label = Element.text rankingobj.rankingname
             }
         ]
@@ -916,18 +907,18 @@ insertPlayerList user playerInfoList =
     mapOutPlayerList
 
 
-globalhomebutton : List SR.Types.RankingInfo -> SR.Types.User -> Element Msg
-globalhomebutton rankingList user =
+globalhomebutton : Element Msg
+globalhomebutton =
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
                 [ Input.button (Button.simple ++ Color.simple) <|
-                    { onPress = Just <| ResetToShowGlobal rankingList user
+                    { onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Home"
                     }
                 , Input.button (Button.simple ++ Color.simple) <|
-                    { onPress = Just <| ChangedUIStateToCreateNew rankingList user
+                    { onPress = Just <| ChangedUIStateToCreateNew
                     , label = Element.text "Create New"
                     }
                 ]
@@ -935,14 +926,14 @@ globalhomebutton rankingList user =
         ]
 
 
-selectedhomebuttons : List SR.Types.RankingInfo -> SR.Types.User -> Element Msg
-selectedhomebuttons rankingList user =
+selectedhomebuttons : Element Msg
+selectedhomebuttons =
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
                 [ Input.button (Button.simple ++ Color.simple) <|
-                    { onPress = Just <| ResetToShowGlobal rankingList user
+                    { onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Home"
                     }
                 , Input.button (Button.simple ++ Color.simple) <|
@@ -961,7 +952,8 @@ selecteduserIsOwnerhomebutton rankingList user =
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
                 [ Input.button (Button.simple ++ Color.simple) <|
-                    { onPress = Just <| ResetToShowGlobal rankingList user
+                    { --onPress = Just <| ResetToShowGlobal rankingList user
+                      onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Home"
                     }
                 , Input.button (Button.simple ++ Color.danger) <|
@@ -982,7 +974,8 @@ selecteduserIsPlayerHomebutton rankingList user =
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
                 [ Input.button (Button.simple ++ Color.simple) <|
-                    { onPress = Just <| ResetToShowGlobal rankingList user
+                    { --onPress = Just <| ResetToShowGlobal rankingList user
+                      onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Home"
                     }
                 ]
@@ -997,7 +990,8 @@ newrankinhomebutton rankingList user rnkInfo =
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
                 [ Input.button (Button.simple ++ Color.simple) <|
-                    { onPress = Just <| ResetToShowGlobal rankingList user
+                    { --onPress = Just <| ResetToShowGlobal rankingList user
+                      onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Home"
                     }
                 , Input.button (Button.simple ++ Color.info) <|
@@ -1100,20 +1094,18 @@ globalResponsiveview rankingList user =
         Element.column
             Framework.container
             [ Element.el Heading.h5 <| Element.text ("SportRank - " ++ user.username)
-            , globalhomebutton rankingList user
+            , globalhomebutton
             , rankingbuttons rankingList
             ]
 
 
-selectedRankingView : List SR.Types.RankingInfo -> List SR.Types.Player -> SR.Types.RankingInfo -> SR.Types.User -> Html Msg
-selectedRankingView lrankingInfo playerList rnkInfo user =
+selectedRankingView : List SR.Types.Player -> SR.Types.RankingInfo -> SR.Types.User -> Html Msg
+selectedRankingView playerList rnkInfo user =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
             [ Element.el Heading.h4 <| Element.text ("SportRank - " ++ user.username)
-
-            --, selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
-            , selectedhomebuttons lrankingInfo user
+            , selectedhomebuttons
             , playerbuttons user playerList rnkInfo
             ]
 
@@ -1136,7 +1128,7 @@ selectedUserIsPlayerView lrankingInfo playerList rnkInfo user =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
-            [ Element.el Heading.h4 <| Element.text "SportRank - Owner"
+            [ Element.el Heading.h4 <| Element.text "SportRank - Player"
 
             --, selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
             , selecteduserIsPlayerHomebutton lrankingInfo user
