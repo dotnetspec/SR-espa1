@@ -1,6 +1,6 @@
 module SR.Defaults exposing
     ( emptyPlayer
-    , emptyActiveUser, emptyAllLists, emptyChallenge, emptyRankingInfo, emptyUser, globalBinName, globalContainerId, secretKey, selectedBinName, selectedContainerId, userBinName, userContainerId
+    , emptyActiveUser, emptyAllLists, emptyAppInfo, emptyChallenge, emptyRankingInfo, emptyUser, globalBinName, globalContainerId, secretKey, selectedBinName, selectedContainerId, userBinName, userContainerId
     )
 
 {-| Default values.
@@ -84,15 +84,24 @@ emptyAllLists =
     }
 
 
-type alias Challenge =
-    { playerid : Int
-    , player : Player
-    , opponent : Player
-    , playerRank : Int
-    , opponentRank : Int
-    , playerStatus : PlayerAvailability
-    , opponentStatus : PlayerAvailability
+emptyAppInfo =
+    { globalRanking = emptyRankingInfo
+    , player = emptyPlayer
+    , user = emptyUser
+    , challenge = emptyChallenge
     }
+
+
+
+-- type alias Challenge =
+--     { playerid : Int
+--     , player : Player
+--     , opponent : Player
+--     , playerRank : Int
+--     , opponentRank : Int
+--     , playerStatus : PlayerAvailability
+--     , opponentStatus : PlayerAvailability
+--     }
 
 
 secretKey =

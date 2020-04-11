@@ -3,6 +3,7 @@ module SR.Types exposing
     , Player, Opponent, OpponentRelativeRank(..), Options, PlayerAvailability(..), ResultOfMatch(..), SRState(..), UserState(..), WalletState(..)
     , UIState(..)
     ,  AllLists
+      , AppInfo
       , Challenge
       , CreateNewLadderFormFields
       , LadderState(..)
@@ -194,6 +195,14 @@ type alias AllLists =
     , users : List User
     }
 --}
+
+
+type alias AppInfo =
+    { globalRanking : RankingInfo
+    , player : Player
+    , user : User
+    , challenge : Challenge
+    }
 
 
 type alias Player =
