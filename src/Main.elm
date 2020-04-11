@@ -50,13 +50,12 @@ main =
 
 
 --The model represents the state of the application
--- Model is what is going to change via Update (which is changed from places like View, Subs etc.)
+-- Model is what is going to change via Update and assoc functions
+-- update called whenever there is a Msg or Cmd Msg (e.g. from a sub)
 -- it will go from 1 state to another
 -- functions like view will just reflect
 -- current state of model
 --nb: each variant added to model has to be handled e.g. do you need 'failure' if it's anyway handled by RemoteData?
--- AllRankingsJson is just the current list of all rankings
--- AddingNewRankingToGlobalList holds a new ranking id, data for a new ranking and the existing global list to add the new data to
 --we have to have a separate VARIANT for the user to move on from wallet_status sub - avoiding looping
 
 
@@ -262,28 +261,13 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                 UsersReceived userList ->
                     let
-                        extractedUsersFromWebData =
-                            Utils.MyUtils.extractUsersFromWebData userList
-
-                        gotUserToUpdateAddr =
-                            SR.ListOps.singleUserInList extractedUsersFromWebData uaddr
-
-                        userWithUpdatedAddr =
-                            { gotUserToUpdateAddr | ethaddress = Eth.Utils.addressToString uaddr }
-
-                        userUpdatedInAppInfo =
-                            { appInfo | user = userWithUpdatedAddr }
-
                         userLAddedToAllLists =
                             { allLists | users = Utils.MyUtils.extractUsersFromWebData userList }
                     in
                     if SR.ListOps.isUserInList userLAddedToAllLists.users uaddr then
                         ( updateOnUserListReceived currentmodel userList, gotRankingList )
-                        --( GlobalRankings SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings allLists (SR.ListOps.singleUserInList userLAddedToAllLists.users uaddr) emptyTxRecord, gotRankingList )
-                        --( GlobalRankings SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings allLists userWithUpdatedAddr emptyTxRecord, gotRankingList )
 
                     else
-                        --( UserOps (SR.Types.NewUser userWithUpdatedAddr) userLAddedToAllLists uaddr userUpdatedInAppInfo SR.Types.CreateNewUser txRec, Cmd.none )
                         ( updateOnUserListReceived currentmodel userList, Cmd.none )
 
                 NewUserNameInputChg namefield ->
@@ -946,8 +930,7 @@ selecteduserIsOwnerhomebutton rankingList user =
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
                 [ Input.button (Button.simple ++ Color.simple) <|
-                    { --onPress = Just <| ResetToShowGlobal rankingList user
-                      onPress = Just <| ResetToShowGlobal
+                    { onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Home"
                     }
                 , Input.button (Button.simple ++ Color.danger) <|
@@ -968,8 +951,7 @@ selecteduserIsPlayerHomebutton rankingList user =
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
                 [ Input.button (Button.simple ++ Color.simple) <|
-                    { --onPress = Just <| ResetToShowGlobal rankingList user
-                      onPress = Just <| ResetToShowGlobal
+                    { onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Home"
                     }
                 ]
