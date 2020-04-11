@@ -63,8 +63,9 @@ main =
 type Model
     = WalletOps SR.Types.WalletState TxRecord
     | UserOps SR.Types.UserState SR.Types.AllLists Eth.Types.Address SR.Types.User SR.Types.UIState TxRecord
-    | GlobalRankings (List SR.Types.RankingInfo) SR.Types.RankingInfo SR.Types.UIState SR.Types.AllLists SR.Types.User TxRecord
-    | SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) SR.Types.RankingInfo SR.Types.User SR.Types.Challenge (List SR.Types.User) SR.Types.UIState TxRecord
+    | GlobalRankings SR.Types.RankingInfo SR.Types.UIState SR.Types.AllLists SR.Types.User TxRecord
+      --| SelectedRanking (List SR.Types.RankingInfo) (List SR.Types.Player) SR.Types.RankingInfo SR.Types.User SR.Types.Challenge (List SR.Types.User) SR.Types.UIState TxRecord
+    | SelectedRanking SR.Types.AllLists (List SR.Types.Player) SR.Types.RankingInfo SR.Types.User SR.Types.Challenge (List SR.Types.User) SR.Types.UIState TxRecord
     | Failure String
 
 
@@ -272,7 +273,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                             { allLists | users = Utils.MyUtils.extractUsersFromWebData userList }
                     in
                     if SR.ListOps.isUserInList userLAddedToAllLists.users uaddr then
-                        ( GlobalRankings [] SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings allLists (SR.ListOps.singleUserInList userLAddedToAllLists.users uaddr) emptyTxRecord, gotRankingList )
+                        ( GlobalRankings SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings allLists (SR.ListOps.singleUserInList userLAddedToAllLists.users uaddr) emptyTxRecord, gotRankingList )
 
                     else
                         ( UserOps (SR.Types.NewUser userWithUpdatedAddr) userLAddedToAllLists uaddr userWithUpdatedAddr SR.Types.CreateNewUser txRec, Cmd.none )
@@ -319,24 +320,28 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         userWithUpdatedAddr =
                             { userInfo | ethaddress = userInfo.ethaddress }
                     in
-                    ( GlobalRankings [] SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings SR.Defaults.emptyAllLists userInfo { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewUser allLists.users userWithUpdatedAddr, gotRankingList ] )
+                    ( GlobalRankings SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings SR.Defaults.emptyAllLists userInfo { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewUser allLists.users userWithUpdatedAddr, gotRankingList ] )
 
                 _ ->
                     --todo: better logic. This should go to failure model rather than fall thru to UserOps
                     -- but currently logic needs to do this
                     ( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyUser SR.Types.CreateNewUser txRec, Cmd.none )
 
-        GlobalRankings lrankingInfo rnkInfo uiState allLists user txRec ->
+        GlobalRankings rnkInfo uiState allLists user txRec ->
             case msgOfTransitonThatAlreadyHappened of
                 GotGlobalRankingsJson rmtrnkingdata ->
-                    ( GlobalRankings (Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata) SR.Defaults.emptyRankingInfo uiState allLists user emptyTxRecord, Cmd.none )
+                    let
+                        addedRankingListToAllLists =
+                            { allLists | globalRankings = Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata }
+                    in
+                    ( GlobalRankings SR.Defaults.emptyRankingInfo uiState addedRankingListToAllLists user emptyTxRecord, Cmd.none )
 
                 GotRankingIdAndRankingOwnerAddr rnkidstr rnkownerstr rnknamestr ->
                     let
                         newRnkInfo =
                             { rnkInfo | id = Utils.MyUtils.stringFromRankingId rnkidstr, rankingowneraddr = rnkownerstr, rankingname = rnknamestr }
                     in
-                    ( SelectedRanking lrankingInfo [] newRnkInfo user SR.Defaults.emptyChallenge allLists.users uiState emptyTxRecord, fetchedSingleRanking rnkidstr )
+                    ( SelectedRanking allLists [] newRnkInfo user SR.Defaults.emptyChallenge allLists.users uiState emptyTxRecord, fetchedSingleRanking rnkidstr )
 
                 -- this is the response from createNewPlayerListWithCurrentUser Cmd
                 -- it had the Http.expectStringResponse in it
@@ -344,27 +349,39 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 -- the result now is the ranking id only at this point which was pulled out by the decoder
                 -- the lrankingInfo is preserved
                 SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
-                    ( GlobalRankings lrankingInfo SR.Defaults.emptyRankingInfo SR.Types.CreateNewLadder allLists user emptyTxRecord
-                    , addedNewRankingListEntryInGlobal idValueFromDecoder lrankingInfo rnkInfo user.ethaddress
+                    ( GlobalRankings SR.Defaults.emptyRankingInfo SR.Types.CreateNewLadder allLists user emptyTxRecord
+                    , addedNewRankingListEntryInGlobal idValueFromDecoder allLists.globalRankings rnkInfo user.ethaddress
                     )
 
                 SentUserInfoAndDecodedResponseToNewUser serverResponse ->
-                    ( GlobalRankings lrankingInfo SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings allLists user emptyTxRecord, Cmd.none )
+                    ( GlobalRankings SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings allLists user emptyTxRecord, Cmd.none )
 
                 ResetToShowGlobal lrankingInfoForReset userRec ->
-                    ( GlobalRankings lrankingInfoForReset SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings allLists userRec emptyTxRecord, Cmd.none )
+                    let
+                        resetGlobalRankingList =
+                            { allLists | globalRankings = lrankingInfoForReset }
+                    in
+                    ( GlobalRankings SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings resetGlobalRankingList userRec emptyTxRecord, Cmd.none )
 
                 ChangedUIStateToCreateNew lrankingInfoChgToCreateNew userRec ->
-                    ( GlobalRankings lrankingInfoChgToCreateNew SR.Defaults.emptyRankingInfo SR.Types.CreateNewLadder allLists userRec emptyTxRecord, Cmd.none )
+                    let
+                        resetGlobalRankingListForCreateNew =
+                            { allLists | globalRankings = lrankingInfoChgToCreateNew }
+                    in
+                    ( GlobalRankings SR.Defaults.emptyRankingInfo SR.Types.CreateNewLadder resetGlobalRankingListForCreateNew userRec emptyTxRecord, Cmd.none )
 
                 AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
-                    ( GlobalRankings (Utils.MyUtils.extractRankingsFromWebData <| updatedListAfterNewEntryAddedToGlobalList) SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings allLists user emptyTxRecord, Cmd.none )
+                    let
+                        resetGlobalRankingListForAddedNewEntry =
+                            { allLists | globalRankings = Utils.MyUtils.extractRankingsFromWebData <| updatedListAfterNewEntryAddedToGlobalList }
+                    in
+                    ( GlobalRankings SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings resetGlobalRankingListForAddedNewEntry user emptyTxRecord, Cmd.none )
 
                 LadderNameInputChg namefield ->
-                    ( GlobalRankings lrankingInfo { rnkInfo | rankingname = namefield } SR.Types.CreateNewLadder allLists user emptyTxRecord, Cmd.none )
+                    ( GlobalRankings { rnkInfo | rankingname = namefield } SR.Types.CreateNewLadder allLists user emptyTxRecord, Cmd.none )
 
                 LadderDescInputChg descfield ->
-                    ( GlobalRankings lrankingInfo { rnkInfo | rankingdesc = descfield } SR.Types.CreateNewLadder allLists user emptyTxRecord, Cmd.none )
+                    ( GlobalRankings { rnkInfo | rankingdesc = descfield } SR.Types.CreateNewLadder allLists user emptyTxRecord, Cmd.none )
 
                 NewRankingRequestedByConfirmBtnClicked newLadderRnkInfo ->
                     let
@@ -394,7 +411,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         _ =
                             Debug.log "NewRankingRequestedByConfirmBtnClicked user " user.ethaddress
                     in
-                    ( GlobalRankings lrankingInfo newLadderRnkInfo SR.Types.CreateNewLadder allLists user { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewPlayerListWithCurrentUser user ] )
+                    ( GlobalRankings newLadderRnkInfo SR.Types.CreateNewLadder allLists user { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewPlayerListWithCurrentUser user ] )
 
                 Fail str ->
                     ( Failure str, Cmd.none )
@@ -402,13 +419,13 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 _ ->
                     ( Failure "Global Rankings fall thru", Cmd.none )
 
-        SelectedRanking lrankingInfo lPlayer rnkInfo userRec challenge luser uiState txRec ->
+        SelectedRanking allLists lPlayer rnkInfo userRec challenge luser uiState txRec ->
             case msgOfTransitonThatAlreadyHappened of
                 PlayersReceived players ->
                     ( updateSelectedRankingUIState rnkInfo currentmodel (extractAndSortPlayerList players), Cmd.none )
 
                 ResetToShowGlobal _ user ->
-                    ( GlobalRankings lrankingInfo SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings SR.Defaults.emptyAllLists user emptyTxRecord, Cmd.none )
+                    ( GlobalRankings SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings allLists user emptyTxRecord, Cmd.none )
 
                 TxSentryMsg subMsg ->
                     let
@@ -430,7 +447,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                             case whoHigher of
                                 SR.Types.OpponentRankHigher ->
                                     --nb. higher rank is a lower number and vice versa!
-                                    ( SelectedRanking lrankingInfo
+                                    ( SelectedRanking allLists
                                         lPlayer
                                         rnkInfo
                                         userRec
@@ -448,7 +465,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                                 SR.Types.OpponentRankLower ->
                                     --nb. higher rank is a lower number and vice versa!
-                                    ( SelectedRanking lrankingInfo
+                                    ( SelectedRanking allLists
                                         lPlayer
                                         rnkInfo
                                         userRec
@@ -463,7 +480,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                             case whoHigher of
                                 SR.Types.OpponentRankHigher ->
                                     --nb. higher rank is a lower number and vice versa!
-                                    ( SelectedRanking lrankingInfo
+                                    ( SelectedRanking allLists
                                         lPlayer
                                         rnkInfo
                                         userRec
@@ -476,7 +493,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                                 SR.Types.OpponentRankLower ->
                                     --nb. higher rank is a lower number and vice versa!
-                                    ( SelectedRanking lrankingInfo
+                                    ( SelectedRanking allLists
                                         lPlayer
                                         rnkInfo
                                         userRec
@@ -493,7 +510,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                     )
 
                         SR.Types.Undecided ->
-                            ( SelectedRanking lrankingInfo
+                            ( SelectedRanking allLists
                                 lPlayer
                                 rnkInfo
                                 userRec
@@ -505,7 +522,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                             )
 
                 SentResultToJsonbin a ->
-                    ( SelectedRanking lrankingInfo
+                    ( SelectedRanking allLists
                         lPlayer
                         rnkInfo
                         userRec
@@ -517,7 +534,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     )
 
                 DeletedRanking uaddr ->
-                    ( SelectedRanking lrankingInfo
+                    ( SelectedRanking allLists
                         lPlayer
                         rnkInfo
                         userRec
@@ -529,7 +546,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     )
 
                 DeletedSingleRankingFromJsonBin result ->
-                    ( SelectedRanking lrankingInfo
+                    ( SelectedRanking allLists
                         lPlayer
                         rnkInfo
                         userRec
@@ -537,7 +554,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         luser
                         uiState
                         txRec
-                    , deleteSelectedRankingFromGlobalList rnkInfo.id lrankingInfo userRec.ethaddress
+                    , deleteSelectedRankingFromGlobalList rnkInfo.id allLists.globalRankings userRec.ethaddress
                     )
 
                 Fail str ->
@@ -547,7 +564,11 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( updatedSelectedForChallenge currentmodel lPlayer opponentAsPlayerRec userRec, Cmd.none )
 
                 DeletedRankingFromGlobalList updatedListAfterRankingDeletedFromGlobalList ->
-                    ( GlobalRankings (Utils.MyUtils.extractRankingsFromWebData <| updatedListAfterRankingDeletedFromGlobalList) SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings SR.Defaults.emptyAllLists userRec emptyTxRecord, Cmd.none )
+                    let
+                        resetGlobalRankingList =
+                            { allLists | globalRankings = Utils.MyUtils.extractRankingsFromWebData <| updatedListAfterRankingDeletedFromGlobalList }
+                    in
+                    ( GlobalRankings SR.Defaults.emptyRankingInfo SR.Types.UIRenderAllRankings resetGlobalRankingList userRec emptyTxRecord, Cmd.none )
 
                 ClickedJoinSelected ->
                     ( currentmodel, addCurrentUserToPlayerList rnkInfo.id lPlayer userRec )
@@ -610,15 +631,15 @@ updateSelectedRankingPlayerList currentmodel lplayers =
 updateSelectedRankingUIState : SR.Types.RankingInfo -> Model -> List SR.Types.Player -> Model
 updateSelectedRankingUIState rnkInfo currentmodel lplayers =
     case currentmodel of
-        SelectedRanking lrankingInfo lPlayer intrankingId userRec challenge luser uiState txRec ->
-            if SR.ListOps.isUserSelectedOwnerOfRanking rnkInfo lrankingInfo userRec then
-                SelectedRanking lrankingInfo lplayers rnkInfo userRec SR.Defaults.emptyChallenge luser SR.Types.UISelectedRankingUserIsOwner emptyTxRecord
+        SelectedRanking allLists lPlayer intrankingId userRec challenge luser uiState txRec ->
+            if SR.ListOps.isUserSelectedOwnerOfRanking rnkInfo allLists.globalRankings userRec then
+                SelectedRanking allLists lplayers rnkInfo userRec SR.Defaults.emptyChallenge luser SR.Types.UISelectedRankingUserIsOwner emptyTxRecord
 
             else if SR.ListOps.isUserMemberOfSelectedRanking lplayers userRec then
-                SelectedRanking lrankingInfo lplayers rnkInfo userRec SR.Defaults.emptyChallenge luser SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord
+                SelectedRanking allLists lplayers rnkInfo userRec SR.Defaults.emptyChallenge luser SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord
 
             else
-                SelectedRanking lrankingInfo lplayers rnkInfo userRec SR.Defaults.emptyChallenge luser SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord
+                SelectedRanking allLists lplayers rnkInfo userRec SR.Defaults.emptyChallenge luser SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord
 
         _ ->
             Failure <| "updateSelectedRankingUIState : "
@@ -631,35 +652,35 @@ updateSelectedRankingUIState rnkInfo currentmodel lplayers =
 view : Model -> Html Msg
 view model =
     case model of
-        GlobalRankings lrankingInfo rnkInfo uiState userlist userRec txRec ->
+        GlobalRankings rnkInfo uiState allLists userRec txRec ->
             case uiState of
                 SR.Types.CreateNewUser ->
                     inputNewUserview userRec
 
                 SR.Types.CreateNewLadder ->
-                    inputNewLadderview lrankingInfo userRec rnkInfo
+                    inputNewLadderview allLists.globalRankings userRec rnkInfo
 
                 _ ->
-                    globalResponsiveview lrankingInfo userRec
+                    globalResponsiveview allLists.globalRankings userRec
 
-        SelectedRanking lrankingInfo playerList rnkInfo userRec challenge luser uiState txRec ->
+        SelectedRanking allLists playerList rnkInfo userRec challenge luser uiState txRec ->
             let
                 _ =
                     Debug.log "rankinfo " rnkInfo
             in
             case uiState of
                 SR.Types.UISelectedRankingUserIsOwner ->
-                    selectedUserIsOwnerView lrankingInfo playerList rnkInfo userRec
+                    selectedUserIsOwnerView allLists.globalRankings playerList rnkInfo userRec
 
                 SR.Types.UISelectedRankingUserIsPlayer ->
-                    selectedUserIsPlayerView lrankingInfo playerList rnkInfo userRec
+                    selectedUserIsPlayerView allLists.globalRankings playerList rnkInfo userRec
 
                 SR.Types.UIChallenge ->
-                    --selectedUserIsPlayerView lrankingInfo playerList rnkInfo userRec
+                    --selectedUserIsPlayerView allLists.globalRankings playerList rnkInfo userRec
                     greetingView <| "You are \nchallenging " ++ challenge.opponent.name ++ "you are \n" ++ challenge.player.name ++ "your opponent email \nis " ++ challenge.opponentEmail
 
                 _ ->
-                    selectedRankingView lrankingInfo playerList rnkInfo userRec
+                    selectedRankingView allLists.globalRankings playerList rnkInfo userRec
 
         WalletOps walletState txRec ->
             case walletState of
@@ -829,6 +850,10 @@ globalhomebutton rankingList user =
 
 selectedhomebuttons : List SR.Types.RankingInfo -> SR.Types.User -> Element Msg
 selectedhomebuttons rankingList user =
+    let
+        _ =
+            Debug.log "selected home" rankingList
+    in
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
@@ -1080,7 +1105,7 @@ subscriptions model =
         UserOps _ _ _ _ _ _ ->
             Sub.none
 
-        GlobalRankings _ _ _ _ _ _ ->
+        GlobalRankings _ _ _ _ _ ->
             Sub.none
 
         SelectedRanking _ _ _ _ _ _ _ _ ->
