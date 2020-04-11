@@ -198,7 +198,7 @@ type alias AllLists =
 
 
 type alias AppInfo =
-    { globalRanking : RankingInfo
+    { selectedRanking : RankingInfo
     , player : Player
     , user : User
     , challenge : Challenge

@@ -85,7 +85,7 @@ emptyAllLists =
 
 
 emptyAppInfo =
-    { globalRanking = emptyRankingInfo
+    { selectedRanking = emptyRankingInfo
     , player = emptyPlayer
     , user = emptyUser
     , challenge = emptyChallenge
