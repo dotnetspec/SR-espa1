@@ -838,8 +838,8 @@ playerbuttons user playerInfoList rnkInfo =
         ]
 
 
-addPlayerInfoToAnyElText : SR.Types.User -> SR.Types.Player -> Element Msg
-addPlayerInfoToAnyElText user playerObj =
+addPlayerInfoToAnyElText : SR.Types.User -> Bool -> SR.Types.Player -> Element Msg
+addPlayerInfoToAnyElText user isUserInThisRanking playerObj =
     let
         playerAvailability =
             if playerObj.currentchallengername == "" then
@@ -855,17 +855,26 @@ addPlayerInfoToAnyElText user playerObj =
             else
                 False
     in
-    if isPlayerCurrentUser then
-        Element.column Grid.simple <|
-            [ Input.button (Button.fill ++ Color.disabled) <|
-                { onPress = Nothing
-                , label = Element.text <| String.fromInt playerObj.rank ++ ". " ++ playerObj.name ++ " vs " ++ playerAvailability
-                }
-            ]
+    if isUserInThisRanking then
+        if isPlayerCurrentUser then
+            Element.column Grid.simple <|
+                [ Input.button (Button.fill ++ Color.disabled) <|
+                    { onPress = Nothing
+                    , label = Element.text <| String.fromInt playerObj.rank ++ ". " ++ playerObj.name ++ " vs " ++ playerAvailability
+                    }
+                ]
+
+        else
+            Element.column Grid.simple <|
+                [ Input.button (Button.fill ++ Color.info) <|
+                    { onPress = Just <| ChallengeOpponentClicked playerObj
+                    , label = Element.text <| String.fromInt playerObj.rank ++ ". " ++ playerObj.name ++ " vs " ++ playerAvailability
+                    }
+                ]
 
     else
         Element.column Grid.simple <|
-            [ Input.button (Button.fill ++ Color.info) <|
+            [ Input.button (Button.fill ++ Color.disabled) <|
                 { onPress = Just <| ChallengeOpponentClicked playerObj
                 , label = Element.text <| String.fromInt playerObj.rank ++ ". " ++ playerObj.name ++ " vs " ++ playerAvailability
                 }
@@ -875,10 +884,14 @@ addPlayerInfoToAnyElText user playerObj =
 insertPlayerList : SR.Types.User -> List SR.Types.Player -> List (Element Msg)
 insertPlayerList user playerInfoList =
     let
+        isUserMemberOfThisRanking =
+            SR.ListOps.isUserMemberOfSelectedRanking playerInfoList user
+
         mapOutPlayerList =
             List.map
                 (addPlayerInfoToAnyElText
                     user
+                    isUserMemberOfThisRanking
                 )
                 playerInfoList
     in
