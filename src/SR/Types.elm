@@ -1,18 +1,8 @@
 module SR.Types exposing
     ( PlayerId, RankingId(..)
-    , Player, Opponent, OpponentRelativeRank(..), Options, PlayerAvailability(..), ResultOfMatch(..), SRState(..), UserState(..), WalletState(..)
+    , Player, Opponent, OpponentRelativeRank(..), Options, ResultOfMatch(..), UserState(..), WalletState(..)
     , UIState(..)
-    ,  Challenge
-      , CreateNewLadderFormFields
-      , LadderState(..)
-      , ModalState(..)
-      , NewRankingListServerResponse
-      , RankingInfo
-      , ResultRadioOptions(..)
-        --, JsonApiURLs(..)
-      , User
-      , UserListState(..)
-
+    , AllLists, AppInfo, Challenge, CreateNewLadderFormFields, LadderState(..), ModalState(..), NewRankingListServerResponse, RankingInfo, ResultRadioOptions(..), User, UserListState(..)
     )
 
 {-| Types
@@ -115,14 +105,12 @@ type WalletState
 
 --| Inactive
 --| Transaction --Ports.EthNode Eth.Types.Address
-
-
-type SRState
-    = AllRankingsJson (RemoteData.WebData (List RankingInfo))
-    | NewEmpty
-      --| SingleRanking (RemoteData.WebData (List Player)) RankingId
-      --| EnterResult
-    | SRStateFailure String
+-- type SRState
+--     = AllRankingsJson (RemoteData.WebData (List RankingInfo))
+--     | NewEmpty
+--       --| SingleRanking (RemoteData.WebData (List Player)) RankingId
+--       --| EnterResult
+--     | SRStateFailure String
 
 
 type UserState
@@ -139,7 +127,7 @@ type UIState
     = UIRenderAllRankings
     | CreateNewLadder
     | CreateNewUser
-    | DisplayWalletInfoToUser
+    | UIDisplayWalletInfoToUser
     | UISelectedRankingUserIsOwner
     | UISelectedRankingUserIsPlayer
     | UISelectedRankingUserIsNeitherOwnerNorPlayer
@@ -159,12 +147,6 @@ type alias CreateNewLadderFormFields =
     }
 
 
-
--- MissingWalletDialogOpen
--- | LockedWalletDialogOpen
--- | DialogClosed
-
-
 type Options
     = MatchChallenge
     | Result
@@ -181,36 +163,44 @@ type OpponentRelativeRank
     | OpponentRankLower
 
 
-type PlayerAvailability
-    = Available
-    | Unavailable
+{--}
+type alias AllLists =
+    { globalRankings : List RankingInfo
+    , players : List Player
+    , users : List User
+    }
+--}
 
 
-{-| -}
+type alias AppInfo =
+    { selectedRanking : RankingInfo
+    , player : Player
+    , user : User
+    , challenger : Player
+    }
+
+
 type alias Player =
     { datestamp : Int
     , active : Bool
-    , currentchallengername : String
-    , currentchallengerid : Int
     , address : String
     , rank : Int
     , name : String
     , id : Int
-    , currentchallengeraddress : String
+    , isplayercurrentlychallenged : Bool
+    , email : String
+    , mobile : String
+    , challengeraddress : String
     }
 
 
 type alias Challenge =
-    { playerid : Int
-    , player : Player
-    , opponent : Player
-    , playerRank : Int
-    , opponentRank : Int
-    , playerStatus : PlayerAvailability
-    , opponentStatus : PlayerAvailability
-    , rankingid : String
-    , opponentEmail : String
-    , opponentMobile : String
+    { opponentname : String
+    , opponentid : Int
+    , opponentrank : Int
+    , opponentaddress : String
+    , opponentemail : String
+    , opponentmobile : String
     }
 
 

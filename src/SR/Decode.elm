@@ -24,13 +24,14 @@ playerDecoder =
     Json.Decode.succeed SR.Types.Player
         |> Json.Decode.Pipeline.required "datestamp" Json.Decode.int
         |> Json.Decode.Pipeline.required "active" Json.Decode.bool
-        |> Json.Decode.Pipeline.required "currentchallengername" Json.Decode.string
-        |> Json.Decode.Pipeline.required "currentchallengerid" Json.Decode.int
         |> Json.Decode.Pipeline.required "address" Json.Decode.string
         |> Json.Decode.Pipeline.required "rank" Json.Decode.int
         |> Json.Decode.Pipeline.required "name" Json.Decode.string
-        |> Json.Decode.Pipeline.required "playerid" Json.Decode.int
-        |> Json.Decode.Pipeline.required "currentchallengeraddress" Json.Decode.string
+        |> Json.Decode.Pipeline.required "id" Json.Decode.int
+        |> Json.Decode.Pipeline.required "isplayercurrentlychallenged" Json.Decode.bool
+        |> Json.Decode.Pipeline.required "email" Json.Decode.string
+        |> Json.Decode.Pipeline.required "mobile" Json.Decode.string
+        |> Json.Decode.Pipeline.required "challengeraddress" Json.Decode.string
 
 
 rankingsDecoder : Json.Decode.Decoder (List SR.Types.RankingInfo)
@@ -51,17 +52,6 @@ rankingDecoder =
 decodeNewRankingListServerResponse : Decoder (List SR.Types.RankingInfo)
 decodeNewRankingListServerResponse =
     Json.Decode.field "data" (Json.Decode.list rankingDecoder)
-
-
-
--- newRankingDecoder : Json.Decode.Decoder SR.Types.RankingInfo
--- newRankingDecoder =
---     Json.Decode.succeed SR.Types.RankingInfo
---         |> Json.Decode.Pipeline.required "id" Json.Decode.string
---         |> Json.Decode.Pipeline.required "active" Json.Decode.bool
---         |> Json.Decode.Pipeline.required "rankingname" Json.Decode.string
---         |> Json.Decode.Pipeline.required "rankingdesc" Json.Decode.string
--- newRankingIdDecoder : Json.Decode.Decoder SR.Types.RankingId
 
 
 newRankingIdDecoder =

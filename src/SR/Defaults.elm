@@ -1,6 +1,6 @@
 module SR.Defaults exposing
     ( emptyPlayer
-    , emptyActiveUser, emptyChallenge, emptyRankingInfo, emptyUser, globalBinName, globalContainerId, secretKey, selectedBinName, selectedContainerId, userBinName, userContainerId
+    , emptyActiveUser, emptyAllLists, emptyAppInfo, emptyRankingInfo, emptyUser, globalBinName, globalContainerId, secretKey, selectedBinName, selectedContainerId, userBinName, userContainerId
     )
 
 {-| Default values.
@@ -20,13 +20,14 @@ emptyPlayer : SR.Types.Player
 emptyPlayer =
     { datestamp = 12345
     , active = False
-    , currentchallengername = "Available"
-    , currentchallengerid = 0
     , address = ""
     , rank = 0
     , name = "Unidentified"
     , id = 0
-    , currentchallengeraddress = ""
+    , isplayercurrentlychallenged = False
+    , email = ""
+    , mobile = ""
+    , challengeraddress = ""
     }
 
 
@@ -63,28 +64,18 @@ emptyRankingInfo =
     }
 
 
-emptyChallenge =
-    { playerid = 0
-    , player = emptyPlayer
-    , opponent = emptyPlayer
-    , playerRank = 0
-    , opponentRank = 0
-    , playerStatus = Unavailable
-    , opponentStatus = Unavailable
-    , rankingid = ""
-    , opponentEmail = ""
-    , opponentMobile = ""
+emptyAllLists =
+    { globalRankings = []
+    , players = []
+    , users = []
     }
 
 
-type alias Challenge =
-    { playerid : Int
-    , player : Player
-    , opponent : Player
-    , playerRank : Int
-    , opponentRank : Int
-    , playerStatus : PlayerAvailability
-    , opponentStatus : PlayerAvailability
+emptyAppInfo =
+    { selectedRanking = emptyRankingInfo
+    , player = emptyPlayer
+    , user = emptyUser
+    , challenger = emptyPlayer
     }
 
 
