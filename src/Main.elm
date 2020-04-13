@@ -141,26 +141,26 @@ type Msg
     | DeletedRankingFromGlobalList (RemoteData.WebData (List SR.Types.RankingInfo))
     | DeletedSingleRankingFromJsonBin (RemoteData.WebData (List SR.Types.RankingInfo))
     | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
-    | GotRankingId Internal.Types.RankingId
     | GotRankingIdAndRankingOwnerAddrClicked Internal.Types.RankingId String String
     | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
     | UsersReceived (RemoteData.WebData (List SR.Types.User))
     | MissingWalletInstructions
     | OpenWalletInstructions
     | NewUser
-      --| ResetToShowGlobal (List SR.Types.RankingInfo) SR.Types.User
     | ResetToShowGlobal
-    | ExistingUser Eth.Types.Address
     | LadderNameInputChg String
     | LadderDescInputChg String
     | ProcessResult SR.Types.ResultOfMatch
     | SentResultToJsonbin (Result Http.Error ())
     | NewUserNameInputChg String
     | NewUserDescInputChg String
+    | NewUserEmailInputChg String
+    | NewUserMobileInputChg String
     | NewUserRequested SR.Types.User
     | ClickedJoinSelected
     | ReturnFromJoin (RemoteData.WebData (List SR.Types.Player))
     | ChallengeOpponentClicked SR.Types.Player
+    | NewUserInputs Msg
     | Fail String
 
 
@@ -270,22 +270,19 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     else
                         ( updateOnUserListReceived currentmodel userList, Cmd.none )
 
-                NewUserNameInputChg namefield ->
-                    case userState of
-                        SR.Types.NewUser user ->
-                            ( UserOps (SR.Types.NewUser { user | username = namefield }) allLists uaddr appInfo SR.Types.CreateNewUser txRec, Cmd.none )
+                NewUserNameInputChg newUserInputsMsg ->
+                    ( handleNewUserInputs currentmodel (NewUserNameInputChg newUserInputsMsg), Cmd.none )
 
-                        SR.Types.ExistingUser _ ->
-                            ( Failure "NewUserNameInputChg", Cmd.none )
+                NewUserDescInputChg newUserInputsMsg ->
+                    ( handleNewUserInputs currentmodel (NewUserDescInputChg newUserInputsMsg), Cmd.none )
 
-                NewUserDescInputChg descfield ->
-                    case userState of
-                        SR.Types.NewUser user ->
-                            ( UserOps (SR.Types.NewUser { user | description = descfield }) allLists uaddr appInfo SR.Types.CreateNewUser txRec, Cmd.none )
+                NewUserEmailInputChg newUserInputsMsg ->
+                    ( handleNewUserInputs currentmodel (NewUserDescInputChg newUserInputsMsg), Cmd.none )
 
-                        SR.Types.ExistingUser _ ->
-                            ( Failure "NewUserNameInputChg", Cmd.none )
+                NewUserMobileInputChg newUserInputsMsg ->
+                    ( handleNewUserInputs currentmodel (NewUserDescInputChg newUserInputsMsg), Cmd.none )
 
+                --( Failure "NewUserNameInputChg", Cmd.none )
                 NewUserRequested userInfo ->
                     let
                         txParams =
@@ -630,6 +627,50 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
         Failure str ->
             ( Failure <| "Model failure in selected ranking: " ++ str, Cmd.none )
+
+
+handleNewUserInputs : Model -> Msg -> Model
+handleNewUserInputs currentmodel msg =
+    case currentmodel of
+        UserOps userState allLists uaddr appInfo uiState txRec ->
+            case msg of
+                NewUserNameInputChg namefield ->
+                    case userState of
+                        SR.Types.NewUser user ->
+                            UserOps (SR.Types.NewUser { user | username = namefield }) allLists uaddr appInfo SR.Types.CreateNewUser txRec
+
+                        SR.Types.ExistingUser _ ->
+                            Failure "NewUserNameInputChg"
+
+                NewUserDescInputChg descfield ->
+                    case userState of
+                        SR.Types.NewUser user ->
+                            UserOps (SR.Types.NewUser { user | description = descfield }) allLists uaddr appInfo SR.Types.CreateNewUser txRec
+
+                        SR.Types.ExistingUser _ ->
+                            Failure "NewUserNameInputChg"
+
+                NewUserEmailInputChg emailfield ->
+                    case userState of
+                        SR.Types.NewUser user ->
+                            UserOps (SR.Types.NewUser { user | email = emailfield }) allLists uaddr appInfo SR.Types.CreateNewUser txRec
+
+                        SR.Types.ExistingUser _ ->
+                            Failure "NewUserEmailInputChg"
+
+                NewUserMobileInputChg mobilefield ->
+                    case userState of
+                        SR.Types.NewUser user ->
+                            UserOps (SR.Types.NewUser { user | mobile = mobilefield }) allLists uaddr appInfo SR.Types.CreateNewUser txRec
+
+                        SR.Types.ExistingUser _ ->
+                            Failure "NewUserMobileInputChg"
+
+                _ ->
+                    Failure "NewUserNameInputChg"
+
+        _ ->
+            Failure "NewUserNameInputChg"
 
 
 extractAndSortPlayerList : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
@@ -1117,11 +1158,21 @@ inputNewUser user =
                     , label = Input.labelLeft Input.label <| Element.text "Description"
                     , spellcheck = False
                     }
+                , Input.text Input.simple
+                    { onChange = NewUserEmailInputChg
+                    , text = user.email
+                    , placeholder = Nothing
+                    , label = Input.labelLeft Input.label <| Element.text "Email"
+                    }
+                , Input.text Input.simple
+                    { onChange = NewUserMobileInputChg
+                    , text = user.mobile
+                    , placeholder = Nothing
+                    , label = Input.labelLeft Input.label <| Element.text "Mobile"
+                    }
                 ]
             ]
-        , Element.paragraph [] <|
-            List.singleton <|
-                Element.text "Input attributes can be combined with other attributes."
+        , SR.Elements.justParasimpleUserInfoText
         ]
 
 
