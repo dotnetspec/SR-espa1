@@ -1,4 +1,19 @@
-module SR.ListOps exposing (filterSelectedRankingOutOfGlobalList, gotCurrentUserAsPlayerFromPlayerList, gotRankingFromRankingList, gotUserFromUserList, gotUserFromUserListStrAddress, gotUserListFromRemData, isUserInList, isUserMemberOfSelectedRanking, isUserSelectedOwnerOfRanking, singleUserInList, sortPlayerListByRank)
+module SR.ListOps exposing
+    ( filterSelectedRankingOutOfGlobalList
+    ,  gotCurrentUserAsPlayerFromPlayerList
+       --, gotLPlayersFromPlayerListWithPlayerAddr
+
+    , gotRankingFromRankingList
+    , gotUserFromUserList
+    , gotUserFromUserListStrAddress
+    , gotUserListFromRemData
+    , isUserInList
+    , isUserMemberOfSelectedRanking
+    , isUserSelectedOwnerOfRanking
+    , setPlayerInPlayerListWithChallengeResult
+    , singleUserInList
+    , sortPlayerListByRank
+    )
 
 import Eth.Types
 import Eth.Utils
@@ -12,9 +27,50 @@ import Utils.MyUtils
 
 
 --external
--- gotCurrentUserAsPlayerFromPlayerList : List SR.Types.Player -> SR.Types.User -> SR.Types.Player
 -- gotCurrentUserAsPlayerFromPlayerList lplayer user =
 --     SR.Defaults.emptyPlayer
+-- gotLPlayersFromPlayerListWithPlayerAddr : String -> List SR.Types.Player -> List SR.Types.Player
+-- gotLPlayersFromPlayerListWithPlayerAddr uaddr lPlayer =
+--     List.filterMap
+--         (isThisPlayerAddr
+--             uaddr
+--         )
+--         lPlayer
+-- isThisPlayerAddr : String -> SR.Types.Player -> Maybe SR.Types.Player
+-- isThisPlayerAddr playerAddr player =
+--     if player.address == playerAddr then
+--         Just player
+--     else
+--         Nothing
+
+
+setPlayerInPlayerListWithChallengeResult : List SR.Types.Player -> SR.Types.Player -> Int -> List SR.Types.Player
+setPlayerInPlayerListWithChallengeResult lPlayer player rank =
+    let
+        filteredPlayerList =
+            filterPlayerOutOfPlayerList player.address lPlayer
+
+        updatedPlayer =
+            { player | isplayercurrentlychallenged = False, rank = rank }
+
+        newPlayerList =
+            updatedPlayer :: filteredPlayerList
+    in
+    newPlayerList
+
+
+
+-- setPlayerInPlayerListCurrentChallengeToFalse : List SR.Types.Player -> SR.Type.Player -> List SR.Types.Player
+-- setPlayerInPlayerListCurrentChallengeToFalse lPlayer player =
+--     let
+--         filteredPlayerList =
+--             filterPlayerOutOfPlayerList lPlayer player
+--         updatedPlayer =
+--             { player | isplayercurrentlychallenged = False }
+--         newPlayerList =
+--             updatedPlayer :: filteredPlayerList
+--     in
+--     newPlayerList
 
 
 isUserInList : List SR.Types.User -> Eth.Types.Address -> Bool
@@ -150,10 +206,6 @@ isUserSelectedOwnerOfRanking rnkInfo lrnkInfo user =
                 False
 
 
-
---internal
-
-
 filterSelectedRankingOutOfGlobalList : String -> List SR.Types.RankingInfo -> List SR.Types.RankingInfo
 filterSelectedRankingOutOfGlobalList rankingid lrankinginfo =
     List.filterMap
@@ -163,10 +215,32 @@ filterSelectedRankingOutOfGlobalList rankingid lrankinginfo =
         lrankinginfo
 
 
+filterPlayerOutOfPlayerList : String -> List SR.Types.Player -> List SR.Types.Player
+filterPlayerOutOfPlayerList addr lplayer =
+    List.filterMap
+        (doesPlayerAddrNOTMatchAddr
+            addr
+        )
+        lplayer
+
+
+
+--internal
+
+
 doesCurrentRankingIdNOTMatchId : String -> SR.Types.RankingInfo -> Maybe SR.Types.RankingInfo
 doesCurrentRankingIdNOTMatchId rankingid rankingInfo =
     if rankingInfo.id /= rankingid then
         Just rankingInfo
+
+    else
+        Nothing
+
+
+doesPlayerAddrNOTMatchAddr : String -> SR.Types.Player -> Maybe SR.Types.Player
+doesPlayerAddrNOTMatchAddr addr player =
+    if player.address /= addr then
+        Just player
 
     else
         Nothing
@@ -193,14 +267,14 @@ isRankingIdInList rankingid rnk =
 findPlayerInList : SR.Types.User -> List SR.Types.Player -> List SR.Types.Player
 findPlayerInList user lPlayer =
     List.filterMap
-        (isPlayerInList
+        (isThisPlayerAddr
             user.ethaddress
         )
         lPlayer
 
 
-isPlayerInList : String -> SR.Types.Player -> Maybe SR.Types.Player
-isPlayerInList playerAddr player =
+isThisPlayerAddr : String -> SR.Types.Player -> Maybe SR.Types.Player
+isThisPlayerAddr playerAddr player =
     if player.address == playerAddr then
         Just player
 
