@@ -1,4 +1,4 @@
-module SR.Elements exposing (justParasimpleUserInfoText, selectedRankingHeaderEl, simpleUserInfoText)
+module SR.Elements exposing (ethereumWalletWarning, justParasimpleUserInfoText, selectedRankingHeaderEl, simpleUserInfoText)
 
 --import RemoteData
 
@@ -64,4 +64,14 @@ selectedHeading user rnkInfo =
                 Element.text rnkInfo.rankingname
             , Element.text rnkInfo.rankingdesc
             ]
+        ]
+
+
+ethereumWalletWarning : Element msg
+ethereumWalletWarning =
+    Element.paragraph (Card.fill ++ Color.warning) <|
+        [ Element.el [ Font.bold ] <| Element.text "Please note: "
+        , Element.paragraph [] <|
+            List.singleton <|
+                Element.text "Clicking 'Create New' interacts with your Ethereum wallet"
         ]
