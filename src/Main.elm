@@ -277,12 +277,11 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( handleNewUserInputs currentmodel (NewUserDescInputChg newUserInputsMsg), Cmd.none )
 
                 NewUserEmailInputChg newUserInputsMsg ->
-                    ( handleNewUserInputs currentmodel (NewUserDescInputChg newUserInputsMsg), Cmd.none )
+                    ( handleNewUserInputs currentmodel (NewUserEmailInputChg newUserInputsMsg), Cmd.none )
 
                 NewUserMobileInputChg newUserInputsMsg ->
-                    ( handleNewUserInputs currentmodel (NewUserDescInputChg newUserInputsMsg), Cmd.none )
+                    ( handleNewUserInputs currentmodel (NewUserMobileInputChg newUserInputsMsg), Cmd.none )
 
-                --( Failure "NewUserNameInputChg", Cmd.none )
                 NewUserRequested userInfo ->
                     let
                         txParams =

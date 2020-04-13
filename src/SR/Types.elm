@@ -95,22 +95,10 @@ type Username
 
 type WalletState
     = Missing
-    | Locked --Ports.EthNode
-      --| Opened --Ports.EthNode Eth.Types.Address
+    | Locked
     | WalletOpenedWithoutUserCheck Eth.Types.Address
     | WalletOpenedUserCheckDone User Eth.Types.Address
     | WalletOpenedAndOperational
-
-
-
---| Inactive
---| Transaction --Ports.EthNode Eth.Types.Address
--- type SRState
---     = AllRankingsJson (RemoteData.WebData (List RankingInfo))
---     | NewEmpty
---       --| SingleRanking (RemoteData.WebData (List Player)) RankingId
---       --| EnterResult
---     | SRStateFailure String
 
 
 type UserState
