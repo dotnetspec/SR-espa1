@@ -1,6 +1,11 @@
 module SR.ListOps exposing
-    ( filterSelectedRankingOutOfGlobalList
+    (  filterSelectedRankingOutOfGlobalList
+       --, findPlayerInPlayerForDisplayList
+
     , gotCurrentUserAsPlayerFromPlayerList
+    ,  gotPlayerFromPlayerListStrAddress
+       --, gotPlayerListForDisplay
+
     , gotRankingFromRankingList
     , gotUserFromUserList
     , gotUserFromUserListStrAddress
@@ -9,8 +14,11 @@ module SR.ListOps exposing
     , isUserMemberOfSelectedRanking
     , isUserSelectedOwnerOfRanking
     , setPlayerInPlayerListWithChallengeResult
+    , setPlayerInPlayerListWithNewChallengerAddr
     , singleUserInList
-    , sortPlayerListByRank
+    ,  sortPlayerListByRank
+       --, createANewPlayerForDisplay
+
     )
 
 import Eth.Types
@@ -25,6 +33,28 @@ import Utils.MyUtils
 
 
 --external
+-- gotPlayerListForDisplay : List SR.Types.Player -> SR.Types.Player -> List SR.Types.PlayerForDisplay
+-- gotPlayerListForDisplay lplayer currentPlayer =
+--     -- let
+--     --     playerForDisplayList =
+--     -- in
+--     List.map (createANewPlayerForDisplay lplayer) lplayer
+-- createANewPlayerForDisplay : List SR.Types.Player -> SR.Types.Player -> SR.Types.PlayerForDisplay
+-- createANewPlayerForDisplay lplayer player =
+--     let
+--         opponent =
+--             gotPlayerFromPlayerListStrAddress lplayer player.address
+--         newPlayerForDisplay =
+--             { address = player.address
+--             , rank = player.rank
+--             , name = player.name
+--             , isplayercurrentlychallenged = player.isplayercurrentlychallenged
+--             , opponentname = opponent.name
+--             , opponentemail = opponent.email
+--             , opponentmobile = opponent.mobile
+--             }
+--     in
+--     newPlayerForDisplay
 
 
 setPlayerInPlayerListWithChallengeResult : List SR.Types.Player -> SR.Types.Player -> Int -> List SR.Types.Player
@@ -35,6 +65,21 @@ setPlayerInPlayerListWithChallengeResult lPlayer player rank =
 
         updatedPlayer =
             { player | isplayercurrentlychallenged = False, rank = rank }
+
+        newPlayerList =
+            updatedPlayer :: filteredPlayerList
+    in
+    newPlayerList
+
+
+setPlayerInPlayerListWithNewChallengerAddr : List SR.Types.Player -> SR.Types.Player -> String -> List SR.Types.Player
+setPlayerInPlayerListWithNewChallengerAddr lPlayer player challengeraddress =
+    let
+        filteredPlayerList =
+            filterPlayerOutOfPlayerList player.address lPlayer
+
+        updatedPlayer =
+            { player | isplayercurrentlychallenged = True, challengeraddress = challengeraddress }
 
         newPlayerList =
             updatedPlayer :: filteredPlayerList
@@ -58,6 +103,25 @@ isUserInList userlist uaddr =
 sortPlayerListByRank : List SR.Types.Player -> List SR.Types.Player
 sortPlayerListByRank lplayer =
     List.sortBy .rank lplayer
+
+
+
+-- isUserMemberOfSelectedRankingPlayerForDisplay : List SR.Types.Player -> SR.Types.User -> Bool
+-- isUserMemberOfSelectedRankingPlayerForDisplay lplayerfordisplay user =
+--     let
+--         filteredList =
+--             findPlayerInPlayerForDisplayList user lplayerfordisplay
+--         filteredRec =
+--             List.head filteredList
+--     in
+--     case filteredRec of
+--         Nothing ->
+--             False
+--         Just a ->
+--             if a.address == user.ethaddress then
+--                 True
+--             else
+--                 False
 
 
 isUserMemberOfSelectedRanking : List SR.Types.Player -> SR.Types.User -> Bool
@@ -129,6 +193,22 @@ gotUserFromUserListStrAddress userList uaddr =
             a
 
 
+gotPlayerFromPlayerListStrAddress : List SR.Types.Player -> String -> SR.Types.Player
+gotPlayerFromPlayerListStrAddress lplayer addr =
+    let
+        existingUser =
+            List.head <|
+                List.filter (\r -> r.address == (String.toLower <| addr))
+                    lplayer
+    in
+    case existingUser of
+        Nothing ->
+            SR.Defaults.emptyPlayer
+
+        Just a ->
+            a
+
+
 gotUserFromUserList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
 gotUserFromUserList userList uaddr =
     let
@@ -191,6 +271,19 @@ filterPlayerOutOfPlayerList addr lplayer =
 
 
 --internal
+-- findPlayerInPlayerForDisplayList : SR.Types.User -> List SR.Types.PlayerForDisplay -> List SR.Types.PlayerForDisplay
+-- findPlayerInPlayerForDisplayList user lPlayerForDisplay =
+--     List.filterMap
+--         (isThisPlayerAddrinPlayerForDisplay
+--             user.ethaddress
+--         )
+--         lPlayerForDisplay
+-- isThisPlayerAddrinPlayerForDisplay : String -> SR.Types.PlayerForDisplay -> Maybe SR.Types.PlayerForDisplay
+-- isThisPlayerAddrinPlayerForDisplay uaddr playerfordisplay =
+--     if playerfordisplay.address == uaddr then
+--         Just playerfordisplay
+--     else
+--         Nothing
 
 
 doesCurrentRankingIdNOTMatchId : String -> SR.Types.RankingInfo -> Maybe SR.Types.RankingInfo

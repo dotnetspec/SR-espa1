@@ -1,5 +1,9 @@
 module Main exposing (jsonEncodeNewGlobalRankingList, main)
 
+-- import Json.Decode
+-- import Json.Decode.Pipeline
+--import Ui
+
 import Browser
 import Element exposing (Element)
 import Element.Font as Font
@@ -22,8 +26,6 @@ import Framework.Input as Input
 import Html exposing (Html)
 import Http
 import Internal.Types
-import Json.Decode
-import Json.Decode.Pipeline
 import Json.Encode
 import Ports
 import Process
@@ -35,7 +37,6 @@ import SR.Elements
 import SR.ListOps
 import SR.Types
 import Task
-import Ui
 import Utils.MyUtils
 
 
@@ -130,6 +131,7 @@ type Msg
     | SentUserInfoAndDecodedResponseToNewUser (RemoteData.WebData (List SR.Types.User))
     | ChangedUIStateToCreateNew
     | NewRankingRequestedByConfirmBtnClicked SR.Types.RankingInfo
+    | NewChallengeConfirmClicked
     | PollBlock (Result Http.Error Int)
     | WatchTxHash (Result String Eth.Types.TxHash)
     | WatchTx (Result String Eth.Types.Tx)
@@ -158,7 +160,7 @@ type Msg
     | NewUserMobileInputChg String
     | NewUserRequested SR.Types.User
     | ClickedJoinSelected
-    | ReturnFromJoin (RemoteData.WebData (List SR.Types.Player))
+    | ReturnFromPlayerListUpdate (RemoteData.WebData (List SR.Types.Player))
     | ChallengeOpponentClicked SR.Types.Player
     | NewUserInputs Msg
     | Fail String
@@ -421,11 +423,18 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     in
                     ( RankingOps allLists newAppInfo SR.Types.CreateNewLadder { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewPlayerListWithCurrentUser newAppInfo.user ] )
 
+                NewChallengeConfirmClicked ->
+                    createNewPlayerListWithNewChallengeAndUpdateJsonBin currentmodel
+
                 Fail str ->
                     ( Failure str, Cmd.none )
 
                 PlayersReceived players ->
-                    ( updateSelectedRankingUIState appInfo.selectedRanking currentmodel (extractAndSortPlayerList players), Cmd.none )
+                    let
+                        _ =
+                            Debug.log "players" players
+                    in
+                    ( updateSelectedRankingOnPlayersReceived currentmodel (extractAndSortPlayerList players), Cmd.none )
 
                 TxSentryMsg subMsg ->
                     let
@@ -595,12 +604,12 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     , deleteSelectedRankingFromGlobalList appInfo.selectedRanking.id allLists.globalRankings appInfo.user.ethaddress
                     )
 
-                ChallengeOpponentClicked opponentAsPlayerRec ->
+                ChallengeOpponentClicked opponentAsPlayer ->
                     let
                         _ =
-                            Debug.log "opponentAsPlayerRec" opponentAsPlayerRec
+                            Debug.log "opponentAsPlayer" opponentAsPlayer
                     in
-                    ( updatedForChallenge currentmodel allLists.players opponentAsPlayerRec appInfo.user, Cmd.none )
+                    ( updatedForChallenge currentmodel allLists.players opponentAsPlayer appInfo.user, Cmd.none )
 
                 DeletedRankingFromGlobalList updatedListAfterRankingDeletedFromGlobalList ->
                     let
@@ -612,7 +621,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 ClickedJoinSelected ->
                     ( currentmodel, addCurrentUserToPlayerList appInfo.selectedRanking.id allLists.players appInfo.user )
 
-                ReturnFromJoin response ->
+                ReturnFromPlayerListUpdate response ->
                     ( updateSelectedRankingPlayerList currentmodel (Utils.MyUtils.extractPlayersFromWebData response), Cmd.none )
 
                 _ ->
@@ -620,6 +629,30 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
         Failure str ->
             ( Failure <| "Model failure in selected ranking: " ++ str, Cmd.none )
+
+
+createNewPlayerListWithNewChallengeAndUpdateJsonBin : Model -> ( Model, Cmd Msg )
+createNewPlayerListWithNewChallengeAndUpdateJsonBin model =
+    case model of
+        RankingOps allLists appInfo uiState txRec ->
+            let
+                -- add respective challenger addresses to player and challenger (who is also a player type)
+                newplayerListWithPlayerUpdated =
+                    SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr allLists.players appInfo.player appInfo.challenger.address
+
+                challengerAsPlayer =
+                    SR.ListOps.gotPlayerFromPlayerListStrAddress allLists.players appInfo.challenger.address
+
+                newplayerListWithPlayerAndChallengerUpdated =
+                    SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.address
+
+                newAllLists =
+                    { allLists | players = newplayerListWithPlayerAndChallengerUpdated }
+            in
+            ( RankingOps newAllLists appInfo uiState txRec, updatePlayerList appInfo.selectedRanking.id newAllLists.players )
+
+        _ ->
+            ( Failure "createNewPlayerListWithNewChallengeAndUpdateJsonBin", Cmd.none )
 
 
 handleNewUserInputs : Model -> Msg -> Model
@@ -753,15 +786,21 @@ updateSelectedRankingPlayerList currentmodel lplayers =
             Failure <| "updateSelectedRankingPlayerList : "
 
 
-updateSelectedRankingUIState : SR.Types.RankingInfo -> Model -> List SR.Types.Player -> Model
-updateSelectedRankingUIState rnkInfo currentmodel lplayers =
+updateSelectedRankingOnPlayersReceived : Model -> List SR.Types.Player -> Model
+updateSelectedRankingOnPlayersReceived currentmodel lplayers =
     case currentmodel of
         RankingOps allLists appInfo uiState txRec ->
             let
+                _ =
+                    Debug.log "updateSelectedRankingOnPlayersReceived" appInfo.challenger.name
+
+                currentPlayerFromUser =
+                    SR.ListOps.gotPlayerFromPlayerListStrAddress lplayers appInfo.user.ethaddress
+
                 allListsPlayersAdded =
                     { allLists | players = lplayers }
             in
-            if SR.ListOps.isUserSelectedOwnerOfRanking rnkInfo allLists.globalRankings appInfo.user then
+            if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking allLists.globalRankings appInfo.user then
                 RankingOps allListsPlayersAdded appInfo SR.Types.UISelectedRankingUserIsOwner emptyTxRecord
 
             else if SR.ListOps.isUserMemberOfSelectedRanking lplayers appInfo.user then
@@ -771,7 +810,7 @@ updateSelectedRankingUIState rnkInfo currentmodel lplayers =
                 RankingOps allListsPlayersAdded appInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord
 
         _ ->
-            Failure <| "updateSelectedRankingUIState : "
+            Failure <| "updateSelectedRankingOnPlayersReceived : "
 
 
 
@@ -790,10 +829,12 @@ view model =
                     inputNewLadderview allLists.globalRankings appInfo.user appInfo.selectedRanking
 
                 SR.Types.UISelectedRankingUserIsOwner ->
-                    selectedUserIsOwnerView allLists.globalRankings allLists.players appInfo.selectedRanking appInfo.user
+                    --selectedUserIsOwnerView allLists.globalRankings allLists.players appInfo.selectedRanking appInfo.user
+                    selectedUserIsOwnerView model
 
                 SR.Types.UISelectedRankingUserIsPlayer ->
-                    selectedUserIsPlayerView allLists.globalRankings allLists.players appInfo.selectedRanking appInfo.user
+                    --selectedUserIsPlayerView allLists.globalRankings allLists.players appInfo.selectedRanking appInfo.user
+                    selectedUserIsPlayerView model
 
                 SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer ->
                     selectedUserIsNeitherOwnerNorPlayerView allLists.globalRankings allLists.players appInfo.selectedRanking appInfo.user
@@ -896,80 +937,120 @@ insertRankingList rnkgInfoList =
     mapOutRankingList
 
 
-playerbuttons : SR.Types.User -> List SR.Types.Player -> SR.Types.RankingInfo -> Element Msg
-playerbuttons user playerInfoList rnkInfo =
-    Element.column Grid.section <|
-        [ --Element.el Heading.h2 <| Element.text "Selected Ranking"
-          SR.Elements.selectedRankingHeaderEl rnkInfo
-        , Element.column (Card.simple ++ Grid.simple) <|
-            insertPlayerList user playerInfoList
-        , Element.paragraph (Card.fill ++ Color.warning) <|
-            [ Element.el [ Font.bold ] <| Element.text "Please note: "
-            , Element.paragraph [] <|
-                List.singleton <|
-                    Element.text "Clicking 'Create New' interacts with your Ethereum wallet"
-            ]
-        ]
+
+-- playerbuttons : SR.Types.User -> List SR.Types.Player -> SR.Types.RankingInfo -> Element Msg
+-- playerbuttons user playerInfoList rnkInfo =
 
 
-addPlayerInfoToAnyElText : SR.Types.User -> Bool -> SR.Types.Player -> Element Msg
-addPlayerInfoToAnyElText user isUserInThisRanking playerObj =
-    let
-        playerAvailability =
-            if playerObj.isplayercurrentlychallenged == False then
-                "Available"
-
-            else
-                "Unavailable"
-
-        isPlayerCurrentUser =
-            if playerObj.address == user.ethaddress then
-                True
-
-            else
-                False
-    in
-    if isUserInThisRanking then
-        if isPlayerCurrentUser then
-            Element.column Grid.simple <|
-                [ Input.button (Button.fill ++ Color.disabled) <|
-                    { onPress = Nothing
-                    , label = Element.text <| String.fromInt playerObj.rank ++ ". " ++ playerObj.name ++ " vs " ++ playerAvailability
-                    }
+playerbuttons : Model -> Element Msg
+playerbuttons model =
+    case model of
+        RankingOps allLists appInfo uiState txRec ->
+            Element.column Grid.section <|
+                [ --Element.el Heading.h2 <| Element.text "Selected Ranking"
+                  SR.Elements.selectedRankingHeaderEl appInfo.selectedRanking
+                , Element.column (Card.simple ++ Grid.simple) <|
+                    --insertPlayerList user playerInfoList
+                    --insertPlayerList appInfo.user allLists.playersForDisplay
+                    insertPlayerList model
+                , Element.paragraph (Card.fill ++ Color.warning) <|
+                    [ Element.el [ Font.bold ] <| Element.text "Please note: "
+                    , Element.paragraph [] <|
+                        List.singleton <|
+                            Element.text "Clicking 'Create New' interacts with your Ethereum wallet"
+                    ]
                 ]
 
-        else
-            Element.column Grid.simple <|
-                [ Input.button (Button.fill ++ Color.info) <|
-                    { onPress = Just <| ChallengeOpponentClicked playerObj
-                    , label = Element.text <| String.fromInt playerObj.rank ++ ". " ++ playerObj.name ++ " vs " ++ playerAvailability
-                    }
-                ]
-
-    else
-        Element.column Grid.simple <|
-            [ Input.button (Button.fill ++ Color.disabled) <|
-                { onPress = Just <| ChallengeOpponentClicked playerObj
-                , label = Element.text <| String.fromInt playerObj.rank ++ ". " ++ playerObj.name ++ " vs " ++ playerAvailability
-                }
-            ]
+        _ ->
+            Element.text "Error"
 
 
-insertPlayerList : SR.Types.User -> List SR.Types.Player -> List (Element Msg)
-insertPlayerList user playerInfoList =
-    let
-        isUserMemberOfThisRanking =
-            SR.ListOps.isUserMemberOfSelectedRanking playerInfoList user
 
-        mapOutPlayerList =
-            List.map
-                (addPlayerInfoToAnyElText
-                    user
-                    isUserMemberOfThisRanking
-                )
-                playerInfoList
-    in
-    mapOutPlayerList
+-- addPlayerInfoToAnyElText : SR.Types.User -> Bool -> SR.Types.PlayerForDisplay -> Element Msg
+-- addPlayerInfoToAnyElText user isUserInThisRanking playerfordisplay =
+-- are you using the 'player' here?
+
+
+addPlayerInfoToAnyElText : Model -> SR.Types.Player -> Element Msg
+addPlayerInfoToAnyElText model player =
+    case model of
+        RankingOps allLists appInfo uiState txRec ->
+            let
+                challenger =
+                    SR.ListOps.gotPlayerFromPlayerListStrAddress allLists.players player.challengeraddress
+
+                playerAvailability =
+                    if appInfo.player.isplayercurrentlychallenged == False then
+                        "Available"
+
+                    else
+                        challenger.name
+
+                isPlayerCurrentUser =
+                    if player.address == appInfo.user.ethaddress then
+                        True
+
+                    else
+                        False
+            in
+            if SR.ListOps.isUserMemberOfSelectedRanking allLists.players appInfo.user then
+                if isPlayerCurrentUser then
+                    Element.column Grid.simple <|
+                        [ Input.button (Button.fill ++ Color.disabled) <|
+                            { onPress = Nothing
+                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ playerAvailability
+                            }
+                        ]
+
+                else if appInfo.player.isplayercurrentlychallenged == False then
+                    Element.column Grid.simple <|
+                        [ Input.button (Button.fill ++ Color.info) <|
+                            { onPress = Just <| ChallengeOpponentClicked player
+                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ playerAvailability
+                            }
+                        ]
+
+                else
+                    Element.column Grid.simple <|
+                        [ Input.button (Button.fill ++ Color.disabled) <|
+                            { onPress = Nothing
+                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ playerAvailability
+                            }
+                        ]
+
+            else
+                Element.column Grid.simple <|
+                    [ Input.button (Button.fill ++ Color.disabled) <|
+                        { onPress = Just <| ChallengeOpponentClicked player
+                        , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ playerAvailability
+                        }
+                    ]
+
+        _ ->
+            Element.text "Failed"
+
+
+insertPlayerList : Model -> List (Element Msg)
+insertPlayerList model =
+    case model of
+        RankingOps allLists appInfo uiState txRec ->
+            let
+                -- isUserMemberOfThisRanking =
+                --     SR.ListOps.isUserMemberOfSelectedRanking lplayerfordisplay user
+                -- challenger =
+                --     SR.ListOps.gotPlayerFromPlayerListStrAddress lplayerfordisplay playerObj.challengeraddress
+                mapOutPlayerList =
+                    List.map
+                        (addPlayerInfoToAnyElText model)
+                        --user
+                        --isUserMemberOfThisRanking
+                        --challenger
+                        allLists.players
+            in
+            mapOutPlayerList
+
+        _ ->
+            [ Element.text "error" ]
 
 
 globalhomebutton : Element Msg
@@ -1113,8 +1194,9 @@ confirmChallengebutton appInfo =
                     , label = Element.text "Home"
                     }
                 , Input.button (Button.simple ++ Color.info) <|
-                    { --onPress = Just <| NewRankingRequestedByConfirmBtnClicked rnkInfo
-                      onPress = Nothing
+                    { onPress = Just <| NewChallengeConfirmClicked
+
+                    --onPress = Nothing
                     , label = Element.text "Confirm"
                     }
                 ]
@@ -1222,41 +1304,61 @@ globalResponsiveview rankingList user =
             ]
 
 
-selectedRankingView : List SR.Types.Player -> SR.Types.RankingInfo -> SR.Types.User -> Html Msg
-selectedRankingView playerList rnkInfo user =
-    Framework.responsiveLayout [] <|
-        Element.column
-            Framework.container
-            [ Element.el Heading.h4 <| Element.text ("SportRank - " ++ user.username)
-            , selectedhomebuttons
-            , playerbuttons user playerList rnkInfo
-            ]
+
+-- selectedRankingView : List SR.Types.Player -> SR.Types.RankingInfo -> SR.Types.User -> Html Msg
+-- selectedRankingView playerList rnkInfo user =
+--     Framework.responsiveLayout [] <|
+--         Element.column
+--             Framework.container
+--             [ Element.el Heading.h4 <| Element.text ("SportRank - " ++ user.username)
+--             , selectedhomebuttons
+--             , playerbuttons user playerList rnkInfo
+--             ]
+-- selectedUserIsOwnerView : List SR.Types.RankingInfo -> List SR.Types.Player -> SR.Types.RankingInfo -> SR.Types.User -> Html Msg
+-- selectedUserIsOwnerView lrankingInfo playerList rnkInfo user =
 
 
-selectedUserIsOwnerView : List SR.Types.RankingInfo -> List SR.Types.Player -> SR.Types.RankingInfo -> SR.Types.User -> Html Msg
-selectedUserIsOwnerView lrankingInfo playerList rnkInfo user =
-    Framework.responsiveLayout [] <|
-        Element.column
-            Framework.container
-            [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ user.username
+selectedUserIsOwnerView : Model -> Html Msg
+selectedUserIsOwnerView model =
+    case model of
+        RankingOps allLists appInfo uiState txRec ->
+            Framework.responsiveLayout [] <|
+                Element.column
+                    Framework.container
+                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ appInfo.user.username
 
-            --, selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
-            , selecteduserIsOwnerhomebutton lrankingInfo user
-            , playerbuttons user playerList rnkInfo
-            ]
+                    --, selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
+                    --, selecteduserIsOwnerhomebutton lrankingInfo user
+                    --, playerbuttons user playerList rnkInfo
+                    ]
+
+        _ ->
+            Html.text "Fail"
 
 
-selectedUserIsPlayerView : List SR.Types.RankingInfo -> List SR.Types.Player -> SR.Types.RankingInfo -> SR.Types.User -> Html Msg
-selectedUserIsPlayerView lrankingInfo playerList rnkInfo user =
-    Framework.responsiveLayout [] <|
-        Element.column
-            Framework.container
-            [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ user.username
 
-            --, selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
-            , selecteduserIsPlayerHomebutton lrankingInfo user
-            , playerbuttons user playerList rnkInfo
-            ]
+-- selectedUserIsPlayerView : List SR.Types.RankingInfo -> List SR.Types.Player -> SR.Types.RankingInfo -> SR.Types.User -> Html Msg
+-- selectedUserIsPlayerView lrankingInfo playerList rnkInfo user =
+
+
+selectedUserIsPlayerView : Model -> Html Msg
+selectedUserIsPlayerView model =
+    case model of
+        RankingOps allLists appInfo uiState txRec ->
+            Framework.responsiveLayout [] <|
+                Element.column
+                    Framework.container
+                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ appInfo.user.username
+
+                    --, selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
+                    , selecteduserIsPlayerHomebutton allLists.globalRankings appInfo.user
+
+                    --, playerbuttons user playerList rnkInfo
+                    , playerbuttons model
+                    ]
+
+        _ ->
+            Html.text "Error"
 
 
 selectedUserIsNeitherOwnerNorPlayerView : List SR.Types.RankingInfo -> List SR.Types.Player -> SR.Types.RankingInfo -> SR.Types.User -> Html Msg
@@ -1266,7 +1368,8 @@ selectedUserIsNeitherOwnerNorPlayerView lrankingInfo playerList rnkInfo user =
             Framework.container
             [ Element.el Heading.h4 <| Element.text <| "SportRank - " ++ user.username ++ " - Join?"
             , selecteduserIsNeitherPlayerNorOwnerHomebutton
-            , playerbuttons user playerList rnkInfo
+
+            --, playerbuttons user playerList rnkInfo
             ]
 
 
@@ -1548,7 +1651,7 @@ addCurrentUserToPlayerList intrankingId lPlayer userRec =
     Http.request
         { body =
             Http.jsonBody <| jsonEncodeNewSelectedRankingPlayerList sortedSelectedRankingListWithNewPlayerJsonObjAdded
-        , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromJoin) SR.Decode.decodeNewPlayerListServerResponse
+        , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromPlayerListUpdate) SR.Decode.decodeNewPlayerListServerResponse
         , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
         , method = "PUT"
         , timeout = Nothing
@@ -1723,4 +1826,18 @@ deleteSelectedRankingFromGlobalList rankingId lrankingInfo rankingowneraddress =
         , timeout = Nothing
         , tracker = Nothing
         , url = SR.Constants.globalJsonbinRankingUpdateLink
+        }
+
+
+updatePlayerList : String -> List SR.Types.Player -> Cmd Msg
+updatePlayerList intrankingId lPlayer =
+    Http.request
+        { body =
+            Http.jsonBody <| jsonEncodeNewSelectedRankingPlayerList lPlayer
+        , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromPlayerListUpdate) SR.Decode.decodeNewPlayerListServerResponse
+        , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
+        , method = "PUT"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = SR.Constants.jsonbinUrlStubForUpdateExistingBinAndRespond ++ intrankingId
         }
