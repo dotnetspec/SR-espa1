@@ -1,11 +1,7 @@
 module SR.ListOps exposing
-    (  filterSelectedRankingOutOfGlobalList
-       --, findPlayerInPlayerForDisplayList
-
+    ( filterSelectedRankingOutOfGlobalList
     , gotCurrentUserAsPlayerFromPlayerList
-    ,  gotPlayerFromPlayerListStrAddress
-       --, gotPlayerListForDisplay
-
+    , gotPlayerFromPlayerListStrAddress
     , gotRankingFromRankingList
     , gotUserFromUserList
     , gotUserFromUserListStrAddress
@@ -16,9 +12,7 @@ module SR.ListOps exposing
     , setPlayerInPlayerListWithChallengeResult
     , setPlayerInPlayerListWithNewChallengerAddr
     , singleUserInList
-    ,  sortPlayerListByRank
-       --, createANewPlayerForDisplay
-
+    , sortPlayerListByRank
     )
 
 import Eth.Types
@@ -32,29 +26,7 @@ import Utils.MyUtils
 
 
 
---external
--- gotPlayerListForDisplay : List SR.Types.Player -> SR.Types.Player -> List SR.Types.PlayerForDisplay
--- gotPlayerListForDisplay lplayer currentPlayer =
---     -- let
---     --     playerForDisplayList =
---     -- in
---     List.map (createANewPlayerForDisplay lplayer) lplayer
--- createANewPlayerForDisplay : List SR.Types.Player -> SR.Types.Player -> SR.Types.PlayerForDisplay
--- createANewPlayerForDisplay lplayer player =
---     let
---         opponent =
---             gotPlayerFromPlayerListStrAddress lplayer player.address
---         newPlayerForDisplay =
---             { address = player.address
---             , rank = player.rank
---             , name = player.name
---             , isplayercurrentlychallenged = player.isplayercurrentlychallenged
---             , opponentname = opponent.name
---             , opponentemail = opponent.email
---             , opponentmobile = opponent.mobile
---             }
---     in
---     newPlayerForDisplay
+-- external
 
 
 setPlayerInPlayerListWithChallengeResult : List SR.Types.Player -> SR.Types.Player -> Int -> List SR.Types.Player

@@ -646,6 +646,9 @@ createNewPlayerListWithNewChallengeAndUpdateJsonBin model =
                 newplayerListWithPlayerAndChallengerUpdated =
                     SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.address
 
+                _ =
+                    Debug.log "newplayerListWithPlayerUpdated" newplayerListWithPlayerUpdated
+
                 newAllLists =
                     { allLists | players = newplayerListWithPlayerAndChallengerUpdated }
             in
@@ -791,23 +794,23 @@ updateSelectedRankingOnPlayersReceived currentmodel lplayers =
     case currentmodel of
         RankingOps allLists appInfo uiState txRec ->
             let
-                _ =
-                    Debug.log "updateSelectedRankingOnPlayersReceived" appInfo.challenger.name
+                newAppPlayer =
+                    { appInfo | player = SR.ListOps.gotPlayerFromPlayerListStrAddress lplayers appInfo.user.ethaddress }
 
-                currentPlayerFromUser =
-                    SR.ListOps.gotPlayerFromPlayerListStrAddress lplayers appInfo.user.ethaddress
+                newAppChallengerAndPlayer =
+                    { newAppPlayer | challenger = SR.ListOps.gotPlayerFromPlayerListStrAddress lplayers newAppPlayer.player.challengeraddress }
 
                 allListsPlayersAdded =
                     { allLists | players = lplayers }
             in
             if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking allLists.globalRankings appInfo.user then
-                RankingOps allListsPlayersAdded appInfo SR.Types.UISelectedRankingUserIsOwner emptyTxRecord
+                RankingOps allListsPlayersAdded newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner emptyTxRecord
 
             else if SR.ListOps.isUserMemberOfSelectedRanking lplayers appInfo.user then
-                RankingOps allListsPlayersAdded appInfo SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord
+                RankingOps allListsPlayersAdded newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord
 
             else
-                RankingOps allListsPlayersAdded appInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord
+                RankingOps allListsPlayersAdded newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord
 
         _ ->
             Failure <| "updateSelectedRankingOnPlayersReceived : "
@@ -965,12 +968,6 @@ playerbuttons model =
             Element.text "Error"
 
 
-
--- addPlayerInfoToAnyElText : SR.Types.User -> Bool -> SR.Types.PlayerForDisplay -> Element Msg
--- addPlayerInfoToAnyElText user isUserInThisRanking playerfordisplay =
--- are you using the 'player' here?
-
-
 addPlayerInfoToAnyElText : Model -> SR.Types.Player -> Element Msg
 addPlayerInfoToAnyElText model player =
     case model of
@@ -978,6 +975,9 @@ addPlayerInfoToAnyElText model player =
             let
                 challenger =
                     SR.ListOps.gotPlayerFromPlayerListStrAddress allLists.players player.challengeraddress
+
+                _ =
+                    Debug.log "lkjljlj" appInfo.player.isplayercurrentlychallenged
 
                 playerAvailability =
                     if appInfo.player.isplayercurrentlychallenged == False then
@@ -1035,16 +1035,9 @@ insertPlayerList model =
     case model of
         RankingOps allLists appInfo uiState txRec ->
             let
-                -- isUserMemberOfThisRanking =
-                --     SR.ListOps.isUserMemberOfSelectedRanking lplayerfordisplay user
-                -- challenger =
-                --     SR.ListOps.gotPlayerFromPlayerListStrAddress lplayerfordisplay playerObj.challengeraddress
                 mapOutPlayerList =
                     List.map
                         (addPlayerInfoToAnyElText model)
-                        --user
-                        --isUserMemberOfThisRanking
-                        --challenger
                         allLists.players
             in
             mapOutPlayerList
@@ -1304,20 +1297,6 @@ globalResponsiveview rankingList user =
             ]
 
 
-
--- selectedRankingView : List SR.Types.Player -> SR.Types.RankingInfo -> SR.Types.User -> Html Msg
--- selectedRankingView playerList rnkInfo user =
---     Framework.responsiveLayout [] <|
---         Element.column
---             Framework.container
---             [ Element.el Heading.h4 <| Element.text ("SportRank - " ++ user.username)
---             , selectedhomebuttons
---             , playerbuttons user playerList rnkInfo
---             ]
--- selectedUserIsOwnerView : List SR.Types.RankingInfo -> List SR.Types.Player -> SR.Types.RankingInfo -> SR.Types.User -> Html Msg
--- selectedUserIsOwnerView lrankingInfo playerList rnkInfo user =
-
-
 selectedUserIsOwnerView : Model -> Html Msg
 selectedUserIsOwnerView model =
     case model of
@@ -1326,19 +1305,12 @@ selectedUserIsOwnerView model =
                 Element.column
                     Framework.container
                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ appInfo.user.username
-
-                    --, selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
-                    --, selecteduserIsOwnerhomebutton lrankingInfo user
-                    --, playerbuttons user playerList rnkInfo
+                    , selecteduserIsOwnerhomebutton allLists.globalRankings appInfo.user
+                    , playerbuttons model
                     ]
 
         _ ->
             Html.text "Fail"
-
-
-
--- selectedUserIsPlayerView : List SR.Types.RankingInfo -> List SR.Types.Player -> SR.Types.RankingInfo -> SR.Types.User -> Html Msg
--- selectedUserIsPlayerView lrankingInfo playerList rnkInfo user =
 
 
 selectedUserIsPlayerView : Model -> Html Msg
@@ -1672,7 +1644,7 @@ jsonEncodeNewSelectedRankingPlayerList lplayers =
                 , ( "rank", Json.Encode.int player.rank )
                 , ( "name", Json.Encode.string player.name )
                 , ( "id", Json.Encode.int player.id )
-                , ( "isplayercurrentlychallenged", Json.Encode.bool False )
+                , ( "isplayercurrentlychallenged", Json.Encode.bool player.isplayercurrentlychallenged )
                 , ( "email", Json.Encode.string player.email )
                 , ( "mobile", Json.Encode.string player.mobile )
                 , ( "challengeraddress", Json.Encode.string player.challengeraddress )

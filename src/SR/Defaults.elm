@@ -68,8 +68,6 @@ emptyAllLists =
     { globalRankings = []
     , players = []
     , users = []
-
-    -- , playersForDisplay = []
     }
 
 

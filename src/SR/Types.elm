@@ -156,8 +156,6 @@ type alias AllLists =
     { globalRankings : List RankingInfo
     , players : List Player
     , users : List User
-
-    --, playersForDisplay : List PlayerForDisplay
     }
 --}
 
