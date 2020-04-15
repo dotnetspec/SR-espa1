@@ -822,10 +822,6 @@ view model =
                     globalResponsiveview allLists.globalRankings appInfo.user
 
                 SR.Types.UIChallenge ->
-                    let
-                        _ =
-                            Debug.log "challenger addr at view" appInfo.challenger.address
-                    in
                     displayChallengeBeforeConfirmView model
 
                 _ ->
@@ -946,7 +942,7 @@ addPlayerInfoToAnyElText model player =
                 challengerAsUser =
                     SR.ListOps.gotUserFromUserListStrAddress allLists.users player.challengeraddress
 
-                opponentNameOrAvailable =
+                printChallengerNameOrAvailable =
                     if player.isplayercurrentlychallenged == True then
                         challengerAsUser.username
 
@@ -962,26 +958,35 @@ addPlayerInfoToAnyElText model player =
             in
             if SR.ListOps.isUserMemberOfSelectedRanking allLists.players appInfo.user then
                 if isPlayerCurrentUser then
+                    if player.isplayercurrentlychallenged then
+                        Element.column Grid.simple <|
+                            [ Input.button (Button.fill ++ Color.success) <|
+                                { onPress = Nothing
+                                , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ printChallengerNameOrAvailable
+                                }
+                            ]
+
+                    else
+                        Element.column Grid.simple <|
+                            [ Input.button (Button.fill ++ Color.primary) <|
+                                { onPress = Nothing
+                                , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ printChallengerNameOrAvailable
+                                }
+                            ]
+
+                else if player.isplayercurrentlychallenged == True then
                     Element.column Grid.simple <|
                         [ Input.button (Button.fill ++ Color.disabled) <|
                             { onPress = Nothing
-                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ opponentNameOrAvailable
-                            }
-                        ]
-
-                else if appInfo.player.isplayercurrentlychallenged == False then
-                    Element.column Grid.simple <|
-                        [ Input.button (Button.fill ++ Color.info) <|
-                            { onPress = Just <| ChallengeOpponentClicked player
-                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ opponentNameOrAvailable
+                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ printChallengerNameOrAvailable
                             }
                         ]
 
                 else
                     Element.column Grid.simple <|
-                        [ Input.button (Button.fill ++ Color.disabled) <|
-                            { onPress = Nothing
-                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ opponentNameOrAvailable
+                        [ Input.button (Button.fill ++ Color.info) <|
+                            { onPress = Just <| ChallengeOpponentClicked player
+                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ printChallengerNameOrAvailable
                             }
                         ]
 
@@ -989,7 +994,7 @@ addPlayerInfoToAnyElText model player =
                 Element.column Grid.simple <|
                     [ Input.button (Button.fill ++ Color.disabled) <|
                         { onPress = Nothing
-                        , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ opponentNameOrAvailable
+                        , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ printChallengerNameOrAvailable
                         }
                     ]
 
@@ -1137,9 +1142,6 @@ confirmChallengebutton model =
     case model of
         RankingOps allLists appInfo uiState txRec ->
             let
-                _ =
-                    Debug.log "challenger addr" appInfo.challenger.address
-
                 challengerAsUser =
                     SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.challenger.address
             in
