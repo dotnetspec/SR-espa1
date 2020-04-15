@@ -828,11 +828,9 @@ view model =
                     inputNewLadderview allLists.globalRankings appInfo.user appInfo.selectedRanking
 
                 SR.Types.UISelectedRankingUserIsOwner ->
-                    --selectedUserIsOwnerView allLists.globalRankings allLists.players appInfo.selectedRanking appInfo.user
                     selectedUserIsOwnerView model
 
                 SR.Types.UISelectedRankingUserIsPlayer ->
-                    --selectedUserIsPlayerView allLists.globalRankings allLists.players appInfo.selectedRanking appInfo.user
                     selectedUserIsPlayerView model
 
                 SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer ->
@@ -842,11 +840,6 @@ view model =
                     globalResponsiveview allLists.globalRankings appInfo.user
 
                 SR.Types.UIChallenge ->
-                    let
-                        _ =
-                            Debug.log "apinfo opp email" appInfo.challenger.email
-                    in
-                    --greetingView <| "You are \nchallenging " ++ appInfo.challenger.name ++ "you are \n" ++ appInfo.player.name ++ "your opponent email \nis " ++ appInfo.challenger.email ++ "your opponent mobile \nis " ++ appInfo.challenger.mobile
                     displayChallengeBeforeConfirmView appInfo
 
                 _ ->
@@ -936,21 +929,13 @@ insertRankingList rnkgInfoList =
     mapOutRankingList
 
 
-
--- playerbuttons : SR.Types.User -> List SR.Types.Player -> SR.Types.RankingInfo -> Element Msg
--- playerbuttons user playerInfoList rnkInfo =
-
-
 playerbuttons : Model -> Element Msg
 playerbuttons model =
     case model of
         RankingOps allLists appInfo uiState txRec ->
             Element.column Grid.section <|
-                [ --Element.el Heading.h2 <| Element.text "Selected Ranking"
-                  SR.Elements.selectedRankingHeaderEl appInfo.selectedRanking
+                [ SR.Elements.selectedRankingHeaderEl appInfo.selectedRanking
                 , Element.column (Card.simple ++ Grid.simple) <|
-                    --insertPlayerList user playerInfoList
-                    --insertPlayerList appInfo.user allLists.playersForDisplay
                     insertPlayerList model
                 , Element.paragraph (Card.fill ++ Color.warning) <|
                     [ Element.el [ Font.bold ] <| Element.text "Please note: "
@@ -966,21 +951,19 @@ playerbuttons model =
 
 addPlayerInfoToAnyElText : Model -> SR.Types.Player -> Element Msg
 addPlayerInfoToAnyElText model player =
+    --nb. 'player' is the player that's being mapped cf. appInfo.player which is current user as player (single instance)
     case model of
         RankingOps allLists appInfo uiState txRec ->
             let
                 challenger =
                     SR.ListOps.gotPlayerFromPlayerListStrAddress allLists.players player.challengeraddress
 
-                _ =
-                    Debug.log "isplayercurrentlychallenged" appInfo.player.isplayercurrentlychallenged
-
                 playerAvailability =
-                    if appInfo.player.isplayercurrentlychallenged == False then
-                        "Available"
+                    if player.isplayercurrentlychallenged == True then
+                        challenger.name
 
                     else
-                        challenger.name
+                        "Available"
 
                 isPlayerCurrentUser =
                     if player.address == appInfo.user.ethaddress then
@@ -1017,7 +1000,7 @@ addPlayerInfoToAnyElText model player =
             else
                 Element.column Grid.simple <|
                     [ Input.button (Button.fill ++ Color.disabled) <|
-                        { onPress = Just <| ChallengeOpponentClicked player
+                        { onPress = Nothing
                         , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ playerAvailability
                         }
                     ]
