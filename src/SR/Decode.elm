@@ -22,15 +22,8 @@ ladderOfPlayersDecoder =
 playerDecoder : Json.Decode.Decoder SR.Types.Player
 playerDecoder =
     Json.Decode.succeed SR.Types.Player
-        |> Json.Decode.Pipeline.required "datestamp" Json.Decode.int
-        |> Json.Decode.Pipeline.required "active" Json.Decode.bool
         |> Json.Decode.Pipeline.required "address" Json.Decode.string
         |> Json.Decode.Pipeline.required "rank" Json.Decode.int
-        |> Json.Decode.Pipeline.required "name" Json.Decode.string
-        |> Json.Decode.Pipeline.required "id" Json.Decode.int
-        |> Json.Decode.Pipeline.required "isplayercurrentlychallenged" Json.Decode.bool
-        |> Json.Decode.Pipeline.required "email" Json.Decode.string
-        |> Json.Decode.Pipeline.required "mobile" Json.Decode.string
         |> Json.Decode.Pipeline.required "challengeraddress" Json.Decode.string
 
 

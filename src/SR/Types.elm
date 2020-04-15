@@ -2,7 +2,7 @@ module SR.Types exposing
     ( PlayerId, RankingId(..)
     , Player, Opponent, OpponentRelativeRank(..), Options, ResultOfMatch(..), UserState(..), WalletState(..)
     , UIState(..)
-    , AllLists, AppInfo, Challenge, CreateNewLadderFormFields, LadderState(..), ModalState(..), NewRankingListServerResponse, RankingInfo, ResultRadioOptions(..), User, UserListState(..)
+    , AllLists, AppInfo, CreateNewLadderFormFields, LadderState(..), ModalState(..), NewRankingListServerResponse, RankingInfo, ResultRadioOptions(..), User, UserListState(..)
     )
 
 {-| Types
@@ -72,12 +72,6 @@ type RankingId
     = RankingId String
 
 
-
--- type Ranking
---     = Global (Result Http.Error String)
---     | Random (Result Http.Error String)
-
-
 type alias Opponent =
     Player
 
@@ -86,31 +80,12 @@ type Username
     = Username String
 
 
-
--- type AddressState
---     = Exists String
---     | None
--- Complex
-
-
 type WalletState
     = Missing
-    | Locked --Ports.EthNode
-      --| Opened --Ports.EthNode Eth.Types.Address
+    | Locked
     | WalletOpenedWithoutUserCheck Eth.Types.Address
     | WalletOpenedUserCheckDone User Eth.Types.Address
     | WalletOpenedAndOperational
-
-
-
---| Inactive
---| Transaction --Ports.EthNode Eth.Types.Address
--- type SRState
---     = AllRankingsJson (RemoteData.WebData (List RankingInfo))
---     | NewEmpty
---       --| SingleRanking (RemoteData.WebData (List Player)) RankingId
---       --| EnterResult
---     | SRStateFailure String
 
 
 type UserState
@@ -180,27 +155,21 @@ type alias AppInfo =
     }
 
 
-type alias Player =
+type alias User =
     { datestamp : Int
     , active : Bool
-    , address : String
-    , rank : Int
-    , name : String
-    , id : Int
-    , isplayercurrentlychallenged : Bool
+    , username : String
+    , ethaddress : String
+    , description : String
     , email : String
     , mobile : String
-    , challengeraddress : String
     }
 
 
-type alias Challenge =
-    { opponentname : String
-    , opponentid : Int
-    , opponentrank : Int
-    , opponentaddress : String
-    , opponentemail : String
-    , opponentmobile : String
+type alias Player =
+    { address : String
+    , rank : Int
+    , challengeraddress : String
     }
 
 
@@ -224,15 +193,4 @@ type alias NewRankingListServerResponse =
             }
     , version : Int
     , parentId : String
-    }
-
-
-type alias User =
-    { datestamp : Int
-    , active : Bool
-    , username : String
-    , ethaddress : String
-    , description : String
-    , email : String
-    , mobile : String
     }

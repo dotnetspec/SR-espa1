@@ -1,4 +1,4 @@
-module SR.Elements exposing (selectedRankingHeaderEl, simpleUserInfoText)
+module SR.Elements exposing (ethereumWalletWarning, justParasimpleUserInfoText, selectedRankingHeaderEl, simpleUserInfoText)
 
 --import RemoteData
 
@@ -39,10 +39,15 @@ selectedRankingHeaderEl rnkInfo =
 simpleUserInfoText : Element msg
 simpleUserInfoText =
     Element.column Grid.simple <|
-        [ Element.paragraph [] <|
-            List.singleton <|
-                Element.text "kkkButton attributes can be combined with other attributes."
+        [ justParasimpleUserInfoText
         ]
+
+
+justParasimpleUserInfoText : Element msg
+justParasimpleUserInfoText =
+    Element.paragraph [] <|
+        List.singleton <|
+            Element.text "Use of this application is without any liablity whatsoever"
 
 
 selectedHeading : SR.Types.User -> SR.Types.RankingInfo -> Element msg
@@ -59,4 +64,14 @@ selectedHeading user rnkInfo =
                 Element.text rnkInfo.rankingname
             , Element.text rnkInfo.rankingdesc
             ]
+        ]
+
+
+ethereumWalletWarning : Element msg
+ethereumWalletWarning =
+    Element.paragraph (Card.fill ++ Color.warning) <|
+        [ Element.el [ Font.bold ] <| Element.text "Please note: "
+        , Element.paragraph [] <|
+            List.singleton <|
+                Element.text "Clicking 'Create New' interacts with your Ethereum wallet"
         ]

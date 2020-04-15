@@ -1,8 +1,7 @@
 module SR.ListOps exposing
     ( filterSelectedRankingOutOfGlobalList
-    ,  gotCurrentUserAsPlayerFromPlayerList
-       --, gotLPlayersFromPlayerListWithPlayerAddr
-
+    , gotCurrentUserAsPlayerFromPlayerList
+    , gotPlayerFromPlayerListStrAddress
     , gotRankingFromRankingList
     , gotUserFromUserList
     , gotUserFromUserListStrAddress
@@ -11,6 +10,7 @@ module SR.ListOps exposing
     , isUserMemberOfSelectedRanking
     , isUserSelectedOwnerOfRanking
     , setPlayerInPlayerListWithChallengeResult
+    , setPlayerInPlayerListWithNewChallengerAddr
     , singleUserInList
     , sortPlayerListByRank
     )
@@ -26,22 +26,7 @@ import Utils.MyUtils
 
 
 
---external
--- gotCurrentUserAsPlayerFromPlayerList lplayer user =
---     SR.Defaults.emptyPlayer
--- gotLPlayersFromPlayerListWithPlayerAddr : String -> List SR.Types.Player -> List SR.Types.Player
--- gotLPlayersFromPlayerListWithPlayerAddr uaddr lPlayer =
---     List.filterMap
---         (isThisPlayerAddr
---             uaddr
---         )
---         lPlayer
--- isThisPlayerAddr : String -> SR.Types.Player -> Maybe SR.Types.Player
--- isThisPlayerAddr playerAddr player =
---     if player.address == playerAddr then
---         Just player
---     else
---         Nothing
+-- external
 
 
 setPlayerInPlayerListWithChallengeResult : List SR.Types.Player -> SR.Types.Player -> Int -> List SR.Types.Player
@@ -51,7 +36,7 @@ setPlayerInPlayerListWithChallengeResult lPlayer player rank =
             filterPlayerOutOfPlayerList player.address lPlayer
 
         updatedPlayer =
-            { player | isplayercurrentlychallenged = False, rank = rank }
+            { player | address = "", rank = rank }
 
         newPlayerList =
             updatedPlayer :: filteredPlayerList
@@ -59,18 +44,19 @@ setPlayerInPlayerListWithChallengeResult lPlayer player rank =
     newPlayerList
 
 
+setPlayerInPlayerListWithNewChallengerAddr : List SR.Types.Player -> SR.Types.Player -> String -> List SR.Types.Player
+setPlayerInPlayerListWithNewChallengerAddr lPlayer player challengeraddress =
+    let
+        filteredPlayerList =
+            filterPlayerOutOfPlayerList player.address lPlayer
 
--- setPlayerInPlayerListCurrentChallengeToFalse : List SR.Types.Player -> SR.Type.Player -> List SR.Types.Player
--- setPlayerInPlayerListCurrentChallengeToFalse lPlayer player =
---     let
---         filteredPlayerList =
---             filterPlayerOutOfPlayerList lPlayer player
---         updatedPlayer =
---             { player | isplayercurrentlychallenged = False }
---         newPlayerList =
---             updatedPlayer :: filteredPlayerList
---     in
---     newPlayerList
+        updatedPlayer =
+            { player | challengeraddress = challengeraddress }
+
+        newPlayerList =
+            updatedPlayer :: filteredPlayerList
+    in
+    newPlayerList
 
 
 isUserInList : List SR.Types.User -> Eth.Types.Address -> Bool
@@ -89,6 +75,25 @@ isUserInList userlist uaddr =
 sortPlayerListByRank : List SR.Types.Player -> List SR.Types.Player
 sortPlayerListByRank lplayer =
     List.sortBy .rank lplayer
+
+
+
+-- isUserMemberOfSelectedRankingPlayerForDisplay : List SR.Types.Player -> SR.Types.User -> Bool
+-- isUserMemberOfSelectedRankingPlayerForDisplay lplayerfordisplay user =
+--     let
+--         filteredList =
+--             findPlayerInPlayerForDisplayList user lplayerfordisplay
+--         filteredRec =
+--             List.head filteredList
+--     in
+--     case filteredRec of
+--         Nothing ->
+--             False
+--         Just a ->
+--             if a.address == user.ethaddress then
+--                 True
+--             else
+--                 False
 
 
 isUserMemberOfSelectedRanking : List SR.Types.Player -> SR.Types.User -> Bool
@@ -148,10 +153,8 @@ gotUserFromUserListStrAddress : List SR.Types.User -> String -> SR.Types.User
 gotUserFromUserListStrAddress userList uaddr =
     let
         existingUser =
-            --List.head <| List.filter (\r -> r.ethaddress == (Eth.Utils.addressToString uaddr |> Debug.log "uaddr argument: ")) userList
             List.head <|
                 List.filter (\r -> r.ethaddress == (String.toLower <| uaddr))
-                    --List.filter (\r -> r.ethaddress == uaddr)
                     userList
     in
     case existingUser of
@@ -162,14 +165,28 @@ gotUserFromUserListStrAddress userList uaddr =
             a
 
 
+gotPlayerFromPlayerListStrAddress : List SR.Types.Player -> String -> SR.Types.Player
+gotPlayerFromPlayerListStrAddress lplayer addr =
+    let
+        existingUser =
+            List.head <|
+                List.filter (\r -> r.address == (String.toLower <| addr))
+                    lplayer
+    in
+    case existingUser of
+        Nothing ->
+            SR.Defaults.emptyPlayer
+
+        Just a ->
+            a
+
+
 gotUserFromUserList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
 gotUserFromUserList userList uaddr =
     let
         existingUser =
-            --List.head <| List.filter (\r -> r.ethaddress == (Eth.Utils.addressToString uaddr |> Debug.log "uaddr argument: ")) userList
             List.head <|
                 List.filter (\r -> r.ethaddress == (String.toLower <| Eth.Utils.addressToString <| uaddr))
-                    --List.filter (\r -> r.ethaddress == uaddr)
                     userList
     in
     case existingUser of
