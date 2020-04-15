@@ -1,8 +1,4 @@
-module Main exposing (jsonEncodeNewGlobalRankingList, main)
-
--- import Json.Decode
--- import Json.Decode.Pipeline
---import Ui
+module Main exposing (main)
 
 import Browser
 import Element exposing (Element)
@@ -20,7 +16,6 @@ import Framework.Button as Button
 import Framework.Card as Card
 import Framework.Color as Color
 import Framework.Grid as Grid
-import Framework.Group as Group
 import Framework.Heading as Heading
 import Framework.Input as Input
 import Html exposing (Html)
@@ -460,7 +455,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                             appInfo.player
 
                                         newPlayerUpdated =
-                                            { newPlayer | isplayercurrentlychallenged = False }
+                                            { newPlayer | address = "" }
 
                                         newAppInfo =
                                             { appInfo | player = newPlayerUpdated, challenger = SR.Defaults.emptyPlayer }
@@ -491,7 +486,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                             appInfo.player
 
                                         newPlayerUpdated =
-                                            { newPlayer | isplayercurrentlychallenged = False }
+                                            { newPlayer | address = "" }
 
                                         newAppInfo =
                                             { appInfo | player = newPlayerUpdated, challenger = SR.Defaults.emptyPlayer }
@@ -522,7 +517,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                             appInfo.player
 
                                         newPlayerUpdated =
-                                            { newPlayer | isplayercurrentlychallenged = False }
+                                            { newPlayer | address = "" }
 
                                         newAppInfo =
                                             { appInfo | player = newPlayerUpdated, challenger = SR.Defaults.emptyPlayer }
@@ -552,7 +547,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                             appInfo.player
 
                                         newPlayerUpdated =
-                                            { newPlayer | isplayercurrentlychallenged = False }
+                                            { newPlayer | address = "" }
 
                                         newAppInfo =
                                             { appInfo | player = newPlayerUpdated, challenger = SR.Defaults.emptyPlayer }
@@ -639,9 +634,6 @@ createNewPlayerListWithNewChallengeAndUpdateJsonBin model =
 
                 sortedByRankingnewplayerListWithPlayerAndChallengerUpdated =
                     SR.ListOps.sortPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
-
-                _ =
-                    Debug.log "newplayerListWithPlayerUpdated" sortedByRankingnewplayerListWithPlayerAndChallengerUpdated
 
                 newAllLists =
                     { allLists | players = sortedByRankingnewplayerListWithPlayerAndChallengerUpdated }
@@ -762,9 +754,6 @@ updateSelectedRankingPlayerList currentmodel lplayers =
             let
                 resetSelectedRankingPlayerList =
                     { allLists | players = lplayers }
-
-                _ =
-                    Debug.log "resetSelectedRankingPlayerList on update: " resetSelectedRankingPlayerList.players
             in
             RankingOps resetSelectedRankingPlayerList appInfo SR.Types.UISelectedRankingUserIsPlayer txRec
 
@@ -946,11 +935,14 @@ addPlayerInfoToAnyElText model player =
     case model of
         RankingOps allLists appInfo uiState txRec ->
             let
+                playerAsUser =
+                    SR.ListOps.gotUserFromUserListStrAddress allLists.users player.address
+
                 challengerAsUser =
                     SR.ListOps.gotUserFromUserListStrAddress allLists.users player.challengeraddress
 
                 printChallengerNameOrAvailable =
-                    if player.isplayercurrentlychallenged == True then
+                    if challengerAsUser.username /= "" then
                         challengerAsUser.username
 
                     else
@@ -965,11 +957,11 @@ addPlayerInfoToAnyElText model player =
             in
             if SR.ListOps.isUserMemberOfSelectedRanking allLists.players appInfo.user then
                 if isPlayerCurrentUser then
-                    if player.isplayercurrentlychallenged then
+                    if challengerAsUser.username /= "" then
                         Element.column Grid.simple <|
                             [ Input.button (Button.fill ++ Color.success) <|
                                 { onPress = Nothing
-                                , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ printChallengerNameOrAvailable
+                                , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
                                 }
                             ]
 
@@ -977,15 +969,15 @@ addPlayerInfoToAnyElText model player =
                         Element.column Grid.simple <|
                             [ Input.button (Button.fill ++ Color.primary) <|
                                 { onPress = Nothing
-                                , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ printChallengerNameOrAvailable
+                                , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
                                 }
                             ]
 
-                else if player.isplayercurrentlychallenged == True then
+                else if challengerAsUser.username /= "" then
                     Element.column Grid.simple <|
                         [ Input.button (Button.fill ++ Color.disabled) <|
                             { onPress = Nothing
-                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ printChallengerNameOrAvailable
+                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
                             }
                         ]
 
@@ -993,7 +985,7 @@ addPlayerInfoToAnyElText model player =
                     Element.column Grid.simple <|
                         [ Input.button (Button.fill ++ Color.info) <|
                             { onPress = Just <| ChallengeOpponentClicked player
-                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ printChallengerNameOrAvailable
+                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
                             }
                         ]
 
@@ -1001,7 +993,7 @@ addPlayerInfoToAnyElText model player =
                 Element.column Grid.simple <|
                     [ Input.button (Button.fill ++ Color.disabled) <|
                         { onPress = Nothing
-                        , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ printChallengerNameOrAvailable
+                        , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
                         }
                     ]
 
@@ -1149,13 +1141,16 @@ confirmChallengebutton model =
     case model of
         RankingOps allLists appInfo uiState txRec ->
             let
+                playerAsUser =
+                    SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.player.address
+
                 challengerAsUser =
                     SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.challenger.address
             in
             Element.column Grid.section <|
                 [ Element.el Heading.h6 <| Element.text <| " Your opponent's details: "
                 , Element.paragraph (Card.fill ++ Color.info) <|
-                    [ Element.el [] <| Element.text <| appInfo.player.name ++ " you are challenging " ++ challengerAsUser.username
+                    [ Element.el [] <| Element.text <| playerAsUser.username ++ " you are challenging " ++ challengerAsUser.username
                     ]
                 , Element.el [] <| Element.text <| "Email: "
                 , Element.paragraph (Card.fill ++ Color.info) <|
@@ -1359,10 +1354,14 @@ displayChallengeBeforeConfirmView : Model -> Html Msg
 displayChallengeBeforeConfirmView model =
     case model of
         RankingOps allLists appInfo uiState txRec ->
+            let
+                playerAsUser =
+                    SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.player.address
+            in
             Framework.responsiveLayout [] <|
                 Element.column
                     Framework.container
-                    [ Element.el Heading.h4 <| Element.text <| appInfo.player.name ++ " - Confirm Challenge"
+                    [ Element.el Heading.h4 <| Element.text <| playerAsUser.username ++ " - Confirm Challenge"
                     , confirmChallengebutton model
                     ]
 
@@ -1568,13 +1567,14 @@ addCurrentUserToPlayerList : String -> List SR.Types.Player -> SR.Types.User -> 
 addCurrentUserToPlayerList intrankingId lPlayer userRec =
     let
         newPlayer =
-            { datestamp = 12345
-            , active = True
-            , address = userRec.ethaddress
+            { --datestamp = 12345
+              --, active = True
+              address = userRec.ethaddress
             , rank = List.length lPlayer + 1
-            , name = userRec.username
-            , id = List.length lPlayer + 1
-            , isplayercurrentlychallenged = False
+
+            --, name = userRec.username
+            --, id = List.length lPlayer + 1
+            --, isplayercurrentlychallenged = False
             , challengeraddress = ""
             }
 
@@ -1606,16 +1606,8 @@ jsonEncodeNewSelectedRankingPlayerList lplayers =
         encodePlayerObj : SR.Types.Player -> Json.Encode.Value
         encodePlayerObj player =
             Json.Encode.object
-                [ ( "datestamp", Json.Encode.int 123456 )
-                , ( "active", Json.Encode.bool True )
-                , ( "address", Json.Encode.string (String.toLower player.address) )
+                [ ( "address", Json.Encode.string (String.toLower player.address) )
                 , ( "rank", Json.Encode.int player.rank )
-                , ( "name", Json.Encode.string player.name )
-                , ( "id", Json.Encode.int player.id )
-                , ( "isplayercurrentlychallenged", Json.Encode.bool player.isplayercurrentlychallenged )
-
-                --, ( "email", Json.Encode.string player.email )
-                --, ( "mobile", Json.Encode.string player.mobile )
                 , ( "challengeraddress", Json.Encode.string player.challengeraddress )
                 ]
 

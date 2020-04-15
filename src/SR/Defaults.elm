@@ -18,13 +18,8 @@ import SR.Types exposing (..)
 
 emptyPlayer : SR.Types.Player
 emptyPlayer =
-    { datestamp = 12345
-    , active = False
-    , address = ""
+    { address = ""
     , rank = 0
-    , name = "Unidentified"
-    , id = 0
-    , isplayercurrentlychallenged = False
     , challengeraddress = ""
     }
 

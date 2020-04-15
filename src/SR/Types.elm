@@ -72,25 +72,12 @@ type RankingId
     = RankingId String
 
 
-
--- type Ranking
---     = Global (Result Http.Error String)
---     | Random (Result Http.Error String)
-
-
 type alias Opponent =
     Player
 
 
 type Username
     = Username String
-
-
-
--- type AddressState
---     = Exists String
---     | None
--- Complex
 
 
 type WalletState
@@ -168,14 +155,20 @@ type alias AppInfo =
     }
 
 
-type alias Player =
+type alias User =
     { datestamp : Int
     , active : Bool
-    , address : String
+    , username : String
+    , ethaddress : String
+    , description : String
+    , email : String
+    , mobile : String
+    }
+
+
+type alias Player =
+    { address : String
     , rank : Int
-    , name : String
-    , id : Int
-    , isplayercurrentlychallenged : Bool
     , challengeraddress : String
     }
 
@@ -200,15 +193,4 @@ type alias NewRankingListServerResponse =
             }
     , version : Int
     , parentId : String
-    }
-
-
-type alias User =
-    { datestamp : Int
-    , active : Bool
-    , username : String
-    , ethaddress : String
-    , description : String
-    , email : String
-    , mobile : String
     }

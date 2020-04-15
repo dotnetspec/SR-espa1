@@ -36,7 +36,7 @@ setPlayerInPlayerListWithChallengeResult lPlayer player rank =
             filterPlayerOutOfPlayerList player.address lPlayer
 
         updatedPlayer =
-            { player | isplayercurrentlychallenged = False, rank = rank }
+            { player | address = "", rank = rank }
 
         newPlayerList =
             updatedPlayer :: filteredPlayerList
@@ -51,7 +51,7 @@ setPlayerInPlayerListWithNewChallengerAddr lPlayer player challengeraddress =
             filterPlayerOutOfPlayerList player.address lPlayer
 
         updatedPlayer =
-            { player | isplayercurrentlychallenged = True, challengeraddress = challengeraddress }
+            { player | challengeraddress = challengeraddress }
 
         newPlayerList =
             updatedPlayer :: filteredPlayerList
@@ -243,19 +243,6 @@ filterPlayerOutOfPlayerList addr lplayer =
 
 
 --internal
--- findPlayerInPlayerForDisplayList : SR.Types.User -> List SR.Types.PlayerForDisplay -> List SR.Types.PlayerForDisplay
--- findPlayerInPlayerForDisplayList user lPlayerForDisplay =
---     List.filterMap
---         (isThisPlayerAddrinPlayerForDisplay
---             user.ethaddress
---         )
---         lPlayerForDisplay
--- isThisPlayerAddrinPlayerForDisplay : String -> SR.Types.PlayerForDisplay -> Maybe SR.Types.PlayerForDisplay
--- isThisPlayerAddrinPlayerForDisplay uaddr playerfordisplay =
---     if playerfordisplay.address == uaddr then
---         Just playerfordisplay
---     else
---         Nothing
 
 
 doesCurrentRankingIdNOTMatchId : String -> SR.Types.RankingInfo -> Maybe SR.Types.RankingInfo
