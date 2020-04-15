@@ -430,10 +430,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( Failure str, Cmd.none )
 
                 PlayersReceived players ->
-                    let
-                        _ =
-                            Debug.log "players" players
-                    in
                     ( updateSelectedRankingOnPlayersReceived currentmodel (extractAndSortPlayerList players), Cmd.none )
 
                 TxSentryMsg subMsg ->
@@ -840,7 +836,7 @@ view model =
                     selectedUserIsPlayerView model
 
                 SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer ->
-                    selectedUserIsNeitherOwnerNorPlayerView allLists.globalRankings allLists.players appInfo.selectedRanking appInfo.user
+                    selectedUserIsNeitherOwnerNorPlayerView model
 
                 SR.Types.UIRenderAllRankings ->
                     globalResponsiveview allLists.globalRankings appInfo.user
@@ -977,7 +973,7 @@ addPlayerInfoToAnyElText model player =
                     SR.ListOps.gotPlayerFromPlayerListStrAddress allLists.players player.challengeraddress
 
                 _ =
-                    Debug.log "lkjljlj" appInfo.player.isplayercurrentlychallenged
+                    Debug.log "isplayercurrentlychallenged" appInfo.player.isplayercurrentlychallenged
 
                 playerAvailability =
                     if appInfo.player.isplayercurrentlychallenged == False then
@@ -1321,11 +1317,7 @@ selectedUserIsPlayerView model =
                 Element.column
                     Framework.container
                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ appInfo.user.username
-
-                    --, selectedHeading user <| gotRankingFromRankingList lrankingInfo rnkInfo.id
                     , selecteduserIsPlayerHomebutton allLists.globalRankings appInfo.user
-
-                    --, playerbuttons user playerList rnkInfo
                     , playerbuttons model
                     ]
 
@@ -1333,16 +1325,20 @@ selectedUserIsPlayerView model =
             Html.text "Error"
 
 
-selectedUserIsNeitherOwnerNorPlayerView : List SR.Types.RankingInfo -> List SR.Types.Player -> SR.Types.RankingInfo -> SR.Types.User -> Html Msg
-selectedUserIsNeitherOwnerNorPlayerView lrankingInfo playerList rnkInfo user =
-    Framework.responsiveLayout [] <|
-        Element.column
-            Framework.container
-            [ Element.el Heading.h4 <| Element.text <| "SportRank - " ++ user.username ++ " - Join?"
-            , selecteduserIsNeitherPlayerNorOwnerHomebutton
+selectedUserIsNeitherOwnerNorPlayerView : Model -> Html Msg
+selectedUserIsNeitherOwnerNorPlayerView model =
+    case model of
+        RankingOps allLists appInfo uiState txRec ->
+            Framework.responsiveLayout [] <|
+                Element.column
+                    Framework.container
+                    [ Element.el Heading.h4 <| Element.text <| "SportRank - " ++ appInfo.user.username ++ " - Join?"
+                    , selecteduserIsNeitherPlayerNorOwnerHomebutton
+                    , playerbuttons model
+                    ]
 
-            --, playerbuttons user playerList rnkInfo
-            ]
+        _ ->
+            Html.text "Error"
 
 
 inputNewUserview : SR.Types.User -> Html Msg
