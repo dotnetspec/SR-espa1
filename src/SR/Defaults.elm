@@ -25,8 +25,6 @@ emptyPlayer =
     , name = "Unidentified"
     , id = 0
     , isplayercurrentlychallenged = False
-    , email = ""
-    , mobile = ""
     , challengeraddress = ""
     }
 

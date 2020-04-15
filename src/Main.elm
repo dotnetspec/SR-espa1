@@ -267,10 +267,10 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                             { allLists | users = Utils.MyUtils.extractUsersFromWebData userList }
                     in
                     if SR.ListOps.isUserInList userLAddedToAllLists.users uaddr then
-                        ( updateOnUserListReceived currentmodel userList, gotRankingList )
+                        ( updateOnUserListReceived currentmodel userLAddedToAllLists.users, gotRankingList )
 
                     else
-                        ( updateOnUserListReceived currentmodel userList, Cmd.none )
+                        ( updateOnUserListReceived currentmodel userLAddedToAllLists.users, Cmd.none )
 
                 NewUserNameInputChg newUserInputsMsg ->
                     ( handleNewUserInputs currentmodel (NewUserNameInputChg newUserInputsMsg), Cmd.none )
@@ -601,10 +601,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     )
 
                 ChallengeOpponentClicked opponentAsPlayer ->
-                    let
-                        _ =
-                            Debug.log "opponentAsPlayer" opponentAsPlayer
-                    in
                     ( updatedForChallenge currentmodel allLists.players opponentAsPlayer appInfo.user, Cmd.none )
 
                 DeletedRankingFromGlobalList updatedListAfterRankingDeletedFromGlobalList ->
@@ -704,25 +700,16 @@ extractAndSortPlayerList rdlPlayer =
 
 
 updatedForChallenge : Model -> List SR.Types.Player -> SR.Types.Player -> SR.Types.User -> Model
-updatedForChallenge currentmodel lplayer opponentRec user =
+updatedForChallenge currentmodel lplayer opponentAsPlayer user =
     case currentmodel of
         RankingOps allLists appInfo _ txRec ->
             let
-                -- _ =
-                --     Debug.log "user in updated for " user
                 newAppInfoWithPlayer =
                     { appInfo | player = SR.ListOps.gotCurrentUserAsPlayerFromPlayerList lplayer user }
 
                 newAppInfoWithChallengerAndPlayer =
-                    { newAppInfoWithPlayer | challenger = opponentRec }
+                    { newAppInfoWithPlayer | challenger = opponentAsPlayer }
 
-                _ =
-                    Debug.log "oppo rec:  " opponentRec
-
-                -- _ =
-                --     Debug.log "oppo email:  " newAppInfoWithChallengerAndPlayer.challenger.email
-                -- _ =
-                --     Debug.log "updated for challenge " newAppInfoWithChallengerAndPlayer
                 newAllListsWithSelectedRankingUpdate =
                     updateSelectedRankingOnChallenge allLists newAppInfoWithChallengerAndPlayer
             in
@@ -737,35 +724,30 @@ updateSelectedRankingOnChallenge allLists appInfo =
     allLists
 
 
-updateOnUserListReceived : Model -> RemoteData.WebData (List SR.Types.User) -> Model
-updateOnUserListReceived model wdUserl =
+updateOnUserListReceived : Model -> List SR.Types.User -> Model
+updateOnUserListReceived model userList =
     case model of
         UserOps userState allLists uaddr appInfo uiState txRec ->
             let
-                extractedUsersFromWebData =
-                    Utils.MyUtils.extractUsersFromWebData wdUserl
-
+                --     extractedUsersFromWebData =
+                --         Utils.MyUtils.extractUsersFromWebData allLists
                 gotUserToUpdateAddr =
-                    SR.ListOps.singleUserInList extractedUsersFromWebData uaddr
+                    SR.ListOps.singleUserInList userList uaddr
 
                 userWithUpdatedAddr =
                     { gotUserToUpdateAddr | ethaddress = Eth.Utils.addressToString uaddr }
 
-                -- _ =
-                --     Debug.log
-                --         "user updated"
-                --         userWithUpdatedAddr
                 userUpdatedInAppInfo =
                     { appInfo | user = userWithUpdatedAddr }
 
-                userLAddedToAllLists =
-                    { allLists | users = extractedUsersFromWebData }
+                newAllLists =
+                    { allLists | users = userList }
             in
-            if SR.ListOps.isUserInList userLAddedToAllLists.users uaddr then
-                RankingOps allLists userUpdatedInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord
+            if SR.ListOps.isUserInList userList uaddr then
+                RankingOps newAllLists userUpdatedInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord
 
             else
-                UserOps (SR.Types.NewUser userWithUpdatedAddr) userLAddedToAllLists uaddr userUpdatedInAppInfo SR.Types.CreateNewUser txRec
+                UserOps (SR.Types.NewUser userWithUpdatedAddr) newAllLists uaddr userUpdatedInAppInfo SR.Types.CreateNewUser txRec
 
         _ ->
             Failure "should be in UserOps"
@@ -840,7 +822,11 @@ view model =
                     globalResponsiveview allLists.globalRankings appInfo.user
 
                 SR.Types.UIChallenge ->
-                    displayChallengeBeforeConfirmView appInfo
+                    let
+                        _ =
+                            Debug.log "challenger addr at view" appInfo.challenger.address
+                    in
+                    displayChallengeBeforeConfirmView model
 
                 _ ->
                     greetingView <| "Wrong variant"
@@ -955,12 +941,14 @@ addPlayerInfoToAnyElText model player =
     case model of
         RankingOps allLists appInfo uiState txRec ->
             let
-                challenger =
-                    SR.ListOps.gotPlayerFromPlayerListStrAddress allLists.players player.challengeraddress
+                -- challengerAsPlayer =
+                --     SR.ListOps.gotPlayerFromPlayerListStrAddress allLists.players player.challengeraddress
+                challengerAsUser =
+                    SR.ListOps.gotUserFromUserListStrAddress allLists.users player.challengeraddress
 
-                playerAvailability =
+                opponentNameOrAvailable =
                     if player.isplayercurrentlychallenged == True then
-                        challenger.name
+                        challengerAsUser.username
 
                     else
                         "Available"
@@ -977,7 +965,7 @@ addPlayerInfoToAnyElText model player =
                     Element.column Grid.simple <|
                         [ Input.button (Button.fill ++ Color.disabled) <|
                             { onPress = Nothing
-                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ playerAvailability
+                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ opponentNameOrAvailable
                             }
                         ]
 
@@ -985,7 +973,7 @@ addPlayerInfoToAnyElText model player =
                     Element.column Grid.simple <|
                         [ Input.button (Button.fill ++ Color.info) <|
                             { onPress = Just <| ChallengeOpponentClicked player
-                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ playerAvailability
+                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ opponentNameOrAvailable
                             }
                         ]
 
@@ -993,7 +981,7 @@ addPlayerInfoToAnyElText model player =
                     Element.column Grid.simple <|
                         [ Input.button (Button.fill ++ Color.disabled) <|
                             { onPress = Nothing
-                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ playerAvailability
+                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ opponentNameOrAvailable
                             }
                         ]
 
@@ -1001,7 +989,7 @@ addPlayerInfoToAnyElText model player =
                 Element.column Grid.simple <|
                     [ Input.button (Button.fill ++ Color.disabled) <|
                         { onPress = Nothing
-                        , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ playerAvailability
+                        , label = Element.text <| String.fromInt player.rank ++ ". " ++ player.name ++ " vs " ++ opponentNameOrAvailable
                         }
                     ]
 
@@ -1144,36 +1132,48 @@ newrankinhomebutton rankingList user rnkInfo =
         ]
 
 
-confirmChallengebutton : SR.Types.AppInfo -> Element Msg
-confirmChallengebutton appInfo =
-    Element.column Grid.section <|
-        [ Element.el Heading.h6 <| Element.text <| " Your opponent's details: "
-        , Element.paragraph (Card.fill ++ Color.info) <|
-            [ Element.el [] <| Element.text <| appInfo.player.name ++ " you are challenging " ++ appInfo.challenger.name
-            ]
-        , Element.el [] <| Element.text <| "Email: "
-        , Element.paragraph (Card.fill ++ Color.info) <|
-            [ Element.el [] <| Element.text <| appInfo.challenger.email
-            ]
-        , Element.el [] <| Element.text <| "Mobile: "
-        , Element.paragraph (Card.fill ++ Color.info) <|
-            [ Element.el [] <| Element.text <| appInfo.challenger.mobile
-            ]
-        , Element.column (Card.simple ++ Grid.simple) <|
-            [ Element.wrappedRow Grid.simple <|
-                [ Input.button (Button.simple ++ Color.simple) <|
-                    { onPress = Just <| ResetToShowGlobal
-                    , label = Element.text "Home"
-                    }
-                , Input.button (Button.simple ++ Color.info) <|
-                    { onPress = Just <| NewChallengeConfirmClicked
+confirmChallengebutton : Model -> Element Msg
+confirmChallengebutton model =
+    case model of
+        RankingOps allLists appInfo uiState txRec ->
+            let
+                _ =
+                    Debug.log "challenger addr" appInfo.challenger.address
 
-                    --onPress = Nothing
-                    , label = Element.text "Confirm"
-                    }
+                challengerAsUser =
+                    SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.challenger.address
+            in
+            Element.column Grid.section <|
+                [ Element.el Heading.h6 <| Element.text <| " Your opponent's details: "
+                , Element.paragraph (Card.fill ++ Color.info) <|
+                    [ Element.el [] <| Element.text <| appInfo.player.name ++ " you are challenging " ++ challengerAsUser.username
+                    ]
+                , Element.el [] <| Element.text <| "Email: "
+                , Element.paragraph (Card.fill ++ Color.info) <|
+                    [ Element.el [] <| Element.text <| challengerAsUser.email
+                    ]
+                , Element.el [] <| Element.text <| "Mobile: "
+                , Element.paragraph (Card.fill ++ Color.info) <|
+                    [ Element.el [] <| Element.text <| challengerAsUser.mobile
+                    ]
+                , Element.column (Card.simple ++ Grid.simple) <|
+                    [ Element.wrappedRow Grid.simple <|
+                        [ Input.button (Button.simple ++ Color.simple) <|
+                            { onPress = Just <| ResetToShowGlobal
+                            , label = Element.text "Home"
+                            }
+                        , Input.button (Button.simple ++ Color.info) <|
+                            { onPress = Just <| NewChallengeConfirmClicked
+
+                            --onPress = Nothing
+                            , label = Element.text "Confirm"
+                            }
+                        ]
+                    ]
                 ]
-            ]
-        ]
+
+        _ ->
+            Element.text "Fail"
 
 
 newuserConfirmPanel : SR.Types.User -> Element Msg
@@ -1346,16 +1346,19 @@ inputNewLadderview rankingList user rnkInfo =
             ]
 
 
-displayChallengeBeforeConfirmView : SR.Types.AppInfo -> Html Msg
-displayChallengeBeforeConfirmView appInfo =
-    Framework.responsiveLayout [] <|
-        Element.column
-            Framework.container
-            [ Element.el Heading.h4 <| Element.text <| appInfo.player.name ++ " - Confirm Challenge"
-            , confirmChallengebutton appInfo
+displayChallengeBeforeConfirmView : Model -> Html Msg
+displayChallengeBeforeConfirmView model =
+    case model of
+        RankingOps allLists appInfo uiState txRec ->
+            Framework.responsiveLayout [] <|
+                Element.column
+                    Framework.container
+                    [ Element.el Heading.h4 <| Element.text <| appInfo.player.name ++ " - Confirm Challenge"
+                    , confirmChallengebutton model
+                    ]
 
-            -- , inputNewLadder rnkInfo
-            ]
+        _ ->
+            Html.text "Error"
 
 
 greetingView : String -> Html Msg
@@ -1380,8 +1383,6 @@ subscriptions model =
         UserOps _ _ _ _ _ _ ->
             Sub.none
 
-        -- GlobalRankings _ _ _ _ ->
-        --     Sub.none
         RankingOps _ _ _ _ ->
             Sub.none
 
@@ -1402,19 +1403,6 @@ isOpponentHigherRank player opponent =
 
     else
         SR.Types.OpponentRankLower
-
-
-
--- isUserInList : RemoteData.WebData (List SR.Types.User) -> Eth.Types.Address -> Bool
--- isUserInList userlist uaddr =
---     let
---         gotSingleUserFromList =
---             SR.ListOps.singleUserInList userlist uaddr
---     in
---     if gotSingleUserFromList.ethaddress == "" then
---         False
---     else
---         True
 
 
 addedUAddrToNewEmptyUser : Eth.Types.Address -> SR.Types.User
@@ -1567,12 +1555,6 @@ jsonEncodeNewUsersList luserInfo =
     encodedList
 
 
-
---intrankingId lPlayer userRec
--- addCurrentUserToPlayerList : RemoteData.WebData SR.Types.RankingId -> List SR.Types.RankingInfo -> SR.Types.RankingInfo -> String -> Cmd Msg
--- addCurrentUserToPlayerList newrankingid lrankingInfo rnkInfo rankingowneraddress =
-
-
 addCurrentUserToPlayerList : String -> List SR.Types.Player -> SR.Types.User -> Cmd Msg
 addCurrentUserToPlayerList intrankingId lPlayer userRec =
     let
@@ -1584,8 +1566,6 @@ addCurrentUserToPlayerList intrankingId lPlayer userRec =
             , name = userRec.username
             , id = List.length lPlayer + 1
             , isplayercurrentlychallenged = False
-            , email = ""
-            , mobile = ""
             , challengeraddress = ""
             }
 
@@ -1624,8 +1604,9 @@ jsonEncodeNewSelectedRankingPlayerList lplayers =
                 , ( "name", Json.Encode.string player.name )
                 , ( "id", Json.Encode.int player.id )
                 , ( "isplayercurrentlychallenged", Json.Encode.bool player.isplayercurrentlychallenged )
-                , ( "email", Json.Encode.string player.email )
-                , ( "mobile", Json.Encode.string player.mobile )
+
+                --, ( "email", Json.Encode.string player.email )
+                --, ( "mobile", Json.Encode.string player.mobile )
                 , ( "challengeraddress", Json.Encode.string player.challengeraddress )
                 ]
 

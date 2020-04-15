@@ -168,18 +168,6 @@ type alias AppInfo =
     }
 
 
-
--- type alias PlayerForDisplay =
---     { address : String
---     , rank : Int
---     , name : String
---     , isplayercurrentlychallenged : Bool
---     , opponentname : String
---     , opponentemail : String
---     , opponentmobile : String
---     }
-
-
 type alias Player =
     { datestamp : Int
     , active : Bool
@@ -188,8 +176,6 @@ type alias Player =
     , name : String
     , id : Int
     , isplayercurrentlychallenged : Bool
-    , email : String
-    , mobile : String
     , challengeraddress : String
     }
 
