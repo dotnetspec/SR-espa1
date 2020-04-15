@@ -189,7 +189,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                 Just uaddr ->
                                     ( UserOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser txRec, gotUserList )
 
-                        --( WalletOps (SR.Types.WalletOpenedWithoutUserCheck uaddr) { txRec | account = walletSentry_.account, node = Ports.ethNode walletSentry_.networkId } challenger, gotUserList )
                         _ ->
                             let
                                 _ =
@@ -313,12 +312,12 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         newAppInfo =
                             { appInfo | user = userWithUpdatedAddr }
                     in
-                    ( RankingOps SR.Defaults.emptyAllLists newAppInfo SR.Types.UIRenderAllRankings { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewUser allLists.users userWithUpdatedAddr, gotRankingList ] )
+                    ( RankingOps allLists newAppInfo SR.Types.UIRenderAllRankings { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewUser allLists.users userWithUpdatedAddr, gotRankingList ] )
 
                 _ ->
                     --todo: better logic. This should go to failure model rather than fall thru to UserOps
                     -- but currently logic needs to do this
-                    ( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) SR.Defaults.emptyAllLists uaddr appInfo SR.Types.CreateNewUser txRec, Cmd.none )
+                    ( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) allLists uaddr appInfo SR.Types.CreateNewUser txRec, Cmd.none )
 
         RankingOps allLists appInfo uiState txRec ->
             case msgOfTransitonThatAlreadyHappened of
@@ -638,11 +637,14 @@ createNewPlayerListWithNewChallengeAndUpdateJsonBin model =
                 newplayerListWithPlayerAndChallengerUpdated =
                     SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.address
 
+                sortedByRankingnewplayerListWithPlayerAndChallengerUpdated =
+                    SR.ListOps.sortPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
+
                 _ =
-                    Debug.log "newplayerListWithPlayerUpdated" newplayerListWithPlayerUpdated
+                    Debug.log "newplayerListWithPlayerUpdated" sortedByRankingnewplayerListWithPlayerAndChallengerUpdated
 
                 newAllLists =
-                    { allLists | players = newplayerListWithPlayerAndChallengerUpdated }
+                    { allLists | players = sortedByRankingnewplayerListWithPlayerAndChallengerUpdated }
             in
             ( RankingOps newAllLists appInfo uiState txRec, updatePlayerList appInfo.selectedRanking.id newAllLists.players )
 
@@ -760,6 +762,9 @@ updateSelectedRankingPlayerList currentmodel lplayers =
             let
                 resetSelectedRankingPlayerList =
                     { allLists | players = lplayers }
+
+                _ =
+                    Debug.log "resetSelectedRankingPlayerList on update: " resetSelectedRankingPlayerList.players
             in
             RankingOps resetSelectedRankingPlayerList appInfo SR.Types.UISelectedRankingUserIsPlayer txRec
 
@@ -785,6 +790,10 @@ updateSelectedRankingOnPlayersReceived currentmodel lplayers =
                 RankingOps allListsPlayersAdded newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner emptyTxRecord
 
             else if SR.ListOps.isUserMemberOfSelectedRanking lplayers appInfo.user then
+                let
+                    _ =
+                        Debug.log "isUserMemberOfSelectedRanking"
+                in
                 RankingOps allListsPlayersAdded newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord
 
             else
@@ -937,8 +946,6 @@ addPlayerInfoToAnyElText model player =
     case model of
         RankingOps allLists appInfo uiState txRec ->
             let
-                -- challengerAsPlayer =
-                --     SR.ListOps.gotPlayerFromPlayerListStrAddress allLists.players player.challengeraddress
                 challengerAsUser =
                     SR.ListOps.gotUserFromUserListStrAddress allLists.users player.challengeraddress
 
