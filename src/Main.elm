@@ -987,25 +987,8 @@ addPlayerInfoToAnyElText model player =
             if SR.ListOps.isUserMemberOfSelectedRanking allLists.players appInfo.user then
                 if isPlayerCurrentUser then
                     if isCurrentUserInAChallenge then
-                        if isChallenged then
-                            Element.column Grid.simple <|
-                                [ Input.button (Button.fill ++ Color.success) <|
-                                    { onPress = Nothing
-                                    , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
-                                    }
-                                ]
-
-                        else
-                            Element.column Grid.simple <|
-                                [ Input.button (Button.fill ++ Color.disabled) <|
-                                    { onPress = Nothing
-                                    , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
-                                    }
-                                ]
-
-                    else if challengerAsUser.username == "" then
                         Element.column Grid.simple <|
-                            [ Input.button (Button.fill ++ Color.info) <|
+                            [ Input.button (Button.fill ++ Color.success) <|
                                 { onPress = Nothing
                                 , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
                                 }
@@ -1013,27 +996,30 @@ addPlayerInfoToAnyElText model player =
 
                     else
                         Element.column Grid.simple <|
-                            [ Input.button (Button.fill ++ Color.disabled) <|
+                            [ Input.button (Button.fill ++ Color.info) <|
                                 { onPress = Nothing
                                 , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
                                 }
                             ]
+                    -- else if - this player isn't the current user but is being challenged
 
                 else if isChallenged then
-                    Element.column Grid.simple <|
-                        [ Input.button (Button.fill ++ Color.info) <|
-                            { onPress = Nothing
-                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
-                            }
-                        ]
-
-                else
                     Element.column Grid.simple <|
                         [ Input.button (Button.fill ++ Color.disabled) <|
                             { onPress = Nothing
                             , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
                             }
                         ]
+                    -- else - this player isn't the current user and isn't challenged by anyone
+
+                else
+                    Element.column Grid.simple <|
+                        [ Input.button (Button.fill ++ Color.primary) <|
+                            { onPress = Just <| ChallengeOpponentClicked player
+                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
+                            }
+                        ]
+                -- the user isn't a member of this ranking so disable everything
 
             else
                 Element.column Grid.simple <|
