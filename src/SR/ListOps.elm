@@ -13,6 +13,7 @@ module SR.ListOps exposing
     , setPlayerInPlayerListWithNewChallengerAddr
     , singleUserInList
     , sortPlayerListByRank
+    , updateRankWithWonResult
     )
 
 import Eth.Types
@@ -36,12 +37,15 @@ setPlayerInPlayerListWithChallengeResult lPlayer player rank =
             filterPlayerOutOfPlayerList player.address lPlayer
 
         updatedPlayer =
-            { player | address = "", rank = rank }
+            { player | challengeraddress = "", rank = rank }
 
         newPlayerList =
             updatedPlayer :: filteredPlayerList
+
+        newPlayerListSorted =
+            sortPlayerListByRank newPlayerList
     in
-    newPlayerList
+    newPlayerListSorted
 
 
 setPlayerInPlayerListWithNewChallengerAddr : List SR.Types.Player -> SR.Types.Player -> String -> List SR.Types.Player
@@ -52,6 +56,25 @@ setPlayerInPlayerListWithNewChallengerAddr lPlayer player challengeraddress =
 
         updatedPlayer =
             { player | challengeraddress = challengeraddress }
+
+        newPlayerList =
+            updatedPlayer :: filteredPlayerList
+    in
+    newPlayerList
+
+
+updateRankWithWonResult : List SR.Types.Player -> SR.Types.Player -> List SR.Types.Player
+updateRankWithWonResult lPlayer player =
+    let
+        filteredPlayerList =
+            filterPlayerOutOfPlayerList player.address lPlayer
+
+        opponentAsPlayer =
+            gotPlayerFromPlayerListStrAddress lPlayer player.challengeraddress
+
+        -- this needs more ?:
+        updatedPlayer =
+            { player | rank = opponentAsPlayer.rank }
 
         newPlayerList =
             updatedPlayer :: filteredPlayerList
@@ -75,25 +98,6 @@ isUserInList userlist uaddr =
 sortPlayerListByRank : List SR.Types.Player -> List SR.Types.Player
 sortPlayerListByRank lplayer =
     List.sortBy .rank lplayer
-
-
-
--- isUserMemberOfSelectedRankingPlayerForDisplay : List SR.Types.Player -> SR.Types.User -> Bool
--- isUserMemberOfSelectedRankingPlayerForDisplay lplayerfordisplay user =
---     let
---         filteredList =
---             findPlayerInPlayerForDisplayList user lplayerfordisplay
---         filteredRec =
---             List.head filteredList
---     in
---     case filteredRec of
---         Nothing ->
---             False
---         Just a ->
---             if a.address == user.ethaddress then
---                 True
---             else
---                 False
 
 
 isUserMemberOfSelectedRanking : List SR.Types.Player -> SR.Types.User -> Bool

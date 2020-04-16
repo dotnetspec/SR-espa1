@@ -1,4 +1,4 @@
-module SR.Elements exposing (ethereumWalletWarning, justParasimpleUserInfoText, selectedRankingHeaderEl, simpleUserInfoText)
+module SR.Elements exposing (ethereumWalletWarning, footer, justParasimpleUserInfoText, selectedRankingHeaderEl, simpleUserInfoText)
 
 --import RemoteData
 
@@ -73,5 +73,12 @@ ethereumWalletWarning =
         [ Element.el [ Font.bold ] <| Element.text "Please note: "
         , Element.paragraph [] <|
             List.singleton <|
-                Element.text "Clicking 'Create New' interacts with your Ethereum wallet"
+                Element.text "This confirmation will interact with your Ethereum wallet"
         ]
+
+
+footer : Element msg
+footer =
+    Element.paragraph [] <|
+        List.singleton <|
+            Element.text "SportRank - all rights reserved"
