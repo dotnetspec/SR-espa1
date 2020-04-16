@@ -632,10 +632,10 @@ handleLost model =
                     --nb. higher rank is a lower number and vice versa!
                     let
                         updatedPlayerListForPlayer =
-                            SR.ListOps.setPlayerInPlayerListWithChallengeResult allLists.players appInfo.player appInfo.player.rank
+                            SR.ListOps.setPlayerInPlayerListWithChallengeResult allLists.players appInfo.player (appInfo.player.rank + 1)
 
                         updatedPlayerListForPlayerAndChallenger =
-                            SR.ListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.rank
+                            SR.ListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.player.rank
 
                         --update current player now
                         newPlayer =
@@ -1304,7 +1304,7 @@ confirmResultbutton model =
                         ]
                     ]
                 , Element.paragraph (Card.fill ++ Color.info) <|
-                    [ Element.el [] <| Element.text <| playerAsUser.username ++ " you challenged " ++ challengerAsUser.username
+                    [ Element.el [] <| Element.text <| playerAsUser.username ++ " you had a challenge match vs " ++ challengerAsUser.username
                     ]
                 , Element.el Heading.h6 <| Element.text <| "Please confirm your result: "
                 , Element.column (Card.simple ++ Grid.simple) <|
