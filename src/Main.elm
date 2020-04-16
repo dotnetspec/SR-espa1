@@ -952,8 +952,15 @@ addPlayerInfoToAnyElText model player =
                 challengerAsUser =
                     SR.ListOps.gotUserFromUserListStrAddress allLists.users player.challengeraddress
 
-                printChallengerNameOrAvailable =
+                isChallenged =
                     if challengerAsUser.username /= "" then
+                        True
+
+                    else
+                        False
+
+                printChallengerNameOrAvailable =
+                    if isChallenged then
                         challengerAsUser.username
 
                     else
@@ -965,12 +972,40 @@ addPlayerInfoToAnyElText model player =
 
                     else
                         False
+
+                isCurrentUserInAChallenge =
+                    if isPlayerCurrentUser && isChallenged then
+                        let
+                            _ =
+                                Debug.log "challengerAsUser.username" challengerAsUser.username
+                        in
+                        True
+
+                    else
+                        False
             in
             if SR.ListOps.isUserMemberOfSelectedRanking allLists.players appInfo.user then
                 if isPlayerCurrentUser then
-                    if challengerAsUser.username /= "" then
+                    if isCurrentUserInAChallenge then
+                        if isChallenged then
+                            Element.column Grid.simple <|
+                                [ Input.button (Button.fill ++ Color.success) <|
+                                    { onPress = Nothing
+                                    , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    }
+                                ]
+
+                        else
+                            Element.column Grid.simple <|
+                                [ Input.button (Button.fill ++ Color.disabled) <|
+                                    { onPress = Nothing
+                                    , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    }
+                                ]
+
+                    else if challengerAsUser.username == "" then
                         Element.column Grid.simple <|
-                            [ Input.button (Button.fill ++ Color.success) <|
+                            [ Input.button (Button.fill ++ Color.info) <|
                                 { onPress = Nothing
                                 , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
                                 }
@@ -978,15 +1013,15 @@ addPlayerInfoToAnyElText model player =
 
                     else
                         Element.column Grid.simple <|
-                            [ Input.button (Button.fill ++ Color.primary) <|
+                            [ Input.button (Button.fill ++ Color.disabled) <|
                                 { onPress = Nothing
                                 , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
                                 }
                             ]
 
-                else if challengerAsUser.username /= "" then
+                else if isChallenged then
                     Element.column Grid.simple <|
-                        [ Input.button (Button.fill ++ Color.disabled) <|
+                        [ Input.button (Button.fill ++ Color.info) <|
                             { onPress = Nothing
                             , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
                             }
@@ -994,8 +1029,8 @@ addPlayerInfoToAnyElText model player =
 
                 else
                     Element.column Grid.simple <|
-                        [ Input.button (Button.fill ++ Color.info) <|
-                            { onPress = Just <| ChallengeOpponentClicked player
+                        [ Input.button (Button.fill ++ Color.disabled) <|
+                            { onPress = Nothing
                             , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
                             }
                         ]
