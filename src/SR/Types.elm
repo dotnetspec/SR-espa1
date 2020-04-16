@@ -106,6 +106,7 @@ type UIState
     | UISelectedRankingUserIsOwner
     | UISelectedRankingUserIsPlayer
     | UISelectedRankingUserIsNeitherOwnerNorPlayer
+    | UIEnterResult
     | UIChallenge
 
 

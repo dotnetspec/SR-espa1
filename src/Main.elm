@@ -147,6 +147,7 @@ type Msg
     | ResetToShowGlobal
     | LadderNameInputChg String
     | LadderDescInputChg String
+    | ChangedUIStateToEnterResult SR.Types.Player
     | ProcessResult SR.Types.ResultOfMatch
     | SentResultToJsonbin (Result Http.Error ())
     | NewUserNameInputChg String
@@ -442,6 +443,9 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                             Eth.Sentry.Tx.update subMsg txRec.txSentry
                     in
                     ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = subModel }, subCmd )
+
+                ChangedUIStateToEnterResult player ->
+                    ( RankingOps allLists appInfo SR.Types.UIEnterResult emptyTxRecord, Cmd.none )
 
                 ProcessResult result ->
                     let
@@ -815,7 +819,6 @@ view model =
                     inputNewUserview appInfo.user
 
                 SR.Types.CreateNewLadder ->
-                    --inputNewLadderview allLists.globalRankings appInfo.user appInfo.selectedRanking
                     inputNewLadderview model
 
                 SR.Types.UISelectedRankingUserIsOwner ->
@@ -829,6 +832,9 @@ view model =
 
                 SR.Types.UIRenderAllRankings ->
                     globalResponsiveview allLists.globalRankings appInfo.user
+
+                SR.Types.UIEnterResult ->
+                    displayResultBeforeConfirmView model
 
                 SR.Types.UIChallenge ->
                     displayChallengeBeforeConfirmView model
@@ -981,15 +987,15 @@ addPlayerInfoToAnyElText model player =
                         False
             in
             if SR.ListOps.isUserMemberOfSelectedRanking allLists.players appInfo.user then
-                let
-                    _ =
-                        Debug.log "isCurrentUserInAChallenge" isCurrentUserInAChallenge
-                in
+                -- let
+                --     _ =
+                --         Debug.log "isCurrentUserInAChallenge" isCurrentUserInAChallenge
+                -- in
                 if isPlayerCurrentUser then
                     if isCurrentUserInAChallenge then
                         Element.column Grid.simple <|
                             [ Input.button (Button.fill ++ Color.success) <|
-                                { onPress = Nothing
+                                { onPress = Just <| ChangedUIStateToEnterResult player
                                 , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
                                 }
                             ]
@@ -1222,6 +1228,54 @@ confirmChallengebutton model =
             Element.text "Fail"
 
 
+confirmResultbutton : Model -> Element Msg
+confirmResultbutton model =
+    case model of
+        RankingOps allLists appInfo uiState txRec ->
+            let
+                playerAsUser =
+                    SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.player.address
+
+                challengerAsUser =
+                    SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.challenger.address
+            in
+            Element.column Grid.section <|
+                [ Element.column (Card.simple ++ Grid.simple) <|
+                    [ Element.wrappedRow Grid.simple <|
+                        [ Input.button (Button.simple ++ Color.simple) <|
+                            { onPress = Just <| ResetToShowGlobal
+                            , label = Element.text "Home"
+                            }
+                        ]
+                    ]
+                , Element.paragraph (Card.fill ++ Color.info) <|
+                    [ Element.el [] <| Element.text <| playerAsUser.username ++ " you challenged " ++ challengerAsUser.username
+                    ]
+                , Element.el Heading.h6 <| Element.text <| "Please confirm your result: "
+                , Element.column (Card.simple ++ Grid.simple) <|
+                    [ Element.column Grid.simple <|
+                        [ Input.button (Button.simple ++ Color.simple) <|
+                            { onPress = Just <| ResetToShowGlobal
+                            , label = Element.text "Won"
+                            }
+                        , Input.button (Button.simple ++ Color.info) <|
+                            { onPress = Just <| NewChallengeConfirmClicked
+                            , label = Element.text "Lost"
+                            }
+                        , Input.button (Button.simple ++ Color.info) <|
+                            { onPress = Just <| NewChallengeConfirmClicked
+                            , label = Element.text "Undecided"
+                            }
+                        ]
+                    ]
+                , SR.Elements.ethereumWalletWarning
+                , SR.Elements.footer
+                ]
+
+        _ ->
+            Element.text "Fail"
+
+
 newuserConfirmPanel : SR.Types.User -> Element Msg
 newuserConfirmPanel user =
     Element.column Grid.section <|
@@ -1421,6 +1475,25 @@ displayChallengeBeforeConfirmView model =
                     Framework.container
                     [ Element.el Heading.h4 <| Element.text <| playerAsUser.username ++ " - Confirm Challenge"
                     , confirmChallengebutton model
+                    ]
+
+        _ ->
+            Html.text "Error"
+
+
+displayResultBeforeConfirmView : Model -> Html Msg
+displayResultBeforeConfirmView model =
+    case model of
+        RankingOps allLists appInfo uiState txRec ->
+            let
+                playerAsUser =
+                    SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.player.address
+            in
+            Framework.responsiveLayout [] <|
+                Element.column
+                    Framework.container
+                    [ Element.el Heading.h4 <| Element.text <| playerAsUser.username ++ " - Result"
+                    , confirmResultbutton model
                     ]
 
         _ ->

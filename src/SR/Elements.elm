@@ -73,7 +73,7 @@ ethereumWalletWarning =
         [ Element.el [ Font.bold ] <| Element.text "Please note: "
         , Element.paragraph [] <|
             List.singleton <|
-                Element.text "Clicking 'Create New' interacts with your Ethereum wallet"
+                Element.text "This confirmation will interact with your Ethereum wallet"
         ]
 
 
