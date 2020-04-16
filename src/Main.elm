@@ -974,17 +974,17 @@ addPlayerInfoToAnyElText model player =
                         False
 
                 isCurrentUserInAChallenge =
-                    if isPlayerCurrentUser && isChallenged then
-                        let
-                            _ =
-                                Debug.log "challengerAsUser.username" challengerAsUser.username
-                        in
+                    if appInfo.player.challengeraddress /= "" then
                         True
 
                     else
                         False
             in
             if SR.ListOps.isUserMemberOfSelectedRanking allLists.players appInfo.user then
+                let
+                    _ =
+                        Debug.log "isCurrentUserInAChallenge" isCurrentUserInAChallenge
+                in
                 if isPlayerCurrentUser then
                     if isCurrentUserInAChallenge then
                         Element.column Grid.simple <|
@@ -1001,6 +1001,19 @@ addPlayerInfoToAnyElText model player =
                                 , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
                                 }
                             ]
+                    -- else if - this player isn't the current user but the current user is in a challenge so disable any other players
+
+                else if isCurrentUserInAChallenge then
+                    let
+                        _ =
+                            Debug.log "challengerAsUser.username" challengerAsUser.username
+                    in
+                    Element.column Grid.simple <|
+                        [ Input.button (Button.fill ++ Color.disabled) <|
+                            { onPress = Nothing
+                            , label = Element.text <| String.fromInt player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
+                            }
+                        ]
                     -- else if - this player isn't the current user but is being challenged
 
                 else if isChallenged then
@@ -1199,8 +1212,6 @@ confirmChallengebutton model =
                             }
                         , Input.button (Button.simple ++ Color.info) <|
                             { onPress = Just <| NewChallengeConfirmClicked
-
-                            --onPress = Nothing
                             , label = Element.text "Confirm"
                             }
                         ]
