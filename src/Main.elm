@@ -125,7 +125,7 @@ type Msg
     | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
     | SentUserInfoAndDecodedResponseToNewUser (RemoteData.WebData (List SR.Types.User))
     | ChangedUIStateToCreateNew
-    | NewRankingRequestedByConfirmBtnClicked SR.Types.RankingInfo
+    | ClickedNewRankingRequested SR.Types.RankingInfo
     | NewChallengeConfirmClicked
     | PollBlock (Result Http.Error Int)
     | WatchTxHash (Result String Eth.Types.TxHash)
@@ -355,7 +355,17 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( RankingOps allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                 ChangedUIStateToCreateNew ->
-                    ( RankingOps allLists appInfo SR.Types.CreateNewLadder emptyTxRecord, Cmd.none )
+                    let
+                        rankingInfoFromModel =
+                            appInfo.selectedRanking
+
+                        rankingWithFieldsCleared =
+                            { rankingInfoFromModel | rankingname = "", rankingdesc = "" }
+
+                        newAppInfo =
+                            { appInfo | selectedRanking = rankingWithFieldsCleared }
+                    in
+                    ( RankingOps allLists newAppInfo SR.Types.CreateNewLadder emptyTxRecord, Cmd.none )
 
                 AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
                     let
@@ -390,7 +400,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     in
                     ( RankingOps allLists newAppInfo SR.Types.CreateNewLadder emptyTxRecord, Cmd.none )
 
-                NewRankingRequestedByConfirmBtnClicked newLadderRnkInfo ->
+                ClickedNewRankingRequested newLadderRnkInfo ->
                     let
                         txParams =
                             { to = txRec.account
@@ -805,7 +815,8 @@ view model =
                     inputNewUserview appInfo.user
 
                 SR.Types.CreateNewLadder ->
-                    inputNewLadderview allLists.globalRankings appInfo.user appInfo.selectedRanking
+                    --inputNewLadderview allLists.globalRankings appInfo.user appInfo.selectedRanking
+                    inputNewLadderview model
 
                 SR.Types.UISelectedRankingUserIsOwner ->
                     selectedUserIsOwnerView model
@@ -1117,12 +1128,11 @@ newrankinhomebutton rankingList user rnkInfo =
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
                 [ Input.button (Button.simple ++ Color.simple) <|
-                    { --onPress = Just <| ResetToShowGlobal rankingList user
-                      onPress = Just <| ResetToShowGlobal
+                    { onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Home"
                     }
                 , Input.button (Button.simple ++ Color.info) <|
-                    { onPress = Just <| NewRankingRequestedByConfirmBtnClicked rnkInfo
+                    { onPress = Just <| ClickedNewRankingRequested rnkInfo
                     , label = Element.text "Create New"
                     }
                 ]
@@ -1211,28 +1221,37 @@ inputNewUser user =
         [ Element.el Heading.h5 <| Element.text "New User Details"
         , Element.wrappedRow (Card.fill ++ Grid.simple)
             [ Element.column Grid.simple
-                [ Input.text Input.simple
+                [ Input.text
+                    Input.simple
                     { onChange = NewUserNameInputChg
-                    , text = user.username
+
+                    --, text = user.username
+                    , text = ""
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Username"
                     }
                 , Input.multiline Input.simple
                     { onChange = NewUserDescInputChg
-                    , text = user.description
+
+                    --, text = user.description
+                    , text = ""
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Description"
                     , spellcheck = False
                     }
                 , Input.text Input.simple
                     { onChange = NewUserEmailInputChg
-                    , text = user.email
+
+                    --, text = user.email
+                    , text = ""
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Email"
                     }
                 , Input.text Input.simple
                     { onChange = NewUserMobileInputChg
-                    , text = user.mobile
+
+                    --, text = user.mobile
+                    , text = ""
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Mobile"
                     }
@@ -1240,6 +1259,10 @@ inputNewUser user =
             ]
         , SR.Elements.justParasimpleUserInfoText
         ]
+
+
+
+-- inputNewLadder updates view on every text entry
 
 
 inputNewLadder : SR.Types.RankingInfo -> Element Msg
@@ -1263,9 +1286,7 @@ inputNewLadder newladder =
                     }
                 ]
             ]
-        , Element.paragraph [] <|
-            List.singleton <|
-                Element.text "Input attributes can be combined with other attributes."
+        , SR.Elements.footer
         ]
 
 
@@ -1339,15 +1360,20 @@ inputNewUserview user =
             ]
 
 
-inputNewLadderview : List SR.Types.RankingInfo -> SR.Types.User -> SR.Types.RankingInfo -> Html Msg
-inputNewLadderview rankingList user rnkInfo =
-    Framework.responsiveLayout [] <|
-        Element.column
-            Framework.container
-            [ Element.el Heading.h4 <| Element.text "Create New Ladder Ranking"
-            , newrankinhomebutton rankingList user rnkInfo
-            , inputNewLadder rnkInfo
-            ]
+inputNewLadderview : Model -> Html Msg
+inputNewLadderview model =
+    case model of
+        RankingOps allLists appInfo uiState txRec ->
+            Framework.responsiveLayout [] <|
+                Element.column
+                    Framework.container
+                    [ Element.el Heading.h4 <| Element.text "Create New Ladder Ranking"
+                    , newrankinhomebutton allLists.globalRankings appInfo.user appInfo.selectedRanking
+                    , inputNewLadder appInfo.selectedRanking
+                    ]
+
+        _ ->
+            Html.text "Fail"
 
 
 displayChallengeBeforeConfirmView : Model -> Html Msg
