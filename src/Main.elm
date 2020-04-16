@@ -486,12 +486,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                 _ ->
                                     ( Failure "result lost", Cmd.none )
 
-                -- ( RankingOps allLists
-                --     appInfo
-                --     uiState
-                --     txRec
-                -- , Cmd.none
-                -- )
                 SentResultToJsonbin a ->
                     ( RankingOps allLists
                         appInfo

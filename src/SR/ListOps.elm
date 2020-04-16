@@ -72,7 +72,7 @@ updateRankWithWonResult lPlayer player =
         opponentAsPlayer =
             gotPlayerFromPlayerListStrAddress lPlayer player.challengeraddress
 
-        -- this needs more :
+        -- this needs more ?:
         updatedPlayer =
             { player | rank = opponentAsPlayer.rank }
 
