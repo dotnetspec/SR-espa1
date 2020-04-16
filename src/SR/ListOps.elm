@@ -39,9 +39,6 @@ setPlayerInPlayerListWithChallengeResult lPlayer player rank =
         updatedPlayer =
             { player | challengeraddress = "", rank = rank }
 
-        _ =
-            Debug.log "updated player" updatedPlayer
-
         newPlayerList =
             updatedPlayer :: filteredPlayerList
 
@@ -101,25 +98,6 @@ isUserInList userlist uaddr =
 sortPlayerListByRank : List SR.Types.Player -> List SR.Types.Player
 sortPlayerListByRank lplayer =
     List.sortBy .rank lplayer
-
-
-
--- isUserMemberOfSelectedRankingPlayerForDisplay : List SR.Types.Player -> SR.Types.User -> Bool
--- isUserMemberOfSelectedRankingPlayerForDisplay lplayerfordisplay user =
---     let
---         filteredList =
---             findPlayerInPlayerForDisplayList user lplayerfordisplay
---         filteredRec =
---             List.head filteredList
---     in
---     case filteredRec of
---         Nothing ->
---             False
---         Just a ->
---             if a.address == user.ethaddress then
---                 True
---             else
---                 False
 
 
 isUserMemberOfSelectedRanking : List SR.Types.Player -> SR.Types.User -> Bool
