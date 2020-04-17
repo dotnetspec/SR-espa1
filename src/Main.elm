@@ -1,4 +1,4 @@
-module Main exposing (main)
+module Main exposing (displayResultBeforeConfirmView, main)
 
 import Browser
 import Element exposing (Element)
@@ -32,6 +32,7 @@ import SR.Elements
 import SR.ListOps
 import SR.Types
 import Task
+import Time exposing (Posix)
 import Utils.MyUtils
 
 
@@ -114,6 +115,12 @@ type alias TxRecord =
     }
 
 
+getTime : Cmd Msg
+getTime =
+    Time.now
+        |> Task.perform TimeUpdated
+
+
 
 -- Msg is a description of the transition that already happened
 -- Messages that delivered the response (orign doc says 'will deliver')
@@ -158,8 +165,7 @@ type Msg
     | ClickedJoinSelected
     | ReturnFromPlayerListUpdate (RemoteData.WebData (List SR.Types.Player))
     | ChallengeOpponentClicked SR.Types.Player
-      --| NewUserInputs Msg
-      --| HandleResultClick String
+    | TimeUpdated Posix
     | Fail String
 
 
@@ -173,7 +179,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         Mainnet ->
                             case walletSentry_.account of
                                 Nothing ->
-                                    ( WalletOps SR.Types.Locked txRec, Cmd.none )
+                                    ( UserOps (SR.Types.ExistingUser <| SR.Defaults.emptyUser) SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
 
                                 Just uaddr ->
                                     ( UserOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser txRec, gotUserList )
@@ -181,7 +187,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         Rinkeby ->
                             case walletSentry_.account of
                                 Nothing ->
-                                    ( WalletOps SR.Types.Locked txRec, Cmd.none )
+                                    ( UserOps (SR.Types.ExistingUser <| SR.Defaults.emptyUser) SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
 
                                 Just uaddr ->
                                     ( UserOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser txRec, gotUserList )
@@ -189,9 +195,9 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         _ ->
                             let
                                 _ =
-                                    Debug.log "MissingWalletInstructions " "str"
+                                    Debug.log "Gave MissingWalletInstructions: " "but actually a networkId fall thru"
                             in
-                            ( WalletOps SR.Types.Missing emptyTxRecord, Cmd.none )
+                            ( UserOps (SR.Types.ExistingUser <| SR.Defaults.emptyUser) SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
 
                 OpenWalletInstructions ->
                     ( WalletOps SR.Types.Locked emptyTxRecord, Cmd.none )
@@ -249,13 +255,20 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         allLists
                         uaddr
                         appInfo
-                        SR.Types.CreateNewUser
+                        SR.Types.UIDisplayWalletLockedInstructions
                         txRec
                     , Cmd.none
                     )
 
                 PollBlock (Err error) ->
                     ( WalletOps SR.Types.WalletOpenedAndOperational txRec, Cmd.none )
+
+                TimeUpdated posixTime ->
+                    let
+                        _ =
+                            Debug.log "posixtime" posixTime
+                    in
+                    ( currentmodel, Cmd.none )
 
                 UsersReceived userList ->
                     let
@@ -992,6 +1005,9 @@ view model =
 
         UserOps userState userList uaddr uname uiState _ ->
             case uiState of
+                SR.Types.UIDisplayWalletLockedInstructions ->
+                    greetingView <| "Your Ethereum wallet browser \nextension is locked. Please \nuse your wallet \npassword to open it \nbefore continuing"
+
                 SR.Types.CreateNewUser ->
                     case userState of
                         SR.Types.NewUser user ->
@@ -1010,9 +1026,9 @@ view model =
 greetingHeading : String -> Element Msg
 greetingHeading greetingStr =
     Element.column Grid.section <|
-        [ Element.el Heading.h2 <| Element.text "Initializing ..."
+        [ Element.el Heading.h5 <| Element.text "Initializing ..."
         , Element.column Card.fill
-            [ Element.el Heading.h4 <| Element.text greetingStr
+            [ Element.el Heading.h6 <| Element.text greetingStr
             ]
         ]
 
@@ -1735,7 +1751,7 @@ createNewPlayerListWithCurrentUser user =
         idJsonObj =
             Json.Encode.list
                 Json.Encode.object
-                [ [ ( "datestamp", Json.Encode.int 123456 )
+                [ [ ( "datestamp", Json.Encode.int 12345 )
                   , ( "active", Json.Encode.bool True )
                   , ( "address", Json.Encode.string (String.toLower user.ethaddress) )
                   , ( "rank", Json.Encode.int 1 )

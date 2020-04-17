@@ -102,6 +102,7 @@ type UIState
     = UIRenderAllRankings
     | CreateNewLadder
     | CreateNewUser
+    | UIDisplayWalletLockedInstructions
     | UIDisplayWalletInfoToUser
     | UISelectedRankingUserIsOwner
     | UISelectedRankingUserIsPlayer
