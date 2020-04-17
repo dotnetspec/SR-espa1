@@ -152,6 +152,7 @@ type Msg
     | OpenWalletInstructions
     | NewUser
     | ResetToShowGlobal
+    | ResetToShowSelected
     | LadderNameInputChg String
     | LadderDescInputChg String
     | ChangedUIStateToEnterResult SR.Types.Player
@@ -368,6 +369,20 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                 ResetToShowGlobal ->
                     ( RankingOps allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+
+                ResetToShowSelected ->
+                    let
+                        uiType =
+                            if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking allLists.globalRankings appInfo.user then
+                                SR.Types.UISelectedRankingUserIsOwner
+
+                            else if SR.ListOps.isUserMemberOfSelectedRanking allLists.players appInfo.user then
+                                SR.Types.UISelectedRankingUserIsPlayer
+
+                            else
+                                SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
+                    in
+                    ( RankingOps allLists appInfo uiType emptyTxRecord, Cmd.none )
 
                 ChangedUIStateToCreateNew ->
                     let
@@ -768,7 +783,7 @@ createNewPlayerListWithNewResultAndUpdateJsonBin model =
             ( RankingOps newAllLists appInfo uiState txRec, updatePlayerList appInfo.selectedRanking.id newAllLists.players )
 
         _ ->
-            ( Failure "createNewPlayerListWithNewChallengeAndUpdateJsonBin", Cmd.none )
+            ( Failure "createNewPlayerListWithNewResultAndUpdateJsonBin", Cmd.none )
 
 
 createNewPlayerListWithNewChallengeAndUpdateJsonBin : Model -> ( Model, Cmd Msg )
@@ -1308,7 +1323,7 @@ newrankinhomebutton rankingList user rnkInfo =
             [ Element.wrappedRow Grid.simple <|
                 [ Input.button (Button.simple ++ Color.simple) <|
                     { onPress = Just <| ResetToShowGlobal
-                    , label = Element.text "Home"
+                    , label = Element.text "Cancel"
                     }
                 , Input.button (Button.simple ++ Color.info) <|
                     { onPress = Just <| ClickedNewRankingRequested rnkInfo
@@ -1352,8 +1367,8 @@ confirmChallengebutton model =
                 , Element.column (Card.simple ++ Grid.simple) <|
                     [ Element.wrappedRow Grid.simple <|
                         [ Input.button (Button.simple ++ Color.simple) <|
-                            { onPress = Just <| ResetToShowGlobal
-                            , label = Element.text "Home"
+                            { onPress = Just <| ResetToShowSelected
+                            , label = Element.text "Cancel"
                             }
                         , Input.button (Button.simple ++ Color.info) <|
                             { onPress = Just <| NewChallengeConfirmClicked
@@ -1382,7 +1397,7 @@ confirmResultbutton model =
                 [ Element.column (Card.simple ++ Grid.simple) <|
                     [ Element.wrappedRow Grid.simple <|
                         [ Input.button (Button.simple ++ Color.simple) <|
-                            { onPress = Just <| ResetToShowGlobal
+                            { onPress = Just <| ResetToShowSelected
                             , label = Element.text "Home"
                             }
                         ]
