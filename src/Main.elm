@@ -373,14 +373,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 ResetToShowSelected ->
                     let
                         uiType =
-                            if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking allLists.globalRankings appInfo.user then
-                                SR.Types.UISelectedRankingUserIsOwner
-
-                            else if SR.ListOps.isUserMemberOfSelectedRanking allLists.players appInfo.user then
-                                SR.Types.UISelectedRankingUserIsPlayer
-
-                            else
-                                SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
+                            ensuredCorrectSelectedUI appInfo allLists
                     in
                     ( RankingOps allLists appInfo uiType emptyTxRecord, Cmd.none )
 
@@ -759,6 +752,18 @@ handleUndecided model =
             Failure "Fail"
 
 
+ensuredCorrectSelectedUI : SR.Types.AppInfo -> SR.Types.AllLists -> SR.Types.UIState
+ensuredCorrectSelectedUI appInfo allLists =
+    if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking allLists.globalRankings appInfo.user then
+        SR.Types.UISelectedRankingUserIsOwner
+
+    else if SR.ListOps.isUserMemberOfSelectedRanking allLists.players appInfo.user then
+        SR.Types.UISelectedRankingUserIsPlayer
+
+    else
+        SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
+
+
 createNewPlayerListWithNewResultAndUpdateJsonBin : Model -> ( Model, Cmd Msg )
 createNewPlayerListWithNewResultAndUpdateJsonBin model =
     case model of
@@ -923,8 +928,11 @@ updateSelectedRankingPlayerList currentmodel lplayers =
             let
                 resetSelectedRankingPlayerList =
                     { allLists | players = lplayers }
+
+                uiState =
+                    ensuredCorrectSelectedUI appInfo allLists
             in
-            RankingOps resetSelectedRankingPlayerList appInfo SR.Types.UISelectedRankingUserIsPlayer txRec
+            RankingOps resetSelectedRankingPlayerList appInfo uiState txRec
 
         _ ->
             Failure <| "updateSelectedRankingPlayerList : "
@@ -1398,7 +1406,7 @@ confirmResultbutton model =
                     [ Element.wrappedRow Grid.simple <|
                         [ Input.button (Button.simple ++ Color.simple) <|
                             { onPress = Just <| ResetToShowSelected
-                            , label = Element.text "Home"
+                            , label = Element.text "Cancel"
                             }
                         ]
                     ]
