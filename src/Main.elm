@@ -1,4 +1,4 @@
-module Main exposing (displayResultBeforeConfirmView, main)
+module Main exposing (main)
 
 import Browser
 import Element exposing (Element)
@@ -156,6 +156,7 @@ type Msg
     | LadderNameInputChg String
     | LadderDescInputChg String
     | ChangedUIStateToEnterResult SR.Types.Player
+    | SentResultToWallet SR.Types.ResultOfMatch
     | ProcessResult SR.Types.ResultOfMatch
     | SentResultToJsonbin (Result Http.Error ())
     | NewUserNameInputChg String
@@ -191,7 +192,15 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                     ( UserOps (SR.Types.ExistingUser <| SR.Defaults.emptyUser) SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
 
                                 Just uaddr ->
-                                    ( UserOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser txRec, gotUserList )
+                                    case walletState of
+                                        SR.Types.WalletWaitingForTransactionReceipt ->
+                                            ( WalletOps SR.Types.WalletWaitingForTransactionReceipt txRec
+                                              --|> update (ProcessResult SR.Types.Won)
+                                            , Cmd.none
+                                            )
+
+                                        _ ->
+                                            ( UserOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser txRec, gotUserList )
 
                         _ ->
                             let
@@ -202,6 +211,21 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                 OpenWalletInstructions ->
                     ( WalletOps SR.Types.Locked emptyTxRecord, Cmd.none )
+
+                TxSentryMsg subMsg ->
+                    let
+                        _ =
+                            Debug.log "handleTxSubMsg subMsg" <| handleTxSubMsg subMsg
+                    in
+                    let
+                        ( subModel, subCmd ) =
+                            Eth.Sentry.Tx.update subMsg txRec.txSentry
+                    in
+                    if handleTxSubMsg subMsg then
+                        ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | txSentry = subModel }, subCmd )
+
+                    else
+                        ( RankingOps SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )
 
                 PollBlock (Ok blockNumber) ->
                     -- ( { txRec | blockNumber = Just blockNumber }
@@ -225,18 +249,35 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
 
                 WatchTx (Ok tx) ->
-                    WalletOps SR.Types.WalletOpenedAndOperational { txRec | tx = Just tx }
-                        |> update (ProcessResult SR.Types.Won)
+                    let
+                        _ =
+                            Debug.log "tx ok" "tx was Ok"
+                    in
+                    -- WalletOps SR.Types.WalletOpenedAndOperational { txRec | tx = Just tx }
+                    --     |> update (ProcessResult SR.Types.Won)
+                    ( UserOps (SR.Types.ExistingUser <| SR.Defaults.emptyUser) SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
 
                 WatchTx (Err err) ->
+                    let
+                        _ =
+                            Debug.log "tx ok" err
+                    in
                     ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | errors = ("Error Retrieving Tx: " ++ err) :: txRec.errors }, Cmd.none )
 
                 --( { txRec | errors = ("Error Retrieving Tx: " ++ err) :: txRec.errors }, Cmd.none )
                 WatchTxReceipt (Ok txReceipt) ->
+                    let
+                        _ =
+                            Debug.log "tx ok" txReceipt
+                    in
                     WalletOps SR.Types.WalletOpenedAndOperational { txRec | txReceipt = Just txReceipt }
                         |> update (ProcessResult SR.Types.Won)
 
                 WatchTxReceipt (Err err) ->
+                    let
+                        _ =
+                            Debug.log "tx err" err
+                    in
                     -- ( { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
                     ( WalletOps SR.Types.WalletOpenedAndOperational { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
 
@@ -507,6 +548,48 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                 _ ->
                                     ( Failure "result lost", Cmd.none )
 
+                SentResultToWallet result ->
+                    let
+                        _ =
+                            Debug.log "SentResultToWallet" result
+
+                        txParams =
+                            { to = txRec.account
+                            , from = txRec.account
+                            , gas = Nothing
+                            , gasPrice = Just <| Eth.Units.gwei 4
+                            , value = Just <| Eth.Units.gwei 1
+                            , data = Nothing
+                            , nonce = Nothing
+                            }
+
+                        ( newSentry, sentryCmd ) =
+                            Eth.Sentry.Tx.customSend
+                                txRec.txSentry
+                                { onSign = Just WatchTxHash
+                                , onBroadcast = Just WatchTx
+                                , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                                }
+                                txParams
+                    in
+                    -- ( RankingOps allLists
+                    --     appInfo
+                    --     uiState
+                    --     { txRec | txSentry = newSentry }
+                    -- , sentryCmd
+                    -- )
+                    ( WalletOps SR.Types.WalletWaitingForTransactionReceipt { txRec | txSentry = newSentry }
+                      --|> update (ProcessResult SR.Types.Won)
+                    , sentryCmd
+                    )
+
+                -- WatchTx (Ok tx) ->
+                --     let
+                --         _ =
+                --             Debug.log "tx ok"
+                --     in
+                --     WalletOps SR.Types.WalletOpenedAndOperational { txRec | tx = Just tx }
+                --         |> update (ProcessResult SR.Types.Won)
                 SentResultToJsonbin a ->
                     ( RankingOps allLists
                         appInfo
@@ -552,6 +635,55 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
         Failure str ->
             ( Failure <| "Model failure in selected ranking: " ++ str, Cmd.none )
+
+
+handleTxSubMsg : Eth.Sentry.Tx.Msg -> Bool
+handleTxSubMsg subMsg =
+    let
+        _ =
+            Debug.log "TxSentryMsg" subMsg
+    in
+    case subMsg of
+        Eth.Sentry.Tx.NoOp ->
+            False
+
+        Eth.Sentry.Tx.TxSigned int result ->
+            case result of
+                Err err ->
+                    False
+
+                Ok value ->
+                    True
+
+        --Eth.Sentry.Tx.TxSent int (Result Http.Error tx) ->
+        Eth.Sentry.Tx.TxSent int result ->
+            case result of
+                Err err ->
+                    False
+
+                Ok value ->
+                    True
+
+        --Eth.Sentry.Tx.TxMined int (Result Http.Error txReceipt) ->
+        Eth.Sentry.Tx.TxMined int result ->
+            case result of
+                Err err ->
+                    False
+
+                Ok value ->
+                    True
+
+        --Eth.Sentry.Tx.TrackTx int txTracker (Result Http.Error int) ->
+        Eth.Sentry.Tx.TrackTx int txTracker result ->
+            case result of
+                Err err ->
+                    False
+
+                Ok value ->
+                    True
+
+        Eth.Sentry.Tx.ErrorDecoding str ->
+            False
 
 
 handleWon : Model -> Model
@@ -951,19 +1083,20 @@ updateSelectedRankingOnPlayersReceived currentmodel lplayers =
 
                 allListsPlayersAdded =
                     { allLists | players = lplayers }
+
+                uistate =
+                    ensuredCorrectSelectedUI appInfo allLists
             in
-            if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking allLists.globalRankings appInfo.user then
-                RankingOps allListsPlayersAdded newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner emptyTxRecord
-
-            else if SR.ListOps.isUserMemberOfSelectedRanking lplayers appInfo.user then
-                let
-                    _ =
-                        Debug.log "isUserMemberOfSelectedRanking"
-                in
-                RankingOps allListsPlayersAdded newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord
-
-            else
-                RankingOps allListsPlayersAdded newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord
+            -- if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking allLists.globalRankings appInfo.user then
+            --     RankingOps allListsPlayersAdded newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner emptyTxRecord
+            -- else if SR.ListOps.isUserMemberOfSelectedRanking lplayers appInfo.user then
+            --     let
+            --         _ =
+            --             Debug.log "isUserMemberOfSelectedRanking"
+            --     in
+            --     RankingOps allListsPlayersAdded newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord
+            -- else
+            RankingOps allListsPlayersAdded newAppChallengerAndPlayer uistate emptyTxRecord
 
         _ ->
             Failure <| "updateSelectedRankingOnPlayersReceived : "
@@ -999,6 +1132,9 @@ view model =
                 SR.Types.UIEnterResult ->
                     displayResultBeforeConfirmView model
 
+                SR.Types.UIEnterResultTxProblem ->
+                    txErrorView model
+
                 SR.Types.UIChallenge ->
                     displayChallengeBeforeConfirmView model
 
@@ -1025,6 +1161,9 @@ view model =
 
                 SR.Types.WalletOpenedAndOperational ->
                     greetingView "WalletOpenedAndOperational"
+
+                SR.Types.WalletWaitingForTransactionReceipt ->
+                    greetingView "Please wait while the transaction is mined"
 
         UserOps userState userList uaddr uname uiState _ ->
             case uiState of
@@ -1417,7 +1556,8 @@ confirmResultbutton model =
                 , Element.column (Card.simple ++ Grid.simple) <|
                     [ Element.column Grid.simple <|
                         [ Input.button (Button.simple ++ Color.primary) <|
-                            { onPress = Just <| ProcessResult SR.Types.Won
+                            { --onPress = Just <| ProcessResult SR.Types.Won
+                              onPress = Just <| SentResultToWallet SR.Types.Won
                             , label = Element.text "Won"
                             }
                         , Input.button (Button.simple ++ Color.primary) <|
@@ -1434,6 +1574,89 @@ confirmResultbutton model =
                 , SR.Elements.footer
                 ]
 
+        _ ->
+            Element.text "Fail"
+
+
+acknoweldgeTxErrorbtn : Model -> Element Msg
+acknoweldgeTxErrorbtn model =
+    case model of
+        RankingOps allLists appInfo uiState txRec ->
+            Element.column Grid.section <|
+                [ Element.column (Card.simple ++ Grid.simple) <|
+                    [ Element.wrappedRow Grid.simple <|
+                        [ Input.button (Button.simple ++ Color.simple) <|
+                            { onPress = Just <| ResetToShowSelected
+                            , label = Element.text "Cancel"
+                            }
+                        ]
+                    ]
+                , Element.paragraph (Card.fill ++ Color.info) <|
+                    [ --Element.el [] <| Element.text <| playerAsUser.username ++ " you had a challenge match vs " ++ challengerAsUser.username
+                      Element.el [] <| Element.text """ There was an error 
+                                                        processing your transaction. 
+                                                        It is unlikely to be 
+                                                        an issue with this 
+                                                        application 
+                                                        but rather your 
+                                                        wallet setup. Your results are unaffected and
+                                                        there will have been no charge against your wallet """
+                    ]
+                , Element.el Heading.h6 <| Element.text <| "Please click below to continue ... "
+                , Element.column (Card.simple ++ Grid.simple) <|
+                    [ Element.column Grid.simple <|
+                        [ Input.button (Button.simple ++ Color.primary) <|
+                            { --onPress = Just <| ProcessResult SR.Types.Won
+                              onPress = Just <| ResetToShowGlobal
+                            , label = Element.text "Continue ..."
+                            }
+                        ]
+                    ]
+
+                --, SR.Elements.ethereumWalletWarning
+                , SR.Elements.footer
+                ]
+
+        -- RankingOps allLists appInfo uiState txRec ->
+        --     let
+        --         playerAsUser =
+        --             SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.player.address
+        --         challengerAsUser =
+        --             SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.challenger.address
+        --     in
+        --     Element.column Grid.section <|
+        --         [ Element.column (Card.simple ++ Grid.simple) <|
+        --             [ Element.wrappedRow Grid.simple <|
+        --                 [ Input.button (Button.simple ++ Color.simple) <|
+        --                     { onPress = Just <| ResetToShowSelected
+        --                     , label = Element.text "Cancel"
+        --                     }
+        --                 ]
+        --             ]
+        --         , Element.paragraph (Card.fill ++ Color.info) <|
+        --             [ Element.el [] <| Element.text <| playerAsUser.username ++ " you had a challenge match vs " ++ challengerAsUser.username
+        --             ]
+        --         , Element.el Heading.h6 <| Element.text <| "Please confirm your result: "
+        --         , Element.column (Card.simple ++ Grid.simple) <|
+        --             [ Element.column Grid.simple <|
+        --                 [ Input.button (Button.simple ++ Color.primary) <|
+        --                     { --onPress = Just <| ProcessResult SR.Types.Won
+        --                       onPress = Just <| SentResultToWallet SR.Types.Won
+        --                     , label = Element.text "Won"
+        --                     }
+        --                 , Input.button (Button.simple ++ Color.primary) <|
+        --                     { onPress = Just <| ProcessResult SR.Types.Lost
+        --                     , label = Element.text "Lost"
+        --                     }
+        --                 , Input.button (Button.simple ++ Color.primary) <|
+        --                     { onPress = Just <| ProcessResult SR.Types.Undecided
+        --                     , label = Element.text "Undecided"
+        --                     }
+        --                 ]
+        --             ]
+        --         --, SR.Elements.ethereumWalletWarning
+        --         , SR.Elements.footer
+        --         ]
         _ ->
             Element.text "Fail"
 
@@ -1662,6 +1885,25 @@ displayResultBeforeConfirmView model =
             Html.text "Error"
 
 
+txErrorView : Model -> Html Msg
+txErrorView model =
+    case model of
+        RankingOps allLists appInfo uiState txRec ->
+            let
+                playerAsUser =
+                    SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.player.address
+            in
+            Framework.responsiveLayout [] <|
+                Element.column
+                    Framework.container
+                    [ Element.el Heading.h4 <| Element.text <| playerAsUser.username ++ " Transaction Error"
+                    , acknoweldgeTxErrorbtn model
+                    ]
+
+        _ ->
+            Html.text "Error"
+
+
 greetingView : String -> Html Msg
 greetingView greetingMsg =
     Framework.responsiveLayout [] <|
@@ -1860,14 +2102,8 @@ addCurrentUserToPlayerList : String -> List SR.Types.Player -> SR.Types.User -> 
 addCurrentUserToPlayerList intrankingId lPlayer userRec =
     let
         newPlayer =
-            { --datestamp = 12345
-              --, active = True
-              address = userRec.ethaddress
+            { address = userRec.ethaddress
             , rank = List.length lPlayer + 1
-
-            --, name = userRec.username
-            --, id = List.length lPlayer + 1
-            --, isplayercurrentlychallenged = False
             , challengeraddress = ""
             }
 
