@@ -12,7 +12,7 @@ module SR.ListOps exposing
     , setPlayerInPlayerListWithChallengeResult
     , setPlayerInPlayerListWithNewChallengerAddr
     , singleUserInList
-    , sortPlayerListByRank
+    , sortedPlayerListByRank
     , updateRankWithWonResult
     )
 
@@ -43,7 +43,7 @@ setPlayerInPlayerListWithChallengeResult lPlayer player rank =
             updatedPlayer :: filteredPlayerList
 
         newPlayerListSorted =
-            sortPlayerListByRank newPlayerList
+            sortedPlayerListByRank newPlayerList
     in
     newPlayerListSorted
 
@@ -95,9 +95,98 @@ isUserInList userlist uaddr =
         True
 
 
-sortPlayerListByRank : List SR.Types.Player -> List SR.Types.Player
-sortPlayerListByRank lplayer =
-    List.sortBy .rank lplayer
+sortedPlayerListByRank : List SR.Types.Player -> List SR.Types.Player
+sortedPlayerListByRank lplayer =
+    let
+        validatedMaybePlayerLst =
+            List.map Utils.MyUtils.splitPlayerFieldsToCreateMaybePlayer lplayer
+
+        filteredValidatedMaybePlayerLst =
+            List.filter canPlayerBeInList validatedMaybePlayerLst
+
+        convertedValidatedPlayerList =
+            List.map Utils.MyUtils.convertMaybePlayerToPlayer filteredValidatedMaybePlayerLst
+
+        reorderedConvertedValidatedPlayerList =
+            reorderPlayerListToStartAtOne
+                convertedValidatedPlayerList
+
+        -- _ =
+        --     Debug.log "reorderedConvertedValidatedPlayerList" reorderedConvertedValidatedPlayerList
+    in
+    List.sortBy .rank reorderedConvertedValidatedPlayerList
+
+
+
+-- current
+
+
+reorderPlayerListToStartAtOne : List SR.Types.Player -> List SR.Types.Player
+reorderPlayerListToStartAtOne lplayer =
+    let
+        newPlayerListAllRankIsOne =
+            List.map resetPlayerRankToOne lplayer
+
+        newListLength =
+            List.length lplayer
+
+        newAscendingList =
+            List.range 1 newListLength
+
+        listscombined =
+            List.map2 resetPlayerRankingList newAscendingList newPlayerListAllRankIsOne
+    in
+    listscombined
+
+
+resetPlayerRankingList : Int -> SR.Types.Player -> SR.Types.Player
+resetPlayerRankingList newRank player =
+    let
+        newPlayer =
+            { player
+                | address = player.address
+                , rank = newRank
+                , challengeraddress = player.challengeraddress
+            }
+    in
+    newPlayer
+
+
+addOne : Int -> Int
+addOne int =
+    if int == 1 then
+        1
+
+    else
+        int + 1
+
+
+resetPlayerRankToOne : SR.Types.Player -> SR.Types.Player
+resetPlayerRankToOne player =
+    let
+        newPlayer =
+            { player
+                | address = player.address
+                , rank = 1
+                , challengeraddress = player.challengeraddress
+            }
+    in
+    newPlayer
+
+
+
+-- isThisRankGreaterThanPrevious : Int -> Int -> Bool
+-- isThisRankGreaterThanPrevious previousRank currentRank =
+
+
+canPlayerBeInList : Maybe SR.Types.Player -> Bool
+canPlayerBeInList player =
+    case player of
+        Nothing ->
+            False
+
+        Just a ->
+            True
 
 
 isUserMemberOfSelectedRanking : List SR.Types.Player -> SR.Types.User -> Bool
