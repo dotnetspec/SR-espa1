@@ -85,6 +85,7 @@ type WalletState
     | Locked
     | WalletOpenedWithoutUserCheck Eth.Types.Address
     | WalletOpenedUserCheckDone User Eth.Types.Address
+    | WalletWaitingForTransactionReceipt
     | WalletOpenedAndOperational
 
 
@@ -102,11 +103,13 @@ type UIState
     = UIRenderAllRankings
     | CreateNewLadder
     | CreateNewUser
+    | UIDisplayWalletLockedInstructions
     | UIDisplayWalletInfoToUser
     | UISelectedRankingUserIsOwner
     | UISelectedRankingUserIsPlayer
     | UISelectedRankingUserIsNeitherOwnerNorPlayer
     | UIEnterResult
+    | UIEnterResultTxProblem
     | UIChallenge
 
 

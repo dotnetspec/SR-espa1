@@ -1,10 +1,23 @@
-module Utils.MyUtils exposing (addressFromStringResult, addressToString, extractPlayersFromWebData, extractRankingsFromWebData, extractUsersFromWebData, stringFromBool, stringFromMaybeString, stringFromRankingId)
+module Utils.MyUtils exposing
+    ( addressFromStringResult
+    , addressToString
+    , convertMaybePlayerToPlayer
+    , createdMaybePlayerFromPlayer
+    , extractPlayersFromWebData
+    , extractRankingsFromWebData
+    , extractUsersFromWebData
+    , splitPlayerFieldsToCreateMaybePlayer
+    , stringFromBool
+    , stringFromMaybeString
+    , stringFromRankingId
+    )
 
 import Eth.Types
 import Eth.Utils
 import Http
 import Internal.Types
 import RemoteData
+import SR.Defaults
 import SR.Types
 
 
@@ -104,6 +117,52 @@ stringFromMaybeString str =
     case str of
         Nothing ->
             "Not a string"
+
+        Just a ->
+            a
+
+
+splitPlayerFieldsToCreateMaybePlayer : SR.Types.Player -> Maybe SR.Types.Player
+splitPlayerFieldsToCreateMaybePlayer player =
+    createMaybePlayer player.address player.rank player.challengeraddress
+
+
+createMaybePlayer : String -> Int -> String -> Maybe SR.Types.Player
+createMaybePlayer address rank challengeraddress =
+    if rank > 0 && rank < 50000 then
+        Just { address = address, rank = rank, challengeraddress = challengeraddress }
+
+    else
+        Nothing
+
+
+createdMaybePlayerFromPlayer : SR.Types.Player -> Maybe SR.Types.Player
+createdMaybePlayerFromPlayer player =
+    Just
+        { address = player.address
+        , rank = player.rank
+        , challengeraddress = player.challengeraddress
+        }
+
+
+convertMaybePlayerToPlayer : Maybe SR.Types.Player -> SR.Types.Player
+convertMaybePlayerToPlayer mplayer =
+    case mplayer of
+        Nothing ->
+            SR.Defaults.emptyPlayer
+
+        Just a ->
+            { address = a.address
+            , rank = a.rank
+            , challengeraddress = a.challengeraddress
+            }
+
+
+rankFromMaybeRank : Maybe Int -> Int
+rankFromMaybeRank int =
+    case int of
+        Nothing ->
+            0
 
         Just a ->
             a

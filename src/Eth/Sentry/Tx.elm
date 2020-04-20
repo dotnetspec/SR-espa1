@@ -1,5 +1,5 @@
 module Eth.Sentry.Tx exposing
-    ( TxSentry, Msg, Send, update, init, OutPort, InPort, listen
+    ( TxSentry, Msg(..), Send, update, init, OutPort, InPort, listen
     , send, sendWithReceipt
     , CustomSend, TxTracker, customSend
     , changeNode
