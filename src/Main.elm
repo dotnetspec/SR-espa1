@@ -912,7 +912,7 @@ createNewPlayerListWithNewResultAndUpdateJsonBin model =
                     SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.address
 
                 sortedByRankingnewplayerListWithPlayerAndChallengerUpdated =
-                    SR.ListOps.sortPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
+                    SR.ListOps.sortedPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
 
                 newAllLists =
                     { allLists | players = sortedByRankingnewplayerListWithPlayerAndChallengerUpdated }
@@ -939,7 +939,7 @@ createNewPlayerListWithNewChallengeAndUpdateJsonBin model =
                     SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.address
 
                 sortedByRankingnewplayerListWithPlayerAndChallengerUpdated =
-                    SR.ListOps.sortPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
+                    SR.ListOps.sortedPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
 
                 newAllLists =
                     { allLists | players = sortedByRankingnewplayerListWithPlayerAndChallengerUpdated }
@@ -996,7 +996,7 @@ handleNewUserInputs currentmodel msg =
 
 extractAndSortPlayerList : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
 extractAndSortPlayerList rdlPlayer =
-    SR.ListOps.sortPlayerListByRank <| Utils.MyUtils.extractPlayersFromWebData rdlPlayer
+    SR.ListOps.sortedPlayerListByRank <| Utils.MyUtils.extractPlayersFromWebData rdlPlayer
 
 
 updatedForChallenge : Model -> List SR.Types.Player -> SR.Types.Player -> SR.Types.User -> Model
@@ -1592,8 +1592,7 @@ acknoweldgeTxErrorbtn model =
                         ]
                     ]
                 , Element.paragraph (Card.fill ++ Color.info) <|
-                    [ --Element.el [] <| Element.text <| playerAsUser.username ++ " you had a challenge match vs " ++ challengerAsUser.username
-                      Element.el [] <| Element.text """ There was an error 
+                    [ Element.el [] <| Element.text """ There was an error 
                                                         processing your transaction. 
                                                         It is unlikely to be 
                                                         an issue with this 
@@ -1606,57 +1605,14 @@ acknoweldgeTxErrorbtn model =
                 , Element.column (Card.simple ++ Grid.simple) <|
                     [ Element.column Grid.simple <|
                         [ Input.button (Button.simple ++ Color.primary) <|
-                            { --onPress = Just <| ProcessResult SR.Types.Won
-                              onPress = Just <| ResetToShowGlobal
+                            { onPress = Just <| ResetToShowGlobal
                             , label = Element.text "Continue ..."
                             }
                         ]
                     ]
-
-                --, SR.Elements.ethereumWalletWarning
                 , SR.Elements.footer
                 ]
 
-        -- RankingOps allLists appInfo uiState txRec ->
-        --     let
-        --         playerAsUser =
-        --             SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.player.address
-        --         challengerAsUser =
-        --             SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.challenger.address
-        --     in
-        --     Element.column Grid.section <|
-        --         [ Element.column (Card.simple ++ Grid.simple) <|
-        --             [ Element.wrappedRow Grid.simple <|
-        --                 [ Input.button (Button.simple ++ Color.simple) <|
-        --                     { onPress = Just <| ResetToShowSelected
-        --                     , label = Element.text "Cancel"
-        --                     }
-        --                 ]
-        --             ]
-        --         , Element.paragraph (Card.fill ++ Color.info) <|
-        --             [ Element.el [] <| Element.text <| playerAsUser.username ++ " you had a challenge match vs " ++ challengerAsUser.username
-        --             ]
-        --         , Element.el Heading.h6 <| Element.text <| "Please confirm your result: "
-        --         , Element.column (Card.simple ++ Grid.simple) <|
-        --             [ Element.column Grid.simple <|
-        --                 [ Input.button (Button.simple ++ Color.primary) <|
-        --                     { --onPress = Just <| ProcessResult SR.Types.Won
-        --                       onPress = Just <| SentResultToWallet SR.Types.Won
-        --                     , label = Element.text "Won"
-        --                     }
-        --                 , Input.button (Button.simple ++ Color.primary) <|
-        --                     { onPress = Just <| ProcessResult SR.Types.Lost
-        --                     , label = Element.text "Lost"
-        --                     }
-        --                 , Input.button (Button.simple ++ Color.primary) <|
-        --                     { onPress = Just <| ProcessResult SR.Types.Undecided
-        --                     , label = Element.text "Undecided"
-        --                     }
-        --                 ]
-        --             ]
-        --         --, SR.Elements.ethereumWalletWarning
-        --         , SR.Elements.footer
-        --         ]
         _ ->
             Element.text "Fail"
 
@@ -2012,19 +1968,12 @@ gotRankingList =
 createNewPlayerListWithCurrentUser : SR.Types.User -> Cmd Msg
 createNewPlayerListWithCurrentUser user =
     let
-        idJsonObj : Json.Encode.Value
-        idJsonObj =
+        playerEncoder : Json.Encode.Value
+        playerEncoder =
             Json.Encode.list
                 Json.Encode.object
-                [ [ ( "datestamp", Json.Encode.int 12345 )
-                  , ( "active", Json.Encode.bool True )
-                  , ( "address", Json.Encode.string (String.toLower user.ethaddress) )
+                [ [ ( "address", Json.Encode.string (String.toLower user.ethaddress) )
                   , ( "rank", Json.Encode.int 1 )
-                  , ( "name", Json.Encode.string user.username )
-                  , ( "id", Json.Encode.int 1 )
-                  , ( "isplayercurrentlychallenged", Json.Encode.bool False )
-                  , ( "email", Json.Encode.string user.email )
-                  , ( "mobile", Json.Encode.string user.mobile )
                   , ( "challengeraddress", Json.Encode.string "" )
                   ]
                 ]
@@ -2035,7 +1984,7 @@ createNewPlayerListWithCurrentUser user =
     -- decoder relates to what comes back from server. Nothing to do with above.
     Http.request
         { body =
-            Http.jsonBody <| idJsonObj
+            Http.jsonBody <| playerEncoder
         , expect = Http.expectJson (RemoteData.fromResult >> SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId) SR.Decode.newRankingIdDecoder
         , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
         , method = "POST"
@@ -2111,7 +2060,7 @@ addCurrentUserToPlayerList intrankingId lPlayer userRec =
             newPlayer :: lPlayer
 
         sortedSelectedRankingListWithNewPlayerJsonObjAdded =
-            SR.ListOps.sortPlayerListByRank selectedRankingListWithNewPlayerJsonObjAdded
+            SR.ListOps.sortedPlayerListByRank selectedRankingListWithNewPlayerJsonObjAdded
     in
     --AddedNewRankingToGlobalList is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
