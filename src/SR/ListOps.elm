@@ -6,12 +6,10 @@ module SR.ListOps exposing
     , isUserInList
     , isUserMemberOfSelectedRanking
     , isUserSelectedOwnerOfRanking
-    ,  ownerValidatedRankingList
-       --, setPlayerInPlayerListWithChallengeResult
-       --, setPlayerInPlayerListWithNewChallengerAddr
+    , ownerValidatedRankingList
+    ,  singleUserInList
+       --, sortedPlayerListByRank
 
-    , singleUserInList
-    , sortedPlayerListByRank
     , updateRankWithWonResult
     )
 
@@ -71,29 +69,23 @@ isUserInList userlist uaddr =
         True
 
 
-sortedPlayerListByRank : List SR.Types.Player -> List SR.Types.Player
-sortedPlayerListByRank lplayer =
-    let
-        validatedMaybePlayerLst =
-            List.map Utils.MyUtils.splitPlayerFieldsToCreateMaybePlayer lplayer
 
-        filteredValidatedMaybePlayerLst =
-            List.filter canPlayerBeInList validatedMaybePlayerLst
-
-        convertedValidatedPlayerList =
-            List.map Utils.MyUtils.convertMaybePlayerToPlayer filteredValidatedMaybePlayerLst
-
-        reorderedConvertedValidatedPlayerList =
-            reorderPlayerListToStartAtOne
-                convertedValidatedPlayerList
-
-        -- _ =
-        --     Debug.log "reorderedConvertedValidatedPlayerList" reorderedConvertedValidatedPlayerList
-    in
-    List.sortBy .rank reorderedConvertedValidatedPlayerList
-
-
-
+-- sortedPlayerListByRank : List SR.Types.Player -> List SR.Types.Player
+-- sortedPlayerListByRank lplayer =
+--     let
+--         validatedMaybePlayerLst =
+--             List.map Utils.MyUtils.splitPlayerFieldsToCreateMaybePlayer lplayer
+--         filteredValidatedMaybePlayerLst =
+--             List.filter canPlayerBeInList validatedMaybePlayerLst
+--         convertedValidatedPlayerList =
+--             List.map Utils.MyUtils.convertMaybePlayerToPlayer filteredValidatedMaybePlayerLst
+--         reorderedConvertedValidatedPlayerList =
+--             reorderPlayerListToStartAtOne
+--                 convertedValidatedPlayerList
+--         -- _ =
+--         --     Debug.log "reorderedConvertedValidatedPlayerList" reorderedConvertedValidatedPlayerList
+--     in
+--     List.sortBy .rank reorderedConvertedValidatedPlayerList
 -- current
 
 

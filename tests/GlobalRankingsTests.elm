@@ -10,6 +10,7 @@ import Internal.Types
 import Json.Encode
 import SR.Decode
 import SR.ListOps
+import SR.PlayerListOps
 import SR.Types
 import Shrink
 import Test exposing (..)
@@ -62,7 +63,7 @@ testsortPlayerListByRank =
     describe "testsortPlayerListByRank test"
         [ test "missing rankingowneraddr results in entry being excluded" <|
             \_ ->
-                SR.ListOps.sortedPlayerListByRank listOfPlayers
+                SR.PlayerListOps.sortedPlayerListByRank listOfPlayers
                     |> Expect.equal output
         ]
 
