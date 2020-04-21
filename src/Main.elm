@@ -30,6 +30,7 @@ import SR.Decode
 import SR.Defaults
 import SR.Elements
 import SR.ListOps
+import SR.PlayerListOps
 import SR.Types
 import Task
 import Time exposing (Posix)
@@ -724,10 +725,10 @@ handleWon model =
                     let
                         -- update the player list for both players challenger to emptyPlayer and change rankings
                         updatedPlayerListForPlayer =
-                            SR.ListOps.setPlayerInPlayerListWithChallengeResult allLists.players appInfo.player appInfo.challenger.rank
+                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.players appInfo.player appInfo.challenger.rank
 
                         updatedPlayerListForPlayerAndChallenger =
-                            SR.ListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger (appInfo.challenger.rank + 1)
+                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger (appInfo.challenger.rank + 1)
 
                         --update current player now
                         newPlayer =
@@ -753,10 +754,10 @@ handleWon model =
                         --no ranking change - just update the player list for both players challenger to emptyPlayer, no rank change
                         --update the player list
                         updatedPlayerListForPlayer =
-                            SR.ListOps.setPlayerInPlayerListWithChallengeResult allLists.players appInfo.player appInfo.player.rank
+                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.players appInfo.player appInfo.player.rank
 
                         updatedPlayerListForPlayerAndChallenger =
-                            SR.ListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.rank
+                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.rank
 
                         --update current player now
                         newPlayer =
@@ -793,10 +794,10 @@ handleLost model =
                 SR.Types.OpponentRankHigher ->
                     let
                         updatedPlayerListForPlayer =
-                            SR.ListOps.setPlayerInPlayerListWithChallengeResult allLists.players appInfo.player appInfo.player.rank
+                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.players appInfo.player appInfo.player.rank
 
                         updatedPlayerListForPlayerAndChallenger =
-                            SR.ListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.rank
+                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.rank
 
                         --update current player now
                         newPlayer =
@@ -821,10 +822,10 @@ handleLost model =
                     --nb. higher rank is a lower number and vice versa!
                     let
                         updatedPlayerListForPlayer =
-                            SR.ListOps.setPlayerInPlayerListWithChallengeResult allLists.players appInfo.player (appInfo.player.rank + 1)
+                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.players appInfo.player (appInfo.player.rank + 1)
 
                         updatedPlayerListForPlayerAndChallenger =
-                            SR.ListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.player.rank
+                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.player.rank
 
                         --update current player now
                         newPlayer =
@@ -860,10 +861,10 @@ handleUndecided model =
             --SR.Types.OpponentRankHigher ->
             let
                 updatedPlayerListForPlayer =
-                    SR.ListOps.setPlayerInPlayerListWithChallengeResult allLists.players appInfo.player appInfo.player.rank
+                    SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.players appInfo.player appInfo.player.rank
 
                 updatedPlayerListForPlayerAndChallenger =
-                    SR.ListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.rank
+                    SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.rank
 
                 --update current player now
                 newPlayer =
@@ -928,16 +929,16 @@ createNewPlayerListWithNewResultAndUpdateJsonBin model =
             let
                 -- add respective challenger addresses to player and challenger (who is also a player type)
                 newplayerListWithPlayerUpdated =
-                    SR.ListOps.updateRankWithWonResult allLists.players appInfo.player
+                    SR.PlayerListOps.updatePlayerRankWithWonResult allLists.players appInfo.player
 
                 challengerAsPlayer =
-                    SR.ListOps.gotPlayerFromPlayerListStrAddress allLists.players appInfo.challenger.address
+                    SR.PlayerListOps.gotPlayerFromPlayerListStrAddress allLists.players appInfo.challenger.address
 
                 newplayerListWithPlayerAndChallengerUpdated =
-                    SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.address
+                    SR.PlayerListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.address
 
                 sortedByRankingnewplayerListWithPlayerAndChallengerUpdated =
-                    SR.ListOps.sortedPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
+                    SR.PlayerListOps.sortedPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
 
                 newAllLists =
                     { allLists | players = sortedByRankingnewplayerListWithPlayerAndChallengerUpdated }
@@ -955,16 +956,16 @@ createNewPlayerListWithNewChallengeAndUpdateJsonBin model =
             let
                 -- add respective challenger addresses to player and challenger (who is also a player type)
                 newplayerListWithPlayerUpdated =
-                    SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr allLists.players appInfo.player appInfo.challenger.address
+                    SR.PlayerListOps.setPlayerInPlayerListWithNewChallengerAddr allLists.players appInfo.player appInfo.challenger.address
 
                 challengerAsPlayer =
-                    SR.ListOps.gotPlayerFromPlayerListStrAddress allLists.players appInfo.challenger.address
+                    SR.PlayerListOps.gotPlayerFromPlayerListStrAddress allLists.players appInfo.challenger.address
 
                 newplayerListWithPlayerAndChallengerUpdated =
-                    SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.address
+                    SR.PlayerListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.address
 
                 sortedByRankingnewplayerListWithPlayerAndChallengerUpdated =
-                    SR.ListOps.sortedPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
+                    SR.PlayerListOps.sortedPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
 
                 newAllLists =
                     { allLists | players = sortedByRankingnewplayerListWithPlayerAndChallengerUpdated }
@@ -1030,7 +1031,7 @@ updatedForChallenge currentmodel lplayer opponentAsPlayer user =
         RankingOps allLists appInfo _ txRec ->
             let
                 newAppInfoWithPlayer =
-                    { appInfo | player = SR.ListOps.gotCurrentUserAsPlayerFromPlayerList lplayer user }
+                    { appInfo | player = SR.PlayerListOps.gotCurrentUserAsPlayerFromPlayerList lplayer user }
 
                 newAppInfoWithChallengerAndPlayer =
                     { newAppInfoWithPlayer | challenger = opponentAsPlayer }
@@ -1101,10 +1102,10 @@ updateSelectedRankingOnPlayersReceived currentmodel lplayers =
         RankingOps allLists appInfo uiState txRec ->
             let
                 newAppPlayer =
-                    { appInfo | player = SR.ListOps.gotPlayerFromPlayerListStrAddress lplayers appInfo.user.ethaddress }
+                    { appInfo | player = SR.PlayerListOps.gotPlayerFromPlayerListStrAddress lplayers appInfo.user.ethaddress }
 
                 newAppChallengerAndPlayer =
-                    { newAppPlayer | challenger = SR.ListOps.gotPlayerFromPlayerListStrAddress lplayers newAppPlayer.player.challengeraddress }
+                    { newAppPlayer | challenger = SR.PlayerListOps.gotPlayerFromPlayerListStrAddress lplayers newAppPlayer.player.challengeraddress }
 
                 allListsPlayersAdded =
                     { allLists | players = lplayers }
@@ -1112,15 +1113,6 @@ updateSelectedRankingOnPlayersReceived currentmodel lplayers =
                 uistate =
                     ensuredCorrectSelectedUI appInfo allLists
             in
-            -- if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking allLists.globalRankings appInfo.user then
-            --     RankingOps allListsPlayersAdded newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner emptyTxRecord
-            -- else if SR.ListOps.isUserMemberOfSelectedRanking lplayers appInfo.user then
-            --     let
-            --         _ =
-            --             Debug.log "isUserMemberOfSelectedRanking"
-            --     in
-            --     RankingOps allListsPlayersAdded newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord
-            -- else
             RankingOps allListsPlayersAdded newAppChallengerAndPlayer uistate emptyTxRecord
 
         _ ->

@@ -27,67 +27,9 @@ ownerValidatedRankingList lrankinginfo =
 -- current
 
 
-reorderPlayerListToStartAtOne : List SR.Types.Player -> List SR.Types.Player
-reorderPlayerListToStartAtOne lplayer =
-    let
-        newPlayerListAllRankIsOne =
-            List.map resetPlayerRankToOne lplayer
-
-        newListLength =
-            List.length lplayer
-
-        newAscendingList =
-            List.range 1 newListLength
-
-        listscombined =
-            List.map2 resetPlayerRankingList newAscendingList newPlayerListAllRankIsOne
-    in
-    listscombined
-
-
-resetPlayerRankingList : Int -> SR.Types.Player -> SR.Types.Player
-resetPlayerRankingList newRank player =
-    let
-        newPlayer =
-            { player
-                | address = player.address
-                , rank = newRank
-                , challengeraddress = player.challengeraddress
-            }
-    in
-    newPlayer
-
-
-addOne : Int -> Int
-addOne int =
-    if int == 1 then
-        1
-
-    else
-        int + 1
-
-
-resetPlayerRankToOne : SR.Types.Player -> SR.Types.Player
-resetPlayerRankToOne player =
-    let
-        newPlayer =
-            { player
-                | address = player.address
-                , rank = 1
-                , challengeraddress = player.challengeraddress
-            }
-    in
-    newPlayer
-
-
-
--- isThisRankGreaterThanPrevious : Int -> Int -> Bool
--- isThisRankGreaterThanPrevious previousRank currentRank =
-
-
-canPlayerBeInList : Maybe SR.Types.Player -> Bool
-canPlayerBeInList player =
-    case player of
+canRankingBeInList : Maybe SR.Types.RankingInfo -> Bool
+canRankingBeInList ranking =
+    case ranking of
         Nothing ->
             False
 
@@ -164,24 +106,6 @@ isRankingIdInList : String -> SR.Types.RankingInfo -> Maybe SR.Types.RankingInfo
 isRankingIdInList rankingid rnk =
     if rnk.id == rankingid then
         Just rnk
-
-    else
-        Nothing
-
-
-findPlayerInList : SR.Types.User -> List SR.Types.Player -> List SR.Types.Player
-findPlayerInList user lPlayer =
-    List.filterMap
-        (isThisPlayerAddr
-            user.ethaddress
-        )
-        lPlayer
-
-
-isThisPlayerAddr : String -> SR.Types.Player -> Maybe SR.Types.Player
-isThisPlayerAddr playerAddr player =
-    if player.address == playerAddr then
-        Just player
 
     else
         Nothing

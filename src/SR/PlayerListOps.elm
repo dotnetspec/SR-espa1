@@ -1,18 +1,10 @@
-module SR.ListOps exposing
-    ( filterSelectedRankingOutOfGlobalList
-    , gotUserFromUserList
-    , gotUserFromUserListStrAddress
-    , gotUserListFromRemData
-    , isUserInList
-    , isUserMemberOfSelectedRanking
-    , isUserSelectedOwnerOfRanking
-    ,  ownerValidatedRankingList
-       --, setPlayerInPlayerListWithChallengeResult
-       --, setPlayerInPlayerListWithNewChallengerAddr
-
-    , singleUserInList
+module SR.PlayerListOps exposing
+    ( gotCurrentUserAsPlayerFromPlayerList
+    , gotPlayerFromPlayerListStrAddress
+    , setPlayerInPlayerListWithChallengeResult
+    , setPlayerInPlayerListWithNewChallengerAddr
     , sortedPlayerListByRank
-    , updateRankWithWonResult
+    , updatePlayerRankWithWonResult
     )
 
 import Eth.Types
@@ -29,18 +21,41 @@ import Utils.MyUtils
 -- external
 
 
-ownerValidatedRankingList : List SR.Types.RankingInfo -> List SR.Types.RankingInfo
-ownerValidatedRankingList lrankinginfo =
-    lrankinginfo
+setPlayerInPlayerListWithChallengeResult : List SR.Types.Player -> SR.Types.Player -> Int -> List SR.Types.Player
+setPlayerInPlayerListWithChallengeResult lPlayer player rank =
+    let
+        filteredPlayerList =
+            filterPlayerOutOfPlayerList player.address lPlayer
+
+        updatedPlayer =
+            { player | challengeraddress = "", rank = rank }
+
+        newPlayerList =
+            updatedPlayer :: filteredPlayerList
+
+        newPlayerListSorted =
+            sortedPlayerListByRank newPlayerList
+    in
+    newPlayerListSorted
 
 
+setPlayerInPlayerListWithNewChallengerAddr : List SR.Types.Player -> SR.Types.Player -> String -> List SR.Types.Player
+setPlayerInPlayerListWithNewChallengerAddr lPlayer player challengeraddress =
+    let
+        filteredPlayerList =
+            filterPlayerOutOfPlayerList player.address lPlayer
 
---
---
+        updatedPlayer =
+            { player | challengeraddress = challengeraddress }
+
+        newPlayerList =
+            updatedPlayer :: filteredPlayerList
+    in
+    newPlayerList
 
 
-updateRankWithWonResult : List SR.Types.Player -> SR.Types.Player -> List SR.Types.Player
-updateRankWithWonResult lPlayer player =
+updatePlayerRankWithWonResult : List SR.Types.Player -> SR.Types.Player -> List SR.Types.Player
+updatePlayerRankWithWonResult lPlayer player =
     let
         filteredPlayerList =
             filterPlayerOutOfPlayerList player.address lPlayer
@@ -56,19 +71,6 @@ updateRankWithWonResult lPlayer player =
             updatedPlayer :: filteredPlayerList
     in
     newPlayerList
-
-
-isUserInList : List SR.Types.User -> Eth.Types.Address -> Bool
-isUserInList userlist uaddr =
-    let
-        gotSingleUserFromList =
-            singleUserInList userlist uaddr
-    in
-    if gotSingleUserFromList.ethaddress == "" then
-        False
-
-    else
-        True
 
 
 sortedPlayerListByRank : List SR.Types.Player -> List SR.Types.Player
@@ -165,41 +167,36 @@ canPlayerBeInList player =
             True
 
 
-isUserMemberOfSelectedRanking : List SR.Types.Player -> SR.Types.User -> Bool
-isUserMemberOfSelectedRanking lplayer user =
+gotCurrentUserAsPlayerFromPlayerList : List SR.Types.Player -> SR.Types.User -> SR.Types.Player
+gotCurrentUserAsPlayerFromPlayerList lPlayer userRec =
     let
-        filteredList =
-            findPlayerInList user lplayer
-
-        filteredRec =
-            List.head filteredList
-    in
-    case filteredRec of
-        Nothing ->
-            False
-
-        Just a ->
-            if a.address == user.ethaddress then
-                True
-
-            else
-                False
-
-
-gotUserFromUserListStrAddress : List SR.Types.User -> String -> SR.Types.User
-gotUserFromUserListStrAddress userList uaddr =
-    let
-        existingUser =
+        existingPlayer =
             List.head <|
-                List.filter (\r -> r.ethaddress == (String.toLower <| uaddr))
-                    userList
+                List.filter (\r -> r.address == (String.toLower <| userRec.ethaddress))
+                    lPlayer
     in
-    case existingUser of
+    case existingPlayer of
         Nothing ->
-            SR.Defaults.emptyUser
+            SR.Defaults.emptyPlayer
 
         Just a ->
             a
+
+
+
+-- gotUserFromUserListStrAddress : List SR.Types.User -> String -> SR.Types.User
+-- gotUserFromUserListStrAddress userList uaddr =
+--     let
+--         existingUser =
+--             List.head <|
+--                 List.filter (\r -> r.ethaddress == (String.toLower <| uaddr))
+--                     userList
+--     in
+--     case existingUser of
+--         Nothing ->
+--             SR.Defaults.emptyUser
+--         Just a ->
+--             a
 
 
 gotPlayerFromPlayerListStrAddress : List SR.Types.Player -> String -> SR.Types.Player
@@ -216,57 +213,6 @@ gotPlayerFromPlayerListStrAddress lplayer addr =
 
         Just a ->
             a
-
-
-gotUserFromUserList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
-gotUserFromUserList userList uaddr =
-    let
-        existingUser =
-            List.head <|
-                List.filter (\r -> r.ethaddress == (String.toLower <| Eth.Utils.addressToString <| uaddr))
-                    userList
-    in
-    case existingUser of
-        Nothing ->
-            SR.Defaults.emptyUser
-
-        Just a ->
-            a
-
-
-singleUserInList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
-singleUserInList userlist uaddr =
-    gotUserFromUserList userlist uaddr
-
-
-isUserSelectedOwnerOfRanking : SR.Types.RankingInfo -> List SR.Types.RankingInfo -> SR.Types.User -> Bool
-isUserSelectedOwnerOfRanking rnkInfo lrnkInfo user =
-    let
-        filteredList =
-            findSelectedRankingInGlobalList rnkInfo.id lrnkInfo
-
-        filteredRec =
-            List.head filteredList
-    in
-    case filteredRec of
-        Nothing ->
-            False
-
-        Just a ->
-            if a.rankingowneraddr == user.ethaddress then
-                True
-
-            else
-                False
-
-
-filterSelectedRankingOutOfGlobalList : String -> List SR.Types.RankingInfo -> List SR.Types.RankingInfo
-filterSelectedRankingOutOfGlobalList rankingid lrankinginfo =
-    List.filterMap
-        (doesCurrentRankingIdNOTMatchId
-            rankingid
-        )
-        lrankinginfo
 
 
 filterPlayerOutOfPlayerList : String -> List SR.Types.Player -> List SR.Types.Player
@@ -373,38 +319,32 @@ gotRankingListFromRemData globalList =
                     ]
 
 
-gotUserListFromRemData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
-gotUserListFromRemData userList =
-    case userList of
-        RemoteData.Success a ->
-            a
 
-        RemoteData.NotAsked ->
-            [ SR.Defaults.emptyUser
-            ]
-
-        RemoteData.Loading ->
-            [ SR.Defaults.emptyUser
-            ]
-
-        RemoteData.Failure err ->
-            case err of
-                Http.BadUrl s ->
-                    [ SR.Defaults.emptyUser
-                    ]
-
-                Http.Timeout ->
-                    [ SR.Defaults.emptyUser
-                    ]
-
-                Http.NetworkError ->
-                    [ SR.Defaults.emptyUser
-                    ]
-
-                Http.BadStatus statuscode ->
-                    [ SR.Defaults.emptyUser
-                    ]
-
-                Http.BadBody s ->
-                    [ SR.Defaults.emptyUser
-                    ]
+-- gotUserListFromRemData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
+-- gotUserListFromRemData userList =
+--     case userList of
+--         RemoteData.Success a ->
+--             a
+--         RemoteData.NotAsked ->
+--             [ SR.Defaults.emptyUser
+--             ]
+--         RemoteData.Loading ->
+--             [ SR.Defaults.emptyUser
+--             ]
+--         RemoteData.Failure err ->
+--             case err of
+--                 Http.BadUrl s ->
+--                     [ SR.Defaults.emptyUser
+--                     ]
+--                 Http.Timeout ->
+--                     [ SR.Defaults.emptyUser
+--                     ]
+--                 Http.NetworkError ->
+--                     [ SR.Defaults.emptyUser
+--                     ]
+--                 Http.BadStatus statuscode ->
+--                     [ SR.Defaults.emptyUser
+--                     ]
+--                 Http.BadBody s ->
+--                     [ SR.Defaults.emptyUser
+--                     ]
