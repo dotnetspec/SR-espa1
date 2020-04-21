@@ -9,6 +9,7 @@ module SR.ListOps exposing
     , isUserInList
     , isUserMemberOfSelectedRanking
     , isUserSelectedOwnerOfRanking
+    , ownerValidatedRankingList
     , setPlayerInPlayerListWithChallengeResult
     , setPlayerInPlayerListWithNewChallengerAddr
     , singleUserInList
@@ -28,6 +29,11 @@ import Utils.MyUtils
 
 
 -- external
+
+
+ownerValidatedRankingList : List SR.Types.RankingInfo -> List SR.Types.RankingInfo
+ownerValidatedRankingList lrankinginfo =
+    lrankinginfo
 
 
 setPlayerInPlayerListWithChallengeResult : List SR.Types.Player -> SR.Types.Player -> Int -> List SR.Types.Player
