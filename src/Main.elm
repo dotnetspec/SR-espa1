@@ -128,47 +128,51 @@ getTime =
 
 
 type Msg
-    = WalletStatus Eth.Sentry.Wallet.WalletSentry
+    = -- WalletOps
+      WalletStatus Eth.Sentry.Wallet.WalletSentry
+    | MissingWalletInstructions
+    | OpenWalletInstructions
+    | Fail String
+      -- RankingOps
+    | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
+    | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
+    | ClickedSelectedRanking Internal.Types.RankingId String String
     | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
     | SentUserInfoAndDecodedResponseToNewUser (RemoteData.WebData (List SR.Types.User))
-    | ChangedUIStateToCreateNew
+    | ResetToShowGlobal
+    | ResetToShowSelected
+    | AddedNewRankingToGlobalList (RemoteData.WebData (List SR.Types.RankingInfo))
+    | SentResultToWallet SR.Types.ResultOfMatch
+    | ProcessResult SR.Types.ResultOfMatch
+    | SentResultToJsonbin (Result Http.Error ())
+    | DeletedRanking String
+    | DeletedRankingFromGlobalList (RemoteData.WebData (List SR.Types.RankingInfo))
+    | DeletedSingleRankingFromJsonBin (RemoteData.WebData (List SR.Types.RankingInfo))
+    | ChallengeOpponentClicked SR.Types.Player
+    | ClickedJoinSelected
+    | ReturnFromPlayerListUpdate (RemoteData.WebData (List SR.Types.Player))
+    | LadderNameInputChg String
+    | LadderDescInputChg String
     | ClickedNewRankingRequested SR.Types.RankingInfo
+    | ChangedUIStateToCreateNew
     | NewChallengeConfirmClicked
+    | ChangedUIStateToEnterResult SR.Types.Player
+      -- UserOps
+    | UsersReceived (RemoteData.WebData (List SR.Types.User))
+    | NewUser
+    | NewUserNameInputChg String
+    | NewUserDescInputChg String
+    | NewUserEmailInputChg String
+    | NewUserMobileInputChg String
+    | NewUserRequested SR.Types.User
+    | TimeUpdated Posix
+      -- Multiple
     | PollBlock (Result Http.Error Int)
     | WatchTxHash (Result String Eth.Types.TxHash)
     | WatchTx (Result String Eth.Types.Tx)
     | WatchTxReceipt (Result String Eth.Types.TxReceipt)
     | TrackTx Eth.Sentry.Tx.TxTracker
     | TxSentryMsg Eth.Sentry.Tx.Msg
-    | AddedNewRankingToGlobalList (RemoteData.WebData (List SR.Types.RankingInfo))
-    | DeletedRanking String
-    | DeletedRankingFromGlobalList (RemoteData.WebData (List SR.Types.RankingInfo))
-    | DeletedSingleRankingFromJsonBin (RemoteData.WebData (List SR.Types.RankingInfo))
-    | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
-    | ClickedSelectedRanking Internal.Types.RankingId String String
-    | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
-    | UsersReceived (RemoteData.WebData (List SR.Types.User))
-    | MissingWalletInstructions
-    | OpenWalletInstructions
-    | NewUser
-    | ResetToShowGlobal
-    | ResetToShowSelected
-    | LadderNameInputChg String
-    | LadderDescInputChg String
-    | ChangedUIStateToEnterResult SR.Types.Player
-    | SentResultToWallet SR.Types.ResultOfMatch
-    | ProcessResult SR.Types.ResultOfMatch
-    | SentResultToJsonbin (Result Http.Error ())
-    | NewUserNameInputChg String
-    | NewUserDescInputChg String
-    | NewUserEmailInputChg String
-    | NewUserMobileInputChg String
-    | NewUserRequested SR.Types.User
-    | ClickedJoinSelected
-    | ReturnFromPlayerListUpdate (RemoteData.WebData (List SR.Types.Player))
-    | ChallengeOpponentClicked SR.Types.Player
-    | TimeUpdated Posix
-    | Fail String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -284,6 +288,10 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 -- TrackTx blockDepth ->
                 --     ( { txRec | blockDepth = Just blockDepth }, Cmd.none )
                 Fail str ->
+                    let
+                        _ =
+                            Debug.log "msgOfTransitonThatAlreadyHappened" msgOfTransitonThatAlreadyHappened
+                    in
                     ( Failure <| "WalletOps 1" ++ str, Cmd.none )
 
                 _ ->
@@ -367,10 +375,15 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( RankingOps allLists newAppInfo SR.Types.UIRenderAllRankings { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewUser allLists.users userWithUpdatedAddr, gotRankingList ] )
 
                 _ ->
+                    let
+                        _ =
+                            Debug.log "msgOfTransitonThatAlreadyHappened" msgOfTransitonThatAlreadyHappened
+                    in
                     --todo: better logic. This should go to failure model rather than fall thru to UserOps
                     -- but currently logic needs to do this
                     ( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) allLists uaddr appInfo SR.Types.CreateNewUser txRec, Cmd.none )
 
+        --( Failure "in UserOps", Cmd.none )
         RankingOps allLists appInfo uiState txRec ->
             case msgOfTransitonThatAlreadyHappened of
                 GotGlobalRankingsJson rmtrnkingdata ->
@@ -378,7 +391,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         addedRankingListToAllLists =
                             { allLists | globalRankings = Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata }
                     in
-                    ( RankingOps addedRankingListToAllLists appInfo uiState emptyTxRecord, Cmd.none )
+                    ( RankingOps addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                 ClickedSelectedRanking rnkidstr rnkownerstr rnknamestr ->
                     let
@@ -630,11 +643,23 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 ReturnFromPlayerListUpdate response ->
                     ( updateSelectedRankingPlayerList currentmodel (Utils.MyUtils.extractPlayersFromWebData response), Cmd.none )
 
+                PollBlock (Ok blockNumber) ->
+                    ( currentmodel
+                    , Cmd.none
+                    )
+
+                PollBlock (Err error) ->
+                    ( WalletOps SR.Types.WalletOpenedAndOperational txRec, Cmd.none )
+
                 _ ->
-                    ( Failure <| "Fall thru failure : ", Cmd.none )
+                    let
+                        _ =
+                            Debug.log "msgOfTransitonThatAlreadyHappened" msgOfTransitonThatAlreadyHappened
+                    in
+                    ( Failure <| "Fall thru in RankingOps: ", Cmd.none )
 
         Failure str ->
-            ( Failure <| "Model failure in selected ranking: " ++ str, Cmd.none )
+            ( Failure <| "Model failure in RankingOps: " ++ str, Cmd.none )
 
 
 handleTxSubMsg : Eth.Sentry.Tx.Msg -> Bool
@@ -753,7 +778,7 @@ handleWon model =
                         txRec
 
         _ ->
-            Failure "Fail"
+            Failure "HandleWonFail"
 
 
 handleLost : Model -> Model
