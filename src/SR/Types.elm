@@ -1,6 +1,6 @@
 module SR.Types exposing
     ( PlayerId, RankingId(..)
-    , Player, Opponent, OpponentRelativeRank(..), Options, ResultOfMatch(..), UserState(..), WalletState(..)
+    , Player, Opponent, OpponentRelativeRank(..), Options, ResultOfMatch(..), WalletState(..)
     , UIState(..)
     , AllLists, AppInfo, CreateNewLadderFormFields, LadderState(..), ModalState(..), NewRankingListServerResponse, RankingInfo, ResultRadioOptions(..), User, UserListState(..)
     )
@@ -86,11 +86,6 @@ type WalletState
     | WalletOpenedWithoutUserCheck Eth.Types.Address
     | WalletWaitingForTransactionReceipt
     | WalletOpenedAndOperational
-
-
-type UserState
-    = ExistingUser User
-    | NewUser User
 
 
 type LadderState

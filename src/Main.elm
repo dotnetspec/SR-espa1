@@ -61,7 +61,7 @@ main =
 
 type Model
     = WalletOps SR.Types.WalletState TxRecord
-    | UserOps SR.Types.UserState SR.Types.AllLists Eth.Types.Address SR.Types.AppInfo SR.Types.UIState TxRecord
+    | UserOps SR.Types.AllLists Eth.Types.Address SR.Types.AppInfo SR.Types.UIState TxRecord
     | RankingOps SR.Types.AllLists SR.Types.AppInfo SR.Types.UIState TxRecord
     | Failure String
 
@@ -235,15 +235,15 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         Mainnet ->
                             case walletSentry_.account of
                                 Nothing ->
-                                    ( UserOps (SR.Types.ExistingUser <| SR.Defaults.emptyUser) SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
+                                    ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
 
                                 Just uaddr ->
-                                    ( UserOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser txRec, gotUserList )
+                                    ( UserOps SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser txRec, gotUserList )
 
                         Rinkeby ->
                             case walletSentry_.account of
                                 Nothing ->
-                                    ( UserOps (SR.Types.ExistingUser <| SR.Defaults.emptyUser) SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
+                                    ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
 
                                 Just uaddr ->
                                     case walletState of
@@ -262,14 +262,14 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                                 _ =
                                                     Debug.log "Fell thru to : " "UserOps"
                                             in
-                                            ( UserOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser txRec, gotUserList )
+                                            ( UserOps SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser txRec, gotUserList )
 
                         _ ->
                             let
                                 _ =
                                     Debug.log "Gave MissingWalletInstructions: " "but actually a networkId fall thru"
                             in
-                            ( UserOps (SR.Types.ExistingUser <| SR.Defaults.emptyUser) SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
+                            ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
 
                 OpenWalletInstructions ->
                     ( WalletOps SR.Types.Locked emptyTxRecord, Cmd.none )
@@ -317,7 +317,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     in
                     -- WalletOps SR.Types.WalletOpenedAndOperational { txRec | tx = Just tx }
                     --     |> update (ProcessResult SR.Types.Won)
-                    ( UserOps (SR.Types.ExistingUser <| SR.Defaults.emptyUser) SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
+                    ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
 
                 WatchTx (Err err) ->
                     let
@@ -355,11 +355,10 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 _ ->
                     ( Failure "WalletOps 2", Cmd.none )
 
-        UserOps userState allLists uaddr appInfo uiState txRec ->
+        UserOps allLists uaddr appInfo uiState txRec ->
             case msgOfTransitonThatAlreadyHappened of
                 PollBlock (Ok blockNumber) ->
                     ( UserOps
-                        (SR.Types.NewUser appInfo.user)
                         allLists
                         uaddr
                         appInfo
@@ -439,7 +438,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     in
                     --todo: better logic. This should go to failure model rather than fall thru to UserOps
                     -- but currently logic needs to do this
-                    ( UserOps (SR.Types.NewUser SR.Defaults.emptyUser) allLists uaddr appInfo SR.Types.CreateNewUser txRec, Cmd.none )
+                    ( UserOps allLists uaddr appInfo SR.Types.CreateNewUser txRec, Cmd.none )
 
         --( Failure "in UserOps", Cmd.none )
         RankingOps allLists appInfo uiState txRec ->
@@ -1036,7 +1035,7 @@ createNewPlayerListWithNewChallengeAndUpdateJsonBin model =
 handleNewUserInputs : Model -> Msg -> Model
 handleNewUserInputs currentmodel msg =
     case currentmodel of
-        UserOps userState allLists uaddr appInfo uiState txRec ->
+        UserOps allLists uaddr appInfo uiState txRec ->
             case msg of
                 NewUserNameInputChg namefield ->
                     let
@@ -1049,7 +1048,7 @@ handleNewUserInputs currentmodel msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    UserOps (SR.Types.NewUser SR.Defaults.emptyUser) allLists uaddr newAppInfo SR.Types.CreateNewUser txRec
+                    UserOps allLists uaddr newAppInfo SR.Types.CreateNewUser txRec
 
                 NewUserDescInputChg descfield ->
                     let
@@ -1062,7 +1061,7 @@ handleNewUserInputs currentmodel msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    UserOps (SR.Types.NewUser SR.Defaults.emptyUser) allLists uaddr newAppInfo SR.Types.CreateNewUser txRec
+                    UserOps allLists uaddr newAppInfo SR.Types.CreateNewUser txRec
 
                 NewUserEmailInputChg emailfield ->
                     let
@@ -1075,7 +1074,7 @@ handleNewUserInputs currentmodel msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    UserOps (SR.Types.NewUser SR.Defaults.emptyUser) allLists uaddr newAppInfo SR.Types.CreateNewUser txRec
+                    UserOps allLists uaddr newAppInfo SR.Types.CreateNewUser txRec
 
                 NewUserMobileInputChg mobilefield ->
                     let
@@ -1088,7 +1087,7 @@ handleNewUserInputs currentmodel msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    UserOps (SR.Types.NewUser SR.Defaults.emptyUser) allLists uaddr newAppInfo SR.Types.CreateNewUser txRec
+                    UserOps allLists uaddr newAppInfo SR.Types.CreateNewUser txRec
 
                 _ ->
                     Failure "NewUserNameInputChg"
@@ -1130,7 +1129,7 @@ updateSelectedRankingOnChallenge allLists appInfo =
 updateOnUserListReceived : Model -> List SR.Types.User -> Model
 updateOnUserListReceived model userList =
     case model of
-        UserOps userState allLists uaddr appInfo uiState txRec ->
+        UserOps allLists uaddr appInfo uiState txRec ->
             let
                 --     extractedUsersFromWebData =
                 --         Utils.MyUtils.extractUsersFromWebData allLists
@@ -1150,7 +1149,8 @@ updateOnUserListReceived model userList =
                 RankingOps newAllLists userUpdatedInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord
 
             else
-                UserOps (SR.Types.NewUser userWithUpdatedAddr) newAllLists uaddr userUpdatedInAppInfo SR.Types.CreateNewUser txRec
+                --UserOps (SR.Types.NewUser userWithUpdatedAddr) newAllLists uaddr userUpdatedInAppInfo SR.Types.CreateNewUser txRec
+                UserOps newAllLists uaddr userUpdatedInAppInfo SR.Types.CreateNewUser txRec
 
         _ ->
             Failure "should be in UserOps"
@@ -1251,19 +1251,14 @@ view model =
                 SR.Types.WalletWaitingForTransactionReceipt ->
                     greetingView "Please wait while the transaction is mined"
 
-        --UserOps userState userList uaddr uname uiState _ ->
-        UserOps userState allLists uaddr appInfo uiState txRec ->
+        UserOps allLists uaddr appInfo uiState txRec ->
             case uiState of
                 SR.Types.UIDisplayWalletLockedInstructions ->
                     greetingView <| "Your Ethereum wallet browser \nextension is locked. Please \nuse your wallet \npassword to open it \nbefore continuing"
 
                 SR.Types.CreateNewUser ->
-                    --case userState of
-                    --SR.Types.NewUser user ->
                     inputNewUserview model
 
-                --_ ->
-                --greetingView <| "Loading ... "
                 _ ->
                     greetingView <| "Loading ... "
 
@@ -1865,7 +1860,7 @@ selectedUserIsNeitherOwnerNorPlayerView model =
 inputNewUserview : Model -> Html Msg
 inputNewUserview model =
     case model of
-        UserOps userState allLists uaddr appInfo uiState txRec ->
+        UserOps allLists uaddr appInfo uiState txRec ->
             Framework.responsiveLayout [] <|
                 Element.column
                     Framework.container
@@ -1970,7 +1965,7 @@ subscriptions model =
                 , Eth.Sentry.Tx.listen txRec.txSentry
                 ]
 
-        UserOps _ _ _ _ _ _ ->
+        UserOps _ _ _ _ _ ->
             Sub.none
 
         RankingOps _ _ _ _ ->
@@ -1993,18 +1988,6 @@ isOpponentHigherRank player opponent =
 
     else
         SR.Types.OpponentRankLower
-
-
-addedUAddrToNewEmptyUser : Eth.Types.Address -> SR.Types.User
-addedUAddrToNewEmptyUser uaddr =
-    let
-        newEmptyUser =
-            SR.Defaults.emptyUser
-
-        newUser =
-            { newEmptyUser | ethaddress = Eth.Utils.addressToString uaddr }
-    in
-    newUser
 
 
 
