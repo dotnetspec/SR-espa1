@@ -84,7 +84,6 @@ type WalletState
     = Missing
     | Locked
     | WalletOpenedWithoutUserCheck Eth.Types.Address
-    | WalletOpenedUserCheckDone User Eth.Types.Address
     | WalletWaitingForTransactionReceipt
     | WalletOpenedAndOperational
 

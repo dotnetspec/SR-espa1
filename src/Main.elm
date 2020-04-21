@@ -36,6 +36,7 @@ import SR.Types
 import Task
 import Time exposing (Posix)
 import Utils.MyUtils
+import Validate exposing (Validator, ifBlank, ifInvalidEmail, ifNotInt, validate)
 
 
 main =
@@ -63,6 +64,53 @@ type Model
     | UserOps SR.Types.UserState SR.Types.AllLists Eth.Types.Address SR.Types.AppInfo SR.Types.UIState TxRecord
     | RankingOps SR.Types.AllLists SR.Types.AppInfo SR.Types.UIState TxRecord
     | Failure String
+
+
+
+-- type Field
+--     = Name
+--     | Email
+--     | Age
+-- type alias ValidatorTestModel =
+--     { name : String, email : String, age : String }
+--modelValidator : Validator String ValidatorTestModel
+-- userValidator : Validator String SR.Types.User
+
+
+userValidator =
+    Validate.all
+        [ ifBlank .username "Please enter a name."
+        , ifBlank .description "Please enter a description."
+        , Validate.firstError
+            [ ifBlank .email "Please enter an email address."
+            , ifInvalidEmail .email (\_ -> "Please enter a valid primary email address.")
+            ]
+        , ifBlank .mobile "Please enter a mobile number."
+        ]
+
+
+
+-- didValidate : SR.Types.User
+-- didValidate =
+--             validate
+--                 userValidator
+--                 SR.Defaults.emptyUser
+-- validate : SR.Types.User -> List Error
+-- validate =
+--     Validate.all
+--         [ .email >> Validate.ifBlank ( Email, "Email can't be \n          blank." )
+--         , .mobile >> Validate.ifBlank ( Password, "Password can't \n          be blank." )
+--         ]
+-- isValidEmail : String -> Result String Int
+-- isValidEmail input =
+--     case input of
+--         Nothing ->
+--             Err "This is not a valid email address."
+--         Just email ->
+--             if String.length email < 1 || String.length email > 20 then
+--                 Err "email too long"
+--             else
+--                 Ok email
 
 
 init : () -> ( Model, Cmd Msg )
@@ -200,12 +248,20 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                 Just uaddr ->
                                     case walletState of
                                         SR.Types.WalletWaitingForTransactionReceipt ->
+                                            let
+                                                _ =
+                                                    Debug.log "WalletWaitingForTransactionReceipt: " "b4 WalletOps"
+                                            in
                                             ( WalletOps SR.Types.WalletWaitingForTransactionReceipt txRec
                                               --|> update (ProcessResult SR.Types.Won)
                                             , Cmd.none
                                             )
 
                                         _ ->
+                                            let
+                                                _ =
+                                                    Debug.log "Fell thru to : " "UserOps"
+                                            in
                                             ( UserOps (SR.Types.NewUser <| SR.Defaults.emptyUser) SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser txRec, gotUserList )
 
                         _ ->
@@ -333,17 +389,17 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     else
                         ( updateOnUserListReceived currentmodel userLAddedToAllLists.users, Cmd.none )
 
-                NewUserNameInputChg newUserInputsMsg ->
-                    ( handleNewUserInputs currentmodel (NewUserNameInputChg newUserInputsMsg), Cmd.none )
+                NewUserNameInputChg namefield ->
+                    ( handleNewUserInputs currentmodel (NewUserNameInputChg namefield), Cmd.none )
 
-                NewUserDescInputChg newUserInputsMsg ->
-                    ( handleNewUserInputs currentmodel (NewUserDescInputChg newUserInputsMsg), Cmd.none )
+                NewUserDescInputChg namefield ->
+                    ( handleNewUserInputs currentmodel (NewUserDescInputChg namefield), Cmd.none )
 
-                NewUserEmailInputChg newUserInputsMsg ->
-                    ( handleNewUserInputs currentmodel (NewUserEmailInputChg newUserInputsMsg), Cmd.none )
+                NewUserEmailInputChg namefield ->
+                    ( handleNewUserInputs currentmodel (NewUserEmailInputChg namefield), Cmd.none )
 
-                NewUserMobileInputChg newUserInputsMsg ->
-                    ( handleNewUserInputs currentmodel (NewUserMobileInputChg newUserInputsMsg), Cmd.none )
+                NewUserMobileInputChg namefield ->
+                    ( handleNewUserInputs currentmodel (NewUserMobileInputChg namefield), Cmd.none )
 
                 NewUserRequested userInfo ->
                     let
@@ -847,7 +903,7 @@ handleLost model =
                         txRec
 
         _ ->
-            Failure "Fail"
+            Failure "Fail handleLost"
 
 
 handleUndecided : Model -> Model
@@ -908,7 +964,7 @@ handleUndecided model =
         --         SR.Types.UISelectedRankingUserIsPlayer
         --         txRec
         _ ->
-            Failure "Fail"
+            Failure "Fail in handleUndecided"
 
 
 ensuredCorrectSelectedUI : SR.Types.AppInfo -> SR.Types.AllLists -> SR.Types.UIState
@@ -983,36 +1039,56 @@ handleNewUserInputs currentmodel msg =
         UserOps userState allLists uaddr appInfo uiState txRec ->
             case msg of
                 NewUserNameInputChg namefield ->
-                    case userState of
-                        SR.Types.NewUser user ->
-                            UserOps (SR.Types.NewUser { user | username = namefield }) allLists uaddr appInfo SR.Types.CreateNewUser txRec
+                    let
+                        newUser =
+                            appInfo.user
 
-                        SR.Types.ExistingUser _ ->
-                            Failure "NewUserNameInputChg"
+                        updatedNewUser =
+                            { newUser | username = namefield }
+
+                        newAppInfo =
+                            { appInfo | user = updatedNewUser }
+                    in
+                    UserOps (SR.Types.NewUser SR.Defaults.emptyUser) allLists uaddr newAppInfo SR.Types.CreateNewUser txRec
 
                 NewUserDescInputChg descfield ->
-                    case userState of
-                        SR.Types.NewUser user ->
-                            UserOps (SR.Types.NewUser { user | description = descfield }) allLists uaddr appInfo SR.Types.CreateNewUser txRec
+                    let
+                        newUser =
+                            appInfo.user
 
-                        SR.Types.ExistingUser _ ->
-                            Failure "NewUserNameInputChg"
+                        updatedNewUser =
+                            { newUser | description = descfield }
+
+                        newAppInfo =
+                            { appInfo | user = updatedNewUser }
+                    in
+                    UserOps (SR.Types.NewUser SR.Defaults.emptyUser) allLists uaddr newAppInfo SR.Types.CreateNewUser txRec
 
                 NewUserEmailInputChg emailfield ->
-                    case userState of
-                        SR.Types.NewUser user ->
-                            UserOps (SR.Types.NewUser { user | email = emailfield }) allLists uaddr appInfo SR.Types.CreateNewUser txRec
+                    let
+                        newUser =
+                            appInfo.user
 
-                        SR.Types.ExistingUser _ ->
-                            Failure "NewUserEmailInputChg"
+                        updatedNewUser =
+                            { newUser | email = emailfield }
+
+                        newAppInfo =
+                            { appInfo | user = updatedNewUser }
+                    in
+                    UserOps (SR.Types.NewUser SR.Defaults.emptyUser) allLists uaddr newAppInfo SR.Types.CreateNewUser txRec
 
                 NewUserMobileInputChg mobilefield ->
-                    case userState of
-                        SR.Types.NewUser user ->
-                            UserOps (SR.Types.NewUser { user | mobile = mobilefield }) allLists uaddr appInfo SR.Types.CreateNewUser txRec
+                    let
+                        newUser =
+                            appInfo.user
 
-                        SR.Types.ExistingUser _ ->
-                            Failure "NewUserMobileInputChg"
+                        updatedNewUser =
+                            { newUser | mobile = mobilefield }
+
+                        newAppInfo =
+                            { appInfo | user = updatedNewUser }
+                    in
+                    UserOps (SR.Types.NewUser SR.Defaults.emptyUser) allLists uaddr newAppInfo SR.Types.CreateNewUser txRec
 
                 _ ->
                     Failure "NewUserNameInputChg"
@@ -1129,9 +1205,8 @@ view model =
     case model of
         RankingOps allLists appInfo uiState txRec ->
             case uiState of
-                SR.Types.CreateNewUser ->
-                    inputNewUserview appInfo.user
-
+                -- SR.Types.CreateNewUser ->
+                --     inputNewUserview appInfo.user
                 SR.Types.CreateNewLadder ->
                     inputNewLadderview model
 
@@ -1170,32 +1245,25 @@ view model =
                 SR.Types.WalletOpenedWithoutUserCheck uaddr ->
                     greetingView "User unchecked "
 
-                SR.Types.WalletOpenedUserCheckDone user uaddr ->
-                    if user.username == "" then
-                        inputNewUserview user
-
-                    else
-                        greetingView <| "Welcome back " ++ user.username
-
                 SR.Types.WalletOpenedAndOperational ->
                     greetingView "WalletOpenedAndOperational"
 
                 SR.Types.WalletWaitingForTransactionReceipt ->
                     greetingView "Please wait while the transaction is mined"
 
-        UserOps userState userList uaddr uname uiState _ ->
+        --UserOps userState userList uaddr uname uiState _ ->
+        UserOps userState allLists uaddr appInfo uiState txRec ->
             case uiState of
                 SR.Types.UIDisplayWalletLockedInstructions ->
                     greetingView <| "Your Ethereum wallet browser \nextension is locked. Please \nuse your wallet \npassword to open it \nbefore continuing"
 
                 SR.Types.CreateNewUser ->
-                    case userState of
-                        SR.Types.NewUser user ->
-                            inputNewUserview user
+                    --case userState of
+                    --SR.Types.NewUser user ->
+                    inputNewUserview model
 
-                        _ ->
-                            greetingView <| "Loading ... "
-
+                --_ ->
+                --greetingView <| "Loading ... "
                 _ ->
                     greetingView <| "Loading ... "
 
@@ -1544,7 +1612,7 @@ confirmChallengebutton model =
                 ]
 
         _ ->
-            Element.text "Fail"
+            Element.text "Fail confirmChallengebutton"
 
 
 confirmResultbutton : Model -> Element Msg
@@ -1593,7 +1661,7 @@ confirmResultbutton model =
                 ]
 
         _ ->
-            Element.text "Fail"
+            Element.text "Fail confirmResultbutton"
 
 
 acknoweldgeTxErrorbtn : Model -> Element Msg
@@ -1632,7 +1700,7 @@ acknoweldgeTxErrorbtn model =
                 ]
 
         _ ->
-            Element.text "Fail"
+            Element.text "Fail acknoweldgeTxErrorbtn"
 
 
 newuserConfirmPanel : SR.Types.User -> Element Msg
@@ -1662,6 +1730,14 @@ newuserConfirmPanel user =
 
 inputNewUser : SR.Types.User -> Element Msg
 inputNewUser user =
+    -- let
+    --     didValidate =
+    --         validate
+    --             userValidator
+    --             user
+    --     _ =
+    --         Debug.log "didValidate " didValidate
+    -- in
     Element.column Grid.section <|
         [ Element.el Heading.h5 <| Element.text "New User Details"
         , Element.wrappedRow (Card.fill ++ Grid.simple)
@@ -1669,34 +1745,26 @@ inputNewUser user =
                 [ Input.text
                     Input.simple
                     { onChange = NewUserNameInputChg
-
-                    --, text = user.username
-                    , text = ""
+                    , text = user.username
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Username"
                     }
                 , Input.multiline Input.simple
                     { onChange = NewUserDescInputChg
-
-                    --, text = user.description
-                    , text = ""
+                    , text = user.description
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Description"
                     , spellcheck = False
                     }
                 , Input.text Input.simple
                     { onChange = NewUserEmailInputChg
-
-                    --, text = user.email
-                    , text = ""
+                    , text = user.email
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Email"
                     }
                 , Input.text Input.simple
                     { onChange = NewUserMobileInputChg
-
-                    --, text = user.mobile
-                    , text = ""
+                    , text = user.mobile
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Mobile"
                     }
@@ -1759,7 +1827,7 @@ selectedUserIsOwnerView model =
                     ]
 
         _ ->
-            Html.text "Fail"
+            Html.text "Fail selectedUserIsOwnerView"
 
 
 selectedUserIsPlayerView : Model -> Html Msg
@@ -1794,15 +1862,20 @@ selectedUserIsNeitherOwnerNorPlayerView model =
             Html.text "Error"
 
 
-inputNewUserview : SR.Types.User -> Html Msg
-inputNewUserview user =
-    Framework.responsiveLayout [] <|
-        Element.column
-            Framework.container
-            [ Element.el Heading.h4 <| Element.text "SportRank"
-            , inputNewUser user
-            , newuserConfirmPanel user
-            ]
+inputNewUserview : Model -> Html Msg
+inputNewUserview model =
+    case model of
+        UserOps userState allLists uaddr appInfo uiState txRec ->
+            Framework.responsiveLayout [] <|
+                Element.column
+                    Framework.container
+                    [ Element.el Heading.h4 <| Element.text "Create New User"
+                    , inputNewUser appInfo.user
+                    , newuserConfirmPanel appInfo.user
+                    ]
+
+        _ ->
+            Html.text "Fail inputNewUserview"
 
 
 inputNewLadderview : Model -> Html Msg
