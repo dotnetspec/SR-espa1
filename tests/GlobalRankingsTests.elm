@@ -9,6 +9,7 @@ import Fuzz exposing (Fuzzer, int, list, string)
 import Internal.Types
 import Json.Encode
 import SR.Decode
+import SR.GlobalListOps
 import SR.ListOps
 import SR.PlayerListOps
 import SR.Types
@@ -72,8 +73,8 @@ testsortPlayerListByRank =
 -- this could be improved to become equal to a valid eth addrs - not just empty string
 
 
-sortGlobalRankingListTest1 : Test
-sortGlobalRankingListTest1 =
+ownerValidatedRankingListTest : Test
+ownerValidatedRankingListTest =
     fuzz (Fuzz.list rankingInfoFuzzer) "a globalranking list entry must have valid owneraddresses" <|
         \list ->
             case SR.ListOps.ownerValidatedRankingList list of
@@ -86,17 +87,25 @@ sortGlobalRankingListTest1 =
                     --     _ =
                     --         Debug.log "globalRankingList" globalRankingList
                     -- in
-                    Expect.true "true" <| List.all isValidOwnerAddress globalRankingList
+                    Expect.true "true" <| List.all isValidOwnerAddress <| SR.GlobalListOps.ownerValidatedRankingList globalRankingList
 
 
 
---Expect.notEqual "" a.rankingowneraddr
+-- this is used here to keep the original private
 
 
 isValidOwnerAddress : SR.Types.RankingInfo -> Bool
 isValidOwnerAddress rankInfo =
+    let
+        _ =
+            Debug.log "isValidOwnerAddress" rankInfo.rankingowneraddr
+    in
     if Eth.Utils.isAddress rankInfo.rankingowneraddr then
         True
 
     else
         False
+
+
+
+--Expect.notEqual "" a.rankingowneraddr

@@ -1,5 +1,6 @@
 module SR.PlayerListOps exposing
-    ( gotCurrentUserAsPlayerFromPlayerList
+    ( findPlayerInList
+    , gotCurrentUserAsPlayerFromPlayerList
     , gotPlayerFromPlayerListStrAddress
     , setPlayerInPlayerListWithChallengeResult
     , setPlayerInPlayerListWithNewChallengerAddr
@@ -130,15 +131,6 @@ resetPlayerRankingList newRank player =
     newPlayer
 
 
-addOne : Int -> Int
-addOne int =
-    if int == 1 then
-        1
-
-    else
-        int + 1
-
-
 resetPlayerRankToOne : SR.Types.Player -> SR.Types.Player
 resetPlayerRankToOne player =
     let
@@ -150,11 +142,6 @@ resetPlayerRankToOne player =
             }
     in
     newPlayer
-
-
-
--- isThisRankGreaterThanPrevious : Int -> Int -> Bool
--- isThisRankGreaterThanPrevious previousRank currentRank =
 
 
 canPlayerBeInList : Maybe SR.Types.Player -> Bool
@@ -181,22 +168,6 @@ gotCurrentUserAsPlayerFromPlayerList lPlayer userRec =
 
         Just a ->
             a
-
-
-
--- gotUserFromUserListStrAddress : List SR.Types.User -> String -> SR.Types.User
--- gotUserFromUserListStrAddress userList uaddr =
---     let
---         existingUser =
---             List.head <|
---                 List.filter (\r -> r.ethaddress == (String.toLower <| uaddr))
---                     userList
---     in
---     case existingUser of
---         Nothing ->
---             SR.Defaults.emptyUser
---         Just a ->
---             a
 
 
 gotPlayerFromPlayerListStrAddress : List SR.Types.Player -> String -> SR.Types.Player

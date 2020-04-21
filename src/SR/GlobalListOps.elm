@@ -20,7 +20,16 @@ import Utils.MyUtils
 
 ownerValidatedRankingList : List SR.Types.RankingInfo -> List SR.Types.RankingInfo
 ownerValidatedRankingList lrankinginfo =
-    lrankinginfo
+    List.filter isValidOwnerAddress lrankinginfo
+
+
+isValidOwnerAddress : SR.Types.RankingInfo -> Bool
+isValidOwnerAddress rankInfo =
+    if Eth.Utils.isAddress rankInfo.rankingowneraddr then
+        True
+
+    else
+        False
 
 
 
@@ -62,15 +71,6 @@ filterSelectedRankingOutOfGlobalList rankingid lrankinginfo =
         lrankinginfo
 
 
-filterPlayerOutOfPlayerList : String -> List SR.Types.Player -> List SR.Types.Player
-filterPlayerOutOfPlayerList addr lplayer =
-    List.filterMap
-        (doesPlayerAddrNOTMatchAddr
-            addr
-        )
-        lplayer
-
-
 
 --internal
 
@@ -79,15 +79,6 @@ doesCurrentRankingIdNOTMatchId : String -> SR.Types.RankingInfo -> Maybe SR.Type
 doesCurrentRankingIdNOTMatchId rankingid rankingInfo =
     if rankingInfo.id /= rankingid then
         Just rankingInfo
-
-    else
-        Nothing
-
-
-doesPlayerAddrNOTMatchAddr : String -> SR.Types.Player -> Maybe SR.Types.Player
-doesPlayerAddrNOTMatchAddr addr player =
-    if player.address /= addr then
-        Just player
 
     else
         Nothing

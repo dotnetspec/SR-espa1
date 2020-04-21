@@ -29,6 +29,7 @@ import SR.Constants
 import SR.Decode
 import SR.Defaults
 import SR.Elements
+import SR.GlobalListOps
 import SR.ListOps
 import SR.PlayerListOps
 import SR.Types
@@ -390,7 +391,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 GotGlobalRankingsJson rmtrnkingdata ->
                     let
                         addedRankingListToAllLists =
-                            { allLists | globalRankings = Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata }
+                            { allLists | globalRankings = SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata }
                     in
                     ( RankingOps addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
@@ -1022,7 +1023,7 @@ handleNewUserInputs currentmodel msg =
 
 extractAndSortPlayerList : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
 extractAndSortPlayerList rdlPlayer =
-    SR.ListOps.sortedPlayerListByRank <| Utils.MyUtils.extractPlayersFromWebData rdlPlayer
+    SR.PlayerListOps.sortedPlayerListByRank <| Utils.MyUtils.extractPlayersFromWebData rdlPlayer
 
 
 updatedForChallenge : Model -> List SR.Types.Player -> SR.Types.Player -> SR.Types.User -> Model
@@ -2077,7 +2078,7 @@ addCurrentUserToPlayerList intrankingId lPlayer userRec =
             newPlayer :: lPlayer
 
         sortedSelectedRankingListWithNewPlayerJsonObjAdded =
-            SR.ListOps.sortedPlayerListByRank selectedRankingListWithNewPlayerJsonObjAdded
+            SR.PlayerListOps.sortedPlayerListByRank selectedRankingListWithNewPlayerJsonObjAdded
     in
     --AddedNewRankingToGlobalList is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
