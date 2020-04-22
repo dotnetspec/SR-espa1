@@ -1,5 +1,7 @@
 module Main exposing (main)
 
+--import Html exposing (Html)
+
 import Browser
 import Element exposing (Element)
 import Element.Font as Font
@@ -11,6 +13,9 @@ import Eth.Sentry.Wallet
 import Eth.Types
 import Eth.Units
 import Eth.Utils
+import Form exposing (Form)
+import Form.Input
+import Form.Validate as Validate exposing (..)
 import Framework
 import Framework.Button as Button
 import Framework.Card as Card
@@ -18,7 +23,9 @@ import Framework.Color as Color
 import Framework.Grid as Grid
 import Framework.Heading as Heading
 import Framework.Input as Input
-import Html exposing (Html)
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Http
 import Internal.Types
 import Json.Encode
@@ -36,7 +43,14 @@ import SR.Types
 import Task
 import Time exposing (Posix)
 import Utils.MyUtils
-import Validate exposing (Validator, ifBlank, ifInvalidEmail, ifNotInt, validate)
+
+
+type alias UserForm =
+    { username : String
+    , description : String
+    , email : String
+    , mobile : String
+    }
 
 
 main =
@@ -64,53 +78,6 @@ type Model
     | UserOps SR.Types.AllLists Eth.Types.Address SR.Types.AppInfo SR.Types.UIState TxRecord
     | RankingOps SR.Types.AllLists SR.Types.AppInfo SR.Types.UIState TxRecord
     | Failure String
-
-
-
--- type Field
---     = Name
---     | Email
---     | Age
--- type alias ValidatorTestModel =
---     { name : String, email : String, age : String }
---modelValidator : Validator String ValidatorTestModel
--- userValidator : Validator String SR.Types.User
-
-
-userValidator =
-    Validate.all
-        [ ifBlank .username "Please enter a name."
-        , ifBlank .description "Please enter a description."
-        , Validate.firstError
-            [ ifBlank .email "Please enter an email address."
-            , ifInvalidEmail .email (\_ -> "Please enter a valid primary email address.")
-            ]
-        , ifBlank .mobile "Please enter a mobile number."
-        ]
-
-
-
--- didValidate : SR.Types.User
--- didValidate =
---             validate
---                 userValidator
---                 SR.Defaults.emptyUser
--- validate : SR.Types.User -> List Error
--- validate =
---     Validate.all
---         [ .email >> Validate.ifBlank ( Email, "Email can't be \n          blank." )
---         , .mobile >> Validate.ifBlank ( Password, "Password can't \n          be blank." )
---         ]
--- isValidEmail : String -> Result String Int
--- isValidEmail input =
---     case input of
---         Nothing ->
---             Err "This is not a valid email address."
---         Just email ->
---             if String.length email < 1 || String.length email > 20 then
---                 Err "email too long"
---             else
---                 Ok email
 
 
 init : () -> ( Model, Cmd Msg )
@@ -209,7 +176,6 @@ type Msg
     | ChangedUIStateToEnterResult SR.Types.Player
       -- UserOps
     | UsersReceived (RemoteData.WebData (List SR.Types.User))
-    | NewUser
     | NewUserNameInputChg String
     | NewUserDescInputChg String
     | NewUserEmailInputChg String
@@ -642,24 +608,11 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                 }
                                 txParams
                     in
-                    -- ( RankingOps allLists
-                    --     appInfo
-                    --     uiState
-                    --     { txRec | txSentry = newSentry }
-                    -- , sentryCmd
-                    -- )
                     ( WalletOps SR.Types.WalletWaitingForTransactionReceipt { txRec | txSentry = newSentry }
                       --|> update (ProcessResult SR.Types.Won)
                     , sentryCmd
                     )
 
-                -- WatchTx (Ok tx) ->
-                --     let
-                --         _ =
-                --             Debug.log "tx ok"
-                --     in
-                --     WalletOps SR.Types.WalletOpenedAndOperational { txRec | tx = Just tx }
-                --         |> update (ProcessResult SR.Types.Won)
                 SentResultToJsonbin a ->
                     ( RankingOps allLists
                         appInfo
@@ -1149,7 +1102,6 @@ updateOnUserListReceived model userList =
                 RankingOps newAllLists userUpdatedInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord
 
             else
-                --UserOps (SR.Types.NewUser userWithUpdatedAddr) newAllLists uaddr userUpdatedInAppInfo SR.Types.CreateNewUser txRec
                 UserOps newAllLists uaddr userUpdatedInAppInfo SR.Types.CreateNewUser txRec
 
         _ ->
@@ -1205,8 +1157,6 @@ view model =
     case model of
         RankingOps allLists appInfo uiState txRec ->
             case uiState of
-                -- SR.Types.CreateNewUser ->
-                --     inputNewUserview appInfo.user
                 SR.Types.CreateNewLadder ->
                     inputNewLadderview model
 
@@ -1254,7 +1204,15 @@ view model =
         UserOps allLists uaddr appInfo uiState txRec ->
             case uiState of
                 SR.Types.UIDisplayWalletLockedInstructions ->
-                    greetingView <| "Your Ethereum wallet browser \nextension is locked. Please \nuse your wallet \npassword to open it \nbefore continuing"
+                    greetingView <| """Your Ethereum wallet browser 
+                    
+extension is locked. Please 
+use your wallet 
+                    
+password to open it 
+before continuing and
+                    
+refresh the browser"""
 
                 SR.Types.CreateNewUser ->
                     inputNewUserview model
@@ -1725,14 +1683,6 @@ newuserConfirmPanel user =
 
 inputNewUser : SR.Types.User -> Element Msg
 inputNewUser user =
-    -- let
-    --     didValidate =
-    --         validate
-    --             userValidator
-    --             user
-    --     _ =
-    --         Debug.log "didValidate " didValidate
-    -- in
     Element.column Grid.section <|
         [ Element.el Heading.h5 <| Element.text "New User Details"
         , Element.wrappedRow (Card.fill ++ Grid.simple)
