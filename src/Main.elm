@@ -45,14 +45,6 @@ import Time exposing (Posix)
 import Utils.MyUtils
 
 
-type alias UserForm =
-    { username : String
-    , description : String
-    , email : String
-    , mobile : String
-    }
-
-
 main =
     Browser.element
         { init = init
@@ -71,11 +63,13 @@ main =
 -- current state of model
 --nb: each variant added to model has to be handled e.g. do you need 'failure' if it's anyway handled by RemoteData?
 --we have to have a separate VARIANT for the user to move on from wallet_status sub - avoiding looping
+-- maybe that can be handled by poll block?
+--{ form : Form () SR.Types.UserForm }
 
 
 type Model
     = WalletOps SR.Types.WalletState TxRecord
-    | UserOps SR.Types.AllLists Eth.Types.Address SR.Types.AppInfo SR.Types.UIState TxRecord
+    | UserOps SR.Types.AllLists Eth.Types.Address SR.Types.AppInfo SR.Types.UIState (Form () SR.Types.UserForm) TxRecord
     | RankingOps SR.Types.AllLists SR.Types.AppInfo SR.Types.UIState TxRecord
     | Failure String
 
@@ -95,6 +89,15 @@ init _ =
         , Task.attempt PollBlock (Eth.getBlockNumber node.http)
         ]
     )
+
+
+validate : Validation () SR.Types.UserForm
+validate =
+    succeed SR.Types.UserForm
+        |> andMap (field "username" string)
+        |> andMap (field "description" string)
+        |> andMap (field "email" email)
+        |> andMap (field "mobile" string)
 
 
 emptyTxRecord : TxRecord
@@ -182,6 +185,7 @@ type Msg
     | NewUserMobileInputChg String
     | NewUserRequested SR.Types.User
     | TimeUpdated Posix
+    | FormMsg Form.Msg
       -- Multiple
     | PollBlock (Result Http.Error Int)
     | WatchTxHash (Result String Eth.Types.TxHash)
@@ -201,18 +205,39 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         Mainnet ->
                             case walletSentry_.account of
                                 Nothing ->
-                                    ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
+                                    ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions (Form.initial [] validate) txRec, Cmd.none )
 
                                 Just uaddr ->
-                                    ( UserOps SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser txRec, gotUserList )
+                                    ( UserOps SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser (Form.initial [] validate) txRec, gotUserList )
 
                         Rinkeby ->
                             case walletSentry_.account of
                                 Nothing ->
-                                    ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
+                                    ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions (Form.initial [] validate) txRec, Cmd.none )
 
                                 Just uaddr ->
                                     case walletState of
+                                        SR.Types.Missing ->
+                                            let
+                                                _ =
+                                                    Debug.log "In : " "Wallet Missing"
+                                            in
+                                            ( UserOps SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIWalletMissingInstructions (Form.initial [] validate) txRec, gotUserList )
+
+                                        SR.Types.Locked ->
+                                            let
+                                                _ =
+                                                    Debug.log "In : " "Wallet Locked"
+                                            in
+                                            ( UserOps SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser (Form.initial [] validate) txRec, gotUserList )
+
+                                        SR.Types.WalletOpenedWithoutUserCheck useraddr ->
+                                            let
+                                                _ =
+                                                    Debug.log "In : WalletOpenedWithoutUserCheck" useraddr
+                                            in
+                                            ( UserOps SR.Defaults.emptyAllLists useraddr SR.Defaults.emptyAppInfo SR.Types.UICreateNewUser (Form.initial [] validate) txRec, gotUserList )
+
                                         SR.Types.WalletWaitingForTransactionReceipt ->
                                             let
                                                 _ =
@@ -223,19 +248,19 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                             , Cmd.none
                                             )
 
-                                        _ ->
+                                        SR.Types.WalletOpenedAndOperational ->
                                             let
                                                 _ =
-                                                    Debug.log "Fell thru to : " "UserOps"
+                                                    Debug.log "In : " "WalletOpenedAndOperational"
                                             in
-                                            ( UserOps SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser txRec, gotUserList )
+                                            ( UserOps SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser (Form.initial [] validate) txRec, gotUserList )
 
                         _ ->
                             let
                                 _ =
                                     Debug.log "Gave MissingWalletInstructions: " "but actually a networkId fall thru"
                             in
-                            ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
+                            ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions (Form.initial [] validate) txRec, Cmd.none )
 
                 OpenWalletInstructions ->
                     ( WalletOps SR.Types.Locked emptyTxRecord, Cmd.none )
@@ -283,7 +308,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     in
                     -- WalletOps SR.Types.WalletOpenedAndOperational { txRec | tx = Just tx }
                     --     |> update (ProcessResult SR.Types.Won)
-                    ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
+                    ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions (Form.initial [] validate) txRec, Cmd.none )
 
                 WatchTx (Err err) ->
                     let
@@ -321,14 +346,36 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 _ ->
                     ( Failure "WalletOps 2", Cmd.none )
 
-        UserOps allLists uaddr appInfo uiState txRec ->
+        --         FormMsg formMsg ->
+        -- { model | form = Form.update validate formMsg form }
+        UserOps allLists uaddr appInfo uiState uForm txRec ->
             case msgOfTransitonThatAlreadyHappened of
-                PollBlock (Ok blockNumber) ->
+                FormMsg formMsg ->
+                    let
+                        newUForm =
+                            Form.update validate formMsg uForm
+                    in
                     ( UserOps
                         allLists
                         uaddr
                         appInfo
                         SR.Types.UIDisplayWalletLockedInstructions
+                        newUForm
+                        txRec
+                    , Cmd.none
+                    )
+
+                PollBlock (Ok blockNumber) ->
+                    let
+                        _ =
+                            Debug.log "userops poll block" "yes"
+                    in
+                    ( UserOps
+                        allLists
+                        uaddr
+                        appInfo
+                        SR.Types.UICreateNewUser
+                        (Form.initial [] validate)
                         txRec
                     , Cmd.none
                     )
@@ -401,10 +448,16 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     let
                         _ =
                             Debug.log "msgOfTransitonThatAlreadyHappened" msgOfTransitonThatAlreadyHappened
+
+                        -- newUForm =
+                        --     { form }
+                        -- Form.update
+                        --     validate
+                        --     formMsg
                     in
                     --todo: better logic. This should go to failure model rather than fall thru to UserOps
                     -- but currently logic needs to do this
-                    ( UserOps allLists uaddr appInfo SR.Types.CreateNewUser txRec, Cmd.none )
+                    ( UserOps allLists uaddr appInfo SR.Types.UICreateNewUser uForm txRec, Cmd.none )
 
         --( Failure "in UserOps", Cmd.none )
         RankingOps allLists appInfo uiState txRec ->
@@ -988,7 +1041,7 @@ createNewPlayerListWithNewChallengeAndUpdateJsonBin model =
 handleNewUserInputs : Model -> Msg -> Model
 handleNewUserInputs currentmodel msg =
     case currentmodel of
-        UserOps allLists uaddr appInfo uiState txRec ->
+        UserOps allLists uaddr appInfo uiState uForm txRec ->
             case msg of
                 NewUserNameInputChg namefield ->
                     let
@@ -1001,7 +1054,7 @@ handleNewUserInputs currentmodel msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    UserOps allLists uaddr newAppInfo SR.Types.CreateNewUser txRec
+                    UserOps allLists uaddr newAppInfo SR.Types.UICreateNewUser uForm txRec
 
                 NewUserDescInputChg descfield ->
                     let
@@ -1014,7 +1067,7 @@ handleNewUserInputs currentmodel msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    UserOps allLists uaddr newAppInfo SR.Types.CreateNewUser txRec
+                    UserOps allLists uaddr newAppInfo SR.Types.UICreateNewUser uForm txRec
 
                 NewUserEmailInputChg emailfield ->
                     let
@@ -1027,7 +1080,7 @@ handleNewUserInputs currentmodel msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    UserOps allLists uaddr newAppInfo SR.Types.CreateNewUser txRec
+                    UserOps allLists uaddr newAppInfo SR.Types.UICreateNewUser uForm txRec
 
                 NewUserMobileInputChg mobilefield ->
                     let
@@ -1040,7 +1093,7 @@ handleNewUserInputs currentmodel msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    UserOps allLists uaddr newAppInfo SR.Types.CreateNewUser txRec
+                    UserOps allLists uaddr newAppInfo SR.Types.UICreateNewUser uForm txRec
 
                 _ ->
                     Failure "NewUserNameInputChg"
@@ -1082,10 +1135,8 @@ updateSelectedRankingOnChallenge allLists appInfo =
 updateOnUserListReceived : Model -> List SR.Types.User -> Model
 updateOnUserListReceived model userList =
     case model of
-        UserOps allLists uaddr appInfo uiState txRec ->
+        UserOps allLists uaddr appInfo uiState uForm txRec ->
             let
-                --     extractedUsersFromWebData =
-                --         Utils.MyUtils.extractUsersFromWebData allLists
                 gotUserToUpdateAddr =
                     SR.ListOps.singleUserInList userList uaddr
 
@@ -1102,7 +1153,11 @@ updateOnUserListReceived model userList =
                 RankingOps newAllLists userUpdatedInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord
 
             else
-                UserOps newAllLists uaddr userUpdatedInAppInfo SR.Types.CreateNewUser txRec
+                let
+                    _ =
+                        Debug.log "no user" uaddr
+                in
+                UserOps newAllLists uaddr userUpdatedInAppInfo SR.Types.UICreateNewUser uForm txRec
 
         _ ->
             Failure "should be in UserOps"
@@ -1201,27 +1256,74 @@ view model =
                 SR.Types.WalletWaitingForTransactionReceipt ->
                     greetingView "Please wait while the transaction is mined"
 
-        UserOps allLists uaddr appInfo uiState txRec ->
+        UserOps allLists uaddr appInfo uiState uForm txRec ->
             case uiState of
-                SR.Types.UIDisplayWalletLockedInstructions ->
-                    greetingView <| """Your Ethereum wallet browser 
-                    
-extension is locked. Please 
-use your wallet 
-                    
-password to open it 
+                SR.Types.UIWalletMissingInstructions ->
+                    greetingView <|
+                        """Your Ethereum  
+wallet browser
+extension is MISSING. Please 
+install Metamask (or similar)     
+in Chrome extensions 
 before continuing and
-                    
 refresh the browser"""
 
-                SR.Types.CreateNewUser ->
+                SR.Types.UIDisplayWalletLockedInstructions ->
+                    greetingView <|
+                        """Your Ethereum  
+wallet browser
+extension is LOCKED. Please 
+use your wallet      
+password to open it 
+before continuing and
+refresh the browser"""
+
+                SR.Types.UICreateNewUser ->
                     inputNewUserview model
 
+                --Html.map FormMsg (formView uForm)
                 _ ->
                     greetingView <| "Loading ... "
 
         Failure str ->
             greetingView <| "Model failure in view: " ++ str
+
+
+formView : Form () SR.Types.UserForm -> Html Form.Msg
+formView form =
+    let
+        -- error presenter
+        errorFor field =
+            case field.liveError of
+                Just error ->
+                    -- replace toString with your own translations
+                    div [ class "error" ] [ text (Debug.toString error) ]
+
+                Nothing ->
+                    text ""
+
+        -- fields states
+        bar =
+            Form.getFieldAsString "bar" form
+
+        baz =
+            Form.getFieldAsBool "baz" form
+    in
+    div []
+        [ label [] [ text "Bar" ]
+        , Form.Input.textInput bar []
+
+        --, Form.Input.textInput
+        , errorFor bar
+        , label []
+            [ Form.Input.checkboxInput baz []
+            , text "Baz"
+            ]
+        , errorFor baz
+        , button
+            [ onClick Form.Submit ]
+            [ text "Submit" ]
+        ]
 
 
 greetingHeading : String -> Element Msg
@@ -1810,7 +1912,7 @@ selectedUserIsNeitherOwnerNorPlayerView model =
 inputNewUserview : Model -> Html Msg
 inputNewUserview model =
     case model of
-        UserOps allLists uaddr appInfo uiState txRec ->
+        UserOps allLists uaddr appInfo uiState uForm txRec ->
             Framework.responsiveLayout [] <|
                 Element.column
                     Framework.container
@@ -1915,7 +2017,7 @@ subscriptions model =
                 , Eth.Sentry.Tx.listen txRec.txSentry
                 ]
 
-        UserOps _ _ _ _ _ ->
+        UserOps _ _ _ _ _ _ ->
             Sub.none
 
         RankingOps _ _ _ _ ->

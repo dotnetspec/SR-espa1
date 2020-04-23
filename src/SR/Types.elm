@@ -2,7 +2,7 @@ module SR.Types exposing
     ( PlayerId, RankingId(..)
     , Player, Opponent, OpponentRelativeRank(..), Options, ResultOfMatch(..), WalletState(..)
     , UIState(..)
-    , AllLists, AppInfo, CreateNewLadderFormFields, LadderState(..), ModalState(..), NewRankingListServerResponse, RankingInfo, ResultRadioOptions(..), User, UserListState(..)
+    , AllLists, AppInfo, CreateNewLadderFormFields, LadderState(..), ModalState(..), NewRankingListServerResponse, RankingInfo, ResultRadioOptions(..), User, UserForm, UserListState(..)
     )
 
 {-| Types
@@ -96,7 +96,8 @@ type LadderState
 type UIState
     = UIRenderAllRankings
     | CreateNewLadder
-    | CreateNewUser
+    | UICreateNewUser
+    | UIWalletMissingInstructions
     | UIDisplayWalletLockedInstructions
     | UIDisplayWalletInfoToUser
     | UISelectedRankingUserIsOwner
@@ -158,6 +159,14 @@ type alias User =
     , active : Bool
     , username : String
     , ethaddress : String
+    , description : String
+    , email : String
+    , mobile : String
+    }
+
+
+type alias UserForm =
+    { username : String
     , description : String
     , email : String
     , mobile : String
