@@ -1,7 +1,5 @@
 module Main exposing (main)
 
---import Html exposing (Html)
-
 import Browser
 import Element exposing (Element)
 import Element.Font as Font
@@ -13,9 +11,6 @@ import Eth.Sentry.Wallet
 import Eth.Types
 import Eth.Units
 import Eth.Utils
-import Form exposing (Form)
-import Form.Input
-import Form.Validate as Validate exposing (..)
 import Framework
 import Framework.Button as Button
 import Framework.Card as Card
@@ -23,6 +18,7 @@ import Framework.Color as Color
 import Framework.Grid as Grid
 import Framework.Heading as Heading
 import Framework.Input as Input
+import Framework.Tag as Tag
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -64,12 +60,11 @@ main =
 --nb: each variant added to model has to be handled e.g. do you need 'failure' if it's anyway handled by RemoteData?
 --we have to have a separate VARIANT for the user to move on from wallet_status sub - avoiding looping
 -- maybe that can be handled by poll block?
---{ form : Form () SR.Types.UserForm }
 
 
 type Model
     = WalletOps SR.Types.WalletState TxRecord
-    | UserOps SR.Types.AllLists Eth.Types.Address SR.Types.AppInfo SR.Types.UIState (Form () SR.Types.UserForm) TxRecord
+    | UserOps SR.Types.AllLists Eth.Types.Address SR.Types.AppInfo SR.Types.UIState TxRecord
     | RankingOps SR.Types.AllLists SR.Types.AppInfo SR.Types.UIState TxRecord
     | Failure String
 
@@ -89,15 +84,6 @@ init _ =
         , Task.attempt PollBlock (Eth.getBlockNumber node.http)
         ]
     )
-
-
-validate : Validation () SR.Types.UserForm
-validate =
-    succeed SR.Types.UserForm
-        |> andMap (field "username" string)
-        |> andMap (field "description" string)
-        |> andMap (field "email" email)
-        |> andMap (field "mobile" string)
 
 
 emptyTxRecord : TxRecord
@@ -185,7 +171,6 @@ type Msg
     | NewUserMobileInputChg String
     | NewUserRequested SR.Types.User
     | TimeUpdated Posix
-    | FormMsg Form.Msg
       -- Multiple
     | PollBlock (Result Http.Error Int)
     | WatchTxHash (Result String Eth.Types.TxHash)
@@ -205,15 +190,15 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         Mainnet ->
                             case walletSentry_.account of
                                 Nothing ->
-                                    ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions (Form.initial [] validate) txRec, Cmd.none )
+                                    ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
 
                                 Just uaddr ->
-                                    ( UserOps SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser (Form.initial [] validate) txRec, gotUserList )
+                                    ( UserOps SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser txRec, gotUserList )
 
                         Rinkeby ->
                             case walletSentry_.account of
                                 Nothing ->
-                                    ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions (Form.initial [] validate) txRec, Cmd.none )
+                                    ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
 
                                 Just uaddr ->
                                     case walletState of
@@ -222,21 +207,21 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                                 _ =
                                                     Debug.log "In : " "Wallet Missing"
                                             in
-                                            ( UserOps SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIWalletMissingInstructions (Form.initial [] validate) txRec, gotUserList )
+                                            ( UserOps SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIWalletMissingInstructions txRec, gotUserList )
 
                                         SR.Types.Locked ->
                                             let
                                                 _ =
                                                     Debug.log "In : " "Wallet Locked"
                                             in
-                                            ( UserOps SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser (Form.initial [] validate) txRec, gotUserList )
+                                            ( UserOps SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser txRec, gotUserList )
 
                                         SR.Types.WalletOpenedWithoutUserCheck useraddr ->
                                             let
                                                 _ =
                                                     Debug.log "In : WalletOpenedWithoutUserCheck" useraddr
                                             in
-                                            ( UserOps SR.Defaults.emptyAllLists useraddr SR.Defaults.emptyAppInfo SR.Types.UICreateNewUser (Form.initial [] validate) txRec, gotUserList )
+                                            ( UserOps SR.Defaults.emptyAllLists useraddr SR.Defaults.emptyAppInfo SR.Types.UICreateNewUser txRec, gotUserList )
 
                                         SR.Types.WalletWaitingForTransactionReceipt ->
                                             let
@@ -253,14 +238,14 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                                 _ =
                                                     Debug.log "In : " "WalletOpenedAndOperational"
                                             in
-                                            ( UserOps SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser (Form.initial [] validate) txRec, gotUserList )
+                                            ( UserOps SR.Defaults.emptyAllLists uaddr SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletInfoToUser txRec, gotUserList )
 
                         _ ->
                             let
                                 _ =
                                     Debug.log "Gave MissingWalletInstructions: " "but actually a networkId fall thru"
                             in
-                            ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions (Form.initial [] validate) txRec, Cmd.none )
+                            ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
 
                 OpenWalletInstructions ->
                     ( WalletOps SR.Types.Locked emptyTxRecord, Cmd.none )
@@ -308,7 +293,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     in
                     -- WalletOps SR.Types.WalletOpenedAndOperational { txRec | tx = Just tx }
                     --     |> update (ProcessResult SR.Types.Won)
-                    ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions (Form.initial [] validate) txRec, Cmd.none )
+                    ( UserOps SR.Defaults.emptyAllLists (Internal.Types.Address "") SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
 
                 WatchTx (Err err) ->
                     let
@@ -346,25 +331,8 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 _ ->
                     ( Failure "WalletOps 2", Cmd.none )
 
-        --         FormMsg formMsg ->
-        -- { model | form = Form.update validate formMsg form }
-        UserOps allLists uaddr appInfo uiState uForm txRec ->
+        UserOps allLists uaddr appInfo uiState txRec ->
             case msgOfTransitonThatAlreadyHappened of
-                FormMsg formMsg ->
-                    let
-                        newUForm =
-                            Form.update validate formMsg uForm
-                    in
-                    ( UserOps
-                        allLists
-                        uaddr
-                        appInfo
-                        SR.Types.UIDisplayWalletLockedInstructions
-                        newUForm
-                        txRec
-                    , Cmd.none
-                    )
-
                 PollBlock (Ok blockNumber) ->
                     let
                         _ =
@@ -375,7 +343,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         uaddr
                         appInfo
                         SR.Types.UICreateNewUser
-                        (Form.initial [] validate)
                         txRec
                     , Cmd.none
                     )
@@ -448,18 +415,11 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     let
                         _ =
                             Debug.log "msgOfTransitonThatAlreadyHappened" msgOfTransitonThatAlreadyHappened
-
-                        -- newUForm =
-                        --     { form }
-                        -- Form.update
-                        --     validate
-                        --     formMsg
                     in
                     --todo: better logic. This should go to failure model rather than fall thru to UserOps
                     -- but currently logic needs to do this
-                    ( UserOps allLists uaddr appInfo SR.Types.UICreateNewUser uForm txRec, Cmd.none )
+                    ( UserOps allLists uaddr appInfo SR.Types.UICreateNewUser txRec, Cmd.none )
 
-        --( Failure "in UserOps", Cmd.none )
         RankingOps allLists appInfo uiState txRec ->
             case msgOfTransitonThatAlreadyHappened of
                 GotGlobalRankingsJson rmtrnkingdata ->
@@ -1041,7 +1001,7 @@ createNewPlayerListWithNewChallengeAndUpdateJsonBin model =
 handleNewUserInputs : Model -> Msg -> Model
 handleNewUserInputs currentmodel msg =
     case currentmodel of
-        UserOps allLists uaddr appInfo uiState uForm txRec ->
+        UserOps allLists uaddr appInfo uiState txRec ->
             case msg of
                 NewUserNameInputChg namefield ->
                     let
@@ -1053,8 +1013,11 @@ handleNewUserInputs currentmodel msg =
 
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
+
+                        _ =
+                            Debug.log "currentUformfield" .username
                     in
-                    UserOps allLists uaddr newAppInfo SR.Types.UICreateNewUser uForm txRec
+                    UserOps allLists uaddr newAppInfo SR.Types.UICreateNewUser txRec
 
                 NewUserDescInputChg descfield ->
                     let
@@ -1067,7 +1030,7 @@ handleNewUserInputs currentmodel msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    UserOps allLists uaddr newAppInfo SR.Types.UICreateNewUser uForm txRec
+                    UserOps allLists uaddr newAppInfo SR.Types.UICreateNewUser txRec
 
                 NewUserEmailInputChg emailfield ->
                     let
@@ -1080,7 +1043,7 @@ handleNewUserInputs currentmodel msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    UserOps allLists uaddr newAppInfo SR.Types.UICreateNewUser uForm txRec
+                    UserOps allLists uaddr newAppInfo SR.Types.UICreateNewUser txRec
 
                 NewUserMobileInputChg mobilefield ->
                     let
@@ -1093,7 +1056,7 @@ handleNewUserInputs currentmodel msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    UserOps allLists uaddr newAppInfo SR.Types.UICreateNewUser uForm txRec
+                    UserOps allLists uaddr newAppInfo SR.Types.UICreateNewUser txRec
 
                 _ ->
                     Failure "NewUserNameInputChg"
@@ -1135,7 +1098,7 @@ updateSelectedRankingOnChallenge allLists appInfo =
 updateOnUserListReceived : Model -> List SR.Types.User -> Model
 updateOnUserListReceived model userList =
     case model of
-        UserOps allLists uaddr appInfo uiState uForm txRec ->
+        UserOps allLists uaddr appInfo uiState txRec ->
             let
                 gotUserToUpdateAddr =
                     SR.ListOps.singleUserInList userList uaddr
@@ -1157,7 +1120,7 @@ updateOnUserListReceived model userList =
                     _ =
                         Debug.log "no user" uaddr
                 in
-                UserOps newAllLists uaddr userUpdatedInAppInfo SR.Types.UICreateNewUser uForm txRec
+                UserOps newAllLists uaddr userUpdatedInAppInfo SR.Types.UICreateNewUser txRec
 
         _ ->
             Failure "should be in UserOps"
@@ -1256,7 +1219,7 @@ view model =
                 SR.Types.WalletWaitingForTransactionReceipt ->
                     greetingView "Please wait while the transaction is mined"
 
-        UserOps allLists uaddr appInfo uiState uForm txRec ->
+        UserOps allLists uaddr appInfo uiState txRec ->
             case uiState of
                 SR.Types.UIWalletMissingInstructions ->
                     greetingView <|
@@ -1281,49 +1244,11 @@ refresh the browser"""
                 SR.Types.UICreateNewUser ->
                     inputNewUserview model
 
-                --Html.map FormMsg (formView uForm)
                 _ ->
                     greetingView <| "Loading ... "
 
         Failure str ->
             greetingView <| "Model failure in view: " ++ str
-
-
-formView : Form () SR.Types.UserForm -> Html Form.Msg
-formView form =
-    let
-        -- error presenter
-        errorFor field =
-            case field.liveError of
-                Just error ->
-                    -- replace toString with your own translations
-                    div [ class "error" ] [ text (Debug.toString error) ]
-
-                Nothing ->
-                    text ""
-
-        -- fields states
-        bar =
-            Form.getFieldAsString "bar" form
-
-        baz =
-            Form.getFieldAsBool "baz" form
-    in
-    div []
-        [ label [] [ text "Bar" ]
-        , Form.Input.textInput bar []
-
-        --, Form.Input.textInput
-        , errorFor bar
-        , label []
-            [ Form.Input.checkboxInput baz []
-            , text "Baz"
-            ]
-        , errorFor baz
-        , button
-            [ onClick Form.Submit ]
-            [ text "Submit" ]
-        ]
 
 
 greetingHeading : String -> Element Msg
@@ -1783,42 +1708,65 @@ newuserConfirmPanel user =
         ]
 
 
-inputNewUser : SR.Types.User -> Element Msg
-inputNewUser user =
-    Element.column Grid.section <|
-        [ Element.el Heading.h5 <| Element.text "New User Details"
-        , Element.wrappedRow (Card.fill ++ Grid.simple)
-            [ Element.column Grid.simple
-                [ Input.text
-                    Input.simple
-                    { onChange = NewUserNameInputChg
-                    , text = user.username
-                    , placeholder = Nothing
-                    , label = Input.labelLeft Input.label <| Element.text "Username"
-                    }
-                , Input.multiline Input.simple
-                    { onChange = NewUserDescInputChg
-                    , text = user.description
-                    , placeholder = Nothing
-                    , label = Input.labelLeft Input.label <| Element.text "Description"
-                    , spellcheck = False
-                    }
-                , Input.text Input.simple
-                    { onChange = NewUserEmailInputChg
-                    , text = user.email
-                    , placeholder = Nothing
-                    , label = Input.labelLeft Input.label <| Element.text "Email"
-                    }
-                , Input.text Input.simple
-                    { onChange = NewUserMobileInputChg
-                    , text = user.mobile
-                    , placeholder = Nothing
-                    , label = Input.labelLeft Input.label <| Element.text "Mobile"
-                    }
+inputNewUser : Model -> Element Msg
+inputNewUser model =
+    case model of
+        UserOps allLists uaddr appInfo uiState txRec ->
+            let
+                isValidated =
+                    if String.length appInfo.user.username > 5 && String.length appInfo.user.username < 9 then
+                        True
+
+                    else
+                        False
+
+                nameChgValidationErr =
+                    if isValidated then
+                        Element.el [ Font.color SR.Types.colors.green, Font.center ] <| Element.text "Username OK!"
+
+                    else
+                        Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <|
+                            Element.text """Username must be unique
+and between 6-8 characters"""
+            in
+            Element.column Grid.section <|
+                [ Element.el Heading.h5 <| Element.text "New User Details"
+                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                    [ Element.column Grid.simple
+                        [ Input.text
+                            Input.simple
+                            { onChange = NewUserNameInputChg
+                            , text = appInfo.user.username
+                            , placeholder = Nothing
+                            , label = Input.labelLeft Input.label <| Element.text "Username"
+                            }
+                        , nameChgValidationErr
+                        , Input.multiline Input.simple
+                            { onChange = NewUserDescInputChg
+                            , text = appInfo.user.description
+                            , placeholder = Nothing
+                            , label = Input.labelLeft Input.label <| Element.text "Description"
+                            , spellcheck = False
+                            }
+                        , Input.text Input.simple
+                            { onChange = NewUserEmailInputChg
+                            , text = appInfo.user.email
+                            , placeholder = Nothing
+                            , label = Input.labelLeft Input.label <| Element.text "Email"
+                            }
+                        , Input.text Input.simple
+                            { onChange = NewUserMobileInputChg
+                            , text = appInfo.user.mobile
+                            , placeholder = Nothing
+                            , label = Input.labelLeft Input.label <| Element.text "Mobile"
+                            }
+                        ]
+                    ]
+                , SR.Elements.justParasimpleUserInfoText
                 ]
-            ]
-        , SR.Elements.justParasimpleUserInfoText
-        ]
+
+        _ ->
+            Element.text "Fail on inputNewUser"
 
 
 
@@ -1912,12 +1860,12 @@ selectedUserIsNeitherOwnerNorPlayerView model =
 inputNewUserview : Model -> Html Msg
 inputNewUserview model =
     case model of
-        UserOps allLists uaddr appInfo uiState uForm txRec ->
+        UserOps allLists uaddr appInfo uiState txRec ->
             Framework.responsiveLayout [] <|
                 Element.column
                     Framework.container
                     [ Element.el Heading.h4 <| Element.text "Create New User"
-                    , inputNewUser appInfo.user
+                    , inputNewUser model
                     , newuserConfirmPanel appInfo.user
                     ]
 
@@ -2017,7 +1965,7 @@ subscriptions model =
                 , Eth.Sentry.Tx.listen txRec.txSentry
                 ]
 
-        UserOps _ _ _ _ _ _ ->
+        UserOps _ _ _ _ _ ->
             Sub.none
 
         RankingOps _ _ _ _ ->
