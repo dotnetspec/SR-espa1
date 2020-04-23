@@ -1,6 +1,6 @@
 module SR.Defaults exposing
     ( emptyPlayer
-    , emptyActiveUser, emptyAllLists, emptyAppInfo, emptyRankingInfo, emptyUser, globalBinName, globalContainerId, secretKey, selectedBinName, selectedContainerId, userBinName, userContainerId
+    , emptyActiveUser, emptyAllLists, emptyAppInfo, emptyFormValidations, emptyRankingInfo, emptyUser, globalBinName, globalContainerId, secretKey, selectedBinName, selectedContainerId, userBinName, userContainerId
     )
 
 {-| Default values.
@@ -31,6 +31,17 @@ emptyUser =
     , username = ""
     , ethaddress = ""
     , description = ""
+    , email = ""
+    , mobile = ""
+    }
+
+
+emptyFormValidations : SR.Types.FormValidations
+emptyFormValidations =
+    { username = ""
+    , laddername = ""
+    , userdesc = ""
+    , ladderdesc = ""
     , email = ""
     , mobile = ""
     }

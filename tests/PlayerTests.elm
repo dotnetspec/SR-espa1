@@ -9,6 +9,7 @@ import Internal.Types
 import Json.Encode
 import SR.Decode
 import SR.ListOps
+import SR.PlayerListOps
 import SR.Types
 import Shrink
 import Test exposing (..)
@@ -51,7 +52,7 @@ testsortPlayerListByRank =
     describe "testsortPlayerListByRank test"
         [ test "outputs correctly ordered list" <|
             \_ ->
-                SR.ListOps.sortedPlayerListByRank listOfPlayers
+                SR.PlayerListOps.sortedPlayerListByRank listOfPlayers
                     |> Expect.equal output
         ]
 
@@ -60,33 +61,12 @@ sortPlayerListTest1 : Test
 sortPlayerListTest1 =
     fuzz (Fuzz.list playerFuzzer) "a sorted list should have the first rank == 1" <|
         \list ->
-            case SR.ListOps.sortedPlayerListByRank list of
+            case SR.PlayerListOps.sortedPlayerListByRank list of
                 [] ->
                     Expect.pass
 
                 a :: _ ->
                     Expect.equal 1 a.rank
-
-
-sortPlayerListTest2 : Test
-sortPlayerListTest2 =
-    fuzz (Fuzz.list playerFuzzer) "a sorted list should have a higher number for the next rank " <|
-        \list ->
-            case SR.ListOps.sortedPlayerListByRank list of
-                [] ->
-                    Expect.false
-
-                a ->
-                    Expect.true True
-
-
-
---Expect.true <| List.all eachRankInListLowerThanTheNext a
-
-
-eachRankInListLowerThanTheNext : SR.Types.Player -> Bool
-eachRankInListLowerThanTheNext player =
-    True
 
 
 
