@@ -82,8 +82,10 @@ type Username
 
 
 type WalletState
-    = Missing
-    | Locked
+    = WalletStateUnknown
+    | Missing
+    | WalletStateLocked
+    | WalletStateAwaitOpening
     | WalletOpenedWithoutUserCheck Eth.Types.Address
     | WalletWaitingForTransactionReceipt
     | WalletOpenedAndOperational
@@ -107,6 +109,8 @@ type UIState
     | UIEnterResult
     | UIEnterResultTxProblem
     | UIChallenge
+    | UILoading
+    | UIWaitingForTxReceipt
 
 
 type UserListState

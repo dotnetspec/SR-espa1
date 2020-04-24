@@ -4,10 +4,12 @@ module SR.ListOps exposing
     , gotUserFromUserListStrAddress
     , gotUserListFromRemData
     , isUserInList
+    , isUserInListStrAddr
     , isUserMemberOfSelectedRanking
     , isUserSelectedOwnerOfRanking
     , ownerValidatedRankingList
     , singleUserInList
+    , singleUserInListStrAddr
     )
 
 import Eth.Types
@@ -35,6 +37,19 @@ isUserInList userlist uaddr =
     let
         gotSingleUserFromList =
             singleUserInList userlist uaddr
+    in
+    if gotSingleUserFromList.ethaddress == "" then
+        False
+
+    else
+        True
+
+
+isUserInListStrAddr : List SR.Types.User -> String -> Bool
+isUserInListStrAddr userlist uaddr =
+    let
+        gotSingleUserFromList =
+            singleUserInListStrAddr userlist uaddr
     in
     if gotSingleUserFromList.ethaddress == "" then
         False
@@ -99,6 +114,11 @@ gotUserFromUserList userList uaddr =
 singleUserInList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
 singleUserInList userlist uaddr =
     gotUserFromUserList userlist uaddr
+
+
+singleUserInListStrAddr : List SR.Types.User -> String -> SR.Types.User
+singleUserInListStrAddr userlist uaddr =
+    gotUserFromUserListStrAddress userlist uaddr
 
 
 isUserSelectedOwnerOfRanking : SR.Types.RankingInfo -> List SR.Types.RankingInfo -> SR.Types.User -> Bool
