@@ -64,7 +64,7 @@ main =
 
 type Model
     = WalletOps SR.Types.WalletState SR.Types.AllLists SR.Types.AppInfo SR.Types.UIState TxRecord
-    | UserOps SR.Types.AllLists SR.Types.AppInfo SR.Types.UIState TxRecord
+      --| UserOps SR.Types.AllLists SR.Types.AppInfo SR.Types.UIState TxRecord
     | RankingOps SR.Types.AllLists SR.Types.AppInfo SR.Types.UIState TxRecord
     | Failure String
 
@@ -218,96 +218,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                 _ ->
                     ( Failure "WalletState failure", Cmd.none )
-
-        UserOps allLists appInfo uiState txRec ->
-            case msgOfTransitonThatAlreadyHappened of
-                TimeUpdated posixTime ->
-                    let
-                        _ =
-                            Debug.log "posixtime" posixTime
-                    in
-                    ( currentmodel, Cmd.none )
-
-                UsersReceived userList ->
-                    let
-                        userLAddedToAllLists =
-                            { allLists | users = Utils.MyUtils.extractUsersFromWebData userList }
-
-                        _ =
-                            Debug.log "isUserInList" SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress
-                    in
-                    if SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress then
-                        let
-                            _ =
-                                Debug.log "isUserInList" SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress
-                        in
-                        ( updateOnUserListReceived currentmodel userLAddedToAllLists.users, gotRankingList )
-
-                    else
-                        let
-                            _ =
-                                Debug.log "isUserInList" SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress
-                        in
-                        ( updateOnUserListReceived currentmodel userLAddedToAllLists.users, Cmd.none )
-
-                NewUserNameInputChg namefield ->
-                    ( handleNewUserInputs currentmodel (NewUserNameInputChg namefield), Cmd.none )
-
-                NewUserDescInputChg namefield ->
-                    ( handleNewUserInputs currentmodel (NewUserDescInputChg namefield), Cmd.none )
-
-                NewUserEmailInputChg namefield ->
-                    ( handleNewUserInputs currentmodel (NewUserEmailInputChg namefield), Cmd.none )
-
-                NewUserMobileInputChg namefield ->
-                    ( handleNewUserInputs currentmodel (NewUserMobileInputChg namefield), Cmd.none )
-
-                NewUserRequested userInfo ->
-                    let
-                        txParams =
-                            { to = txRec.account
-                            , from = txRec.account
-                            , gas = Nothing
-                            , gasPrice = Just <| Eth.Units.gwei 4
-                            , value = Just <| Eth.Units.gwei 1
-                            , data = Nothing
-                            , nonce = Nothing
-                            }
-
-                        ( newSentry, sentryCmd ) =
-                            Eth.Sentry.Tx.customSend
-                                txRec.txSentry
-                                { onSign = Just WatchTxHash
-                                , onBroadcast = Just WatchTx
-                                , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
-                                }
-                                txParams
-
-                        -- we need to send a user obj to createNewUser, not just the addr
-                        -- because it will update the other input details on the obj
-                        userWithUpdatedAddr =
-                            { userInfo | ethaddress = userInfo.ethaddress }
-
-                        newAppInfo =
-                            { appInfo | user = userWithUpdatedAddr }
-                    in
-                    ( RankingOps allLists newAppInfo SR.Types.UIRenderAllRankings { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewUser allLists.users userWithUpdatedAddr, gotRankingList ] )
-
-                TxSentryMsg subMsg ->
-                    let
-                        ( subModel, subCmd ) =
-                            Eth.Sentry.Tx.update subMsg txRec.txSentry
-                    in
-                    ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo uiState { txRec | txSentry = subModel }, subCmd )
-
-                _ ->
-                    let
-                        _ =
-                            Debug.log "UserOps: msgOfTransitonThatAlreadyHappened" msgOfTransitonThatAlreadyHappened
-                    in
-                    --todo: better logic. This should go to failure model rather than fall thru to UserOps
-                    -- but currently logic needs to do this
-                    ( UserOps allLists appInfo SR.Types.UICreateNewUser txRec, Cmd.none )
 
         RankingOps allLists appInfo uiState txRec ->
             case msgOfTransitonThatAlreadyHappened of
@@ -567,13 +477,94 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 PollBlock (Err error) ->
                     ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo uiState txRec, Cmd.none )
 
+                -- old UserOps
+                TimeUpdated posixTime ->
+                    let
+                        _ =
+                            Debug.log "posixtime" posixTime
+                    in
+                    ( currentmodel, Cmd.none )
+
+                UsersReceived userList ->
+                    let
+                        userLAddedToAllLists =
+                            { allLists | users = Utils.MyUtils.extractUsersFromWebData userList }
+
+                        _ =
+                            Debug.log "isUserInList" SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress
+                    in
+                    if SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress then
+                        let
+                            _ =
+                                Debug.log "isUserInList" SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress
+                        in
+                        ( updateOnUserListReceived currentmodel userLAddedToAllLists.users, gotRankingList )
+
+                    else
+                        let
+                            _ =
+                                Debug.log "isUserInList" SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress
+                        in
+                        ( updateOnUserListReceived currentmodel userLAddedToAllLists.users, Cmd.none )
+
+                NewUserNameInputChg namefield ->
+                    ( handleNewUserInputs currentmodel (NewUserNameInputChg namefield), Cmd.none )
+
+                NewUserDescInputChg namefield ->
+                    ( handleNewUserInputs currentmodel (NewUserDescInputChg namefield), Cmd.none )
+
+                NewUserEmailInputChg namefield ->
+                    ( handleNewUserInputs currentmodel (NewUserEmailInputChg namefield), Cmd.none )
+
+                NewUserMobileInputChg namefield ->
+                    ( handleNewUserInputs currentmodel (NewUserMobileInputChg namefield), Cmd.none )
+
+                NewUserRequested userInfo ->
+                    let
+                        txParams =
+                            { to = txRec.account
+                            , from = txRec.account
+                            , gas = Nothing
+                            , gasPrice = Just <| Eth.Units.gwei 4
+                            , value = Just <| Eth.Units.gwei 1
+                            , data = Nothing
+                            , nonce = Nothing
+                            }
+
+                        ( newSentry, sentryCmd ) =
+                            Eth.Sentry.Tx.customSend
+                                txRec.txSentry
+                                { onSign = Just WatchTxHash
+                                , onBroadcast = Just WatchTx
+                                , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                                }
+                                txParams
+
+                        -- we need to send a user obj to createNewUser, not just the addr
+                        -- because it will update the other input details on the obj
+                        userWithUpdatedAddr =
+                            { userInfo | ethaddress = userInfo.ethaddress }
+
+                        newAppInfo =
+                            { appInfo | user = userWithUpdatedAddr }
+                    in
+                    ( RankingOps allLists newAppInfo SR.Types.UIRenderAllRankings { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewUser allLists.users userWithUpdatedAddr, gotRankingList ] )
+
                 _ ->
                     let
                         _ =
-                            Debug.log "RankingOps fall thru msg" msgOfTransitonThatAlreadyHappened
+                            Debug.log "RankingOps: msgOfTransitonThatAlreadyHappened" msgOfTransitonThatAlreadyHappened
                     in
-                    ( Failure <| "Fall thru in RankingOps: ", Cmd.none )
+                    --todo: better logic. This should go to failure model rather than fall thru to UserOps
+                    -- but currently logic needs to do this
+                    ( RankingOps allLists appInfo SR.Types.UICreateNewUser txRec, Cmd.none )
 
+        -- _ ->
+        --     let
+        --         _ =
+        --             Debug.log "RankingOps fall thru msg" msgOfTransitonThatAlreadyHappened
+        --     in
+        --     ( Failure <| "Fall thru in RankingOps: ", Cmd.none )
         Failure str ->
             ( Failure <| "Model failure in RankingOps: " ++ str, Cmd.none )
 
@@ -746,10 +737,10 @@ handleWalletStateOpenedAndOperational msg model =
             case msg of
                 WalletStatus walletSentry_ ->
                     if appInfo.user.ethaddress == "" then
-                        ( UserOps allLists appInfo SR.Types.UICreateNewUser emptyTxRecord, Cmd.none )
+                        ( RankingOps allLists appInfo SR.Types.UICreateNewUser emptyTxRecord, Cmd.none )
 
                     else
-                        ( UserOps allLists appInfo SR.Types.UILoading emptyTxRecord, gotUserList )
+                        ( RankingOps allLists appInfo SR.Types.UILoading emptyTxRecord, gotUserList )
 
                 PollBlock (Ok blockNumber) ->
                     ( RankingOps allLists appInfo SR.Types.UIRenderAllRankings txRec, Cmd.none )
@@ -985,10 +976,10 @@ handleGotUser model uaddr =
                     Debug.log "newUserWithAddr" newUserWithAddr.ethaddress
             in
             if newUserWithAddr.ethaddress == "" then
-                UserOps SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UICreateNewUser emptyTxRecord
+                RankingOps SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UICreateNewUser emptyTxRecord
 
             else
-                UserOps SR.Defaults.emptyAllLists newAppInfo SR.Types.UILoading emptyTxRecord
+                RankingOps SR.Defaults.emptyAllLists newAppInfo SR.Types.UILoading emptyTxRecord
 
         _ ->
             Failure "handleGotUser"
@@ -1261,7 +1252,7 @@ createNewPlayerListWithNewChallengeAndUpdateJsonBin model =
 handleNewUserInputs : Model -> Msg -> Model
 handleNewUserInputs currentmodel msg =
     case currentmodel of
-        UserOps allLists appInfo uiState txRec ->
+        RankingOps allLists appInfo uiState txRec ->
             case msg of
                 NewUserNameInputChg namefield ->
                     let
@@ -1277,7 +1268,7 @@ handleNewUserInputs currentmodel msg =
                         _ =
                             Debug.log "currentUformfield" .username
                     in
-                    UserOps allLists newAppInfo SR.Types.UICreateNewUser txRec
+                    RankingOps allLists newAppInfo SR.Types.UICreateNewUser txRec
 
                 NewUserDescInputChg descfield ->
                     let
@@ -1290,7 +1281,7 @@ handleNewUserInputs currentmodel msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    UserOps allLists newAppInfo SR.Types.UICreateNewUser txRec
+                    RankingOps allLists newAppInfo SR.Types.UICreateNewUser txRec
 
                 NewUserEmailInputChg emailfield ->
                     let
@@ -1303,7 +1294,7 @@ handleNewUserInputs currentmodel msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    UserOps allLists newAppInfo SR.Types.UICreateNewUser txRec
+                    RankingOps allLists newAppInfo SR.Types.UICreateNewUser txRec
 
                 NewUserMobileInputChg mobilefield ->
                     let
@@ -1316,7 +1307,7 @@ handleNewUserInputs currentmodel msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    UserOps allLists newAppInfo SR.Types.UICreateNewUser txRec
+                    RankingOps allLists newAppInfo SR.Types.UICreateNewUser txRec
 
                 _ ->
                     Failure "NewUserNameInputChg"
@@ -1358,7 +1349,7 @@ updateSelectedRankingOnChallenge allLists appInfo =
 updateOnUserListReceived : Model -> List SR.Types.User -> Model
 updateOnUserListReceived model userList =
     case model of
-        UserOps allLists appInfo uiState txRec ->
+        RankingOps allLists appInfo uiState txRec ->
             let
                 gotUserToUpdateAddr =
                     SR.ListOps.singleUserInListStrAddr userList appInfo.user.ethaddress
@@ -1380,10 +1371,10 @@ updateOnUserListReceived model userList =
                 --     _ =
                 --         Debug.log "no user" uaddr
                 -- in
-                UserOps newAllLists userUpdatedInAppInfo SR.Types.UICreateNewUser txRec
+                RankingOps newAllLists userUpdatedInAppInfo SR.Types.UICreateNewUser txRec
 
         _ ->
-            Failure "should be in UserOps"
+            Failure "should be in RankingOps"
 
 
 updateSelectedRankingPlayerList : Model -> List SR.Types.Player -> Model
@@ -1459,34 +1450,6 @@ view model =
                 SR.Types.UIChallenge ->
                     displayChallengeBeforeConfirmView model
 
-                _ ->
-                    greetingView <| "Wrong variant"
-
-        WalletOps walletState allLists appInfo uiState txRec ->
-            case walletState of
-                SR.Types.WalletStateUnknown ->
-                    greetingView <| "Wallet State unknown"
-
-                SR.Types.Missing ->
-                    greetingView "MissingWalletInstructions"
-
-                SR.Types.WalletStateLocked ->
-                    greetingView "OpenWalletInstructions"
-
-                SR.Types.WalletStateAwaitOpening ->
-                    greetingView "OpenWalletInstructions"
-
-                SR.Types.WalletOpenedWithoutUserCheck uaddr ->
-                    greetingView "User unchecked "
-
-                SR.Types.WalletOpenedAndOperational ->
-                    greetingView "WalletOpenedAndOperational"
-
-                SR.Types.WalletWaitingForTransactionReceipt ->
-                    greetingView "Please wait while the transaction is mined"
-
-        UserOps allLists appInfo uiState txRec ->
-            case uiState of
                 SR.Types.UILoading ->
                     greetingView <| "Loading ..."
 
@@ -1516,6 +1479,31 @@ refresh the browser"""
                 _ ->
                     greetingView <| "Loading ... "
 
+        WalletOps walletState allLists appInfo uiState txRec ->
+            case walletState of
+                SR.Types.WalletStateUnknown ->
+                    greetingView <| "Wallet State unknown"
+
+                SR.Types.Missing ->
+                    greetingView "MissingWalletInstructions"
+
+                SR.Types.WalletStateLocked ->
+                    greetingView "OpenWalletInstructions"
+
+                SR.Types.WalletStateAwaitOpening ->
+                    greetingView "OpenWalletInstructions"
+
+                SR.Types.WalletOpenedWithoutUserCheck uaddr ->
+                    greetingView "User unchecked "
+
+                SR.Types.WalletOpenedAndOperational ->
+                    greetingView "WalletOpenedAndOperational"
+
+                SR.Types.WalletWaitingForTransactionReceipt ->
+                    greetingView "Please wait while the transaction is mined"
+
+        -- RankingOps allLists appInfo uiState txRec ->
+        --     case uiState of
         Failure str ->
             greetingView <| "Model failure in view: " ++ str
 
@@ -1980,7 +1968,7 @@ newuserConfirmPanel user =
 inputNewUser : Model -> Element Msg
 inputNewUser model =
     case model of
-        UserOps allLists appInfo uiState txRec ->
+        RankingOps allLists appInfo uiState txRec ->
             let
                 isValidated =
                     if String.length appInfo.user.username > 5 && String.length appInfo.user.username < 9 then
@@ -2129,7 +2117,7 @@ selectedUserIsNeitherOwnerNorPlayerView model =
 inputNewUserview : Model -> Html Msg
 inputNewUserview model =
     case model of
-        UserOps allLists appInfo uiState txRec ->
+        RankingOps allLists appInfo uiState txRec ->
             Framework.responsiveLayout [] <|
                 Element.column
                     Framework.container
@@ -2233,9 +2221,6 @@ subscriptions model =
                 [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
                 , Eth.Sentry.Tx.listen txRec.txSentry
                 ]
-
-        UserOps _ _ _ _ ->
-            Sub.none
 
         RankingOps _ _ _ _ ->
             Sub.none
