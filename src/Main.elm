@@ -187,11 +187,15 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 SR.Types.WalletStateUnknown ->
                     let
                         _ =
-                            Debug.log "WalletStateUnknown appInfo" appInfo
+                            Debug.log "WalletStateUnknown" "currently"
                     in
                     handleWalletStateUnknown msgOfTransitonThatAlreadyHappened currentmodel
 
                 SR.Types.WalletStateLocked ->
+                    let
+                        _ =
+                            Debug.log "WalletStateLocked" msgOfTransitonThatAlreadyHappened
+                    in
                     handleWalletStateLocked msgOfTransitonThatAlreadyHappened
 
                 SR.Types.WalletStateAwaitOpening ->
@@ -595,8 +599,14 @@ handleWalletStateUnknown msg model =
 handleWalletStateLocked : Msg -> ( Model, Cmd Msg )
 handleWalletStateLocked msg =
     case msg of
-        OpenWalletInstructions ->
+        WalletStatus walletSentry_ ->
             ( WalletOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
+
+        PollBlock (Ok blockNumber) ->
+            ( AppOps SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
+
+        PollBlock (Err error) ->
+            ( AppOps SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
 
         _ ->
             ( Failure "handleWalletStateLocked"
