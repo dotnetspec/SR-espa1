@@ -1563,10 +1563,10 @@ addPlayerInfoToAnyElText model player =
         AppOps allLists appInfo uiState txRec ->
             let
                 playerAsUser =
-                    SR.ListOps.gotUserFromUserListStrAddress allLists.users player.address
+                    SR.ListOps.gotUserFromUserList allLists.users player.address
 
                 challengerAsUser =
-                    SR.ListOps.gotUserFromUserListStrAddress allLists.users player.challengeraddress
+                    SR.ListOps.gotUserFromUserList allLists.users player.challengeraddress
 
                 isChallenged =
                     if challengerAsUser.username /= "" then
@@ -1798,10 +1798,10 @@ confirmChallengebutton model =
         AppOps allLists appInfo uiState txRec ->
             let
                 playerAsUser =
-                    SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.player.address
+                    SR.ListOps.gotUserFromUserList allLists.users appInfo.player.address
 
                 challengerAsUser =
-                    SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.challenger.address
+                    SR.ListOps.gotUserFromUserList allLists.users appInfo.challenger.address
             in
             Element.column Grid.section <|
                 [ Element.el Heading.h6 <| Element.text <| " Your opponent's details: "
@@ -1840,10 +1840,10 @@ confirmResultbutton model =
         AppOps allLists appInfo uiState txRec ->
             let
                 playerAsUser =
-                    SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.player.address
+                    SR.ListOps.gotUserFromUserList allLists.users appInfo.player.address
 
                 challengerAsUser =
-                    SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.challenger.address
+                    SR.ListOps.gotUserFromUserList allLists.users appInfo.challenger.address
             in
             Element.column Grid.section <|
                 [ Element.column (Card.simple ++ Grid.simple) <|
@@ -2134,7 +2134,7 @@ displayChallengeBeforeConfirmView model =
         AppOps allLists appInfo uiState txRec ->
             let
                 playerAsUser =
-                    SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.player.address
+                    SR.ListOps.gotUserFromUserList allLists.users appInfo.player.address
             in
             Framework.responsiveLayout [] <|
                 Element.column
@@ -2153,7 +2153,7 @@ displayResultBeforeConfirmView model =
         AppOps allLists appInfo uiState txRec ->
             let
                 playerAsUser =
-                    SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.player.address
+                    SR.ListOps.gotUserFromUserList allLists.users appInfo.player.address
             in
             Framework.responsiveLayout [] <|
                 Element.column
@@ -2172,7 +2172,7 @@ txErrorView model =
         AppOps allLists appInfo uiState txRec ->
             let
                 playerAsUser =
-                    SR.ListOps.gotUserFromUserListStrAddress allLists.users appInfo.player.address
+                    SR.ListOps.gotUserFromUserList allLists.users appInfo.player.address
             in
             Framework.responsiveLayout [] <|
                 Element.column

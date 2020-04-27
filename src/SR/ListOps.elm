@@ -1,15 +1,17 @@
 module SR.ListOps exposing
     ( filterSelectedRankingOutOfGlobalList
     , gotUserFromUserList
-    , gotUserFromUserListStrAddress
-    , gotUserListFromRemData
-    , isUserInList
+    ,  gotUserListFromRemData
+       --, isUserInList
+
     , isUserInListStrAddr
     , isUserMemberOfSelectedRanking
     , isUserSelectedOwnerOfRanking
-    , ownerValidatedRankingList
-    , singleUserInList
+    ,  ownerValidatedRankingList
+       --, singleUserInList
+
     , singleUserInListStrAddr
+    , validatedUserList
     )
 
 import Eth.Types
@@ -32,17 +34,17 @@ ownerValidatedRankingList lrankinginfo =
     lrankinginfo
 
 
-isUserInList : List SR.Types.User -> Eth.Types.Address -> Bool
-isUserInList userlist uaddr =
-    let
-        gotSingleUserFromList =
-            singleUserInList userlist uaddr
-    in
-    if gotSingleUserFromList.ethaddress == "" then
-        False
 
-    else
-        True
+-- isUserInList : List SR.Types.User -> Eth.Types.Address -> Bool
+-- isUserInList userlist uaddr =
+--     let
+--         gotSingleUserFromList =
+--             singleUserInList userlist uaddr
+--     in
+--     if gotSingleUserFromList.ethaddress == "" then
+--         False
+--     else
+--         True
 
 
 isUserInListStrAddr : List SR.Types.User -> String -> Bool
@@ -79,29 +81,13 @@ isUserMemberOfSelectedRanking lplayer user =
                 False
 
 
-gotUserFromUserListStrAddress : List SR.Types.User -> String -> SR.Types.User
-gotUserFromUserListStrAddress userList uaddr =
-    let
-        existingUser =
-            List.head <|
-                List.filter (\r -> r.ethaddress == (String.toLower <| uaddr))
-                    userList
-    in
-    case existingUser of
-        Nothing ->
-            SR.Defaults.emptyUser
-
-        Just a ->
-            a
-
-
-gotUserFromUserList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
+gotUserFromUserList : List SR.Types.User -> String -> SR.Types.User
 gotUserFromUserList userList uaddr =
     let
         existingUser =
             List.head <|
-                List.filter (\r -> r.ethaddress == (String.toLower <| Eth.Utils.addressToString <| uaddr))
-                    userList
+                List.filter (\r -> (String.toLower <| r.ethaddress) == (String.toLower <| uaddr))
+                    (validatedUserList userList)
     in
     case existingUser of
         Nothing ->
@@ -111,14 +97,28 @@ gotUserFromUserList userList uaddr =
             a
 
 
-singleUserInList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
-singleUserInList userlist uaddr =
-    gotUserFromUserList userlist uaddr
+
+-- gotUserFromUserList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
+-- gotUserFromUserList userList uaddr =
+--     let
+--         existingUser =
+--             List.head <|
+--                 List.filter (\r -> r.ethaddress == (String.toLower <| Eth.Utils.addressToString <| uaddr))
+--                     userList
+--     in
+--     case existingUser of
+--         Nothing ->
+--             SR.Defaults.emptyUser
+--         Just a ->
+--             a
+-- singleUserInList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
+-- singleUserInList userlist uaddr =
+--     gotUserFromUserList userlist uaddr
 
 
 singleUserInListStrAddr : List SR.Types.User -> String -> SR.Types.User
 singleUserInListStrAddr userlist uaddr =
-    gotUserFromUserListStrAddress userlist uaddr
+    gotUserFromUserList userlist uaddr
 
 
 isUserSelectedOwnerOfRanking : SR.Types.RankingInfo -> List SR.Types.RankingInfo -> SR.Types.User -> Bool
@@ -217,3 +217,19 @@ gotUserListFromRemData userList =
                 Http.BadBody s ->
                     [ SR.Defaults.emptyUser
                     ]
+
+
+validatedUserList : List SR.Types.User -> List SR.Types.User
+validatedUserList luser =
+    List.filterMap
+        isValidUserAddrInList
+        luser
+
+
+isValidUserAddrInList : SR.Types.User -> Maybe SR.Types.User
+isValidUserAddrInList user =
+    if Eth.Utils.isAddress user.ethaddress then
+        Just user
+
+    else
+        Nothing
