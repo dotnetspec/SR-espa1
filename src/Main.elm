@@ -1,4 +1,4 @@
-module Main exposing (main)
+module Main exposing (Model, Msg, init, main, update, view)
 
 import Browser
 import Element exposing (Element)
@@ -2039,10 +2039,12 @@ inputNewLadder newladder =
 
 globalResponsiveview : List SR.Types.RankingInfo -> SR.Types.User -> Html Msg
 globalResponsiveview rankingList user =
-    Framework.responsiveLayout [] <|
+    Framework.responsiveLayout
+        []
+    <|
         Element.column
             Framework.container
-            [ Element.el Heading.h5 <| Element.text ("SportRank - " ++ user.username)
+            [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <| Element.text "SportRank - " --++ user.username)
             , globalhomebutton
             , rankingbuttons rankingList
             ]
