@@ -1,4 +1,4 @@
-module Main exposing (Model, Msg, init, main, update, view)
+module Main exposing (Model, Msg(..), init, main, update, view)
 
 import Browser
 import Element exposing (Element)
@@ -1684,7 +1684,7 @@ globalhomebutton =
                     { onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Home"
                     }
-                , Input.button (Button.simple ++ Color.info) <|
+                , Input.button (Button.simple ++ Color.info ++ [ Element.htmlAttribute (Html.Attributes.id "createnewladderbtn") ]) <|
                     { onPress = Just <| ChangedUIStateToCreateNew
                     , label = Element.text "Create New"
                     }
