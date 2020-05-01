@@ -487,22 +487,19 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 UsersReceived userList ->
                     let
                         userLAddedToAllLists =
-                            { allLists | users = Utils.MyUtils.extractUsersFromWebData userList }
-
-                        _ =
-                            Debug.log "isUserInList" SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress
+                            { allLists | users = SR.ListOps.validatedUserList <| Utils.MyUtils.extractUsersFromWebData userList }
                     in
                     if SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress then
                         let
                             _ =
-                                Debug.log "isUserInList" SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress
+                                Debug.log "isUserInList" (SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress)
                         in
                         ( updateOnUserListReceived currentmodel userLAddedToAllLists.users, gotRankingList )
 
                     else
                         let
                             _ =
-                                Debug.log "isUserInList" SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress
+                                Debug.log "isUserInList" (SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress)
                         in
                         ( updateOnUserListReceived currentmodel userLAddedToAllLists.users, Cmd.none )
 
@@ -635,7 +632,6 @@ handleWalletStateAwaitOpening msg model =
                                     in
                                     handleWalletStateOpenedAndOperational msg (handleGotUser model uaddr)
 
-                        --, gotUserList
                         _ ->
                             ( Failure "handleWalletStateAwaitOpening"
                             , Cmd.none
@@ -1334,14 +1330,18 @@ updateOnUserListReceived model userList =
                 newAllLists =
                     { allLists | users = userList }
             in
-            if SR.ListOps.isUserInListStrAddr userList appInfo.user.ethaddress then
+            if SR.ListOps.isUserInListStrAddr userList userUpdatedInAppInfo.user.ethaddress then
+                let
+                    _ =
+                        Debug.log "have user" userUpdatedInAppInfo.user.ethaddress
+                in
                 AppOps newAllLists userUpdatedInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord
 
             else
-                -- let
-                --     _ =
-                --         Debug.log "no user" uaddr
-                -- in
+                let
+                    _ =
+                        Debug.log "no user" appInfo.user.ethaddress
+                in
                 AppOps newAllLists userUpdatedInAppInfo SR.Types.UICreateNewUser txRec
 
         _ ->
@@ -2040,7 +2040,7 @@ globalResponsiveview rankingList user =
     <|
         Element.column
             Framework.container
-            [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <| Element.text "SportRank - " --++ user.username)
+            [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <| Element.text ("SportRank - " ++ user.username)
             , globalhomebutton
             , rankingbuttons rankingList
             ]

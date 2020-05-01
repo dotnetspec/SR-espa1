@@ -25,6 +25,13 @@ ownerValidatedRankingList lrankinginfo =
 
 isValidOwnerAddress : SR.Types.RankingInfo -> Bool
 isValidOwnerAddress rankInfo =
+    let
+        _ =
+            Debug.log "rankInfo.rankingowneraddr" rankInfo.rankingowneraddr
+
+        _ =
+            Debug.log "isValid addr" (Eth.Utils.isAddress rankInfo.rankingowneraddr)
+    in
     if Eth.Utils.isAddress rankInfo.rankingowneraddr then
         True
 
