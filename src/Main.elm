@@ -1,4 +1,4 @@
-module Main exposing (Model, Msg(..), init, main, update, view)
+module Main exposing (Model(..), Msg(..), emptyTxRecord, init, main, update, view)
 
 import Browser
 import Element exposing (Element)
@@ -159,18 +159,18 @@ type Msg
     | LadderNameInputChg String
     | LadderDescInputChg String
     | ClickedNewRankingRequested SR.Types.RankingInfo
-    | ChangedUIStateToCreateNew
+    | ChangedUIStateToCreateNewLadder
     | NewChallengeConfirmClicked
     | ChangedUIStateToEnterResult SR.Types.Player
-      -- UserOps
+      -- User/AppOps
     | UsersReceived (RemoteData.WebData (List SR.Types.User))
     | NewUserNameInputChg String
     | NewUserDescInputChg String
     | NewUserEmailInputChg String
     | NewUserMobileInputChg String
-    | NewUserRequested SR.Types.User
+    | CreateNewUserRequested SR.Types.User
     | TimeUpdated Posix
-      -- Multiple
+      --Wallet and User/App Ops
     | PollBlock (Result Http.Error Int)
     | WatchTxHash (Result String Eth.Types.TxHash)
     | WatchTx (Result String Eth.Types.Tx)
@@ -228,6 +228,9 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     let
                         addedRankingListToAllLists =
                             { allLists | globalRankings = SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata }
+
+                        _ =
+                            Debug.log "about to render all rankings " "yes"
                     in
                     ( AppOps addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
@@ -269,7 +272,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     in
                     ( AppOps allLists appInfo uiType emptyTxRecord, Cmd.none )
 
-                ChangedUIStateToCreateNew ->
+                ChangedUIStateToCreateNewLadder ->
                     let
                         rankingInfoFromModel =
                             appInfo.selectedRanking
@@ -522,7 +525,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 NewUserMobileInputChg namefield ->
                     ( handleNewUserInputs currentmodel (NewUserMobileInputChg namefield), Cmd.none )
 
-                NewUserRequested userInfo ->
+                CreateNewUserRequested userInfo ->
                     let
                         txParams =
                             { to = txRec.account
@@ -1685,7 +1688,7 @@ globalhomebutton =
                     , label = Element.text "Home"
                     }
                 , Input.button (Button.simple ++ Color.info ++ [ Element.htmlAttribute (Html.Attributes.id "createnewladderbtn") ]) <|
-                    { onPress = Just <| ChangedUIStateToCreateNew
+                    { onPress = Just <| ChangedUIStateToCreateNewLadder
                     , label = Element.text "Create New"
                     }
                 ]
@@ -1939,7 +1942,7 @@ newuserConfirmPanel user =
                     , label = Element.text "Home"
                     }
                 , Input.button (Button.simple ++ Color.info) <|
-                    { onPress = Just <| NewUserRequested user
+                    { onPress = Just <| CreateNewUserRequested user
                     , label = Element.text "Register"
                     }
                 ]
