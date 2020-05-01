@@ -185,10 +185,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
         WalletOps walletState allLists appInfo uiState txRec ->
             case walletState of
                 SR.Types.WalletStateUnknown ->
-                    let
-                        _ =
-                            Debug.log "WalletStateUnknown" "currently"
-                    in
                     handleWalletStateUnknown msgOfTransitonThatAlreadyHappened currentmodel
 
                 SR.Types.WalletStateLocked ->
@@ -228,9 +224,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     let
                         addedRankingListToAllLists =
                             { allLists | globalRankings = SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata }
-
-                        _ =
-                            Debug.log "about to render all rankings " "yes"
                     in
                     ( AppOps addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
