@@ -31,18 +31,18 @@ start =
 globalListTest : Test
 globalListTest =
     describe "SportsRank frontend"
-        [ --only <|
-          test "happy path: successful creation of home page" <|
-            \() ->
-                start
-                    |> ProgramTest.update (Main.WalletStatus Testdata.TestDefaults.simWalletSentryData)
-                    |> ProgramTest.update (Main.UsersReceived Testdata.UserTestData.usersJson)
-                    |> ProgramTest.update (Main.GotGlobalRankingsJson Testdata.GlobalTestData.globalRankingsJson)
-                    |> expectViewHas
-                        [ text "SportRank - Test1"
-                        , text "Click to continue"
-                        , text "Test 4"
-                        ]
+        [ skip <|
+            test "happy path: successful creation of home page" <|
+                \() ->
+                    start
+                        |> ProgramTest.update (Main.WalletStatus Testdata.TestDefaults.simWalletSentryData)
+                        |> ProgramTest.update (Main.UsersReceived Testdata.UserTestData.usersJson)
+                        |> ProgramTest.update (Main.GotGlobalRankingsJson Testdata.GlobalTestData.globalRankingsJson)
+                        |> expectViewHas
+                            [ text "SportRank - Test1"
+                            , text "Click to continue"
+                            , text "Test 4"
+                            ]
         ]
 
 
