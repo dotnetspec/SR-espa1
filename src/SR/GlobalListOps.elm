@@ -1,5 +1,6 @@
 module SR.GlobalListOps exposing
-    ( filterSelectedRankingOutOfGlobalList
+    ( createOwnedRankingList
+    , filterSelectedRankingOutOfGlobalList
     , gotRankingFromRankingList
     , ownerValidatedRankingList
     )
@@ -10,6 +11,7 @@ import Http
 import Internal.Types
 import RemoteData
 import SR.Defaults
+import SR.ListOps
 import SR.Types
 import Utils.MyUtils
 
@@ -80,6 +82,39 @@ filterSelectedRankingOutOfGlobalList rankingid lrankinginfo =
 
 
 --internal
+-- types
+
+
+type alias OwnedRanking =
+    { rankingInfo : SR.Types.RankingInfo
+    , userInfo : SR.Types.User
+    }
+
+
+createOwnedRankingList : List SR.Types.RankingInfo -> List SR.Types.User -> List OwnedRanking
+createOwnedRankingList lrankinfo luser =
+    let
+        newList =
+            List.map (createNewOwnedRanking luser) lrankinfo
+
+        _ =
+            Debug.log "newlist of owned" newList
+    in
+    newList
+
+
+createNewOwnedRanking : List SR.Types.User -> SR.Types.RankingInfo -> OwnedRanking
+createNewOwnedRanking luser rankingInfo =
+    let
+        userOwner =
+            SR.ListOps.gotUserFromUserList luser rankingInfo.rankingowneraddr
+
+        newOwnedRanking =
+            { rankingInfo = rankingInfo
+            , userInfo = userOwner
+            }
+    in
+    newOwnedRanking
 
 
 doesCurrentRankingIdNOTMatchId : String -> SR.Types.RankingInfo -> Maybe SR.Types.RankingInfo

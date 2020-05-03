@@ -173,9 +173,9 @@ type OpponentRelativeRank
 
 {--}
 type alias AllLists =
-    { globalRankings : List RankingInfo
+    { users : List User
+    , globalRankings : List RankingInfo
     , players : List Player
-    , users : List User
     }
 --}
 

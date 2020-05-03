@@ -224,6 +224,9 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     let
                         addedRankingListToAllLists =
                             { allLists | globalRankings = SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata }
+
+                        _ =
+                            Debug.log "createOwnedRankingList" SR.GlobalListOps.createOwnedRankingList addedRankingListToAllLists.globalRankings allLists.users
                     in
                     ( AppOps addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
