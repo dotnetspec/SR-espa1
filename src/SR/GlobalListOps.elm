@@ -1,7 +1,8 @@
 module SR.GlobalListOps exposing
-    ( createOwnedRankingList
+    ( createAllUserAsOwnerGlobalRankingList
     , filterSelectedRankingOutOfGlobalList
     , gotRankingFromRankingList
+    , gotUserOwnedGlobalRankingList
     , ownerValidatedRankingList
     )
 
@@ -91,16 +92,27 @@ type alias OwnedRanking =
     }
 
 
-createOwnedRankingList : List SR.Types.RankingInfo -> List SR.Types.User -> List OwnedRanking
-createOwnedRankingList lrankinfo luser =
-    let
-        newList =
-            List.map (createNewOwnedRanking luser) lrankinfo
+gotUserOwnedGlobalRankingList : List OwnedRanking -> SR.Types.User -> List OwnedRanking
+gotUserOwnedGlobalRankingList lownedrankings user =
+    List.filterMap
+        (isGlobalRankingOwnedByUser
+            user
+        )
+        lownedrankings
 
-        _ =
-            Debug.log "newlist of owned" newList
-    in
-    newList
+
+isGlobalRankingOwnedByUser : SR.Types.User -> OwnedRanking -> Maybe OwnedRanking
+isGlobalRankingOwnedByUser user ownedrnk =
+    if ownedrnk.userInfo.ethaddress == user.ethaddress then
+        Just ownedrnk
+
+    else
+        Nothing
+
+
+createAllUserAsOwnerGlobalRankingList : List SR.Types.RankingInfo -> List SR.Types.User -> List OwnedRanking
+createAllUserAsOwnerGlobalRankingList lrankinfo luser =
+    List.map (createNewOwnedRanking luser) lrankinfo
 
 
 createNewOwnedRanking : List SR.Types.User -> SR.Types.RankingInfo -> OwnedRanking
