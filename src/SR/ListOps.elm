@@ -34,19 +34,6 @@ ownerValidatedRankingList lrankinginfo =
     lrankinginfo
 
 
-
--- isUserInList : List SR.Types.User -> Eth.Types.Address -> Bool
--- isUserInList userlist uaddr =
---     let
---         gotSingleUserFromList =
---             singleUserInList userlist uaddr
---     in
---     if gotSingleUserFromList.ethaddress == "" then
---         False
---     else
---         True
-
-
 isUserInListStrAddr : List SR.Types.User -> String -> Bool
 isUserInListStrAddr userlist uaddr =
     let

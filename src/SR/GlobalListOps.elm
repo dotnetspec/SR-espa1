@@ -1,5 +1,6 @@
 module SR.GlobalListOps exposing
     ( createAllUserAsOwnerGlobalRankingList
+    , extractRankingList
     , filterSelectedRankingOutOfGlobalList
     , gotRankingFromRankingList
     , gotUserOwnedGlobalRankingList
@@ -19,6 +20,16 @@ import Utils.MyUtils
 
 
 -- external
+
+
+extractRankingList : List SR.Types.UserRanking -> List SR.Types.RankingInfo
+extractRankingList luserranking =
+    List.map extractRanking luserranking
+
+
+extractRanking : SR.Types.UserRanking -> SR.Types.RankingInfo
+extractRanking uranking =
+    uranking.rankingInfo
 
 
 ownerValidatedRankingList : List SR.Types.RankingInfo -> List SR.Types.RankingInfo
@@ -84,15 +95,13 @@ filterSelectedRankingOutOfGlobalList rankingid lrankinginfo =
 
 --internal
 -- types
+-- type alias SR.Types.UserRanking =
+--     { rankingInfo : SR.Types.RankingInfo
+--     , userInfo : SR.Types.User
+--     }
 
 
-type alias OwnedRanking =
-    { rankingInfo : SR.Types.RankingInfo
-    , userInfo : SR.Types.User
-    }
-
-
-gotUserOwnedGlobalRankingList : List OwnedRanking -> SR.Types.User -> List OwnedRanking
+gotUserOwnedGlobalRankingList : List SR.Types.UserRanking -> SR.Types.User -> List SR.Types.UserRanking
 gotUserOwnedGlobalRankingList lownedrankings user =
     List.filterMap
         (isGlobalRankingOwnedByUser
@@ -101,7 +110,7 @@ gotUserOwnedGlobalRankingList lownedrankings user =
         lownedrankings
 
 
-isGlobalRankingOwnedByUser : SR.Types.User -> OwnedRanking -> Maybe OwnedRanking
+isGlobalRankingOwnedByUser : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
 isGlobalRankingOwnedByUser user ownedrnk =
     if ownedrnk.userInfo.ethaddress == user.ethaddress then
         Just ownedrnk
@@ -110,12 +119,12 @@ isGlobalRankingOwnedByUser user ownedrnk =
         Nothing
 
 
-createAllUserAsOwnerGlobalRankingList : List SR.Types.RankingInfo -> List SR.Types.User -> List OwnedRanking
+createAllUserAsOwnerGlobalRankingList : List SR.Types.RankingInfo -> List SR.Types.User -> List SR.Types.UserRanking
 createAllUserAsOwnerGlobalRankingList lrankinfo luser =
     List.map (createNewOwnedRanking luser) lrankinfo
 
 
-createNewOwnedRanking : List SR.Types.User -> SR.Types.RankingInfo -> OwnedRanking
+createNewOwnedRanking : List SR.Types.User -> SR.Types.RankingInfo -> SR.Types.UserRanking
 createNewOwnedRanking luser rankingInfo =
     let
         userOwner =

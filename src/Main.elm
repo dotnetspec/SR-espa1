@@ -222,11 +222,21 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
             case msgOfTransitonThatAlreadyHappened of
                 GotGlobalRankingsJson rmtrnkingdata ->
                     let
-                        addedRankingListToAllLists =
-                            { allLists | globalRankings = SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata }
+                        --addedRankingListToAllLists =
+                        -- { allLists | globalRankings =
+                        extractedList =
+                            SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata
 
+                        --}
+                        -- this was only added to get the new 'imposs' code working:
                         allGlobal =
-                            SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList addedRankingListToAllLists.globalRankings allLists.users
+                            --SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList addedRankingListToAllLists.globalRankings allLists.users
+                            SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
+
+                        addedRankingListToAllLists =
+                            { allLists
+                                | globalRankings = allGlobal
+                            }
 
                         _ =
                             Debug.log "gotUserOwnedGlobalRankingList" (SR.GlobalListOps.gotUserOwnedGlobalRankingList allGlobal appInfo.user)
@@ -255,7 +265,11 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 -- the result now is the ranking id only at this point which was pulled out by the decoder
                 SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
                     ( AppOps allLists appInfo SR.Types.CreateNewLadder emptyTxRecord
-                    , addedNewRankingListEntryInGlobal idValueFromDecoder allLists.globalRankings appInfo.selectedRanking appInfo.user.ethaddress
+                    , addedNewRankingListEntryInGlobal idValueFromDecoder
+                        allLists.globalRankings
+                        appInfo.selectedRanking
+                        appInfo.user.ethaddress
+                        allLists.users
                     )
 
                 SentUserInfoAndDecodedResponseToNewUser serverResponse ->
@@ -286,10 +300,18 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                 AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
                     let
-                        resetGlobalRankingListForAddedNewEntry =
-                            { allLists | globalRankings = Utils.MyUtils.extractRankingsFromWebData <| updatedListAfterNewEntryAddedToGlobalList }
+                        extractedList =
+                            SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData updatedListAfterNewEntryAddedToGlobalList
+
+                        allGlobal =
+                            SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
+
+                        addedRankingListToAllLists =
+                            { allLists
+                                | globalRankings = allGlobal
+                            }
                     in
-                    ( AppOps resetGlobalRankingListForAddedNewEntry appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+                    ( AppOps addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                 LadderNameInputChg namefield ->
                     let
@@ -350,6 +372,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( Failure str, Cmd.none )
 
                 PlayersReceived players ->
+                    -- current
                     ( updateSelectedRankingOnPlayersReceived currentmodel (extractAndSortPlayerList players), Cmd.none )
 
                 TxSentryMsg subMsg ->
@@ -455,7 +478,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         appInfo
                         uiState
                         txRec
-                    , deleteSelectedRankingFromGlobalList appInfo.selectedRanking.id allLists.globalRankings appInfo.user.ethaddress
+                    , deleteSelectedRankingFromGlobalList appInfo.selectedRanking.id (SR.GlobalListOps.extractRankingList allLists.globalRankings) allLists.users appInfo.user.ethaddress
                     )
 
                 ChallengeOpponentClicked opponentAsPlayer ->
@@ -463,10 +486,22 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                 DeletedRankingFromGlobalList updatedListAfterRankingDeletedFromGlobalList ->
                     let
-                        resetGlobalRankingList =
-                            { allLists | globalRankings = Utils.MyUtils.extractRankingsFromWebData <| updatedListAfterRankingDeletedFromGlobalList }
+                        extractedList =
+                            SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData updatedListAfterRankingDeletedFromGlobalList
+
+                        allGlobal =
+                            SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
+
+                        addedRankingListToAllLists =
+                            { allLists
+                                | globalRankings = allGlobal
+                            }
+
+                        -- resetGlobalRankingList =
+                        --     { allLists | globalRankings = Utils.MyUtils.extractRankingsFromWebData <| updatedListAfterRankingDeletedFromGlobalList }
                     in
-                    ( AppOps resetGlobalRankingList appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+                    --( AppOps resetGlobalRankingList appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+                    ( AppOps addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                 ClickedJoinSelected ->
                     ( currentmodel, addCurrentUserToPlayerList appInfo.selectedRanking.id allLists.players appInfo.user )
@@ -1158,7 +1193,7 @@ handleUndecided model =
 
 ensuredCorrectSelectedUI : SR.Types.AppInfo -> SR.Types.AllLists -> SR.Types.UIState
 ensuredCorrectSelectedUI appInfo allLists =
-    if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking allLists.globalRankings appInfo.user then
+    if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking (SR.GlobalListOps.extractRankingList allLists.globalRankings) appInfo.user then
         SR.Types.UISelectedRankingUserIsOwner
 
     else if SR.ListOps.isUserMemberOfSelectedRanking allLists.players appInfo.user then
@@ -1416,7 +1451,7 @@ view model =
                     selectedUserIsNeitherOwnerNorPlayerView model
 
                 SR.Types.UIRenderAllRankings ->
-                    globalResponsiveview allLists.globalRankings appInfo.user
+                    globalResponsiveview (SR.GlobalListOps.extractRankingList allLists.globalRankings) appInfo.user
 
                 SR.Types.UIEnterResult ->
                     displayResultBeforeConfirmView model
@@ -1714,8 +1749,8 @@ selectedhomebuttons =
         ]
 
 
-selecteduserIsOwnerhomebutton : List SR.Types.RankingInfo -> SR.Types.User -> Element Msg
-selecteduserIsOwnerhomebutton rankingList user =
+selecteduserIsOwnerhomebutton : SR.Types.User -> Element Msg
+selecteduserIsOwnerhomebutton user =
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
@@ -1735,8 +1770,8 @@ selecteduserIsOwnerhomebutton rankingList user =
         ]
 
 
-selecteduserIsPlayerHomebutton : List SR.Types.RankingInfo -> SR.Types.User -> Element Msg
-selecteduserIsPlayerHomebutton rankingList user =
+selecteduserIsPlayerHomebutton : SR.Types.User -> Element Msg
+selecteduserIsPlayerHomebutton user =
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
@@ -1769,8 +1804,8 @@ selecteduserIsNeitherPlayerNorOwnerHomebutton =
         ]
 
 
-newrankinhomebutton : List SR.Types.RankingInfo -> SR.Types.User -> SR.Types.RankingInfo -> Element Msg
-newrankinhomebutton rankingList user rnkInfo =
+newrankinhomebutton : SR.Types.User -> SR.Types.RankingInfo -> Element Msg
+newrankinhomebutton user rnkInfo =
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
@@ -2060,7 +2095,7 @@ selectedUserIsOwnerView model =
                 Element.column
                     Framework.container
                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ appInfo.user.username
-                    , selecteduserIsOwnerhomebutton allLists.globalRankings appInfo.user
+                    , selecteduserIsOwnerhomebutton appInfo.user
                     , playerbuttons model
                     ]
 
@@ -2076,7 +2111,7 @@ selectedUserIsPlayerView model =
                 Element.column
                     Framework.container
                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ appInfo.user.username
-                    , selecteduserIsPlayerHomebutton allLists.globalRankings appInfo.user
+                    , selecteduserIsPlayerHomebutton appInfo.user
                     , playerbuttons model
                     ]
 
@@ -2124,7 +2159,7 @@ inputNewLadderview model =
                 Element.column
                     Framework.container
                     [ Element.el Heading.h4 <| Element.text "Create New Ladder Ranking"
-                    , newrankinhomebutton allLists.globalRankings appInfo.user appInfo.selectedRanking
+                    , newrankinhomebutton appInfo.user appInfo.selectedRanking
                     , inputNewLadder appInfo.selectedRanking
                     ]
 
@@ -2409,8 +2444,8 @@ jsonEncodeNewSelectedRankingPlayerList lplayers =
     encodedList
 
 
-addedNewRankingListEntryInGlobal : RemoteData.WebData SR.Types.RankingId -> List SR.Types.RankingInfo -> SR.Types.RankingInfo -> String -> Cmd Msg
-addedNewRankingListEntryInGlobal newrankingid lrankingInfo rnkInfo rankingowneraddress =
+addedNewRankingListEntryInGlobal : RemoteData.WebData SR.Types.RankingId -> List SR.Types.UserRanking -> SR.Types.RankingInfo -> String -> List SR.Types.User -> Cmd Msg
+addedNewRankingListEntryInGlobal newrankingid lrankingInfo rnkInfo rankingowneraddress lusers =
     let
         _ =
             Debug.log "rankingowneraddress" rankingowneraddress
@@ -2423,8 +2458,13 @@ addedNewRankingListEntryInGlobal newrankingid lrankingInfo rnkInfo rankingownera
             , rankingowneraddr = rankingowneraddress
             }
 
+        newOtherRankingInfo =
+            { rankingInfo = newRankingInfo
+            , userInfo = SR.ListOps.gotUserFromUserList lusers rankingowneraddress
+            }
+
         globalListWithJsonObjAdded =
-            newRankingInfo :: lrankingInfo
+            newOtherRankingInfo :: lrankingInfo
     in
     --AddedNewRankingToGlobalList is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
@@ -2442,9 +2482,12 @@ addedNewRankingListEntryInGlobal newrankingid lrankingInfo rnkInfo rankingownera
         }
 
 
-jsonEncodeNewGlobalRankingList : List SR.Types.RankingInfo -> Json.Encode.Value
-jsonEncodeNewGlobalRankingList lrankingInfo =
+jsonEncodeNewGlobalRankingList : List SR.Types.UserRanking -> Json.Encode.Value
+jsonEncodeNewGlobalRankingList lotherrankingInfo =
     let
+        newRankingInfoList =
+            SR.GlobalListOps.extractRankingList lotherrankingInfo
+
         encodeAglobalRankingObj : SR.Types.RankingInfo -> Json.Encode.Value
         encodeAglobalRankingObj rankingInfo =
             Json.Encode.object
@@ -2456,7 +2499,7 @@ jsonEncodeNewGlobalRankingList lrankingInfo =
                 ]
 
         encodedList =
-            Json.Encode.list encodeAglobalRankingObj lrankingInfo
+            Json.Encode.list encodeAglobalRankingObj newRankingInfoList
     in
     encodedList
 
@@ -2532,11 +2575,14 @@ deleteSelectedRankingFromJsonBin rankingId =
         }
 
 
-deleteSelectedRankingFromGlobalList : String -> List SR.Types.RankingInfo -> String -> Cmd Msg
-deleteSelectedRankingFromGlobalList rankingId lrankingInfo rankingowneraddress =
+deleteSelectedRankingFromGlobalList : String -> List SR.Types.RankingInfo -> List SR.Types.User -> String -> Cmd Msg
+deleteSelectedRankingFromGlobalList rankingId lrankingInfo luser rankingowneraddress =
     let
         globalListWithDeletedRankingInfoRemoved =
             SR.ListOps.filterSelectedRankingOutOfGlobalList rankingId lrankingInfo
+
+        newUserRankingList =
+            SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList globalListWithDeletedRankingInfoRemoved luser
     in
     --DeletedRankingFromGlobalList is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
@@ -2544,7 +2590,8 @@ deleteSelectedRankingFromGlobalList rankingId lrankingInfo rankingowneraddress =
     -- the Decoder decodes what comes back in the response
     Http.request
         { body =
-            Http.jsonBody <| jsonEncodeNewGlobalRankingList globalListWithDeletedRankingInfoRemoved
+            --Http.jsonBody <| jsonEncodeNewGlobalRankingList globalListWithDeletedRankingInfoRemoved
+            Http.jsonBody <| jsonEncodeNewGlobalRankingList newUserRankingList
         , expect = Http.expectJson (RemoteData.fromResult >> DeletedRankingFromGlobalList) SR.Decode.decodeNewRankingListServerResponse
         , headers = [ SR.Defaults.secretKey, SR.Defaults.globalBinName, SR.Defaults.globalContainerId ]
         , method = "PUT"
