@@ -32,6 +32,7 @@ import SR.Constants
 import SR.Decode
 import SR.Defaults
 import SR.Elements
+import SR.Encode
 import SR.GlobalListOps
 import SR.ListOps
 import SR.PlayerListOps
@@ -156,6 +157,7 @@ type Msg
     | ChallengeOpponentClicked SR.Types.Player
     | ClickedJoinSelected
     | ReturnFromPlayerListUpdate (RemoteData.WebData (List SR.Types.Player))
+    | ReturnFromUserListUpdate (RemoteData.WebData (List SR.Types.User))
     | LadderNameInputChg String
     | LadderDescInputChg String
     | ClickedNewRankingRequested SR.Types.RankingInfo
@@ -369,7 +371,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( Failure str, Cmd.none )
 
                 PlayersReceived players ->
-                    -- current
                     ( updateSelectedRankingOnPlayersReceived currentmodel (extractAndSortPlayerList players), Cmd.none )
 
                 TxSentryMsg subMsg ->
@@ -381,49 +382,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                 ChangedUIStateToEnterResult player ->
                     ( AppOps allLists appInfo SR.Types.UIEnterResult emptyTxRecord, Cmd.none )
-
-                ProcessResult result ->
-                    let
-                        _ =
-                            Debug.log "process result" result
-                    in
-                    case result of
-                        SR.Types.Won ->
-                            let
-                                -- ensure that updatePlayerList gets the updated lists
-                                newModel =
-                                    handleWon currentmodel
-                            in
-                            case newModel of
-                                AppOps allTheLists theAppInfo theUIState thetxRec ->
-                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.players )
-
-                                _ ->
-                                    ( Failure "result won", Cmd.none )
-
-                        SR.Types.Lost ->
-                            let
-                                newModel =
-                                    handleLost currentmodel
-                            in
-                            case newModel of
-                                AppOps allTheLists theAppInfo theUIState thetxRec ->
-                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.players )
-
-                                _ ->
-                                    ( Failure "result lost", Cmd.none )
-
-                        SR.Types.Undecided ->
-                            let
-                                newModel =
-                                    handleUndecided currentmodel
-                            in
-                            case newModel of
-                                AppOps allTheLists theAppInfo theUIState thetxRec ->
-                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.players )
-
-                                _ ->
-                                    ( Failure "result lost", Cmd.none )
 
                 SentResultToWallet result ->
                     let
@@ -496,11 +454,16 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     in
                     ( AppOps addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
+                -- current
                 ClickedJoinSelected ->
-                    ( currentmodel, addCurrentUserToPlayerList appInfo.selectedRanking.id allLists.players appInfo.user )
+                    -- this updates the player and user lists
+                    ( currentmodel, Cmd.batch [ addCurrentUserToPlayerList appInfo.selectedRanking.id allLists.players appInfo.user, updateUsersJoinRankings appInfo.selectedRanking.id appInfo.user allLists.users ] )
 
                 ReturnFromPlayerListUpdate response ->
                     ( updateSelectedRankingPlayerList currentmodel (Utils.MyUtils.extractPlayersFromWebData response), Cmd.none )
+
+                ReturnFromUserListUpdate response ->
+                    ( updateUserList currentmodel (Utils.MyUtils.extractUsersFromWebData response), Cmd.none )
 
                 PollBlock (Ok blockNumber) ->
                     ( currentmodel
@@ -520,27 +483,13 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                 UsersReceived userList ->
                     let
-                        _ =
-                            Debug.log "UserList" userList
-
                         userLAddedToAllLists =
                             { allLists | users = SR.ListOps.validatedUserList <| Utils.MyUtils.extractUsersFromWebData userList }
                     in
                     if SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress then
-                        let
-                            _ =
-                                Debug.log "UserList" userLAddedToAllLists.users
-
-                            _ =
-                                Debug.log "isUserInList" (SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress)
-                        in
                         ( updateOnUserListReceived currentmodel userLAddedToAllLists.users, gotRankingList )
 
                     else
-                        let
-                            _ =
-                                Debug.log "isUserInList" (SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress)
-                        in
                         ( updateOnUserListReceived currentmodel userLAddedToAllLists.users, Cmd.none )
 
                 NewUserNameInputChg namefield ->
@@ -847,7 +796,6 @@ handleWalletStateOpenedAndOperational msg model =
                     case result of
                         SR.Types.Won ->
                             let
-                                -- ensure that updatePlayerList gets the updated lists
                                 newModel =
                                     handleWon model
                             in
@@ -1400,6 +1348,23 @@ updateSelectedRankingPlayerList currentmodel lplayers =
                     ensuredCorrectSelectedUI appInfo allLists
             in
             AppOps resetSelectedRankingPlayerList appInfo uiState txRec
+
+        _ ->
+            Failure <| "updateSelectedRankingPlayerList : "
+
+
+updateUserList : Model -> List SR.Types.User -> Model
+updateUserList currentmodel lusers =
+    case currentmodel of
+        AppOps allLists appInfo _ txRec ->
+            let
+                resetUserList =
+                    { allLists | users = lusers }
+
+                uiState =
+                    ensuredCorrectSelectedUI appInfo allLists
+            in
+            AppOps resetUserList appInfo uiState txRec
 
         _ ->
             Failure <| "updateSelectedRankingPlayerList : "
@@ -2371,7 +2336,7 @@ createNewUser originaluserlist newuserinfo =
         , method = "PUT"
         , timeout = Nothing
         , tracker = Nothing
-        , url = SR.Constants.jsonbinUrlUpdateWithNewUserAndRespond
+        , url = SR.Constants.jsonbinUrlUpdateUserListAndRespond
         }
 
 
@@ -2618,4 +2583,23 @@ updatePlayerList intrankingId lPlayer =
         , timeout = Nothing
         , tracker = Nothing
         , url = SR.Constants.jsonbinUrlStubForUpdateExistingBinAndRespond ++ intrankingId
+        }
+
+
+updateUsersJoinRankings : String -> SR.Types.User -> List SR.Types.User -> Cmd Msg
+updateUsersJoinRankings rankingId user lUser =
+    let
+        -- update the user list with the new selected ranking id they want to join
+        newUserList =
+            lUser
+    in
+    Http.request
+        { body =
+            Http.jsonBody <| SR.Encode.encodeUserList newUserList
+        , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromUserListUpdate) SR.Decode.decodeNewUserListServerResponse
+        , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
+        , method = "PUT"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = SR.Constants.jsonbinUrlUpdateUserListAndRespond
         }
