@@ -33,6 +33,7 @@ emptyUser =
     , description = ""
     , email = ""
     , mobile = ""
+    , userjoinrankings = []
     }
 
 
@@ -56,6 +57,7 @@ emptyActiveUser =
     , description = ""
     , email = ""
     , mobile = ""
+    , userjoinrankings = []
     }
 
 

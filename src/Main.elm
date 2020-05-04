@@ -520,11 +520,17 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                 UsersReceived userList ->
                     let
+                        _ =
+                            Debug.log "UserList" userList
+
                         userLAddedToAllLists =
                             { allLists | users = SR.ListOps.validatedUserList <| Utils.MyUtils.extractUsersFromWebData userList }
                     in
                     if SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress then
                         let
+                            _ =
+                                Debug.log "UserList" userLAddedToAllLists.users
+
                             _ =
                                 Debug.log "isUserInList" (SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress)
                         in
@@ -2347,6 +2353,7 @@ createNewUser originaluserlist newuserinfo =
             , description = newuserinfo.description
             , email = newuserinfo.email
             , mobile = newuserinfo.mobile
+            , userjoinrankings = []
             }
 
         userListWithJsonObjAdded =
@@ -2381,7 +2388,13 @@ jsonEncodeNewUsersList luserInfo =
                 , ( "description", Json.Encode.string userInfo.description )
                 , ( "email", Json.Encode.string userInfo.email )
                 , ( "mobile", Json.Encode.string userInfo.mobile )
+                , ( "userjoinrankings", Json.Encode.list encodeRankingIdList userInfo.userjoinrankings )
                 ]
+
+        encodeRankingIdList : String -> Json.Encode.Value
+        encodeRankingIdList rankingIdstr =
+            Json.Encode.string
+                rankingIdstr
 
         encodedList =
             Json.Encode.list encodeNewUserObj luserInfo

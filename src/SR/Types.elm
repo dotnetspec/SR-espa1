@@ -202,6 +202,7 @@ type alias User =
     , description : String
     , email : String
     , mobile : String
+    , userjoinrankings : List String
     }
 
 
