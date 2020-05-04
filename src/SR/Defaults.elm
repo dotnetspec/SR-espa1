@@ -69,7 +69,7 @@ emptyRankingInfo =
 
 
 emptyAllLists =
-    { globalRankings = []
+    { userRankings = []
     , players = []
     , users = []
     }

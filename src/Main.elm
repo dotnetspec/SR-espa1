@@ -222,20 +222,17 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
             case msgOfTransitonThatAlreadyHappened of
                 GotGlobalRankingsJson rmtrnkingdata ->
                     let
-                        --addedRankingListToAllLists =
-                        -- { allLists | globalRankings =
                         extractedList =
                             SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata
 
                         --}
                         -- this was only added to get the new 'imposs' code working:
                         allGlobal =
-                            --SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList addedRankingListToAllLists.globalRankings allLists.users
                             SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
 
                         addedRankingListToAllLists =
                             { allLists
-                                | globalRankings = allGlobal
+                                | userRankings = allGlobal
                             }
 
                         _ =
@@ -266,7 +263,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
                     ( AppOps allLists appInfo SR.Types.CreateNewLadder emptyTxRecord
                     , addedNewRankingListEntryInGlobal idValueFromDecoder
-                        allLists.globalRankings
+                        allLists.userRankings
                         appInfo.selectedRanking
                         appInfo.user.ethaddress
                         allLists.users
@@ -308,7 +305,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                         addedRankingListToAllLists =
                             { allLists
-                                | globalRankings = allGlobal
+                                | userRankings = allGlobal
                             }
                     in
                     ( AppOps addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
@@ -478,7 +475,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         appInfo
                         uiState
                         txRec
-                    , deleteSelectedRankingFromGlobalList appInfo.selectedRanking.id (SR.GlobalListOps.extractRankingList allLists.globalRankings) allLists.users appInfo.user.ethaddress
+                    , deleteSelectedRankingFromGlobalList appInfo.selectedRanking.id (SR.GlobalListOps.extractRankingList allLists.userRankings) allLists.users appInfo.user.ethaddress
                     )
 
                 ChallengeOpponentClicked opponentAsPlayer ->
@@ -494,13 +491,9 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                         addedRankingListToAllLists =
                             { allLists
-                                | globalRankings = allGlobal
+                                | userRankings = allGlobal
                             }
-
-                        -- resetGlobalRankingList =
-                        --     { allLists | globalRankings = Utils.MyUtils.extractRankingsFromWebData <| updatedListAfterRankingDeletedFromGlobalList }
                     in
-                    --( AppOps resetGlobalRankingList appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
                     ( AppOps addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                 ClickedJoinSelected ->
@@ -1193,7 +1186,7 @@ handleUndecided model =
 
 ensuredCorrectSelectedUI : SR.Types.AppInfo -> SR.Types.AllLists -> SR.Types.UIState
 ensuredCorrectSelectedUI appInfo allLists =
-    if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking (SR.GlobalListOps.extractRankingList allLists.globalRankings) appInfo.user then
+    if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking (SR.GlobalListOps.extractRankingList allLists.userRankings) appInfo.user then
         SR.Types.UISelectedRankingUserIsOwner
 
     else if SR.ListOps.isUserMemberOfSelectedRanking allLists.players appInfo.user then
@@ -1451,7 +1444,7 @@ view model =
                     selectedUserIsNeitherOwnerNorPlayerView model
 
                 SR.Types.UIRenderAllRankings ->
-                    globalResponsiveview (SR.GlobalListOps.extractRankingList allLists.globalRankings) appInfo.user
+                    globalResponsiveview (SR.GlobalListOps.extractRankingList allLists.userRankings) appInfo.user
 
                 SR.Types.UIEnterResult ->
                     displayResultBeforeConfirmView model
