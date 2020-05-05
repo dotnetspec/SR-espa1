@@ -2589,9 +2589,21 @@ updatePlayerList intrankingId lPlayer =
 updateUsersJoinRankings : String -> SR.Types.User -> List SR.Types.User -> Cmd Msg
 updateUsersJoinRankings rankingId user lUser =
     let
-        -- update the user list with the new selected ranking id they want to join
+        -- update the user in list with the new selected ranking id they want to join
+        currentUser =
+            SR.ListOps.gotUserFromUserList lUser user.username
+
+        userJoinRankings =
+            currentUser.userjoinrankings
+
+        newUserJoinRankings =
+            rankingId :: userJoinRankings
+
+        newUser =
+            { user | userjoinrankings = newUserJoinRankings }
+
         newUserList =
-            lUser
+            newUser :: lUser
     in
     Http.request
         { body =
