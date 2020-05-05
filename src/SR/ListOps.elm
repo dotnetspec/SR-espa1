@@ -1,5 +1,6 @@
 module SR.ListOps exposing
-    ( filterSelectedRankingOutOfGlobalList
+    ( addedNewJoinedRankingIdToUser
+    , filterSelectedRankingOutOfGlobalList
     , gotUserFromUserList
     ,  gotUserListFromRemData
        --, isUserInList
@@ -7,9 +8,7 @@ module SR.ListOps exposing
     , isUserInListStrAddr
     , isUserMemberOfSelectedRanking
     , isUserSelectedOwnerOfRanking
-    ,  ownerValidatedRankingList
-       --, singleUserInList
-
+    , ownerValidatedRankingList
     , singleUserInListStrAddr
     , validatedUserList
     )
@@ -27,6 +26,27 @@ import Utils.MyUtils
 
 
 -- external
+
+
+addedNewJoinedRankingIdToUser : String -> SR.Types.User -> List SR.Types.User -> List SR.Types.User
+addedNewJoinedRankingIdToUser rankingId user lUser =
+    let
+        currentUser =
+            gotUserFromUserList lUser user.username
+
+        userJoinRankings =
+            currentUser.userjoinrankings
+
+        newUserJoinRankings =
+            rankingId :: userJoinRankings
+
+        newUser =
+            { user | userjoinrankings = newUserJoinRankings }
+
+        newUserList =
+            newUser :: lUser
+    in
+    newUserList
 
 
 ownerValidatedRankingList : List SR.Types.RankingInfo -> List SR.Types.RankingInfo

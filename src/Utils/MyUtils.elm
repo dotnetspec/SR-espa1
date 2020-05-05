@@ -10,6 +10,7 @@ module Utils.MyUtils exposing
     , stringFromBool
     , stringFromMaybeString
     , stringFromRankingId
+    , stringToRankingId
     )
 
 import Eth.Types
@@ -19,6 +20,11 @@ import Internal.Types
 import RemoteData
 import SR.Defaults
 import SR.Types
+
+
+stringToRankingId : String -> Internal.Types.RankingId
+stringToRankingId rnkId =
+    Internal.Types.RankingId rnkId
 
 
 stringFromRankingId : Internal.Types.RankingId -> String

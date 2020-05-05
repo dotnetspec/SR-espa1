@@ -239,6 +239,9 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                         _ =
                             Debug.log "gotUserOwnedGlobalRankingList" (SR.GlobalListOps.gotUserOwnedGlobalRankingList allGlobal appInfo.user)
+
+                        _ =
+                            Debug.log "gotAllUserAsPlayerGlobalRankingList" <| SR.GlobalListOps.gotAllUserAsPlayerGlobalRankingList extractedList appInfo.user
                     in
                     ( AppOps addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
@@ -2588,26 +2591,9 @@ updatePlayerList intrankingId lPlayer =
 
 updateUsersJoinRankings : String -> SR.Types.User -> List SR.Types.User -> Cmd Msg
 updateUsersJoinRankings rankingId user lUser =
-    let
-        -- update the user in list with the new selected ranking id they want to join
-        currentUser =
-            SR.ListOps.gotUserFromUserList lUser user.username
-
-        userJoinRankings =
-            currentUser.userjoinrankings
-
-        newUserJoinRankings =
-            rankingId :: userJoinRankings
-
-        newUser =
-            { user | userjoinrankings = newUserJoinRankings }
-
-        newUserList =
-            newUser :: lUser
-    in
     Http.request
         { body =
-            Http.jsonBody <| SR.Encode.encodeUserList newUserList
+            Http.jsonBody <| SR.Encode.encodeUserList <| SR.ListOps.addedNewJoinedRankingIdToUser rankingId user lUser
         , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromUserListUpdate) SR.Decode.decodeNewUserListServerResponse
         , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
         , method = "PUT"

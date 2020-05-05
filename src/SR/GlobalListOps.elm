@@ -2,6 +2,7 @@ module SR.GlobalListOps exposing
     ( createAllUserAsOwnerGlobalRankingList
     , extractRankingList
     , filterSelectedRankingOutOfGlobalList
+    , gotAllUserAsPlayerGlobalRankingList
     , gotRankingFromRankingList
     , gotUserOwnedGlobalRankingList
     , ownerValidatedRankingList
@@ -133,6 +134,33 @@ createNewOwnedRanking luser rankingInfo =
         newOwnedRanking =
             { rankingInfo = rankingInfo
             , userInfo = userOwner
+            }
+    in
+    newOwnedRanking
+
+
+
+-- current
+
+
+gotAllUserAsPlayerGlobalRankingList : List SR.Types.RankingInfo -> SR.Types.User -> List SR.Types.UserRanking
+gotAllUserAsPlayerGlobalRankingList lrankinfo user =
+    let
+        luserJoinRankings =
+            user.userjoinrankings
+    in
+    List.map (addedJoinedRankingsToUserRankingList user lrankinfo) luserJoinRankings
+
+
+addedJoinedRankingsToUserRankingList : SR.Types.User -> List SR.Types.RankingInfo -> String -> SR.Types.UserRanking
+addedJoinedRankingsToUserRankingList user lrankingInfo rnkId =
+    let
+        rankingInfo =
+            gotRankingFromRankingList lrankingInfo <| Utils.MyUtils.stringToRankingId rnkId
+
+        newOwnedRanking =
+            { rankingInfo = rankingInfo
+            , userInfo = user
             }
     in
     newOwnedRanking
