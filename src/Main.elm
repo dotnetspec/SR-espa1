@@ -229,19 +229,26 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
 
                         --}
                         -- this was only added to get the new 'imposs' code working:
-                        allGlobal =
+                        allUserAsOwnerGlobal =
                             SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
 
                         addedRankingListToAllLists =
                             { allLists
-                                | userRankings = allGlobal
+                                | userRankings = allUserAsOwnerGlobal
                             }
 
-                        _ =
-                            Debug.log "gotUserOwnedGlobalRankingList" (SR.GlobalListOps.gotUserOwnedGlobalRankingList allGlobal appInfo.user)
+                        allUserIsPlayerGlobal =
+                            SR.GlobalListOps.createdAllUserAsPlayerGlobalRankingList extractedList allLists.users
 
+                        -- _ =
+                        --     Debug.log "gotUserOwnedGlobalRankingList" (SR.GlobalListOps.gotUserOwnedGlobalRankingList allUserAsOwnerGlobal appInfo.user)
                         _ =
-                            Debug.log "gotAllUserAsPlayerGlobalRankingList" <| SR.GlobalListOps.gotAllUserAsPlayerGlobalRankingList extractedList appInfo.user
+                            Debug.log "gotUserIsPlayerNonUserRankingList" (SR.GlobalListOps.gotUserIsPlayerNonUserRankingList appInfo.user extractedList)
+
+                        -- _ =
+                        --     Debug.log "gotAllUserAsPlayerGlobalRankingList" <| SR.GlobalListOps.gotUserIsPlayerGlobalRankingList allUserIsPlayerGlobal appInfo.user
+                        -- _ =
+                        --     Debug.log "gotOthersGlobalRankingList" SR.GlobalListOps.gotOthersGlobalRankingList "nought"
                     in
                     ( AppOps addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 

@@ -1,10 +1,9 @@
 module SR.ListOps exposing
     ( addedNewJoinedRankingIdToUser
     , filterSelectedRankingOutOfGlobalList
+    , findSelectedRankingInGlobalList
     , gotUserFromUserList
-    ,  gotUserListFromRemData
-       --, isUserInList
-
+    , gotUserListFromRemData
     , isUserInListStrAddr
     , isUserMemberOfSelectedRanking
     , isUserSelectedOwnerOfRanking
@@ -132,7 +131,7 @@ isUserSelectedOwnerOfRanking : SR.Types.RankingInfo -> List SR.Types.RankingInfo
 isUserSelectedOwnerOfRanking rnkInfo lrnkInfo user =
     let
         filteredList =
-            findSelectedRankingInGlobalList rnkInfo.id lrnkInfo
+            findSelectedRankingInGlobalList lrnkInfo rnkInfo.id
 
         filteredRec =
             List.head filteredList
@@ -171,8 +170,8 @@ doesCurrentRankingIdNOTMatchId rankingid rankingInfo =
         Nothing
 
 
-findSelectedRankingInGlobalList : String -> List SR.Types.RankingInfo -> List SR.Types.RankingInfo
-findSelectedRankingInGlobalList rankingid lrankinginfo =
+findSelectedRankingInGlobalList : List SR.Types.RankingInfo -> String -> List SR.Types.RankingInfo
+findSelectedRankingInGlobalList lrankinginfo rankingid =
     List.filterMap
         (isRankingIdInList
             rankingid

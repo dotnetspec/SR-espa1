@@ -1,10 +1,13 @@
 module Utils.MyUtils exposing
     ( addressFromStringResult
     , addressToString
+    , convertListOfMaybeToList
     , convertMaybePlayerToPlayer
     , createdMaybePlayerFromPlayer
     , extractPlayersFromWebData
+    , extractRankingInfoListFromMaybeList
     , extractRankingsFromWebData
+    , extractRankinigInfoFromMaybe
     , extractUsersFromWebData
     , splitPlayerFieldsToCreateMaybePlayer
     , stringFromBool
@@ -20,6 +23,35 @@ import Internal.Types
 import RemoteData
 import SR.Defaults
 import SR.Types
+
+
+extractRankinigInfoFromMaybe : Maybe SR.Types.RankingInfo -> SR.Types.RankingInfo
+extractRankinigInfoFromMaybe valtoextract =
+    case valtoextract of
+        Just a ->
+            a
+
+        Nothing ->
+            SR.Defaults.emptyRankingInfo
+
+
+extractRankingInfoListFromMaybeList : Maybe (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
+extractRankingInfoListFromMaybeList lranking =
+    case lranking of
+        Just a ->
+            a
+
+        Nothing ->
+            []
+
+
+convertListOfMaybeToList : List (Maybe a) -> List a
+convertListOfMaybeToList hasAnything =
+    let
+        onlyHasRealValues =
+            List.filterMap (\x -> x) hasAnything
+    in
+    onlyHasRealValues
 
 
 stringToRankingId : String -> Internal.Types.RankingId
