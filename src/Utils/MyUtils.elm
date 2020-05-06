@@ -8,6 +8,7 @@ module Utils.MyUtils exposing
     , extractRankingInfoListFromMaybeList
     , extractRankingsFromWebData
     , extractRankinigInfoFromMaybe
+    , extractUserRankinigFromMaybe
     , extractUsersFromWebData
     , splitPlayerFieldsToCreateMaybePlayer
     , stringFromBool
@@ -23,6 +24,16 @@ import Internal.Types
 import RemoteData
 import SR.Defaults
 import SR.Types
+
+
+extractUserRankinigFromMaybe : Maybe SR.Types.UserRanking -> SR.Types.UserRanking
+extractUserRankinigFromMaybe valtoextract =
+    case valtoextract of
+        Just a ->
+            a
+
+        Nothing ->
+            SR.Defaults.emptyUserRanking
 
 
 extractRankinigInfoFromMaybe : Maybe SR.Types.RankingInfo -> SR.Types.RankingInfo

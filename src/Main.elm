@@ -232,21 +232,34 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         allUserAsOwnerGlobal =
                             SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
 
+                        currentUserAsPlayer =
+                            SR.GlobalListOps.gotUserIsPlayerNonUserRankingList appInfo.user extractedList
+
                         addedRankingListToAllLists =
                             { allLists
                                 | userRankings = allUserAsOwnerGlobal
                             }
 
-                        allUserIsPlayerGlobal =
-                            SR.GlobalListOps.createdAllUserAsPlayerGlobalRankingList extractedList allLists.users
+                        userRankingOwner =
+                            SR.GlobalListOps.gotUserOwnedGlobalRankingList allUserAsOwnerGlobal appInfo.user
+
+                        userRankingPlayer =
+                            SR.GlobalListOps.createduserRankingPlayerList currentUserAsPlayer allLists.users
+
+                        _ =
+                            Debug.log "currentUserAsPlayer" userRankingPlayer
+
+                        -- _ =
+                        --     Debug.log "userRankingPlayer" userRankingPlayer
+                        _ =
+                            Debug.log "userRanking Owner and Player " (userRankingOwner ++ userRankingPlayer)
 
                         -- _ =
                         --     Debug.log "gotUserOwnedGlobalRankingList" (SR.GlobalListOps.gotUserOwnedGlobalRankingList allUserAsOwnerGlobal appInfo.user)
-                        _ =
-                            Debug.log "gotUserIsPlayerNonUserRankingList" (SR.GlobalListOps.gotUserIsPlayerNonUserRankingList appInfo.user extractedList)
-
                         -- _ =
-                        --     Debug.log "gotAllUserAsPlayerGlobalRankingList" <| SR.GlobalListOps.gotUserIsPlayerGlobalRankingList allUserIsPlayerGlobal appInfo.user
+                        --     Debug.log "gotUserIsPlayerNonUserRankingList" (SR.GlobalListOps.gotUserIsPlayerNonUserRankingList appInfo.user extractedList)
+                        -- _ =
+                        --     Debug.log "gotAllUserAsPlayerGlobalRankingList" <| SR.GlobalListOps.gotUserIsPlayerGlobalRankingList userRankingPlayer appInfo.user
                         -- _ =
                         --     Debug.log "gotOthersGlobalRankingList" SR.GlobalListOps.gotOthersGlobalRankingList "nought"
                     in

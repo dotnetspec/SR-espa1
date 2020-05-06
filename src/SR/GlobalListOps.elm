@@ -1,6 +1,6 @@
 module SR.GlobalListOps exposing
     ( createAllUserAsOwnerGlobalRankingList
-    , createdAllUserAsPlayerGlobalRankingList
+    , createduserRankingPlayerList
     , extractRankingList
     , filterSelectedRankingOutOfGlobalList
     , gotOthersGlobalRankingList
@@ -191,13 +191,13 @@ isUserPlayerInGlobalRankings user ownedrnk =
         Nothing
 
 
-createdAllUserAsPlayerGlobalRankingList : List SR.Types.RankingInfo -> List SR.Types.User -> List SR.Types.UserRanking
-createdAllUserAsPlayerGlobalRankingList lrankinfo luser =
-    List.map (createdNewUserIsPlayerRanking luser) lrankinfo
+createduserRankingPlayerList : List SR.Types.RankingInfo -> List SR.Types.User -> List SR.Types.UserRanking
+createduserRankingPlayerList lrankinfo luser =
+    List.map (createdUserRankingPlayerRanking luser) lrankinfo
 
 
-createdNewUserIsPlayerRanking : List SR.Types.User -> SR.Types.RankingInfo -> SR.Types.UserRanking
-createdNewUserIsPlayerRanking luser rankingInfo =
+createdUserRankingPlayerRanking : List SR.Types.User -> SR.Types.RankingInfo -> SR.Types.UserRanking
+createdUserRankingPlayerRanking luser rankingInfo =
     let
         userOwner =
             SR.ListOps.gotUserFromUserList luser rankingInfo.rankingowneraddr
