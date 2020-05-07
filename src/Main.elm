@@ -246,6 +246,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         userRankingPlayer =
                             SR.GlobalListOps.createduserRankingPlayerList currentUserAsPlayer allLists.users
 
+                        -- current
                         ownerPlayerCombinedList =
                             userRankingOwner ++ userRankingPlayer
 
@@ -253,16 +254,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                             SR.GlobalListOps.gotOthersGlobalRankingList ownerPlayerCombinedList allUserAsOwnerGlobal
 
                         _ =
-                            Debug.log "Owner " userRankingOwner
-
-                        _ =
-                            Debug.log "Player " userRankingPlayer
-
-                        _ =
-                            Debug.log "Others : " userRankingOther
-
-                        _ =
-                            Debug.log "combined lists : " (userRankingOwner ++ userRankingPlayer) ++ userRankingOther
+                            Debug.log "combined lists : " ((userRankingOwner ++ userRankingPlayer) ++ userRankingOther)
                     in
                     ( AppOps addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
