@@ -227,8 +227,6 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         extractedList =
                             SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata
 
-                        --}
-                        -- this was only added to get the new 'imposs' code working:
                         allUserAsOwnerGlobal =
                             SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
 
