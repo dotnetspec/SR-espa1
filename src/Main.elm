@@ -386,7 +386,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         newAppInfo =
                             { appInfo | selectedRanking = newLadderRnkInfo }
                     in
-                    ( AppOps allLists newAppInfo SR.Types.CreateNewLadder { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewPlayerListWithCurrentUser newAppInfo.user ] )
+                    ( AppOps allLists newAppInfo SR.Types.CreateNewLadder { txRec | txSentry = newSentry }, sentryCmd )
 
                 NewChallengeConfirmClicked ->
                     createNewPlayerListWithNewChallengeAndUpdateJsonBin currentmodel
@@ -1712,25 +1712,6 @@ globalhomebutton =
                 , Input.button (Button.simple ++ Color.info ++ [ Element.htmlAttribute (Html.Attributes.id "createnewladderbtn") ]) <|
                     { onPress = Just <| ChangedUIStateToCreateNewLadder
                     , label = Element.text "Create New"
-                    }
-                ]
-            ]
-        ]
-
-
-selectedhomebuttons : Element Msg
-selectedhomebuttons =
-    Element.column Grid.section <|
-        [ Element.el Heading.h6 <| Element.text "Click to continue ..."
-        , Element.column (Card.simple ++ Grid.simple) <|
-            [ Element.wrappedRow Grid.simple <|
-                [ Input.button (Button.simple ++ Color.simple) <|
-                    { onPress = Just <| ResetToShowGlobal
-                    , label = Element.text "Home"
-                    }
-                , Input.button (Button.simple ++ Color.info) <|
-                    { onPress = Just ClickedJoinSelected
-                    , label = Element.text "Join"
                     }
                 ]
             ]

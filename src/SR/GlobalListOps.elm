@@ -186,9 +186,6 @@ gotOthersGlobalRankingList luserOwnerPlayers lalluserrankings =
         lOwnerPlayerRankingIds =
             List.map gotAllRankindIds luserOwnerPlayers
 
-        _ =
-            Debug.log "lOwnerPlayerRankingIds" lOwnerPlayerRankingIds
-
         listWithfirstValFromOwnerPlayersFilteredOut =
             List.filter (\x -> not (List.member x.rankingInfo.id lOwnerPlayerRankingIds)) lalluserrankings
     in
