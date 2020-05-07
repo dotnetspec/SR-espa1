@@ -246,22 +246,23 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         userRankingPlayer =
                             SR.GlobalListOps.createduserRankingPlayerList currentUserAsPlayer allLists.users
 
-                        _ =
-                            Debug.log "currentUserAsPlayer" userRankingPlayer
+                        ownerPlayerCombinedList =
+                            userRankingOwner ++ userRankingPlayer
 
-                        -- _ =
-                        --     Debug.log "userRankingPlayer" userRankingPlayer
-                        _ =
-                            Debug.log "userRanking Owner and Player " (userRankingOwner ++ userRankingPlayer)
+                        userRankingOther =
+                            SR.GlobalListOps.gotOthersGlobalRankingList ownerPlayerCombinedList allUserAsOwnerGlobal
 
-                        -- _ =
-                        --     Debug.log "gotUserOwnedGlobalRankingList" (SR.GlobalListOps.gotUserOwnedGlobalRankingList allUserAsOwnerGlobal appInfo.user)
-                        -- _ =
-                        --     Debug.log "gotUserIsPlayerNonUserRankingList" (SR.GlobalListOps.gotUserIsPlayerNonUserRankingList appInfo.user extractedList)
-                        -- _ =
-                        --     Debug.log "gotAllUserAsPlayerGlobalRankingList" <| SR.GlobalListOps.gotUserIsPlayerGlobalRankingList userRankingPlayer appInfo.user
-                        -- _ =
-                        --     Debug.log "gotOthersGlobalRankingList" SR.GlobalListOps.gotOthersGlobalRankingList "nought"
+                        _ =
+                            Debug.log "Owner " userRankingOwner
+
+                        _ =
+                            Debug.log "Player " userRankingPlayer
+
+                        _ =
+                            Debug.log "Others : " userRankingOther
+
+                        _ =
+                            Debug.log "combined lists : " (userRankingOwner ++ userRankingPlayer) ++ userRankingOther
                     in
                     ( AppOps addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 

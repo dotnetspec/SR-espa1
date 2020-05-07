@@ -15,6 +15,7 @@ import Eth.Types
 import Eth.Utils
 import Http
 import Internal.Types
+import List.Extra
 import Maybe.Extra
 import RemoteData
 import SR.Defaults
@@ -72,32 +73,6 @@ isRnkIdMatch rankingid rnk =
         False
 
 
-isRankingIdInListForPlayerRnkList : String -> SR.Types.RankingInfo -> Maybe SR.Types.RankingInfo
-isRankingIdInListForPlayerRnkList rankingid rnk =
-    let
-        _ =
-            Debug.log "rnk" rnk
-
-        _ =
-            Debug.log "rnkid" rankingid
-    in
-    if rnk.id == rankingid then
-        Just rnk
-
-    else
-        Nothing
-
-
-canRankingBeInList : Maybe SR.Types.RankingInfo -> Bool
-canRankingBeInList ranking =
-    case ranking of
-        Nothing ->
-            False
-
-        Just a ->
-            True
-
-
 gotRankingFromRankingList : List SR.Types.RankingInfo -> Internal.Types.RankingId -> SR.Types.RankingInfo
 gotRankingFromRankingList rankingList (Internal.Types.RankingId rnkid) =
     let
@@ -125,11 +100,6 @@ filterSelectedRankingOutOfGlobalList rankingid lrankinginfo =
 
 
 --internal
--- types
--- type alias SR.Types.UserRanking =
---     { rankingInfo : SR.Types.RankingInfo
---     , userInfo : SR.Types.User
---     }
 
 
 gotUserOwnedGlobalRankingList : List SR.Types.UserRanking -> SR.Types.User -> List SR.Types.UserRanking
@@ -169,10 +139,6 @@ createNewOwnedRanking luser rankingInfo =
     newOwnedRanking
 
 
-
--- current
-
-
 gotUserIsPlayerGlobalRankingList : List SR.Types.UserRanking -> SR.Types.User -> List SR.Types.UserRanking
 gotUserIsPlayerGlobalRankingList lownedrankings user =
     List.filterMap
@@ -210,9 +176,28 @@ createdUserRankingPlayerRanking luser rankingInfo =
     newOwnedRanking
 
 
-gotOthersGlobalRankingList : String -> String
-gotOthersGlobalRankingList str =
-    str
+
+-- current
+
+
+gotOthersGlobalRankingList : List SR.Types.UserRanking -> List SR.Types.UserRanking -> List SR.Types.UserRanking
+gotOthersGlobalRankingList luserOwnerPlayers lalluserrankings =
+    let
+        lOwnerPlayerRankingIds =
+            List.map gotAllRankindIds luserOwnerPlayers
+
+        _ =
+            Debug.log "lOwnerPlayerRankingIds" lOwnerPlayerRankingIds
+
+        listWithfirstValFromOwnerPlayersFilteredOut =
+            List.filter (\x -> not (List.member x.rankingInfo.id lOwnerPlayerRankingIds)) lalluserrankings
+    in
+    listWithfirstValFromOwnerPlayersFilteredOut
+
+
+gotAllRankindIds : SR.Types.UserRanking -> String
+gotAllRankindIds userRanking =
+    userRanking.rankingInfo.id
 
 
 doesCurrentRankingIdNOTMatchId : String -> SR.Types.RankingInfo -> Maybe SR.Types.RankingInfo
@@ -222,58 +207,3 @@ doesCurrentRankingIdNOTMatchId rankingid rankingInfo =
 
     else
         Nothing
-
-
-findSelectedRankingInGlobalList : String -> List SR.Types.RankingInfo -> List SR.Types.RankingInfo
-findSelectedRankingInGlobalList rankingid lrankinginfo =
-    List.filterMap
-        (isRankingIdInList
-            rankingid
-        )
-        lrankinginfo
-
-
-isRankingIdInList : String -> SR.Types.RankingInfo -> Maybe SR.Types.RankingInfo
-isRankingIdInList rankingid rnk =
-    if rnk.id == rankingid then
-        Just rnk
-
-    else
-        Nothing
-
-
-gotRankingListFromRemData : RemoteData.WebData (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
-gotRankingListFromRemData globalList =
-    case globalList of
-        RemoteData.Success a ->
-            a
-
-        RemoteData.NotAsked ->
-            [ SR.Defaults.emptyRankingInfo
-            ]
-
-        RemoteData.Loading ->
-            [ SR.Defaults.emptyRankingInfo
-            ]
-
-        RemoteData.Failure err ->
-            case err of
-                Http.BadUrl s ->
-                    [ SR.Defaults.emptyRankingInfo
-                    ]
-
-                Http.Timeout ->
-                    [ SR.Defaults.emptyRankingInfo
-                    ]
-
-                Http.NetworkError ->
-                    [ SR.Defaults.emptyRankingInfo
-                    ]
-
-                Http.BadStatus statuscode ->
-                    [ SR.Defaults.emptyRankingInfo
-                    ]
-
-                Http.BadBody s ->
-                    [ SR.Defaults.emptyRankingInfo
-                    ]

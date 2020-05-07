@@ -71,7 +71,7 @@ emptyRankingInfo =
     { id = "0"
     , active = False
     , rankingname = ""
-    , rankingdesc = ""
+    , rankingdesc = "emptyRankingInfo"
     , rankingowneraddr = ""
     }
 

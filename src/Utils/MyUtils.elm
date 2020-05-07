@@ -3,6 +3,7 @@ module Utils.MyUtils exposing
     , addressToString
     , convertListOfMaybeToList
     , convertMaybePlayerToPlayer
+    , convertMaybeUserRankingListToList
     , createdMaybePlayerFromPlayer
     , extractPlayersFromWebData
     , extractRankingInfoListFromMaybeList
@@ -205,6 +206,27 @@ convertMaybePlayerToPlayer mplayer =
             , rank = a.rank
             , challengeraddress = a.challengeraddress
             }
+
+
+convertMaybeUserRankingListToList : Maybe (List SR.Types.UserRanking) -> List SR.Types.UserRanking
+convertMaybeUserRankingListToList luRanking =
+    --List.map convertMaybeUserRankingToUserRanking luRanking
+    case luRanking of
+        Nothing ->
+            []
+
+        Just a ->
+            a
+
+
+convertMaybeUserRankingToUserRanking : Maybe SR.Types.UserRanking -> SR.Types.UserRanking
+convertMaybeUserRankingToUserRanking muranking =
+    case muranking of
+        Nothing ->
+            SR.Defaults.emptyUserRanking
+
+        Just a ->
+            a
 
 
 rankFromMaybeRank : Maybe Int -> Int
