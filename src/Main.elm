@@ -64,8 +64,8 @@ main =
 
 
 type Model
-    = WalletOps SR.Types.WalletState SR.Types.AllLists SR.Types.AppInfo SR.Types.UIState TxRecord
-    | AppOps SR.Types.WalletState SR.Types.AllLists SR.Types.AppInfo SR.Types.UIState TxRecord
+    = --AppOps SR.Types.WalletState SR.Types.AllLists SR.Types.AppInfo SR.Types.UIState TxRecord
+      AppOps SR.Types.WalletState SR.Types.AllLists SR.Types.AppInfo SR.Types.UIState TxRecord
     | Failure String
 
 
@@ -78,7 +78,7 @@ init _ =
             Net.toNetworkId 4
                 |> Ports.ethNode
     in
-    ( WalletOps SR.Types.WalletStateUnknown SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UILoading emptyTxRecord
+    ( AppOps SR.Types.WalletStateUnknown SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UILoading emptyTxRecord
     , Cmd.batch
         [ Ports.log "Sending out msg from init "
         , Task.attempt PollBlock (Eth.getBlockNumber node.http)
@@ -134,7 +134,7 @@ getTime =
 
 
 type Msg
-    = -- WalletOps
+    = -- AppOps
       WalletStatus Eth.Sentry.Wallet.WalletSentry
     | MissingWalletInstructions
     | OpenWalletInstructions
@@ -184,7 +184,37 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msgOfTransitonThatAlreadyHappened currentmodel =
     case currentmodel of
-        WalletOps walletState allLists appInfo uiState txRec ->
+        --WalletOps walletState allLists appInfo uiState txRec ->
+        -- case walletState of
+        --     SR.Types.WalletStateUnknown ->
+        --         handleWalletStateUnknown msgOfTransitonThatAlreadyHappened currentmodel
+        --     SR.Types.WalletStateLocked ->
+        --         let
+        --             _ =
+        --                 Debug.log "WalletStateLocked" msgOfTransitonThatAlreadyHappened
+        --         in
+        --         handleWalletStateLocked msgOfTransitonThatAlreadyHappened currentmodel
+        --     SR.Types.WalletStateAwaitOpening ->
+        --         let
+        --             _ =
+        --                 Debug.log "WalletStateAwaitOpening appInfo" appInfo
+        --         in
+        --         handleWalletStateAwaitOpening msgOfTransitonThatAlreadyHappened currentmodel
+        --     SR.Types.WalletOpenedAndOperational ->
+        --         let
+        --             _ =
+        --                 Debug.log "appInfo" appInfo
+        --         in
+        --         handleWalletStateOpenedAndOperational msgOfTransitonThatAlreadyHappened currentmodel
+        --     SR.Types.WalletWaitingForTransactionReceipt ->
+        --         let
+        --             _ =
+        --                 Debug.log "WalletWaitingForTransactionReceipt: " "b4 WalletOps"
+        --         in
+        --         handleWalletWaitingForTransactionReceipt msgOfTransitonThatAlreadyHappened walletState allLists appInfo txRec
+        --     _ ->
+        --         ( Failure "WalletState failure", Cmd.none )
+        AppOps walletState allLists appInfo uiState txRec ->
             case walletState of
                 SR.Types.WalletStateUnknown ->
                     handleWalletStateUnknown msgOfTransitonThatAlreadyHappened currentmodel
@@ -220,8 +250,337 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 _ ->
                     ( Failure "WalletState failure", Cmd.none )
 
+        --case msgOfTransitonThatAlreadyHappened of
+        Failure str ->
+            ( Failure <| "Model failure in AppOps: " ++ str, Cmd.none )
+
+
+handleWalletStateUnknown : Msg -> Model -> ( Model, Cmd Msg )
+handleWalletStateUnknown msg model =
+    case msg of
+        WalletStatus walletSentry_ ->
+            case walletSentry_.networkId of
+                Rinkeby ->
+                    case walletSentry_.account of
+                        Nothing ->
+                            let
+                                _ =
+                                    Debug.log "nothing : " "set to locked"
+                            in
+                            ( AppOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
+                            , Cmd.none
+                            )
+
+                        Just uaddr ->
+                            ( handleGotUser model uaddr, gotUserList )
+
+                _ ->
+                    ( Failure "handleWalletStateUnknown"
+                    , Cmd.none
+                    )
+
+        _ ->
+            ( Failure "handleWalletStateUnknown"
+            , Cmd.none
+            )
+
+
+handleWalletStateLocked : Msg -> Model -> ( Model, Cmd Msg )
+handleWalletStateLocked msg model =
+    case model of
         AppOps walletState allLists appInfo uiState txRec ->
-            case msgOfTransitonThatAlreadyHappened of
+            case msg of
+                WalletStatus walletSentry_ ->
+                    ( AppOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
+
+                PollBlock (Ok blockNumber) ->
+                    ( AppOps walletState SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
+
+                PollBlock (Err error) ->
+                    ( AppOps walletState SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
+
+                _ ->
+                    ( Failure "handleWalletStateLocked"
+                    , Cmd.none
+                    )
+
+        _ ->
+            ( Failure "handleWalletStateLocked model"
+            , Cmd.none
+            )
+
+
+handleWalletStateAwaitOpening : Msg -> Model -> ( Model, Cmd Msg )
+handleWalletStateAwaitOpening msg model =
+    case model of
+        AppOps walletState allLists appInfo uiState txRec ->
+            case msg of
+                WalletStatus walletSentry_ ->
+                    case walletSentry_.networkId of
+                        Rinkeby ->
+                            case walletSentry_.account of
+                                Nothing ->
+                                    let
+                                        _ =
+                                            Debug.log "nothing : " "set to locked"
+                                    in
+                                    ( AppOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
+                                    , Cmd.none
+                                    )
+
+                                Just uaddr ->
+                                    let
+                                        _ =
+                                            Debug.log "handleWalletStateAwaitOpening : " uaddr
+                                    in
+                                    handleWalletStateOpenedAndOperational msg (handleGotUser model uaddr)
+
+                        _ ->
+                            ( Failure "handleWalletStateAwaitOpening"
+                            , Cmd.none
+                            )
+
+                _ ->
+                    ( Failure "handleWalletStateAwaitOpening"
+                    , Cmd.none
+                    )
+
+        _ ->
+            ( Failure "handleWalletStateAwaitOpening"
+            , Cmd.none
+            )
+
+
+handleWalletWaitingForTransactionReceipt : Msg -> SR.Types.WalletState -> SR.Types.AllLists -> SR.Types.AppInfo -> TxRecord -> ( Model, Cmd Msg )
+handleWalletWaitingForTransactionReceipt msg walletState allLists appInfo txRec =
+    let
+        _ =
+            Debug.log "Msg" msg
+    in
+    case msg of
+        WalletStatus walletSentry_ ->
+            ( AppOps SR.Types.WalletWaitingForTransactionReceipt allLists appInfo SR.Types.UIWaitingForTxReceipt txRec
+              --|> update (ProcessResult SR.Types.Won)
+            , Cmd.none
+            )
+
+        TxSentryMsg subMsg ->
+            let
+                _ =
+                    Debug.log "handleTxSubMsg subMsg" <| handleTxSubMsg subMsg
+            in
+            let
+                ( subModel, subCmd ) =
+                    Eth.Sentry.Tx.update subMsg txRec.txSentry
+            in
+            if handleTxSubMsg subMsg then
+                ( AppOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }, subCmd )
+
+            else
+                ( AppOps walletState SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
+
+        WatchTxHash (Ok txHash) ->
+            --( { txRec | txHash = Just txHash }, Cmd.none )
+            ( AppOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txHash = Just txHash }, Cmd.none )
+
+        WatchTxHash (Err err) ->
+            --( { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
+            ( AppOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
+
+        WatchTx (Ok tx) ->
+            let
+                _ =
+                    Debug.log "handleWalletWaitingForTransactionReceipt" "tx ok"
+            in
+            -- AppOps SR.Types.WalletOpenedAndOperational { txRec | tx = Just tx }
+            --     |> update (ProcessResult SR.Types.Won)
+            --( UserOps SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
+            AppOps walletState allLists appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx } |> update (ProcessResult SR.Types.Won)
+
+        WatchTx (Err err) ->
+            let
+                _ =
+                    Debug.log "handleWalletWaitingForTransactionReceipt tx err" err
+            in
+            ( AppOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving Tx: " ++ err) :: txRec.errors }, Cmd.none )
+
+        WatchTxReceipt (Ok txReceipt) ->
+            let
+                _ =
+                    Debug.log "handleWalletWaitingForTransactionReceipt tx ok" txReceipt
+            in
+            AppOps walletState allLists appInfo SR.Types.UIRenderAllRankings { txRec | txReceipt = Just txReceipt } |> update (ProcessResult SR.Types.Won)
+
+        WatchTxReceipt (Err err) ->
+            let
+                _ =
+                    Debug.log "tx err" err
+            in
+            ( AppOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
+
+        _ ->
+            ( Failure "handleWalletStateUnknown"
+            , Cmd.none
+            )
+
+
+handleWalletStateOpenedAndOperational : Msg -> Model -> ( Model, Cmd Msg )
+handleWalletStateOpenedAndOperational msg model =
+    let
+        _ =
+            Debug.log "in opend and op" "with model"
+    in
+    case model of
+        AppOps walletState allLists appInfo uiState txRec ->
+            case msg of
+                WalletStatus walletSentry_ ->
+                    if appInfo.user.ethaddress == "" then
+                        ( AppOps walletState allLists appInfo SR.Types.UICreateNewUser emptyTxRecord, Cmd.none )
+
+                    else
+                        ( AppOps walletState allLists appInfo SR.Types.UILoading emptyTxRecord, gotUserList )
+
+                PollBlock (Ok blockNumber) ->
+                    ( AppOps walletState allLists appInfo SR.Types.UIRenderAllRankings txRec, Cmd.none )
+
+                PollBlock (Err error) ->
+                    ( AppOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt txRec, Cmd.none )
+
+                OpenWalletInstructions ->
+                    ( AppOps SR.Types.WalletStateLocked allLists appInfo SR.Types.UIWaitingForTxReceipt txRec, Cmd.none )
+
+                TxSentryMsg subMsg ->
+                    let
+                        _ =
+                            Debug.log "handleTxSubMsg subMsg" <| handleTxSubMsg subMsg
+                    in
+                    let
+                        ( subModel, subCmd ) =
+                            Eth.Sentry.Tx.update subMsg txRec.txSentry
+                    in
+                    if handleTxSubMsg subMsg then
+                        ( AppOps walletState allLists appInfo SR.Types.UIRenderAllRankings txRec, Cmd.none )
+
+                    else
+                        ( AppOps walletState allLists appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
+
+                WatchTxHash (Ok txHash) ->
+                    ( AppOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txHash = Just txHash }, Cmd.none )
+
+                WatchTxHash (Err err) ->
+                    ( AppOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
+
+                WatchTx (Ok tx) ->
+                    let
+                        _ =
+                            Debug.log "handleWalletStateOpenedAndOperational" "tx Ok"
+                    in
+                    AppOps walletState allLists appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx } |> update (ProcessResult SR.Types.Won)
+
+                WatchTx (Err err) ->
+                    let
+                        _ =
+                            Debug.log "handleWalletStateOpenedAndOperational tx err" err
+                    in
+                    ( AppOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving Tx: " ++ err) :: txRec.errors }, Cmd.none )
+
+                WatchTxReceipt (Ok txReceipt) ->
+                    let
+                        _ =
+                            Debug.log "handleWalletStateOpenedAndOperational Receipt" txReceipt
+                    in
+                    AppOps walletState allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord
+                        |> update (ProcessResult SR.Types.Won)
+
+                WatchTxReceipt (Err err) ->
+                    let
+                        _ =
+                            Debug.log "tx err" err
+                    in
+                    ( AppOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
+
+                TrackTx blockDepth ->
+                    ( AppOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | blockDepth = Just blockDepth }, Cmd.none )
+
+                ProcessResult result ->
+                    let
+                        _ =
+                            Debug.log "process result" result
+                    in
+                    case result of
+                        SR.Types.Won ->
+                            let
+                                newModel =
+                                    handleWon model
+                            in
+                            case newModel of
+                                AppOps thewalletState allTheLists theAppInfo theUIState thetxRec ->
+                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.userPlayers )
+
+                                _ ->
+                                    ( Failure "result won", Cmd.none )
+
+                        SR.Types.Lost ->
+                            let
+                                newModel =
+                                    handleLost model
+                            in
+                            case newModel of
+                                AppOps thewalletState allTheLists theAppInfo theUIState thetxRec ->
+                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.userPlayers )
+
+                                _ ->
+                                    ( Failure "result lost", Cmd.none )
+
+                        SR.Types.Undecided ->
+                            let
+                                newModel =
+                                    handleUndecided model
+                            in
+                            case newModel of
+                                AppOps thewalletState allTheLists theAppInfo theUIState thetxRec ->
+                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.userPlayers )
+
+                                _ ->
+                                    ( Failure "result lost", Cmd.none )
+
+                SentResultToWallet result ->
+                    let
+                        _ =
+                            Debug.log "SentResultToWallet" result
+
+                        txParams =
+                            { to = txRec.account
+                            , from = txRec.account
+                            , gas = Nothing
+                            , gasPrice = Just <| Eth.Units.gwei 4
+                            , value = Just <| Eth.Units.gwei 1
+                            , data = Nothing
+                            , nonce = Nothing
+                            }
+
+                        ( newSentry, sentryCmd ) =
+                            Eth.Sentry.Tx.customSend
+                                txRec.txSentry
+                                { onSign = Just WatchTxHash
+                                , onBroadcast = Just WatchTx
+                                , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                                }
+                                txParams
+                    in
+                    ( AppOps SR.Types.WalletWaitingForTransactionReceipt allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
+                    , sentryCmd
+                    )
+
+                SentResultToJsonbin a ->
+                    ( AppOps walletState
+                        allLists
+                        appInfo
+                        uiState
+                        txRec
+                    , Cmd.none
+                    )
+
                 GotGlobalRankingsJson rmtrnkingdata ->
                     let
                         extractedList =
@@ -379,62 +738,57 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     ( AppOps walletState allLists newAppInfo SR.Types.CreateNewLadder { txRec | txSentry = newSentry }, sentryCmd )
 
                 NewChallengeConfirmClicked ->
-                    createNewPlayerListWithNewChallengeAndUpdateJsonBin currentmodel
+                    createNewPlayerListWithNewChallengeAndUpdateJsonBin model
 
                 Fail str ->
                     ( Failure str, Cmd.none )
 
                 PlayersReceived players ->
-                    ( updateSelectedRankingOnPlayersReceived currentmodel (extractAndSortPlayerList players), Cmd.none )
+                    ( updateSelectedRankingOnPlayersReceived model (extractAndSortPlayerList players), Cmd.none )
 
-                TxSentryMsg subMsg ->
-                    let
-                        ( subModel, subCmd ) =
-                            Eth.Sentry.Tx.update subMsg txRec.txSentry
-                    in
-                    ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo uiState { txRec | txSentry = subModel }, subCmd )
-
+                -- TxSentryMsg subMsg ->
+                --     let
+                --         ( subModel, subCmd ) =
+                --             Eth.Sentry.Tx.update subMsg txRec.txSentry
+                --     in
+                --     ( AppOps SR.Types.WalletOpenedAndOperational allLists appInfo uiState { txRec | txSentry = subModel }, subCmd )
                 ChangedUIStateToEnterResult player ->
                     ( AppOps walletState allLists appInfo SR.Types.UIEnterResult emptyTxRecord, Cmd.none )
 
-                SentResultToWallet result ->
-                    let
-                        _ =
-                            Debug.log "SentResultToWallet" result
-
-                        txParams =
-                            { to = txRec.account
-                            , from = txRec.account
-                            , gas = Nothing
-                            , gasPrice = Just <| Eth.Units.gwei 4
-                            , value = Just <| Eth.Units.gwei 1
-                            , data = Nothing
-                            , nonce = Nothing
-                            }
-
-                        ( newSentry, sentryCmd ) =
-                            Eth.Sentry.Tx.customSend
-                                txRec.txSentry
-                                { onSign = Just WatchTxHash
-                                , onBroadcast = Just WatchTx
-                                , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
-                                }
-                                txParams
-                    in
-                    ( WalletOps SR.Types.WalletWaitingForTransactionReceipt allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
-                      --|> update (ProcessResult SR.Types.Won)
-                    , sentryCmd
-                    )
-
-                SentResultToJsonbin a ->
-                    ( AppOps walletState
-                        allLists
-                        appInfo
-                        uiState
-                        txRec
-                    , Cmd.none
-                    )
-
+                -- SentResultToWallet result ->
+                --     let
+                --         _ =
+                --             Debug.log "SentResultToWallet" result
+                --         txParams =
+                --             { to = txRec.account
+                --             , from = txRec.account
+                --             , gas = Nothing
+                --             , gasPrice = Just <| Eth.Units.gwei 4
+                --             , value = Just <| Eth.Units.gwei 1
+                --             , data = Nothing
+                --             , nonce = Nothing
+                --             }
+                --         ( newSentry, sentryCmd ) =
+                --             Eth.Sentry.Tx.customSend
+                --                 txRec.txSentry
+                --                 { onSign = Just WatchTxHash
+                --                 , onBroadcast = Just WatchTx
+                --                 , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                --                 }
+                --                 txParams
+                --     in
+                --     ( AppOps SR.Types.WalletWaitingForTransactionReceipt allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
+                --       --|> update (ProcessResult SR.Types.Won)
+                --     , sentryCmd
+                --     )
+                -- SentResultToJsonbin a ->
+                --     ( AppOps walletState
+                --         allLists
+                --         appInfo
+                --         uiState
+                --         txRec
+                --     , Cmd.none
+                --     )
                 DeletedRanking uaddr ->
                     ( AppOps walletState
                         allLists
@@ -454,7 +808,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     )
 
                 ChallengeOpponentClicked opponentAsPlayer ->
-                    ( updatedForChallenge currentmodel allLists.userPlayers opponentAsPlayer appInfo.user, Cmd.none )
+                    ( updatedForChallenge model allLists.userPlayers opponentAsPlayer appInfo.user, Cmd.none )
 
                 DeletedRankingFromGlobalList updatedListAfterRankingDeletedFromGlobalList ->
                     let
@@ -474,33 +828,31 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 -- current
                 ClickedJoinSelected ->
                     -- this updates the player and user lists
-                    ( currentmodel, Cmd.batch [ addCurrentUserToPlayerList appInfo.selectedRanking.id allLists.userPlayers appInfo.user, updateUsersJoinRankings appInfo.selectedRanking.id appInfo.user allLists.users ] )
+                    ( model, Cmd.batch [ addCurrentUserToPlayerList appInfo.selectedRanking.id allLists.userPlayers appInfo.user, updateUsersJoinRankings appInfo.selectedRanking.id appInfo.user allLists.users ] )
 
                 ReturnFromPlayerListUpdate response ->
                     let
                         convertedToUserPlayers =
                             Utils.MyUtils.convertPlayersToUserPlayers (Utils.MyUtils.extractPlayersFromWebData response)
                     in
-                    ( updateSelectedRankingPlayerList currentmodel convertedToUserPlayers, Cmd.none )
+                    ( updateSelectedRankingPlayerList model convertedToUserPlayers, Cmd.none )
 
                 ReturnFromUserListUpdate response ->
-                    ( updateUserList currentmodel (Utils.MyUtils.extractUsersFromWebData response), Cmd.none )
+                    ( updateUserList model (Utils.MyUtils.extractUsersFromWebData response), Cmd.none )
 
-                PollBlock (Ok blockNumber) ->
-                    ( currentmodel
-                    , Cmd.none
-                    )
-
-                PollBlock (Err error) ->
-                    ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo uiState txRec, Cmd.none )
-
+                -- PollBlock (Ok blockNumber) ->
+                --     ( model
+                --     , Cmd.none
+                --     )
+                -- PollBlock (Err error) ->
+                --     ( AppOps SR.Types.WalletOpenedAndOperational allLists appInfo uiState txRec, Cmd.none )
                 -- old UserOps
                 TimeUpdated posixTime ->
                     let
                         _ =
                             Debug.log "posixtime" posixTime
                     in
-                    ( currentmodel, Cmd.none )
+                    ( model, Cmd.none )
 
                 UsersReceived userList ->
                     let
@@ -508,22 +860,22 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                             { allLists | users = SR.ListOps.validatedUserList <| Utils.MyUtils.extractUsersFromWebData userList }
                     in
                     if SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress then
-                        ( updateOnUserListReceived currentmodel userLAddedToAllLists.users, gotRankingList )
+                        ( updateOnUserListReceived model userLAddedToAllLists.users, gotRankingList )
 
                     else
-                        ( updateOnUserListReceived currentmodel userLAddedToAllLists.users, Cmd.none )
+                        ( updateOnUserListReceived model userLAddedToAllLists.users, Cmd.none )
 
                 NewUserNameInputChg namefield ->
-                    ( handleNewUserInputs currentmodel (NewUserNameInputChg namefield), Cmd.none )
+                    ( handleNewUserInputs model (NewUserNameInputChg namefield), Cmd.none )
 
                 NewUserDescInputChg namefield ->
-                    ( handleNewUserInputs currentmodel (NewUserDescInputChg namefield), Cmd.none )
+                    ( handleNewUserInputs model (NewUserDescInputChg namefield), Cmd.none )
 
                 NewUserEmailInputChg namefield ->
-                    ( handleNewUserInputs currentmodel (NewUserEmailInputChg namefield), Cmd.none )
+                    ( handleNewUserInputs model (NewUserEmailInputChg namefield), Cmd.none )
 
                 NewUserMobileInputChg namefield ->
-                    ( handleNewUserInputs currentmodel (NewUserMobileInputChg namefield), Cmd.none )
+                    ( handleNewUserInputs model (NewUserMobileInputChg namefield), Cmd.none )
 
                 CreateNewUserRequested userInfo ->
                     let
@@ -556,361 +908,31 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     in
                     ( AppOps walletState allLists newAppInfo SR.Types.UIRenderAllRankings { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewUser allLists.users userWithUpdatedAddr, gotRankingList ] )
 
-                _ ->
-                    let
-                        _ =
-                            Debug.log "AppOps: msgOfTransitonThatAlreadyHappened" msgOfTransitonThatAlreadyHappened
-                    in
-                    --todo: better logic. This should go to failure model rather than fall thru to UserOps
-                    -- but currently logic needs to do this
-                    ( AppOps walletState allLists appInfo SR.Types.UICreateNewUser txRec, Cmd.none )
+                MissingWalletInstructions ->
+                    ( AppOps SR.Types.WalletStateMissing SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIWalletMissingInstructions emptyTxRecord, Cmd.none )
 
-        Failure str ->
-            ( Failure <| "Model failure in AppOps: " ++ str, Cmd.none )
-
-
-handleWalletStateUnknown : Msg -> Model -> ( Model, Cmd Msg )
-handleWalletStateUnknown msg model =
-    case msg of
-        WalletStatus walletSentry_ ->
-            case walletSentry_.networkId of
-                Rinkeby ->
-                    case walletSentry_.account of
-                        Nothing ->
-                            let
-                                _ =
-                                    Debug.log "nothing : " "set to locked"
-                            in
-                            ( WalletOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
-                            , Cmd.none
-                            )
-
-                        Just uaddr ->
-                            ( handleGotUser model uaddr, gotUserList )
-
-                _ ->
-                    ( Failure "handleWalletStateUnknown"
-                    , Cmd.none
-                    )
-
-        _ ->
-            ( Failure "handleWalletStateUnknown"
-            , Cmd.none
-            )
-
-
-handleWalletStateLocked : Msg -> Model -> ( Model, Cmd Msg )
-handleWalletStateLocked msg model =
-    case model of
-        WalletOps walletState allLists appInfo uiState txRec ->
-            case msg of
-                WalletStatus walletSentry_ ->
-                    ( WalletOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
-
-                PollBlock (Ok blockNumber) ->
-                    ( AppOps walletState SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
-
-                PollBlock (Err error) ->
-                    ( AppOps walletState SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
-
-                _ ->
-                    ( Failure "handleWalletStateLocked"
-                    , Cmd.none
-                    )
-
-        _ ->
-            ( Failure "handleWalletStateLocked model"
-            , Cmd.none
-            )
-
-
-handleWalletStateAwaitOpening : Msg -> Model -> ( Model, Cmd Msg )
-handleWalletStateAwaitOpening msg model =
-    case model of
-        WalletOps walletState allLists appInfo uiState txRec ->
-            case msg of
-                WalletStatus walletSentry_ ->
-                    case walletSentry_.networkId of
-                        Rinkeby ->
-                            case walletSentry_.account of
-                                Nothing ->
-                                    let
-                                        _ =
-                                            Debug.log "nothing : " "set to locked"
-                                    in
-                                    ( WalletOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
-                                    , Cmd.none
-                                    )
-
-                                Just uaddr ->
-                                    let
-                                        _ =
-                                            Debug.log "handleWalletStateAwaitOpening : " uaddr
-                                    in
-                                    handleWalletStateOpenedAndOperational msg (handleGotUser model uaddr)
-
-                        _ ->
-                            ( Failure "handleWalletStateAwaitOpening"
-                            , Cmd.none
-                            )
-
-                _ ->
-                    ( Failure "handleWalletStateAwaitOpening"
-                    , Cmd.none
-                    )
-
-        _ ->
-            ( Failure "handleWalletStateAwaitOpening"
-            , Cmd.none
-            )
-
-
-handleWalletWaitingForTransactionReceipt : Msg -> SR.Types.WalletState -> SR.Types.AllLists -> SR.Types.AppInfo -> TxRecord -> ( Model, Cmd Msg )
-handleWalletWaitingForTransactionReceipt msg walletState allLists appInfo txRec =
-    let
-        _ =
-            Debug.log "Msg" msg
-    in
-    case msg of
-        WalletStatus walletSentry_ ->
-            ( WalletOps SR.Types.WalletWaitingForTransactionReceipt allLists appInfo SR.Types.UIWaitingForTxReceipt txRec
-              --|> update (ProcessResult SR.Types.Won)
-            , Cmd.none
-            )
-
-        TxSentryMsg subMsg ->
-            let
-                _ =
-                    Debug.log "handleTxSubMsg subMsg" <| handleTxSubMsg subMsg
-            in
-            let
-                ( subModel, subCmd ) =
-                    Eth.Sentry.Tx.update subMsg txRec.txSentry
-            in
-            if handleTxSubMsg subMsg then
-                ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }, subCmd )
-
-            else
-                ( AppOps walletState SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
-
-        WatchTxHash (Ok txHash) ->
-            --( { txRec | txHash = Just txHash }, Cmd.none )
-            ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txHash = Just txHash }, Cmd.none )
-
-        WatchTxHash (Err err) ->
-            --( { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
-            ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
-
-        WatchTx (Ok tx) ->
-            let
-                _ =
-                    Debug.log "handleWalletWaitingForTransactionReceipt" "tx ok"
-            in
-            -- WalletOps SR.Types.WalletOpenedAndOperational { txRec | tx = Just tx }
-            --     |> update (ProcessResult SR.Types.Won)
-            --( UserOps SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
-            AppOps walletState allLists appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx } |> update (ProcessResult SR.Types.Won)
-
-        WatchTx (Err err) ->
-            let
-                _ =
-                    Debug.log "handleWalletWaitingForTransactionReceipt tx err" err
-            in
-            ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving Tx: " ++ err) :: txRec.errors }, Cmd.none )
-
-        WatchTxReceipt (Ok txReceipt) ->
-            let
-                _ =
-                    Debug.log "handleWalletWaitingForTransactionReceipt tx ok" txReceipt
-            in
-            AppOps walletState allLists appInfo SR.Types.UIRenderAllRankings { txRec | txReceipt = Just txReceipt } |> update (ProcessResult SR.Types.Won)
-
-        WatchTxReceipt (Err err) ->
-            let
-                _ =
-                    Debug.log "tx err" err
-            in
-            ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
-
-        _ ->
-            ( Failure "handleWalletStateUnknown"
-            , Cmd.none
-            )
-
-
-handleWalletStateOpenedAndOperational : Msg -> Model -> ( Model, Cmd Msg )
-handleWalletStateOpenedAndOperational msg model =
-    let
-        _ =
-            Debug.log "in opend and op" "with model"
-    in
-    case model of
-        WalletOps walletState allLists appInfo uiState txRec ->
-            case msg of
-                WalletStatus walletSentry_ ->
-                    if appInfo.user.ethaddress == "" then
-                        ( AppOps walletState allLists appInfo SR.Types.UICreateNewUser emptyTxRecord, Cmd.none )
-
-                    else
-                        ( AppOps walletState allLists appInfo SR.Types.UILoading emptyTxRecord, gotUserList )
-
-                PollBlock (Ok blockNumber) ->
-                    ( AppOps walletState allLists appInfo SR.Types.UIRenderAllRankings txRec, Cmd.none )
-
-                PollBlock (Err error) ->
-                    ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt txRec, Cmd.none )
-
-                OpenWalletInstructions ->
-                    ( WalletOps SR.Types.WalletStateLocked allLists appInfo SR.Types.UIWaitingForTxReceipt txRec, Cmd.none )
-
-                TxSentryMsg subMsg ->
-                    let
-                        _ =
-                            Debug.log "handleTxSubMsg subMsg" <| handleTxSubMsg subMsg
-                    in
-                    let
-                        ( subModel, subCmd ) =
-                            Eth.Sentry.Tx.update subMsg txRec.txSentry
-                    in
-                    if handleTxSubMsg subMsg then
-                        ( AppOps walletState allLists appInfo SR.Types.UIRenderAllRankings txRec, Cmd.none )
-
-                    else
-                        ( AppOps walletState allLists appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
-
-                WatchTxHash (Ok txHash) ->
-                    ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txHash = Just txHash }, Cmd.none )
-
-                WatchTxHash (Err err) ->
-                    ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
-
-                WatchTx (Ok tx) ->
-                    let
-                        _ =
-                            Debug.log "handleWalletStateOpenedAndOperational" "tx Ok"
-                    in
-                    AppOps walletState allLists appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx } |> update (ProcessResult SR.Types.Won)
-
-                WatchTx (Err err) ->
-                    let
-                        _ =
-                            Debug.log "handleWalletStateOpenedAndOperational tx err" err
-                    in
-                    ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving Tx: " ++ err) :: txRec.errors }, Cmd.none )
-
-                WatchTxReceipt (Ok txReceipt) ->
-                    let
-                        _ =
-                            Debug.log "handleWalletStateOpenedAndOperational Receipt" txReceipt
-                    in
-                    AppOps walletState allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord
-                        |> update (ProcessResult SR.Types.Won)
-
-                WatchTxReceipt (Err err) ->
-                    let
-                        _ =
-                            Debug.log "tx err" err
-                    in
-                    ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
-
-                TrackTx blockDepth ->
-                    ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | blockDepth = Just blockDepth }, Cmd.none )
-
-                ProcessResult result ->
-                    let
-                        _ =
-                            Debug.log "process result" result
-                    in
-                    case result of
-                        SR.Types.Won ->
-                            let
-                                newModel =
-                                    handleWon model
-                            in
-                            case newModel of
-                                AppOps thewalletState allTheLists theAppInfo theUIState thetxRec ->
-                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.userPlayers )
-
-                                _ ->
-                                    ( Failure "result won", Cmd.none )
-
-                        SR.Types.Lost ->
-                            let
-                                newModel =
-                                    handleLost model
-                            in
-                            case newModel of
-                                AppOps thewalletState allTheLists theAppInfo theUIState thetxRec ->
-                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.userPlayers )
-
-                                _ ->
-                                    ( Failure "result lost", Cmd.none )
-
-                        SR.Types.Undecided ->
-                            let
-                                newModel =
-                                    handleUndecided model
-                            in
-                            case newModel of
-                                AppOps thewalletState allTheLists theAppInfo theUIState thetxRec ->
-                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.userPlayers )
-
-                                _ ->
-                                    ( Failure "result lost", Cmd.none )
-
-                SentResultToWallet result ->
-                    let
-                        _ =
-                            Debug.log "SentResultToWallet" result
-
-                        txParams =
-                            { to = txRec.account
-                            , from = txRec.account
-                            , gas = Nothing
-                            , gasPrice = Just <| Eth.Units.gwei 4
-                            , value = Just <| Eth.Units.gwei 1
-                            , data = Nothing
-                            , nonce = Nothing
-                            }
-
-                        ( newSentry, sentryCmd ) =
-                            Eth.Sentry.Tx.customSend
-                                txRec.txSentry
-                                { onSign = Just WatchTxHash
-                                , onBroadcast = Just WatchTx
-                                , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
-                                }
-                                txParams
-                    in
-                    ( WalletOps SR.Types.WalletWaitingForTransactionReceipt allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
-                    , sentryCmd
-                    )
-
-                SentResultToJsonbin a ->
-                    ( AppOps walletState
-                        allLists
-                        appInfo
-                        uiState
-                        txRec
-                    , Cmd.none
-                    )
-
-                Fail str ->
-                    let
-                        _ =
-                            Debug.log "Fail: handleWalletStateOpenedAndOperational" msg
-                    in
-                    ( Failure <| "WalletOps 1" ++ str, Cmd.none )
-
-                _ ->
-                    let
-                        _ =
-                            Debug.log "Fail: msg " msg
-                    in
-                    ( Failure "handleWalletStateOpenedAndOperational"
-                    , Cmd.none
-                    )
-
+        -- _ ->
+        --     let
+        --         _ =
+        --             Debug.log "AppOps: msgOfTransitonThatAlreadyHappened" msgOfTransitonThatAlreadyHappened
+        --     in
+        --     --todo: better logic. This should go to failure model rather than fall thru
+        --     -- but currently logic needs to do this
+        --     ( AppOps walletState allLists appInfo SR.Types.UICreateNewUser txRec, Cmd.none )
+        -- Fail str ->
+        --     let
+        --         _ =
+        --             Debug.log "Fail: handleWalletStateOpenedAndOperational" msg
+        --     in
+        --     ( Failure <| "AppOps 1" ++ str, Cmd.none )
+        -- _ ->
+        --     let
+        --         _ =
+        --             Debug.log "Fail: msg " msg
+        --     in
+        --     ( Failure "handleWalletStateOpenedAndOperational"
+        --     , Cmd.none
+        --     )
         _ ->
             let
                 _ =
@@ -973,7 +995,7 @@ handleTxSubMsg subMsg =
 handleGotUser : Model -> Eth.Types.Address -> Model
 handleGotUser model uaddr =
     case model of
-        WalletOps walletState allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 newAppInfoUser =
                     appInfo.user
@@ -1269,8 +1291,8 @@ createNewPlayerListWithNewChallengeAndUpdateJsonBin model =
 
 
 handleNewUserInputs : Model -> Msg -> Model
-handleNewUserInputs currentmodel msg =
-    case currentmodel of
+handleNewUserInputs model msg =
+    case model of
         AppOps walletState allLists appInfo uiState txRec ->
             case msg of
                 NewUserNameInputChg namefield ->
@@ -1345,8 +1367,8 @@ extractAndSortPlayerList rdlPlayer =
 
 
 updatedForChallenge : Model -> List SR.Types.UserPlayer -> SR.Types.UserPlayer -> SR.Types.User -> Model
-updatedForChallenge currentmodel luplayer opponentAsPlayer user =
-    case currentmodel of
+updatedForChallenge model luplayer opponentAsPlayer user =
+    case model of
         AppOps walletState allLists appInfo _ txRec ->
             let
                 newAppInfoWithPlayer =
@@ -1405,8 +1427,8 @@ updateOnUserListReceived model userList =
 
 
 updateSelectedRankingPlayerList : Model -> List SR.Types.UserPlayer -> Model
-updateSelectedRankingPlayerList currentmodel luplayers =
-    case currentmodel of
+updateSelectedRankingPlayerList model luplayers =
+    case model of
         AppOps walletState allLists appInfo _ txRec ->
             let
                 resetSelectedRankingPlayerList =
@@ -1422,8 +1444,8 @@ updateSelectedRankingPlayerList currentmodel luplayers =
 
 
 updateUserList : Model -> List SR.Types.User -> Model
-updateUserList currentmodel lusers =
-    case currentmodel of
+updateUserList model lusers =
+    case model of
         AppOps walletState allLists appInfo _ txRec ->
             let
                 resetUserList =
@@ -1439,8 +1461,8 @@ updateUserList currentmodel lusers =
 
 
 updateSelectedRankingOnPlayersReceived : Model -> List SR.Types.UserPlayer -> Model
-updateSelectedRankingOnPlayersReceived currentmodel lplayers =
-    case currentmodel of
+updateSelectedRankingOnPlayersReceived model lplayers =
+    case model of
         AppOps walletState allLists appInfo uiState txRec ->
             let
                 newAppPlayer =
@@ -1523,38 +1545,30 @@ refresh the browser"""
                 _ ->
                     greetingView <| "Loading ... "
 
-        WalletOps walletState allLists appInfo uiState txRec ->
-            case walletState of
-                SR.Types.WalletStateUnknown ->
-                    greetingView <| "Wallet State unknown"
-
-                SR.Types.Missing ->
-                    greetingView "MissingWalletInstructions"
-
-                SR.Types.WalletStateLocked ->
-                    case uiState of
-                        SR.Types.UIDisplayWalletLockedInstructions ->
-                            let
-                                _ =
-                                    Debug.log "ui wallet loack " "here"
-                            in
-                            greetingView "OpenWalletInstructions"
-
-                        _ ->
-                            greetingView "OpenWalletInstructions"
-
-                SR.Types.WalletStateAwaitOpening ->
-                    greetingView "OpenWalletInstructions"
-
-                SR.Types.WalletOpenedWithoutUserCheck uaddr ->
-                    greetingView "User unchecked "
-
-                SR.Types.WalletOpenedAndOperational ->
-                    greetingView "WalletOpenedAndOperational"
-
-                SR.Types.WalletWaitingForTransactionReceipt ->
-                    greetingView "Please wait while the transaction is mined"
-
+        -- AppOps walletState allLists appInfo uiState txRec ->
+        --     case walletState of
+        --         SR.Types.WalletStateUnknown ->
+        --             greetingView <| "Wallet State unknown"
+        --         SR.Types.Missing ->
+        --             greetingView "MissingWalletInstructions"
+        --         SR.Types.WalletStateLocked ->
+        --             case uiState of
+        --                 SR.Types.UIDisplayWalletLockedInstructions ->
+        --                     let
+        --                         _ =
+        --                             Debug.log "ui wallet loack " "here"
+        --                     in
+        --                     greetingView "OpenWalletInstructions"
+        --                 _ ->
+        --                     greetingView "OpenWalletInstructions"
+        --         SR.Types.WalletStateAwaitOpening ->
+        --             greetingView "OpenWalletInstructions"
+        --         SR.Types.WalletOpenedWithoutUserCheck uaddr ->
+        --             greetingView "User unchecked "
+        --         SR.Types.WalletOpenedAndOperational ->
+        --             greetingView "WalletOpenedAndOperational"
+        --         SR.Types.WalletWaitingForTransactionReceipt ->
+        --             greetingView "Please wait while the transaction is mined"
         Failure str ->
             greetingView <| "Model failure in view: " ++ str
 
@@ -2250,15 +2264,14 @@ greetingView greetingMsg =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
-        WalletOps _ _ _ _ txRec ->
+        AppOps _ _ _ _ txRec ->
             Sub.batch
                 [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
                 , Eth.Sentry.Tx.listen txRec.txSentry
                 ]
 
-        AppOps _ _ _ _ _ ->
-            Sub.none
-
+        -- AppOps _ _ _ _ _ ->
+        --     Sub.none
         Failure _ ->
             Sub.none
 
