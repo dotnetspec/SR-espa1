@@ -88,7 +88,9 @@ type WalletState
     | WalletStateAwaitOpening
     | WalletOpenedWithoutUserCheck Eth.Types.Address
     | WalletWaitingForTransactionReceipt
-    | WalletOpenedAndOperational
+      --| WalletOpenedAndOperational
+    | WalletOpened
+    | WalletOperational
 
 
 type LadderState
