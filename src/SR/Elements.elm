@@ -1,8 +1,10 @@
-module SR.Elements exposing (ethereumWalletWarning, footer, justParasimpleUserInfoText, selectedRankingHeaderEl, simpleUserInfoText)
+module SR.Elements exposing (ethereumWalletWarning, footer, justParasimpleUserInfoText, placeholder, selectedRankingHeaderEl, simpleUserInfoText)
 
 --import RemoteData
 
 import Element exposing (Element)
+import Element.Background as Background
+import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Eth.Types
@@ -82,3 +84,28 @@ footer =
     Element.paragraph [] <|
         List.singleton <|
             Element.text "SportRank - all rights reserved"
+
+
+wireframeTheme =
+    { bg = Color.grey
+    , frame = Color.black
+    , text = Color.black
+    }
+
+
+placeholder : List (Element.Attribute msg) -> String -> Element msg
+placeholder attr name =
+    Element.text name
+        |> Element.el
+            [ Border.rounded 5
+            , Border.dotted
+            , Border.color wireframeTheme.frame
+            , Border.width 2
+            , Element.height Element.fill
+            , Element.width Element.fill
+            , Element.padding 20
+            , Background.color wireframeTheme.bg
+            , Font.center
+            , Font.color wireframeTheme.text
+            ]
+        |> Element.el attr
