@@ -1,15 +1,13 @@
 module SR.ListOps exposing
-    ( filterSelectedRankingOutOfGlobalList
+    ( addedNewJoinedRankingIdToUser
+    , filterSelectedRankingOutOfGlobalList
+    , findSelectedRankingInGlobalList
     , gotUserFromUserList
-    ,  gotUserListFromRemData
-       --, isUserInList
-
+    , gotUserListFromRemData
     , isUserInListStrAddr
     , isUserMemberOfSelectedRanking
     , isUserSelectedOwnerOfRanking
-    ,  ownerValidatedRankingList
-       --, singleUserInList
-
+    , ownerValidatedRankingList
     , singleUserInListStrAddr
     , validatedUserList
     )
@@ -29,22 +27,30 @@ import Utils.MyUtils
 -- external
 
 
+addedNewJoinedRankingIdToUser : String -> SR.Types.User -> List SR.Types.User -> List SR.Types.User
+addedNewJoinedRankingIdToUser rankingId user lUser =
+    let
+        currentUser =
+            gotUserFromUserList lUser user.username
+
+        userJoinRankings =
+            currentUser.userjoinrankings
+
+        newUserJoinRankings =
+            rankingId :: userJoinRankings
+
+        newUser =
+            { user | userjoinrankings = newUserJoinRankings }
+
+        newUserList =
+            newUser :: lUser
+    in
+    newUserList
+
+
 ownerValidatedRankingList : List SR.Types.RankingInfo -> List SR.Types.RankingInfo
 ownerValidatedRankingList lrankinginfo =
     lrankinginfo
-
-
-
--- isUserInList : List SR.Types.User -> Eth.Types.Address -> Bool
--- isUserInList userlist uaddr =
---     let
---         gotSingleUserFromList =
---             singleUserInList userlist uaddr
---     in
---     if gotSingleUserFromList.ethaddress == "" then
---         False
---     else
---         True
 
 
 isUserInListStrAddr : List SR.Types.User -> String -> Bool
@@ -60,11 +66,11 @@ isUserInListStrAddr userlist uaddr =
         True
 
 
-isUserMemberOfSelectedRanking : List SR.Types.Player -> SR.Types.User -> Bool
-isUserMemberOfSelectedRanking lplayer user =
+isUserMemberOfSelectedRanking : List SR.Types.UserPlayer -> SR.Types.User -> Bool
+isUserMemberOfSelectedRanking luplayer user =
     let
         filteredList =
-            SR.PlayerListOps.findPlayerInList user lplayer
+            SR.PlayerListOps.findPlayerInList user luplayer
 
         filteredRec =
             List.head filteredList
@@ -74,7 +80,7 @@ isUserMemberOfSelectedRanking lplayer user =
             False
 
         Just a ->
-            if a.address == user.ethaddress then
+            if a.player.address == user.ethaddress then
                 True
 
             else
@@ -125,7 +131,7 @@ isUserSelectedOwnerOfRanking : SR.Types.RankingInfo -> List SR.Types.RankingInfo
 isUserSelectedOwnerOfRanking rnkInfo lrnkInfo user =
     let
         filteredList =
-            findSelectedRankingInGlobalList rnkInfo.id lrnkInfo
+            findSelectedRankingInGlobalList lrnkInfo rnkInfo.id
 
         filteredRec =
             List.head filteredList
@@ -164,8 +170,8 @@ doesCurrentRankingIdNOTMatchId rankingid rankingInfo =
         Nothing
 
 
-findSelectedRankingInGlobalList : String -> List SR.Types.RankingInfo -> List SR.Types.RankingInfo
-findSelectedRankingInGlobalList rankingid lrankinginfo =
+findSelectedRankingInGlobalList : List SR.Types.RankingInfo -> String -> List SR.Types.RankingInfo
+findSelectedRankingInGlobalList lrankinginfo rankingid =
     List.filterMap
         (isRankingIdInList
             rankingid

@@ -14,6 +14,7 @@ usersJson =
           , description = "t10"
           , email = "t10@t.com"
           , mobile = "10101000"
+          , userjoinrankings = []
           }
         , { datestamp = 1569839363942
           , active = True
@@ -22,6 +23,7 @@ usersJson =
           , description = "t8"
           , email = "t8@t.com"
           , mobile = "8888888"
+          , userjoinrankings = []
           }
         , { datestamp = 1569839363942
           , active = True
@@ -30,6 +32,7 @@ usersJson =
           , description = "t7"
           , email = "t7@t.com"
           , mobile = "7777777"
+          , userjoinrankings = []
           }
         , { datestamp = 1569839363942
           , active = True
@@ -38,6 +41,7 @@ usersJson =
           , description = "t2"
           , email = "t2@t.com"
           , mobile = "222222222"
+          , userjoinrankings = []
           }
         , { datestamp = 1569839363942
           , active = True
@@ -46,6 +50,7 @@ usersJson =
           , description = "t1"
           , email = "t1@t.com"
           , mobile = "11111111"
+          , userjoinrankings = []
           }
         , { datestamp = 1569839363942
           , active = True
@@ -54,6 +59,7 @@ usersJson =
           , description = "t5"
           , email = "t5@t.com"
           , mobile = "55555555"
+          , userjoinrankings = []
           }
         , { datestamp = 1569839363942
           , active = True
@@ -62,6 +68,7 @@ usersJson =
           , description = "t6"
           , email = "t6@t.com"
           , mobile = "123456"
+          , userjoinrankings = []
           }
         , { datestamp = 1569839363942
           , active = True
@@ -70,6 +77,7 @@ usersJson =
           , description = "t4"
           , email = "t4@t.com"
           , mobile = "123456"
+          , userjoinrankings = []
           }
         , { datestamp = 1569839363942
           , active = True
@@ -78,5 +86,6 @@ usersJson =
           , description = "t3"
           , email = "test3@t3.com"
           , mobile = "777777777777"
+          , userjoinrankings = []
           }
         ]
