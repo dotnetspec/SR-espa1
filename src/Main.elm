@@ -451,7 +451,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     )
 
                 ChallengeOpponentClicked opponentAsPlayer ->
-                    ( updatedForChallenge currentmodel allLists.players opponentAsPlayer appInfo.user, Cmd.none )
+                    ( updatedForChallenge currentmodel allLists.userPlayers opponentAsPlayer appInfo.user, Cmd.none )
 
                 DeletedRankingFromGlobalList updatedListAfterRankingDeletedFromGlobalList ->
                     let
@@ -471,7 +471,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                 -- current
                 ClickedJoinSelected ->
                     -- this updates the player and user lists
-                    ( currentmodel, Cmd.batch [ addCurrentUserToPlayerList appInfo.selectedRanking.id allLists.players appInfo.user, updateUsersJoinRankings appInfo.selectedRanking.id appInfo.user allLists.users ] )
+                    ( currentmodel, Cmd.batch [ addCurrentUserToPlayerList appInfo.selectedRanking.id allLists.userPlayers appInfo.user, updateUsersJoinRankings appInfo.selectedRanking.id appInfo.user allLists.users ] )
 
                 ReturnFromPlayerListUpdate response ->
                     let
@@ -819,7 +819,7 @@ handleWalletStateOpenedAndOperational msg model =
                             in
                             case newModel of
                                 AppOps allTheLists theAppInfo theUIState thetxRec ->
-                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.players )
+                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.userPlayers )
 
                                 _ ->
                                     ( Failure "result won", Cmd.none )
@@ -831,7 +831,7 @@ handleWalletStateOpenedAndOperational msg model =
                             in
                             case newModel of
                                 AppOps allTheLists theAppInfo theUIState thetxRec ->
-                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.players )
+                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.userPlayers )
 
                                 _ ->
                                     ( Failure "result lost", Cmd.none )
@@ -843,7 +843,7 @@ handleWalletStateOpenedAndOperational msg model =
                             in
                             case newModel of
                                 AppOps allTheLists theAppInfo theUIState thetxRec ->
-                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.players )
+                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.userPlayers )
 
                                 _ ->
                                     ( Failure "result lost", Cmd.none )
@@ -999,7 +999,7 @@ handleWon model =
                     let
                         -- update the player list for both players challenger to emptyPlayer and change rankings
                         updatedPlayerListForPlayer =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.players appInfo.player appInfo.challenger.player.rank
+                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.challenger.player.rank
 
                         updatedPlayerListForPlayerAndChallenger =
                             SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger (appInfo.challenger.player.rank + 1)
@@ -1021,7 +1021,7 @@ handleWon model =
                             { appInfo | player = newUserPlayerUpdated, challenger = SR.Defaults.emptyUserPlayer }
 
                         newAllLists =
-                            { allLists | players = updatedPlayerListForPlayerAndChallenger }
+                            { allLists | userPlayers = updatedPlayerListForPlayerAndChallenger }
                     in
                     --nb. higher rank is a lower number and vice versa!
                     AppOps newAllLists
@@ -1034,7 +1034,7 @@ handleWon model =
                         --no ranking change - just update the player list for both players challenger to emptyPlayer, no rank change
                         --update the player list
                         updatedPlayerListForPlayer =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.players appInfo.player appInfo.player.player.rank
+                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.player.player.rank
 
                         updatedPlayerListForPlayerAndChallenger =
                             SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.player.rank
@@ -1056,7 +1056,7 @@ handleWon model =
                             { appInfo | player = newAppInfoUserPlayer, challenger = SR.Defaults.emptyUserPlayer }
 
                         newAllLists =
-                            { allLists | players = updatedPlayerListForPlayerAndChallenger }
+                            { allLists | userPlayers = updatedPlayerListForPlayerAndChallenger }
                     in
                     --nb. higher rank is a lower number and vice versa!
                     AppOps newAllLists
@@ -1080,7 +1080,7 @@ handleLost model =
                 SR.Types.OpponentRankHigher ->
                     let
                         updatedPlayerListForPlayer =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.players appInfo.player appInfo.player.player.rank
+                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.player.player.rank
 
                         updatedPlayerListForPlayerAndChallenger =
                             SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.player.rank
@@ -1102,7 +1102,7 @@ handleLost model =
                             { appInfo | player = newUserPlayerUpdated, challenger = SR.Defaults.emptyUserPlayer }
 
                         newAllLists =
-                            { allLists | players = updatedPlayerListForPlayerAndChallenger }
+                            { allLists | userPlayers = updatedPlayerListForPlayerAndChallenger }
                     in
                     --nb. higher rank is a lower number and vice versa!
                     AppOps newAllLists
@@ -1114,7 +1114,7 @@ handleLost model =
                     --nb. higher rank is a lower number and vice versa!
                     let
                         updatedPlayerListForPlayer =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.players appInfo.player (appInfo.player.player.rank + 1)
+                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player (appInfo.player.player.rank + 1)
 
                         updatedPlayerListForPlayerAndChallenger =
                             SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.player.player.rank
@@ -1136,7 +1136,7 @@ handleLost model =
                             { appInfo | player = newUserPlayerUpdated, challenger = SR.Defaults.emptyUserPlayer }
 
                         newAllLists =
-                            { allLists | players = updatedPlayerListForPlayerAndChallenger }
+                            { allLists | userPlayers = updatedPlayerListForPlayerAndChallenger }
                     in
                     AppOps newAllLists
                         newAppInfo
@@ -1153,7 +1153,7 @@ handleUndecided model =
         AppOps allLists appInfo uiState txRec ->
             let
                 updatedPlayerListForPlayer =
-                    SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.players appInfo.player appInfo.player.player.rank
+                    SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.player.player.rank
 
                 updatedPlayerListForPlayerAndChallenger =
                     SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.player.rank
@@ -1175,7 +1175,7 @@ handleUndecided model =
                     { appInfo | player = newUserPlayerUpdated, challenger = SR.Defaults.emptyUserPlayer }
 
                 newAllLists =
-                    { allLists | players = updatedPlayerListForPlayerAndChallenger }
+                    { allLists | userPlayers = updatedPlayerListForPlayerAndChallenger }
             in
             AppOps newAllLists
                 newAppInfo
@@ -1191,7 +1191,7 @@ ensuredCorrectSelectedUI appInfo allLists =
     if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking (SR.GlobalListOps.extractRankingList allLists.userRankings) appInfo.user then
         SR.Types.UISelectedRankingUserIsOwner
 
-    else if SR.ListOps.isUserMemberOfSelectedRanking allLists.players appInfo.user then
+    else if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
         SR.Types.UISelectedRankingUserIsPlayer
 
     else
@@ -1205,10 +1205,10 @@ createNewPlayerListWithNewResultAndUpdateJsonBin model =
             let
                 -- add respective challenger addresses to player and challenger (who is also a player type)
                 newplayerListWithPlayerUpdated =
-                    SR.PlayerListOps.updatePlayerRankWithWonResult allLists.players appInfo.player
+                    SR.PlayerListOps.updatePlayerRankWithWonResult allLists.userPlayers appInfo.player
 
                 challengerAsPlayer =
-                    SR.PlayerListOps.gotPlayerFromPlayerListStrAddress allLists.players appInfo.challenger.player.address
+                    SR.PlayerListOps.gotPlayerFromPlayerListStrAddress allLists.userPlayers appInfo.challenger.player.address
 
                 newplayerListWithPlayerAndChallengerUpdated =
                     SR.PlayerListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.player.address
@@ -1217,9 +1217,9 @@ createNewPlayerListWithNewResultAndUpdateJsonBin model =
                     SR.PlayerListOps.sortedPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
 
                 newAllLists =
-                    { allLists | players = sortedByRankingnewplayerListWithPlayerAndChallengerUpdated }
+                    { allLists | userPlayers = sortedByRankingnewplayerListWithPlayerAndChallengerUpdated }
             in
-            ( AppOps newAllLists appInfo uiState txRec, updatePlayerList appInfo.selectedRanking.id newAllLists.players )
+            ( AppOps newAllLists appInfo uiState txRec, updatePlayerList appInfo.selectedRanking.id newAllLists.userPlayers )
 
         _ ->
             ( Failure "createNewPlayerListWithNewResultAndUpdateJsonBin", Cmd.none )
@@ -1232,10 +1232,10 @@ createNewPlayerListWithNewChallengeAndUpdateJsonBin model =
             let
                 -- add respective challenger addresses to player and challenger (who is also a player type)
                 newplayerListWithPlayerUpdated =
-                    SR.PlayerListOps.setPlayerInPlayerListWithNewChallengerAddr allLists.players appInfo.player appInfo.challenger.player.address
+                    SR.PlayerListOps.setPlayerInPlayerListWithNewChallengerAddr allLists.userPlayers appInfo.player appInfo.challenger.player.address
 
                 challengerAsPlayer =
-                    SR.PlayerListOps.gotPlayerFromPlayerListStrAddress allLists.players appInfo.challenger.player.address
+                    SR.PlayerListOps.gotPlayerFromPlayerListStrAddress allLists.userPlayers appInfo.challenger.player.address
 
                 newplayerListWithPlayerAndChallengerUpdated =
                     SR.PlayerListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.player.address
@@ -1244,9 +1244,9 @@ createNewPlayerListWithNewChallengeAndUpdateJsonBin model =
                     SR.PlayerListOps.sortedPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
 
                 newAllLists =
-                    { allLists | players = sortedByRankingnewplayerListWithPlayerAndChallengerUpdated }
+                    { allLists | userPlayers = sortedByRankingnewplayerListWithPlayerAndChallengerUpdated }
             in
-            ( AppOps newAllLists appInfo uiState txRec, updatePlayerList appInfo.selectedRanking.id newAllLists.players )
+            ( AppOps newAllLists appInfo uiState txRec, updatePlayerList appInfo.selectedRanking.id newAllLists.userPlayers )
 
         _ ->
             ( Failure "createNewPlayerListWithNewChallengeAndUpdateJsonBin", Cmd.none )
@@ -1394,7 +1394,7 @@ updateSelectedRankingPlayerList currentmodel luplayers =
         AppOps allLists appInfo _ txRec ->
             let
                 resetSelectedRankingPlayerList =
-                    { allLists | players = luplayers }
+                    { allLists | userPlayers = luplayers }
 
                 uiState =
                     ensuredCorrectSelectedUI appInfo allLists
@@ -1434,7 +1434,7 @@ updateSelectedRankingOnPlayersReceived currentmodel lplayers =
                     { newAppPlayer | challenger = SR.PlayerListOps.gotPlayerFromPlayerListStrAddress lplayers newAppPlayer.player.player.challengeraddress }
 
                 allListsPlayersAdded =
-                    { allLists | players = lplayers }
+                    { allLists | userPlayers = lplayers }
 
                 uistate =
                     ensuredCorrectSelectedUI appInfo allLists
@@ -1649,7 +1649,7 @@ addPlayerInfoToAnyElText model uplayer =
                     else
                         False
             in
-            if SR.ListOps.isUserMemberOfSelectedRanking allLists.players appInfo.user then
+            if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
                 -- let
                 --     _ =
                 --         Debug.log "isCurrentUserInAChallenge" isCurrentUserInAChallenge
@@ -1719,7 +1719,7 @@ insertPlayerList model =
                 mapOutPlayerList =
                     List.map
                         (addPlayerInfoToAnyElText model)
-                        allLists.players
+                        allLists.userPlayers
             in
             mapOutPlayerList
 

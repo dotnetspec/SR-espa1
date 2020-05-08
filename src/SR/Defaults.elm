@@ -84,7 +84,7 @@ emptyRankingInfo =
 
 emptyAllLists =
     { userRankings = []
-    , players = []
+    , userPlayers = []
     , users = []
     }
 
