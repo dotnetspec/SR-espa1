@@ -66,11 +66,11 @@ isUserInListStrAddr userlist uaddr =
         True
 
 
-isUserMemberOfSelectedRanking : List SR.Types.Player -> SR.Types.User -> Bool
-isUserMemberOfSelectedRanking lplayer user =
+isUserMemberOfSelectedRanking : List SR.Types.UserPlayer -> SR.Types.User -> Bool
+isUserMemberOfSelectedRanking luplayer user =
     let
         filteredList =
-            SR.PlayerListOps.findPlayerInList user lplayer
+            SR.PlayerListOps.findPlayerInList user luplayer
 
         filteredRec =
             List.head filteredList
@@ -80,7 +80,7 @@ isUserMemberOfSelectedRanking lplayer user =
             False
 
         Just a ->
-            if a.address == user.ethaddress then
+            if a.player.address == user.ethaddress then
                 True
 
             else

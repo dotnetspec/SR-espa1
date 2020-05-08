@@ -1,6 +1,6 @@
 module SR.Defaults exposing
     ( emptyPlayer
-    , emptyActiveUser, emptyAllLists, emptyAppInfo, emptyFormValidations, emptyOwnedRanking, emptyRankingInfo, emptyUser, emptyUserRanking, globalBinName, globalContainerId, secretKey, selectedBinName, selectedContainerId, userBinName, userContainerId
+    , emptyActiveUser, emptyAllLists, emptyAppInfo, emptyFormValidations, emptyOwnedRanking, emptyRankingInfo, emptyUser, emptyUserPlayer, emptyUserRanking, globalBinName, globalContainerId, secretKey, selectedBinName, selectedContainerId, userBinName, userContainerId
     )
 
 {-| Default values.
@@ -67,6 +67,12 @@ emptyUserRanking =
     }
 
 
+emptyUserPlayer =
+    { player = emptyPlayer
+    , user = emptyUser
+    }
+
+
 emptyRankingInfo =
     { id = "0"
     , active = False
@@ -85,9 +91,9 @@ emptyAllLists =
 
 emptyAppInfo =
     { selectedRanking = emptyRankingInfo
-    , player = emptyPlayer
+    , player = emptyUserPlayer
     , user = emptyUser
-    , challenger = emptyPlayer
+    , challenger = emptyUserPlayer
     }
 
 

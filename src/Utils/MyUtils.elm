@@ -4,6 +4,8 @@ module Utils.MyUtils exposing
     , convertListOfMaybeToList
     , convertMaybePlayerToPlayer
     , convertMaybeUserRankingListToList
+    , convertPlayersToUserPlayers
+    , convertUserPlayersToPlayers
     , createdMaybePlayerFromPlayer
     , extractPlayersFromWebData
     , extractRankingInfoListFromMaybeList
@@ -74,6 +76,30 @@ stringToRankingId rnkId =
 stringFromRankingId : Internal.Types.RankingId -> String
 stringFromRankingId (Internal.Types.RankingId rnkId) =
     rnkId
+
+
+convertUserPlayersToPlayers : List SR.Types.UserPlayer -> List SR.Types.Player
+convertUserPlayersToPlayers luplayers =
+    List.map refEachPlayer luplayers
+
+
+convertPlayersToUserPlayers : List SR.Types.Player -> List SR.Types.UserPlayer
+convertPlayersToUserPlayers lplayers =
+    List.map convertEachPlayerToUserPlayer lplayers
+
+
+
+-- Internal
+
+
+convertEachPlayerToUserPlayer : SR.Types.Player -> SR.Types.UserPlayer
+convertEachPlayerToUserPlayer player =
+    { player = player, user = SR.Defaults.emptyUser }
+
+
+refEachPlayer : SR.Types.UserPlayer -> SR.Types.Player
+refEachPlayer uplayer =
+    uplayer.player
 
 
 extractPlayersFromWebData : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
@@ -172,15 +198,10 @@ stringFromMaybeString str =
             a
 
 
-splitPlayerFieldsToCreateMaybePlayer : SR.Types.Player -> Maybe SR.Types.Player
-splitPlayerFieldsToCreateMaybePlayer player =
-    createMaybePlayer player.address player.rank player.challengeraddress
-
-
-createMaybePlayer : String -> Int -> String -> Maybe SR.Types.Player
-createMaybePlayer address rank challengeraddress =
-    if rank > 0 && rank < 50000 then
-        Just { address = address, rank = rank, challengeraddress = challengeraddress }
+splitPlayerFieldsToCreateMaybePlayer : SR.Types.UserPlayer -> Maybe SR.Types.UserPlayer
+splitPlayerFieldsToCreateMaybePlayer uplayer =
+    if uplayer.player.rank > 0 && uplayer.player.rank < 50000 then
+        Just uplayer
 
     else
         Nothing
@@ -195,17 +216,21 @@ createdMaybePlayerFromPlayer player =
         }
 
 
-convertMaybePlayerToPlayer : Maybe SR.Types.Player -> SR.Types.Player
+convertMaybePlayerToPlayer : Maybe SR.Types.UserPlayer -> SR.Types.UserPlayer
 convertMaybePlayerToPlayer mplayer =
     case mplayer of
         Nothing ->
-            SR.Defaults.emptyPlayer
+            SR.Defaults.emptyUserPlayer
 
         Just a ->
-            { address = a.address
-            , rank = a.rank
-            , challengeraddress = a.challengeraddress
-            }
+            a
+
+
+
+-- { address = a.address
+-- , rank = a.rank
+-- , challengeraddress = a.challengeraddress
+-- }
 
 
 convertMaybeUserRankingListToList : Maybe (List SR.Types.UserRanking) -> List SR.Types.UserRanking

@@ -2,7 +2,7 @@ module SR.Types exposing
     ( PlayerId, RankingId(..)
     , Player, Opponent, OpponentRelativeRank(..), Options, ResultOfMatch(..), WalletState(..)
     , UIState(..)
-    , AllLists, AppInfo, Colors, CreateNewLadderFormFields, FormValidations, LadderState(..), ModalState(..), NewRankingListServerResponse, RankingInfo, ResultRadioOptions(..), User, UserListState(..), UserRanking, colors
+    , AllLists, AppInfo, Colors, CreateNewLadderFormFields, FormValidations, LadderState(..), ModalState(..), NewRankingListServerResponse, RankingInfo, ResultRadioOptions(..), User, UserListState(..), UserPlayer, UserRanking, colors
     )
 
 {-| Types
@@ -74,7 +74,7 @@ type RankingId
 
 
 type alias Opponent =
-    Player
+    UserPlayer
 
 
 type Username
@@ -175,16 +175,14 @@ type OpponentRelativeRank
 type alias AllLists =
     { users : List User
     , userRankings : List UserRanking
-
-    --, players : List UserPlayer
-    , players : List Player
+    , players : List UserPlayer
     }
 --}
 
 
 type alias UserPlayer =
     { player : Player
-    , userInfo : User
+    , user : User
     }
 
 
@@ -196,9 +194,9 @@ type alias UserRanking =
 
 type alias AppInfo =
     { selectedRanking : RankingInfo
-    , player : Player
+    , player : UserPlayer
     , user : User
-    , challenger : Player
+    , challenger : UserPlayer
     }
 
 
