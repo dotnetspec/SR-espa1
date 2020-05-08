@@ -1,6 +1,6 @@
 module SR.Defaults exposing
     ( emptyPlayer
-    , emptyActiveUser, emptyAllLists, emptyAppInfo, emptyFormValidations, emptyRankingInfo, emptyUser, globalBinName, globalContainerId, secretKey, selectedBinName, selectedContainerId, userBinName, userContainerId
+    , emptyActiveUser, emptyAllLists, emptyAppInfo, emptyFormValidations, emptyOwnedRanking, emptyRankingInfo, emptyUser, emptyUserPlayer, emptyUserRanking, globalBinName, globalContainerId, secretKey, selectedBinName, selectedContainerId, userBinName, userContainerId
     )
 
 {-| Default values.
@@ -33,6 +33,7 @@ emptyUser =
     , description = ""
     , email = ""
     , mobile = ""
+    , userjoinrankings = []
     }
 
 
@@ -56,6 +57,19 @@ emptyActiveUser =
     , description = ""
     , email = ""
     , mobile = ""
+    , userjoinrankings = []
+    }
+
+
+emptyUserRanking =
+    { rankingInfo = emptyRankingInfo
+    , userInfo = emptyUser
+    }
+
+
+emptyUserPlayer =
+    { player = emptyPlayer
+    , user = emptyUser
     }
 
 
@@ -63,23 +77,29 @@ emptyRankingInfo =
     { id = "0"
     , active = False
     , rankingname = ""
-    , rankingdesc = ""
+    , rankingdesc = "emptyRankingInfo"
     , rankingowneraddr = ""
     }
 
 
 emptyAllLists =
-    { globalRankings = []
-    , players = []
+    { userRankings = []
+    , userPlayers = []
     , users = []
     }
 
 
 emptyAppInfo =
     { selectedRanking = emptyRankingInfo
-    , player = emptyPlayer
+    , player = emptyUserPlayer
     , user = emptyUser
-    , challenger = emptyPlayer
+    , challenger = emptyUserPlayer
+    }
+
+
+emptyOwnedRanking =
+    { rankingInfo = emptyRankingInfo
+    , userInfo = emptyUser
     }
 
 

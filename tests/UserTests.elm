@@ -41,6 +41,7 @@ gotUserFromUserListTest =
               , description = "Tough"
               , email = "j@j.com"
               , mobile = "123456"
+              , userjoinrankings = []
               }
             , { datestamp = 123456
               , active = True
@@ -49,6 +50,7 @@ gotUserFromUserListTest =
               , description = "Fit"
               , email = "j@j.com"
               , mobile = "123456"
+              , userjoinrankings = []
               }
             ]
 
@@ -60,6 +62,7 @@ gotUserFromUserListTest =
               , description = "Fit"
               , email = "j@j.com"
               , mobile = "123456"
+              , userjoinrankings = []
               }
             ]
     in

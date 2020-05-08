@@ -4,7 +4,7 @@ module SR.Constants exposing
     , jsonbinPlayersReadLink
     , jsonbinUrlForCreateNewBinAndRespond
     , jsonbinUrlStubForUpdateExistingBinAndRespond
-    , jsonbinUrlUpdateWithNewUserAndRespond
+    , jsonbinUrlUpdateUserListAndRespond
     , jsonbinUsersReadBinLink
     )
 
@@ -24,8 +24,8 @@ jsonbinUsersReadBinLink =
     "https://api.jsonbin.io/b/5e4cf5f54d073155b0dca915/latest"
 
 
-jsonbinUrlUpdateWithNewUserAndRespond : String
-jsonbinUrlUpdateWithNewUserAndRespond =
+jsonbinUrlUpdateUserListAndRespond : String
+jsonbinUrlUpdateUserListAndRespond =
     "https://api.jsonbin.io/b/5e4cf5f54d073155b0dca915/"
 
 

@@ -75,19 +75,20 @@ testsortPlayerListByRank =
 
 ownerValidatedRankingListTest : Test
 ownerValidatedRankingListTest =
-    fuzz (Fuzz.list rankingInfoFuzzer) "a globalranking list entry must have valid owneraddresses" <|
-        \list ->
-            case SR.ListOps.ownerValidatedRankingList list of
-                [] ->
-                    Expect.pass
+    skip <|
+        fuzz (Fuzz.list rankingInfoFuzzer) "a globalranking list entry must have valid owneraddresses" <|
+            \list ->
+                case SR.ListOps.ownerValidatedRankingList list of
+                    [] ->
+                        Expect.pass
 
-                --Expect.true "true" True
-                globalRankingList ->
-                    -- let
-                    --     _ =
-                    --         Debug.log "globalRankingList" globalRankingList
-                    -- in
-                    Expect.true "true" <| List.all isValidOwnerAddress <| SR.GlobalListOps.ownerValidatedRankingList globalRankingList
+                    --Expect.true "true" True
+                    globalRankingList ->
+                        -- let
+                        --     _ =
+                        --         Debug.log "globalRankingList" globalRankingList
+                        -- in
+                        Expect.true "true" <| List.all isValidOwnerAddress <| SR.GlobalListOps.ownerValidatedRankingList globalRankingList
 
 
 

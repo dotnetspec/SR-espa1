@@ -67,6 +67,12 @@ userDecoder =
         |> Json.Decode.Pipeline.required "description" Json.Decode.string
         |> Json.Decode.Pipeline.required "email" Json.Decode.string
         |> Json.Decode.Pipeline.required "mobile" Json.Decode.string
+        |> Json.Decode.Pipeline.required "userjoinrankings" decodeUserJoinRankingsList
+
+
+decodeUserJoinRankingsList : Decoder (List String)
+decodeUserJoinRankingsList =
+    Json.Decode.list Json.Decode.string
 
 
 decodeNewUserListServerResponse : Decoder (List SR.Types.User)

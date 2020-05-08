@@ -1,7 +1,7 @@
 --module SR.Encode exposing (address, bigInt, blockHash, blockId, hex, hexInt, listOfMaybesToVal, logFilter, topicsList, txCall, txHash)
 
 
-module SR.Encode exposing (playerEncoder)
+module SR.Encode exposing (encodeUserList)
 
 {-|
 
@@ -30,35 +30,30 @@ import SR.Types
 -- address : Address -> Value
 -- address =
 --     addressToString >> string
--- Complex
 
 
-playerEncoder : SR.Types.Player -> Encode.Value
-playerEncoder player =
-    Encode.object
-        [ ( "DATESTAMP", Encode.int player.datestamp )
-        , ( "ACTIVE"
-          , Encode.bool player.active
-          )
-        , ( "CURRENTCHALLENGERNAME"
-          , Encode.string player.currentchallengername
-          )
-        , ( "CURRENTCHALLENGERID"
-          , Encode.int player.currentchallengerid
-          )
-        , ( "ADDRESS"
-          , Encode.string player.address
-          )
-        , ( "RANK"
-          , Encode.int player.rank
-          )
-        , ( "NAME"
-          , Encode.string player.name
-          )
-        , ( "id"
-          , Encode.int player.id
-          )
-        , ( "CURRENTCHALLENGERADDRESS"
-          , Encode.string player.currentchallengeraddress
-          )
-        ]
+encodeUserList : List SR.Types.User -> Encode.Value
+encodeUserList lusers =
+    let
+        encodeUserObj : SR.Types.User -> Encode.Value
+        encodeUserObj user =
+            Encode.object
+                [ ( "datestamp", Encode.int user.datestamp )
+                , ( "active", Encode.bool user.active )
+                , ( "username", Encode.string user.username )
+                , ( "ethaddress", Encode.string (String.toLower user.ethaddress) )
+                , ( "description", Encode.string user.description )
+                , ( "email", Encode.string user.email )
+                , ( "mobile", Encode.string user.mobile )
+                , ( "userjoinrankings", encodeUserJoinRankingsList Encode.string user.userjoinrankings )
+                ]
+
+        encodedList =
+            Encode.list encodeUserObj lusers
+    in
+    encodedList
+
+
+encodeUserJoinRankingsList : (a -> Value) -> List a -> Value
+encodeUserJoinRankingsList fencodestr luserjoinrankings =
+    Encode.list fencodestr luserjoinrankings
