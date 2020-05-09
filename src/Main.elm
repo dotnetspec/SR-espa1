@@ -81,7 +81,8 @@ init _ =
     ( AppOps SR.Types.WalletStateUnknown SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UILoading emptyTxRecord
     , Cmd.batch
         [ Ports.log "Sending out msg from init "
-        , Task.attempt PollBlock (Eth.getBlockNumber node.http)
+
+        --, Task.attempt PollBlock (Eth.getBlockNumber node.http)
         ]
     )
 
@@ -139,6 +140,7 @@ type Msg
     | MissingWalletInstructions
     | OpenWalletInstructions
     | Fail String
+    | NoOp
       -- AppOps
     | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
     | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
@@ -173,7 +175,7 @@ type Msg
     | CreateNewUserRequested SR.Types.User
     | TimeUpdated Posix
       --Wallet and User/App Ops
-    | PollBlock (Result Http.Error Int)
+      --| PollBlock (Result Http.Error Int)
     | WatchTxHash (Result String Eth.Types.TxHash)
     | WatchTx (Result String Eth.Types.Tx)
     | WatchTxReceipt (Result String Eth.Types.TxReceipt)
@@ -292,12 +294,10 @@ handleWalletStateLocked msg model =
                 WalletStatus walletSentry_ ->
                     ( AppOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
 
-                PollBlock (Ok blockNumber) ->
-                    ( AppOps walletState SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
-
-                PollBlock (Err error) ->
-                    ( AppOps walletState SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
-
+                -- PollBlock (Ok blockNumber) ->
+                --     ( AppOps walletState SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
+                -- PollBlock (Err error) ->
+                --     ( AppOps walletState SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
                 _ ->
                     ( Failure "handleWalletStateLocked"
                     , Cmd.none
@@ -433,53 +433,106 @@ handledWalletStateOpened msg model =
         AppOps walletState allLists appInfo uiState txRec ->
             case msg of
                 WalletStatus walletSentry_ ->
-                    if appInfo.user.ethaddress == "" then
-                        ( AppOps SR.Types.WalletStateLocked allLists appInfo SR.Types.UICreateNewUser emptyTxRecord, Cmd.none )
-
-                    else
-                        ( AppOps SR.Types.WalletOpened allLists appInfo SR.Types.UILoading emptyTxRecord, gotUserList )
-
-                PollBlock (Ok blockNumber) ->
-                    ( AppOps SR.Types.WalletOpened allLists appInfo SR.Types.UIRenderAllRankings txRec, Cmd.none )
-
-                PollBlock (Err error) ->
-                    ( AppOps SR.Types.WalletOpened allLists appInfo SR.Types.UIWaitingForTxReceipt txRec, Cmd.none )
-
-                _ ->
-                    let
-                        _ =
-                            Debug.log "handledWalletStateOpened msg : " msg
-                    in
-                    ( Failure "handledWalletStateOpened"
-                    , Cmd.none
-                    )
-
-        Failure str ->
-            ( Failure "handledWalletStateOpened", Cmd.none )
-
-
-handleWalletStateOperational : Msg -> Model -> ( Model, Cmd Msg )
-handleWalletStateOperational msg model =
-    let
-        _ =
-            Debug.log "in opend and op" "with model"
-    in
-    case model of
-        AppOps walletState allLists appInfo uiState txRec ->
-            case msg of
-                WalletStatus walletSentry_ ->
+                    -- let
+                    --     _ =
+                    --         Debug.log "walletSentry in Opened" walletSentry_
+                    -- in
                     if appInfo.user.ethaddress == "" then
                         ( AppOps SR.Types.WalletStateLocked allLists appInfo SR.Types.UICreateNewUser emptyTxRecord, Cmd.none )
 
                     else
                         ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UILoading emptyTxRecord, gotUserList )
 
-                PollBlock (Ok blockNumber) ->
-                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings txRec, Cmd.none )
+                -- PollBlock (Ok blockNumber) ->
+                --     ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings txRec, Cmd.none )
+                -- PollBlock (Err error) ->
+                --     ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt txRec, Cmd.none )
+                UsersReceived userList ->
+                    let
+                        userLAddedToAllLists =
+                            { allLists | users = SR.ListOps.validatedUserList <| Utils.MyUtils.extractUsersFromWebData userList }
+                    in
+                    if SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress then
+                        ( updateOnUserListReceived model userLAddedToAllLists.users, gotRankingList )
 
-                PollBlock (Err error) ->
-                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt txRec, Cmd.none )
+                    else
+                        ( updateOnUserListReceived model userLAddedToAllLists.users, Cmd.none )
 
+                GotGlobalRankingsJson rmtrnkingdata ->
+                    let
+                        extractedList =
+                            SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata
+
+                        allUserAsOwnerGlobal =
+                            SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
+
+                        currentUserAsPlayer =
+                            SR.GlobalListOps.gotUserIsPlayerNonUserRankingList appInfo.user extractedList
+
+                        addedRankingListToAllLists =
+                            { allLists
+                                | userRankings = allUserAsOwnerGlobal
+                            }
+
+                        userRankingOwner =
+                            SR.GlobalListOps.gotUserOwnedGlobalRankingList allUserAsOwnerGlobal appInfo.user
+
+                        userRankingPlayer =
+                            SR.GlobalListOps.createduserRankingPlayerList currentUserAsPlayer allLists.users
+
+                        -- current
+                        ownerPlayerCombinedList =
+                            userRankingOwner ++ userRankingPlayer
+
+                        userRankingOther =
+                            SR.GlobalListOps.gotOthersGlobalRankingList ownerPlayerCombinedList allUserAsOwnerGlobal
+
+                        _ =
+                            Debug.log "combined lists : " ((userRankingOwner ++ userRankingPlayer) ++ userRankingOther)
+                    in
+                    ( AppOps SR.Types.WalletOperational addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+
+                NoOp ->
+                    ( model, Cmd.none )
+
+                _ ->
+                    let
+                        _ =
+                            Debug.log "handledWalletStateOpened1 msg : " msg
+                    in
+                    ( Failure "handledWalletStateOpened2"
+                    , Cmd.none
+                    )
+
+        Failure str ->
+            ( Failure "handledWalletStateOpened3", Cmd.none )
+
+
+handleWalletStateOperational : Msg -> Model -> ( Model, Cmd Msg )
+handleWalletStateOperational msg model =
+    -- let
+    --     _ =
+    --         Debug.log "in opend and op" "with model"
+    -- in
+    case model of
+        AppOps walletState allLists appInfo uiState txRec ->
+            case msg of
+                WalletStatus walletSentry_ ->
+                    ( model, Cmd.none )
+
+                --     ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings txRec, Cmd.none )
+                --     let
+                --         _ =
+                --             Debug.log "walletSentry in Operational" walletSentry_
+                --     in
+                --     if appInfo.user.ethaddress == "" then
+                --         ( AppOps SR.Types.WalletStateLocked allLists appInfo SR.Types.UICreateNewUser emptyTxRecord, Cmd.none )
+                --     else
+                --         ( AppOps SR.Types.WalletOpened allLists appInfo SR.Types.UILoading emptyTxRecord, Cmd.none )
+                -- PollBlock (Ok blockNumber) ->
+                --     ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings txRec, Cmd.none )
+                -- PollBlock (Err error) ->
+                --     ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt txRec, Cmd.none )
                 OpenWalletInstructions ->
                     ( AppOps SR.Types.WalletStateLocked allLists appInfo SR.Types.UIWaitingForTxReceipt txRec, Cmd.none )
 
@@ -536,15 +589,15 @@ handleWalletStateOperational msg model =
                     ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | blockDepth = Just blockDepth }, Cmd.none )
 
                 UsersReceived userList ->
-                    let
-                        userLAddedToAllLists =
-                            { allLists | users = SR.ListOps.validatedUserList <| Utils.MyUtils.extractUsersFromWebData userList }
-                    in
-                    if SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress then
-                        ( updateOnUserListReceived model userLAddedToAllLists.users, gotRankingList )
-
-                    else
-                        ( updateOnUserListReceived model userLAddedToAllLists.users, Cmd.none )
+                    -- let
+                    --     userLAddedToAllLists =
+                    --         { allLists | users = SR.ListOps.validatedUserList <| Utils.MyUtils.extractUsersFromWebData userList }
+                    -- in
+                    -- if SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress then
+                    --     ( updateOnUserListReceived model userLAddedToAllLists.users, gotRankingList )
+                    -- else
+                    --     ( updateOnUserListReceived model userLAddedToAllLists.users, Cmd.none )
+                    ( model, Cmd.none )
 
                 ProcessResult result ->
                     let
@@ -626,39 +679,32 @@ handleWalletStateOperational msg model =
                     )
 
                 GotGlobalRankingsJson rmtrnkingdata ->
-                    let
-                        extractedList =
-                            SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata
+                    -- let
+                    --     extractedList =
+                    --         SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata
+                    --     allUserAsOwnerGlobal =
+                    --         SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
+                    --     currentUserAsPlayer =
+                    --         SR.GlobalListOps.gotUserIsPlayerNonUserRankingList appInfo.user extractedList
+                    --     addedRankingListToAllLists =
+                    --         { allLists
+                    --             | userRankings = allUserAsOwnerGlobal
+                    --         }
+                    --     userRankingOwner =
+                    --         SR.GlobalListOps.gotUserOwnedGlobalRankingList allUserAsOwnerGlobal appInfo.user
+                    --     userRankingPlayer =
+                    --         SR.GlobalListOps.createduserRankingPlayerList currentUserAsPlayer allLists.users
+                    --     -- current
+                    --     ownerPlayerCombinedList =
+                    --         userRankingOwner ++ userRankingPlayer
+                    --     userRankingOther =
+                    --         SR.GlobalListOps.gotOthersGlobalRankingList ownerPlayerCombinedList allUserAsOwnerGlobal
+                    --     _ =
+                    --         Debug.log "combined lists : " ((userRankingOwner ++ userRankingPlayer) ++ userRankingOther)
+                    -- in
+                    ( AppOps SR.Types.WalletOpened allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
-                        allUserAsOwnerGlobal =
-                            SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
-
-                        currentUserAsPlayer =
-                            SR.GlobalListOps.gotUserIsPlayerNonUserRankingList appInfo.user extractedList
-
-                        addedRankingListToAllLists =
-                            { allLists
-                                | userRankings = allUserAsOwnerGlobal
-                            }
-
-                        userRankingOwner =
-                            SR.GlobalListOps.gotUserOwnedGlobalRankingList allUserAsOwnerGlobal appInfo.user
-
-                        userRankingPlayer =
-                            SR.GlobalListOps.createduserRankingPlayerList currentUserAsPlayer allLists.users
-
-                        -- current
-                        ownerPlayerCombinedList =
-                            userRankingOwner ++ userRankingPlayer
-
-                        userRankingOther =
-                            SR.GlobalListOps.gotOthersGlobalRankingList ownerPlayerCombinedList allUserAsOwnerGlobal
-
-                        _ =
-                            Debug.log "combined lists : " ((userRankingOwner ++ userRankingPlayer) ++ userRankingOther)
-                    in
-                    ( AppOps walletState addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
-
+                --( model, Cmd.none )
                 ClickedSelectedRanking rnkidstr rnkownerstr rnknamestr ->
                     let
                         _ =
@@ -673,7 +719,7 @@ handleWalletStateOperational msg model =
                         newAppInfo =
                             { appInfo | selectedRanking = newRnkInfo }
                     in
-                    ( AppOps walletState allLists newAppInfo uiState emptyTxRecord, fetchedSingleRanking rnkidstr )
+                    ( AppOps SR.Types.WalletOperational allLists newAppInfo uiState emptyTxRecord, fetchedSingleRanking rnkidstr )
 
                 -- this is the response from createNewPlayerListWithCurrentUser Cmd
                 -- it had the Http.expectStringResponse in it
@@ -869,7 +915,6 @@ handleWalletStateOperational msg model =
                     in
                     ( AppOps walletState addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
-                -- current
                 ClickedJoinSelected ->
                     -- this updates the player and user lists
                     ( model, Cmd.batch [ addCurrentUserToPlayerList appInfo.selectedRanking.id allLists.userPlayers appInfo.user, updateUsersJoinRankings appInfo.selectedRanking.id appInfo.user allLists.users ] )
@@ -953,36 +998,46 @@ handleWalletStateOperational msg model =
                 MissingWalletInstructions ->
                     ( AppOps SR.Types.WalletStateMissing SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIWalletMissingInstructions emptyTxRecord, Cmd.none )
 
+                NoOp ->
+                    ( model, Cmd.none )
+
         -- _ ->
-        --     let
-        --         _ =
-        --             Debug.log "AppOps: msgOfTransitonThatAlreadyHappened" msgOfTransitonThatAlreadyHappened
-        --     in
-        --     --todo: better logic. This should go to failure model rather than fall thru
-        --     -- but currently logic needs to do this
-        --     ( AppOps walletState allLists appInfo SR.Types.UICreateNewUser txRec, Cmd.none )
-        -- Fail str ->
-        --     let
-        --         _ =
-        --             Debug.log "Fail: handleWalletStateOpenedAndOperational" msg
-        --     in
-        --     ( Failure <| "AppOps 1" ++ str, Cmd.none )
-        -- _ ->
-        --     let
-        --         _ =
-        --             Debug.log "Fail: msg " msg
-        --     in
-        --     ( Failure "handleWalletStateOpenedAndOperational"
-        --     , Cmd.none
-        --     )
-        _ ->
-            let
-                _ =
-                    Debug.log "Fail: msg " msg
-            in
-            ( Failure "handleWalletStateOpenedAndOperational"
-            , Cmd.none
-            )
+        --     ( model, Cmd.none )
+        Failure str ->
+            ( Failure str, Cmd.none )
+
+
+
+-- _ ->
+--     let
+--         _ =
+--             Debug.log "AppOps: msgOfTransitonThatAlreadyHappened" msgOfTransitonThatAlreadyHappened
+--     in
+--     --todo: better logic. This should go to failure model rather than fall thru
+--     -- but currently logic needs to do this
+--     ( AppOps walletState allLists appInfo SR.Types.UICreateNewUser txRec, Cmd.none )
+-- Fail str ->
+--     let
+--         _ =
+--             Debug.log "Fail: handleWalletStateOpenedAndOperational" msg
+--     in
+--     ( Failure <| "AppOps 1" ++ str, Cmd.none )
+-- _ ->
+--     let
+--         _ =
+--             Debug.log "Fail: msg " msg
+--     in
+--     ( Failure "handleWalletStateOpenedAndOperational"
+--     , Cmd.none
+--     )
+-- _ ->
+--     let
+--         _ =
+--             Debug.log "Fail: msg " msg
+--     in
+--     ( Failure "handleWalletStateOpenedAndOperational"
+--     , Cmd.none
+--     )
 
 
 handleTxSubMsg : Eth.Sentry.Tx.Msg -> Bool
@@ -1455,14 +1510,14 @@ updateOnUserListReceived model userList =
                     _ =
                         Debug.log "have user" userUpdatedInAppInfo.user.ethaddress
                 in
-                AppOps walletState newAllLists userUpdatedInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord
+                AppOps SR.Types.WalletOpened newAllLists userUpdatedInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord
 
             else
                 let
                     _ =
                         Debug.log "no user" appInfo.user.ethaddress
                 in
-                AppOps walletState newAllLists userUpdatedInAppInfo SR.Types.UICreateNewUser txRec
+                AppOps SR.Types.WalletOpened newAllLists userUpdatedInAppInfo SR.Types.UICreateNewUser txRec
 
         _ ->
             Failure "should be in AppOps"
