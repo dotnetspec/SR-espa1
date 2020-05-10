@@ -103,9 +103,9 @@ if (MODE === "development") {
                             loader: "elm-webpack-loader",
                             options: {
                                 // add Elm's debug overlay to output
-                                debug: withDebug,
+                                //debug: withDebug,
                                 //
-                                forceWatch: true
+                                //forceWatch: true
                             }
                         }
                     ]
@@ -120,7 +120,7 @@ if (MODE === "development") {
             // feel free to delete this section if you don't need anything like this
             before(app) {
                 // on port 3000
-                app.get("/test", function(req, res) {
+                app.get("/test", function (req, res) {
                     res.json({ result: "OK" });
                 });
             }

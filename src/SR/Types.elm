@@ -83,12 +83,14 @@ type Username
 
 type WalletState
     = WalletStateUnknown
-    | Missing
+    | WalletStateMissing
     | WalletStateLocked
     | WalletStateAwaitOpening
     | WalletOpenedWithoutUserCheck Eth.Types.Address
     | WalletWaitingForTransactionReceipt
-    | WalletOpenedAndOperational
+      --| WalletOpenedAndOperational
+    | WalletOpened
+    | WalletOperational
 
 
 type LadderState
