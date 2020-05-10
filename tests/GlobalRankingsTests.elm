@@ -9,9 +9,7 @@ import Fuzz exposing (Fuzzer, int, list, string)
 import Internal.Types
 import Json.Encode
 import SR.Decode
-import SR.GlobalListOps
 import SR.ListOps
-import SR.PlayerListOps
 import SR.Types
 import Shrink
 import Test exposing (..)
@@ -64,7 +62,7 @@ testsortPlayerListByRank =
     describe "testsortPlayerListByRank test"
         [ test "missing rankingowneraddr results in entry being excluded" <|
             \_ ->
-                SR.PlayerListOps.sortedPlayerListByRank listOfPlayers
+                SR.ListOps.sortedPlayerListByRank listOfPlayers
                     |> Expect.equal output
         ]
 
@@ -88,7 +86,7 @@ ownerValidatedRankingListTest =
                         --     _ =
                         --         Debug.log "globalRankingList" globalRankingList
                         -- in
-                        Expect.true "true" <| List.all isValidOwnerAddress <| SR.GlobalListOps.ownerValidatedRankingList globalRankingList
+                        Expect.true "true" <| List.all isValidOwnerAddress <| SR.ListOps.ownerValidatedRankingList globalRankingList
 
 
 

@@ -30,9 +30,7 @@ import SR.Decode
 import SR.Defaults
 import SR.Elements
 import SR.Encode
-import SR.GlobalListOps
 import SR.ListOps
-import SR.PlayerListOps
 import SR.Types
 import Task
 import Time exposing (Posix)
@@ -143,8 +141,8 @@ type Msg
     | NoOp
     | SentResultToJsonbin (Result Http.Error ())
     | SentUserInfoAndDecodedResponseToNewUser (RemoteData.WebData (List SR.Types.User))
-    | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
     | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
+    | GlobalRankingsReceived (RemoteData.WebData (List SR.Types.RankingInfo))
     | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
     | UsersReceived (RemoteData.WebData (List SR.Types.User))
     | ReturnFromPlayerListUpdate (RemoteData.WebData (List SR.Types.Player))
@@ -291,16 +289,16 @@ handledWalletStateOpened msg model =
                     in
                     updateOnUserListReceived model userLAddedToAllLists.users
 
-                GotGlobalRankingsJson rmtrnkingdata ->
+                GlobalRankingsReceived rmtrnkingdata ->
                     let
                         extractedList =
-                            SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata
+                            SR.ListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata
 
                         allUserAsOwnerGlobal =
-                            SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
+                            SR.ListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
 
                         currentUserAsPlayer =
-                            SR.GlobalListOps.gotUserIsPlayerNonUserRankingList appInfo.user extractedList
+                            SR.ListOps.gotUserIsPlayerNonUserRankingList appInfo.user extractedList
 
                         addedRankingListToAllLists =
                             { allLists
@@ -308,16 +306,16 @@ handledWalletStateOpened msg model =
                             }
 
                         userRankingOwner =
-                            SR.GlobalListOps.gotUserOwnedGlobalRankingList allUserAsOwnerGlobal appInfo.user
+                            SR.ListOps.gotUserOwnedGlobalRankingList allUserAsOwnerGlobal appInfo.user
 
                         userRankingPlayer =
-                            SR.GlobalListOps.createduserRankingPlayerList currentUserAsPlayer allLists.users
+                            SR.ListOps.createduserRankingPlayerList currentUserAsPlayer allLists.users
 
                         ownerPlayerCombinedList =
                             userRankingOwner ++ userRankingPlayer
 
                         userRankingOther =
-                            SR.GlobalListOps.gotOthersGlobalRankingList ownerPlayerCombinedList allUserAsOwnerGlobal
+                            SR.ListOps.gotOthersGlobalRankingList ownerPlayerCombinedList allUserAsOwnerGlobal
 
                         _ =
                             Debug.log "combined lists : " ((userRankingOwner ++ userRankingPlayer) ++ userRankingOther)
@@ -483,28 +481,28 @@ handleWalletStateOperational msg model =
                     , Cmd.none
                     )
 
-                GotGlobalRankingsJson rmtrnkingdata ->
+                GlobalRankingsReceived rmtrnkingdata ->
                     let
                         extractedList =
-                            SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata
+                            SR.ListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata
 
                         allUserAsOwnerGlobal =
-                            SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
+                            SR.ListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
 
                         currentUserAsPlayer =
-                            SR.GlobalListOps.gotUserIsPlayerNonUserRankingList appInfo.user extractedList
+                            SR.ListOps.gotUserIsPlayerNonUserRankingList appInfo.user extractedList
 
                         userRankingOwner =
-                            SR.GlobalListOps.gotUserOwnedGlobalRankingList allUserAsOwnerGlobal appInfo.user
+                            SR.ListOps.gotUserOwnedGlobalRankingList allUserAsOwnerGlobal appInfo.user
 
                         userRankingPlayer =
-                            SR.GlobalListOps.createduserRankingPlayerList currentUserAsPlayer allLists.users
+                            SR.ListOps.createduserRankingPlayerList currentUserAsPlayer allLists.users
 
                         ownerPlayerCombinedList =
                             userRankingOwner ++ userRankingPlayer
 
                         userRankingOther =
-                            SR.GlobalListOps.gotOthersGlobalRankingList ownerPlayerCombinedList allUserAsOwnerGlobal
+                            SR.ListOps.gotOthersGlobalRankingList ownerPlayerCombinedList allUserAsOwnerGlobal
 
                         _ =
                             Debug.log "combined lists : " ((userRankingOwner ++ userRankingPlayer) ++ userRankingOther)
@@ -570,10 +568,10 @@ handleWalletStateOperational msg model =
                 AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
                     let
                         extractedList =
-                            SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData updatedListAfterNewEntryAddedToGlobalList
+                            SR.ListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData updatedListAfterNewEntryAddedToGlobalList
 
                         allGlobal =
-                            SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
+                            SR.ListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
 
                         addedRankingListToAllLists =
                             { allLists
@@ -658,7 +656,7 @@ handleWalletStateOperational msg model =
                         appInfo
                         uiState
                         txRec
-                    , deleteSelectedRankingFromGlobalList appInfo.selectedRanking.id (SR.GlobalListOps.extractRankingList allLists.userRankings) allLists.users appInfo.user.ethaddress
+                    , deleteSelectedRankingFromGlobalList appInfo.selectedRanking.id (SR.ListOps.extractRankingList allLists.userRankings) allLists.users appInfo.user.ethaddress
                     )
 
                 ChallengeOpponentClicked opponentAsPlayer ->
@@ -667,10 +665,10 @@ handleWalletStateOperational msg model =
                 DeletedRankingFromGlobalList updatedListAfterRankingDeletedFromGlobalList ->
                     let
                         extractedList =
-                            SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData updatedListAfterRankingDeletedFromGlobalList
+                            SR.ListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData updatedListAfterRankingDeletedFromGlobalList
 
                         allGlobal =
-                            SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
+                            SR.ListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
 
                         addedRankingListToAllLists =
                             { allLists
@@ -905,10 +903,10 @@ handleWon model =
                     let
                         -- update the player list for both players challenger to emptyPlayer and change rankings
                         updatedPlayerListForPlayer =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.challenger.player.rank
+                            SR.ListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.challenger.player.rank
 
                         updatedPlayerListForPlayerAndChallenger =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger (appInfo.challenger.player.rank + 1)
+                            SR.ListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger (appInfo.challenger.player.rank + 1)
 
                         --update current player now
                         newUserPlayerPlayer =
@@ -941,10 +939,10 @@ handleWon model =
                         --no ranking change - just update the player list for both players challenger to emptyPlayer, no rank change
                         --update the player list
                         updatedPlayerListForPlayer =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.player.player.rank
+                            SR.ListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.player.player.rank
 
                         updatedPlayerListForPlayerAndChallenger =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.player.rank
+                            SR.ListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.player.rank
 
                         --update current player now
                         newUserPlayerPlayer =
@@ -988,10 +986,10 @@ handleLost model =
                 SR.Types.OpponentRankHigher ->
                     let
                         updatedPlayerListForPlayer =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.player.player.rank
+                            SR.ListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.player.player.rank
 
                         updatedPlayerListForPlayerAndChallenger =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.player.rank
+                            SR.ListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.player.rank
 
                         --update current player now
                         newUserPlayer =
@@ -1023,10 +1021,10 @@ handleLost model =
                     --nb. higher rank is a lower number and vice versa!
                     let
                         updatedPlayerListForPlayer =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player (appInfo.player.player.rank + 1)
+                            SR.ListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player (appInfo.player.player.rank + 1)
 
                         updatedPlayerListForPlayerAndChallenger =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.player.player.rank
+                            SR.ListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.player.player.rank
 
                         --update current player now
                         newUserPlayer =
@@ -1063,10 +1061,10 @@ handleUndecided model =
         AppOps walletState allLists appInfo uiState txRec ->
             let
                 updatedPlayerListForPlayer =
-                    SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.player.player.rank
+                    SR.ListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.player.player.rank
 
                 updatedPlayerListForPlayerAndChallenger =
-                    SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.player.rank
+                    SR.ListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.player.rank
 
                 --update current player now
                 newUserPlayer =
@@ -1099,7 +1097,7 @@ handleUndecided model =
 
 ensuredCorrectSelectedUI : SR.Types.AppInfo -> SR.Types.AllLists -> SR.Types.UIState
 ensuredCorrectSelectedUI appInfo allLists =
-    if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking (SR.GlobalListOps.extractRankingList allLists.userRankings) appInfo.user then
+    if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking (SR.ListOps.extractRankingList allLists.userRankings) appInfo.user then
         SR.Types.UISelectedRankingUserIsOwner
 
     else if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
@@ -1116,16 +1114,16 @@ createNewPlayerListWithNewResultAndUpdateJsonBin model =
             let
                 -- add respective challenger addresses to player and challenger (who is also a player type)
                 newplayerListWithPlayerUpdated =
-                    SR.PlayerListOps.updatePlayerRankWithWonResult allLists.userPlayers appInfo.player
+                    SR.ListOps.updatePlayerRankWithWonResult allLists.userPlayers appInfo.player
 
                 challengerAsPlayer =
-                    SR.PlayerListOps.gotPlayerFromPlayerListStrAddress allLists.userPlayers appInfo.challenger.player.address
+                    SR.ListOps.gotPlayerFromPlayerListStrAddress allLists.userPlayers appInfo.challenger.player.address
 
                 newplayerListWithPlayerAndChallengerUpdated =
-                    SR.PlayerListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.player.address
+                    SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.player.address
 
                 sortedByRankingnewplayerListWithPlayerAndChallengerUpdated =
-                    SR.PlayerListOps.sortedPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
+                    SR.ListOps.sortedPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
 
                 newAllLists =
                     { allLists | userPlayers = sortedByRankingnewplayerListWithPlayerAndChallengerUpdated }
@@ -1143,16 +1141,16 @@ createNewPlayerListWithNewChallengeAndUpdateJsonBin model =
             let
                 -- add respective challenger addresses to player and challenger (who is also a player type)
                 newplayerListWithPlayerUpdated =
-                    SR.PlayerListOps.setPlayerInPlayerListWithNewChallengerAddr allLists.userPlayers appInfo.player appInfo.challenger.player.address
+                    SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr allLists.userPlayers appInfo.player appInfo.challenger.player.address
 
                 challengerAsPlayer =
-                    SR.PlayerListOps.gotPlayerFromPlayerListStrAddress allLists.userPlayers appInfo.challenger.player.address
+                    SR.ListOps.gotPlayerFromPlayerListStrAddress allLists.userPlayers appInfo.challenger.player.address
 
                 newplayerListWithPlayerAndChallengerUpdated =
-                    SR.PlayerListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.player.address
+                    SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.player.address
 
                 sortedByRankingnewplayerListWithPlayerAndChallengerUpdated =
-                    SR.PlayerListOps.sortedPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
+                    SR.ListOps.sortedPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
 
                 newAllLists =
                     { allLists | userPlayers = sortedByRankingnewplayerListWithPlayerAndChallengerUpdated }
@@ -1236,7 +1234,7 @@ extractAndSortPlayerList rdlPlayer =
         convertedPlayerListToUserPlayerList =
             Utils.MyUtils.convertPlayersToUserPlayers <| Utils.MyUtils.extractPlayersFromWebData rdlPlayer
     in
-    SR.PlayerListOps.sortedPlayerListByRank <| convertedPlayerListToUserPlayerList
+    SR.ListOps.sortedPlayerListByRank <| convertedPlayerListToUserPlayerList
 
 
 updatedForChallenge : Model -> List SR.Types.UserPlayer -> SR.Types.UserPlayer -> SR.Types.User -> Model
@@ -1245,7 +1243,7 @@ updatedForChallenge model luplayer opponentAsPlayer user =
         AppOps walletState allLists appInfo _ txRec ->
             let
                 newAppInfoWithPlayer =
-                    { appInfo | player = SR.PlayerListOps.gotCurrentUserAsPlayerFromPlayerList luplayer user }
+                    { appInfo | player = SR.ListOps.gotCurrentUserAsPlayerFromPlayerList luplayer user }
 
                 newAppInfoWithChallengerAndPlayer =
                     { newAppInfoWithPlayer | challenger = opponentAsPlayer }
@@ -1339,16 +1337,27 @@ updateSelectedRankingOnPlayersReceived model lplayers =
         AppOps walletState allLists appInfo uiState txRec ->
             let
                 newAppPlayer =
-                    { appInfo | player = SR.PlayerListOps.gotPlayerFromPlayerListStrAddress lplayers appInfo.user.ethaddress }
+                    { appInfo | player = SR.ListOps.gotPlayerFromPlayerListStrAddress lplayers appInfo.user.ethaddress }
 
                 newAppChallengerAndPlayer =
-                    { newAppPlayer | challenger = SR.PlayerListOps.gotPlayerFromPlayerListStrAddress lplayers newAppPlayer.player.player.challengeraddress }
+                    { newAppPlayer | challenger = SR.ListOps.gotPlayerFromPlayerListStrAddress lplayers newAppPlayer.player.player.challengeraddress }
+
+                -- current
+                --
+                userPlayerOwner =
+                    SR.ListOps.gotRankingOwnerAsUserPlayer appInfo.selectedRanking allLists.userRankings
+
+                _ =
+                    Debug.log "userPlayerOwner" userPlayerOwner
 
                 allListsPlayersAdded =
                     { allLists | userPlayers = lplayers }
 
                 uistate =
                     ensuredCorrectSelectedUI appInfo allLists
+
+                _ =
+                    Debug.log "userPlayers " allListsPlayersAdded.userPlayers
             in
             AppOps walletState allListsPlayersAdded newAppChallengerAndPlayer uistate emptyTxRecord
 
@@ -1378,7 +1387,7 @@ view model =
                     selectedUserIsNeitherOwnerNorPlayerView model
 
                 SR.Types.UIRenderAllRankings ->
-                    globalResponsiveview (SR.GlobalListOps.extractRankingList allLists.userRankings) appInfo.user
+                    globalResponsiveview (SR.ListOps.extractRankingList allLists.userRankings) appInfo.user
 
                 SR.Types.UIEnterResult ->
                     displayResultBeforeConfirmView model
@@ -1442,7 +1451,7 @@ rankingbuttons rankingList =
             [ Element.el [ Font.bold ] <| Element.text "Please note: "
             , Element.paragraph [] <|
                 List.singleton <|
-                    Element.text "Clicking 'Create New' interacts with your Ethereum wallet"
+                    Element.text "Terms and Conditions Apply"
             ]
         ]
 
@@ -2173,7 +2182,7 @@ gotRankingList : Cmd Msg
 gotRankingList =
     Http.request
         { body = Http.emptyBody
-        , expect = Http.expectJson (RemoteData.fromResult >> GotGlobalRankingsJson) SR.Decode.rankingsDecoder
+        , expect = Http.expectJson (RemoteData.fromResult >> GlobalRankingsReceived) SR.Decode.rankingsDecoder
         , headers = [ SR.Defaults.secretKey, SR.Defaults.globalContainerId, SR.Defaults.globalContainerId ]
         , method = "GET"
         , timeout = Nothing
@@ -2287,7 +2296,7 @@ addCurrentUserToPlayerList intrankingId luPlayer userRec =
             newUserPlayer :: luPlayer
 
         sortedSelectedRankingListWithNewPlayerJsonObjAdded =
-            SR.PlayerListOps.sortedPlayerListByRank selectedRankingListWithNewPlayerJsonObjAdded
+            SR.ListOps.sortedPlayerListByRank selectedRankingListWithNewPlayerJsonObjAdded
     in
     --AddedNewRankingToGlobalList is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
@@ -2367,7 +2376,7 @@ jsonEncodeNewGlobalRankingList : List SR.Types.UserRanking -> Json.Encode.Value
 jsonEncodeNewGlobalRankingList lotherrankingInfo =
     let
         newRankingInfoList =
-            SR.GlobalListOps.extractRankingList lotherrankingInfo
+            SR.ListOps.extractRankingList lotherrankingInfo
 
         encodeAglobalRankingObj : SR.Types.RankingInfo -> Json.Encode.Value
         encodeAglobalRankingObj rankingInfo =
@@ -2463,7 +2472,7 @@ deleteSelectedRankingFromGlobalList rankingId lrankingInfo luser rankingowneradd
             SR.ListOps.filterSelectedRankingOutOfGlobalList rankingId lrankingInfo
 
         newUserRankingList =
-            SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList globalListWithDeletedRankingInfoRemoved luser
+            SR.ListOps.createAllUserAsOwnerGlobalRankingList globalListWithDeletedRankingInfoRemoved luser
     in
     --DeletedRankingFromGlobalList is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
