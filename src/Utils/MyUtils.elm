@@ -1,18 +1,12 @@
 module Utils.MyUtils exposing
     ( addressFromStringResult
     , addressToString
-    , convertListOfMaybeToList
     , convertMaybePlayerToPlayer
-    , convertMaybeUserRankingListToList
-    , convertPlayersToUserPlayers
-    , convertUserPlayersToPlayers
     , createdMaybePlayerFromPlayer
-    , extractPlayersFromWebData
-    , extractRankingInfoListFromMaybeList
-    , extractRankingsFromWebData
     , extractRankinigInfoFromMaybe
     , extractUserRankinigFromMaybe
-    , extractUsersFromWebData
+    , gotHttpErr
+    , refEachPlayer
     , splitPlayerFieldsToCreateMaybePlayer
     , stringFromBool
     , stringFromMaybeString
@@ -49,25 +43,6 @@ extractRankinigInfoFromMaybe valtoextract =
             SR.Defaults.emptyRankingInfo
 
 
-extractRankingInfoListFromMaybeList : Maybe (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
-extractRankingInfoListFromMaybeList lranking =
-    case lranking of
-        Just a ->
-            a
-
-        Nothing ->
-            []
-
-
-convertListOfMaybeToList : List (Maybe a) -> List a
-convertListOfMaybeToList hasAnything =
-    let
-        onlyHasRealValues =
-            List.filterMap (\x -> x) hasAnything
-    in
-    onlyHasRealValues
-
-
 stringToRankingId : String -> Internal.Types.RankingId
 stringToRankingId rnkId =
     Internal.Types.RankingId rnkId
@@ -78,88 +53,9 @@ stringFromRankingId (Internal.Types.RankingId rnkId) =
     rnkId
 
 
-convertUserPlayersToPlayers : List SR.Types.UserPlayer -> List SR.Types.Player
-convertUserPlayersToPlayers luplayers =
-    List.map refEachPlayer luplayers
-
-
-convertPlayersToUserPlayers : List SR.Types.Player -> List SR.Types.UserPlayer
-convertPlayersToUserPlayers lplayers =
-    List.map convertEachPlayerToUserPlayer lplayers
-
-
-
--- Internal
-
-
-convertEachPlayerToUserPlayer : SR.Types.Player -> SR.Types.UserPlayer
-convertEachPlayerToUserPlayer player =
-    { player = player, user = SR.Defaults.emptyUser }
-
-
 refEachPlayer : SR.Types.UserPlayer -> SR.Types.Player
 refEachPlayer uplayer =
     uplayer.player
-
-
-extractPlayersFromWebData : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
-extractPlayersFromWebData remData =
-    case remData of
-        RemoteData.NotAsked ->
-            []
-
-        RemoteData.Loading ->
-            []
-
-        RemoteData.Success players ->
-            players
-
-        RemoteData.Failure httpError ->
-            []
-
-
-extractRankingsFromWebData : RemoteData.WebData (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
-extractRankingsFromWebData remData =
-    case remData of
-        RemoteData.NotAsked ->
-            []
-
-        RemoteData.Loading ->
-            []
-
-        RemoteData.Success rankings ->
-            rankings
-
-        RemoteData.Failure httpError ->
-            []
-
-
-extractUsersFromWebData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
-extractUsersFromWebData remData =
-    case remData of
-        RemoteData.NotAsked ->
-            let
-                _ =
-                    Debug.log "http err" "not asked"
-            in
-            []
-
-        RemoteData.Loading ->
-            let
-                _ =
-                    Debug.log "http err" "loading"
-            in
-            []
-
-        RemoteData.Success users ->
-            users
-
-        RemoteData.Failure httpError ->
-            let
-                _ =
-                    Debug.log "http err" gotHttpErr <| httpError
-            in
-            []
 
 
 addressFromStringResult : String -> Internal.Types.Address
@@ -231,17 +127,6 @@ convertMaybePlayerToPlayer mplayer =
 -- , rank = a.rank
 -- , challengeraddress = a.challengeraddress
 -- }
-
-
-convertMaybeUserRankingListToList : Maybe (List SR.Types.UserRanking) -> List SR.Types.UserRanking
-convertMaybeUserRankingListToList luRanking =
-    --List.map convertMaybeUserRankingToUserRanking luRanking
-    case luRanking of
-        Nothing ->
-            []
-
-        Just a ->
-            a
 
 
 convertMaybeUserRankingToUserRanking : Maybe SR.Types.UserRanking -> SR.Types.UserRanking

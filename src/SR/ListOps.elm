@@ -1,15 +1,22 @@
 module SR.ListOps exposing
     ( addedNewJoinedRankingIdToUser
+    , convertListOfMaybeToList
+    , convertMaybeUserRankingListToList
+    , convertPlayersToUserPlayers
+    , convertUserPlayersToPlayers
     , createAllUserAsOwnerGlobalRankingList
     , createduserRankingPlayerList
     , doesCurrentRankingIdNOTMatchId
+    , extractPlayersFromWebData
+    , extractRankingInfoListFromMaybeList
     , extractRankingList
+    , extractRankingsFromWebData
+    , extractUsersFromWebData
     , filterSelectedRankingOutOfGlobalList
     , findPlayerInList
     , findSelectedRankingInGlobalList
     , gotCurrentUserAsPlayerFromPlayerList
     , gotOthersGlobalRankingList
-    , gotPlayerFromPlayerListStrAddress
     , gotRankingFromRankingList
     , gotRankingOwnerAsUserPlayer
     , gotUserFromUserList
@@ -17,6 +24,7 @@ module SR.ListOps exposing
     , gotUserIsPlayerNonUserRankingList
     , gotUserListFromRemData
     , gotUserOwnedGlobalRankingList
+    , gotUserPlayerFromPlayerListStrAddress
     , isUserInListStrAddr
     , isUserMemberOfSelectedRanking
     , isUserSelectedOwnerOfRanking
@@ -38,15 +46,127 @@ import SR.Types
 import Utils.MyUtils
 
 
+convertMaybeUserRankingListToList : Maybe (List SR.Types.UserRanking) -> List SR.Types.UserRanking
+convertMaybeUserRankingListToList luRanking =
+    case luRanking of
+        Nothing ->
+            []
 
--- external
+        Just a ->
+            a
 
 
-gotRankingOwnerAsUserPlayer : SR.Types.RankingInfo -> List SR.Types.UserRanking -> SR.Types.UserPlayer
-gotRankingOwnerAsUserPlayer selectedRanking luranking =
-    { player = SR.Defaults.emptyPlayer
-    , user = (gotUserRankingFromUserRankingList luranking (Internal.Types.RankingId selectedRanking.id)).userInfo
+extractPlayersFromWebData : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
+extractPlayersFromWebData remData =
+    case remData of
+        RemoteData.NotAsked ->
+            []
+
+        RemoteData.Loading ->
+            []
+
+        RemoteData.Success players ->
+            players
+
+        RemoteData.Failure httpError ->
+            []
+
+
+extractRankingsFromWebData : RemoteData.WebData (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
+extractRankingsFromWebData remData =
+    case remData of
+        RemoteData.NotAsked ->
+            []
+
+        RemoteData.Loading ->
+            []
+
+        RemoteData.Success rankings ->
+            rankings
+
+        RemoteData.Failure httpError ->
+            []
+
+
+extractUsersFromWebData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
+extractUsersFromWebData remData =
+    case remData of
+        RemoteData.NotAsked ->
+            let
+                _ =
+                    Debug.log "http err" "not asked"
+            in
+            []
+
+        RemoteData.Loading ->
+            let
+                _ =
+                    Debug.log "http err" "loading"
+            in
+            []
+
+        RemoteData.Success users ->
+            users
+
+        RemoteData.Failure httpError ->
+            let
+                _ =
+                    Debug.log "http err" Utils.MyUtils.gotHttpErr <| httpError
+            in
+            []
+
+
+convertUserPlayersToPlayers : List SR.Types.UserPlayer -> List SR.Types.Player
+convertUserPlayersToPlayers luplayers =
+    List.map Utils.MyUtils.refEachPlayer luplayers
+
+
+convertPlayersToUserPlayers : List SR.Types.Player -> List SR.Types.User -> List SR.Types.UserPlayer
+convertPlayersToUserPlayers lplayer luser =
+    List.map (convertEachPlayerToUserPlayer luser) lplayer
+
+
+extractRankingInfoListFromMaybeList : Maybe (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
+extractRankingInfoListFromMaybeList lranking =
+    case lranking of
+        Just a ->
+            a
+
+        Nothing ->
+            []
+
+
+convertListOfMaybeToList : List (Maybe a) -> List a
+convertListOfMaybeToList hasAnything =
+    let
+        onlyHasRealValues =
+            List.filterMap (\x -> x) hasAnything
+    in
+    onlyHasRealValues
+
+
+convertEachPlayerToUserPlayer : List SR.Types.User -> SR.Types.Player -> SR.Types.UserPlayer
+convertEachPlayerToUserPlayer luser player =
+    { player = player, user = gotUserFromUserList luser player.address }
+
+
+gotRankingOwnerAsUserPlayer : SR.Types.RankingInfo -> List SR.Types.UserRanking -> List SR.Types.UserPlayer -> SR.Types.UserPlayer
+gotRankingOwnerAsUserPlayer selectedRanking luranking luplayer =
+    let
+        rankingOwnerAsUser =
+            (gotUserRankingFromUserRankingList luranking (Internal.Types.RankingId selectedRanking.id)).userInfo
+
+        rankingOwnerAsPlayer =
+            gotRankingOwnerAPlayer rankingOwnerAsUser.ethaddress luplayer
+    in
+    { player = rankingOwnerAsPlayer
+    , user = rankingOwnerAsUser
     }
+
+
+gotRankingOwnerAPlayer : String -> List SR.Types.UserPlayer -> SR.Types.Player
+gotRankingOwnerAPlayer selectedRanking luplayer =
+    (gotUserPlayerFromPlayerListStrAddress luplayer selectedRanking).player
 
 
 addedNewJoinedRankingIdToUser : String -> SR.Types.User -> List SR.Types.User -> List SR.Types.User
@@ -496,7 +616,7 @@ updatePlayerRankWithWonResult luPlayer uplayer =
             filterPlayerOutOfPlayerList uplayer.player.address luPlayer
 
         opponentAsPlayer =
-            gotPlayerFromPlayerListStrAddress luPlayer uplayer.player.challengeraddress
+            gotUserPlayerFromPlayerListStrAddress luPlayer uplayer.player.challengeraddress
 
         -- this needs more ?:
         newUserPlayerPlayerField =
@@ -620,8 +740,8 @@ gotCurrentUserAsPlayerFromPlayerList luPlayer userRec =
             a
 
 
-gotPlayerFromPlayerListStrAddress : List SR.Types.UserPlayer -> String -> SR.Types.UserPlayer
-gotPlayerFromPlayerListStrAddress luplayer addr =
+gotUserPlayerFromPlayerListStrAddress : List SR.Types.UserPlayer -> String -> SR.Types.UserPlayer
+gotUserPlayerFromPlayerListStrAddress luplayer addr =
     let
         existingUser =
             List.head <|
