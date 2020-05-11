@@ -86,6 +86,9 @@ emptyAllLists =
     { userRankings = []
     , userPlayers = []
     , users = []
+    , lownedUserRanking = []
+    , lmemberUserRanking = []
+    , lotherUserRanking = []
     }
 
 

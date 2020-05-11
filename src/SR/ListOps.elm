@@ -18,6 +18,7 @@ module SR.ListOps exposing
     , gotCurrentUserAsPlayerFromPlayerList
     , gotOthersGlobalRankingList
     , gotRankingFromRankingList
+    , gotRankingListFromUserRankingList
     , gotRankingOwnerAsUserPlayer
     , gotUserFromUserList
     , gotUserIsPlayerGlobalRankingList
@@ -486,6 +487,16 @@ isRnkIdMatch rankingid rnk =
 
     else
         False
+
+
+gotRankingListFromUserRankingList : List SR.Types.UserRanking -> List SR.Types.RankingInfo
+gotRankingListFromUserRankingList luranking =
+    List.map gotRankingInfo luranking
+
+
+gotRankingInfo : SR.Types.UserRanking -> SR.Types.RankingInfo
+gotRankingInfo uranking =
+    uranking.rankingInfo
 
 
 gotRankingFromRankingList : List SR.Types.RankingInfo -> Internal.Types.RankingId -> SR.Types.RankingInfo
