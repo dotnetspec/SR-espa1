@@ -27,6 +27,7 @@ module SR.ListOps exposing
     , gotUserPlayerFromPlayerListStrAddress
     , isUserInListStrAddr
     , isUserMemberOfSelectedRanking
+    , isUserOwnerOfSelectedUserRanking
     , isUserSelectedOwnerOfRanking
     , ownerValidatedRankingList
     , setPlayerInPlayerListWithChallengeResult
@@ -301,6 +302,30 @@ isUserSelectedOwnerOfRanking rnkInfo lrnkInfo user =
                 False
 
 
+isUserOwnerOfSelectedUserRanking : SR.Types.RankingInfo -> List SR.Types.UserRanking -> SR.Types.User -> Bool
+isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
+    let
+        filteredRec =
+            extractSelectedUserRankingFromGlobalList lurnkInfo rnkInfo.id
+
+        _ =
+            Debug.log "filteredRec" filteredRec
+
+        -- filteredRec =
+        --     List.head filteredList
+    in
+    case filteredRec of
+        Nothing ->
+            False
+
+        Just a ->
+            if a.rankingInfo.rankingowneraddr == user.ethaddress then
+                True
+
+            else
+                False
+
+
 filterSelectedRankingOutOfGlobalList : String -> List SR.Types.RankingInfo -> List SR.Types.RankingInfo
 filterSelectedRankingOutOfGlobalList rankingid lrankinginfo =
     List.filterMap
@@ -330,6 +355,25 @@ findSelectedRankingInGlobalList lrankinginfo rankingid =
             rankingid
         )
         lrankinginfo
+
+
+extractSelectedUserRankingFromGlobalList : List SR.Types.UserRanking -> String -> Maybe SR.Types.UserRanking
+extractSelectedUserRankingFromGlobalList luranking rankingid =
+    List.filterMap
+        (isUserRankingIdInList
+            rankingid
+        )
+        luranking
+        |> List.head
+
+
+isUserRankingIdInList : String -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
+isUserRankingIdInList rankingid urnk =
+    if urnk.rankingInfo.id == rankingid then
+        Just urnk
+
+    else
+        Nothing
 
 
 isRankingIdInList : String -> SR.Types.RankingInfo -> Maybe SR.Types.RankingInfo

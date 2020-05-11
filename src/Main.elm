@@ -317,8 +317,8 @@ handledWalletStateOpened msg model =
                         userRankingOther =
                             SR.ListOps.gotOthersGlobalRankingList ownerPlayerCombinedList allUserAsOwnerGlobal
 
-                        _ =
-                            Debug.log "combined lists : " ((userRankingOwner ++ userRankingPlayer) ++ userRankingOther)
+                        -- _ =
+                        --     Debug.log "combined lists : " ((userRankingOwner ++ userRankingPlayer) ++ userRankingOther)
                     in
                     ( AppOps SR.Types.WalletOperational addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
@@ -636,7 +636,7 @@ handleWalletStateOperational msg model =
                     createNewPlayerListWithNewChallengeAndUpdateJsonBin model
 
                 PlayersReceived lplayer ->
-                    ( updateSelectedRankingOnPlayersReceived model (extractAndSortPlayerList lplayer allLists.users), Cmd.none )
+                    ( updatedSelectedRankingOnPlayersReceived model (extractAndSortPlayerList lplayer allLists.users), Cmd.none )
 
                 ChangedUIStateToEnterResult player ->
                     ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIEnterResult emptyTxRecord, Cmd.none )
@@ -1344,8 +1344,8 @@ updateUserList model lusers =
             Failure <| "updateSelectedRankingPlayerList : "
 
 
-updateSelectedRankingOnPlayersReceived : Model -> List SR.Types.UserPlayer -> Model
-updateSelectedRankingOnPlayersReceived model luplayer =
+updatedSelectedRankingOnPlayersReceived : Model -> List SR.Types.UserPlayer -> Model
+updatedSelectedRankingOnPlayersReceived model luplayer =
     case model of
         AppOps walletState allLists appInfo uiState txRec ->
             let
@@ -1375,7 +1375,7 @@ updateSelectedRankingOnPlayersReceived model luplayer =
             AppOps walletState allListsPlayersAdded newAppChallengerAndPlayer uistate emptyTxRecord
 
         _ ->
-            Failure <| "updateSelectedRankingOnPlayersReceived : "
+            Failure <| "updatedSelectedRankingOnPlayersReceived : "
 
 
 
@@ -1510,9 +1510,9 @@ playerbuttons model =
             Element.text "Error"
 
 
-addPlayerInfoToAnyElText : Model -> SR.Types.UserPlayer -> Element Msg
-addPlayerInfoToAnyElText model uplayer =
-    --nb. 'player' is the player that's being mapped cf. appInfo.player which is current user as player (single instance)
+configureThenAddPlayerRankingBtns : Model -> SR.Types.UserPlayer -> Element Msg
+configureThenAddPlayerRankingBtns model uplayer =
+    --nb. 'uplayer' is the player that's being mapped cf. appInfo.player which is current user as player (single instance)
     case model of
         AppOps walletState allLists appInfo uiState txRec ->
             let
@@ -1549,6 +1549,11 @@ addPlayerInfoToAnyElText model uplayer =
 
                     else
                         False
+
+                -- isCurrentUserOwnerOfSelectedUserRanking =
+                --     SR.ListOps.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking allLists.userRankings appInfo.user
+                -- _ =
+                --     Debug.log "isPlayerSelectedRankingOwner" <| isCurrentUserOwnerOfSelectedUserRanking
             in
             if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
                 if isPlayerCurrentUser then
@@ -1589,7 +1594,7 @@ addPlayerInfoToAnyElText model uplayer =
 
                 else
                     Element.column Grid.simple <|
-                        [ Input.button (Button.fill ++ Color.primary) <|
+                        [ Input.button (Button.fill ++ Color.light) <|
                             { onPress = Just <| ChallengeOpponentClicked uplayer
                             , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
                             }
@@ -1615,7 +1620,7 @@ insertPlayerList model =
             let
                 mapOutPlayerList =
                     List.map
-                        (addPlayerInfoToAnyElText model)
+                        (configureThenAddPlayerRankingBtns model)
                         allLists.userPlayers
             in
             mapOutPlayerList
