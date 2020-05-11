@@ -63,8 +63,12 @@ type Model
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( AppOps SR.Types.WalletStateUnknown SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UILoading emptyTxRecord
-    , Ports.log
-        "Sending out msg from init "
+    , Cmd.batch
+        [ gotUserList
+        , gotRankingList
+        , Ports.log
+            "Sending out msg from init "
+        ]
     )
 
 
