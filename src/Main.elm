@@ -122,6 +122,9 @@ getTime =
 type Msg
     = -- User Ops
       ClickedSelectedRanking Internal.Types.RankingId String String
+    | ClickedSelectedOwnedRanking Internal.Types.RankingId String String
+    | ClickedSelectedMemberRanking Internal.Types.RankingId String String
+    | ClickedSelectedNeitherOwnerNorMember Internal.Types.RankingId String String
     | ResetToShowGlobal
     | ResetToShowSelected
     | DeletedRanking String
@@ -467,28 +470,49 @@ handleWalletStateOperational msg model =
 
                 -- GlobalRankingsReceived rmtrnkingdata ->
                 --     handleGlobalRankingsReceived rmtrnkingdata model
-                ClickedSelectedRanking rnkidstr rnkownerstr rnknamestr ->
+                -- ClickedSelectedRanking rnkidstr rnkownerstr rnknamestr ->
+                --     let
+                --         _ =
+                --             Debug.log "on click " rnkidstr
+                --         newSelectedRanking =
+                --             appInfo.selectedRanking
+                --         newRnkInfo =
+                --             { newSelectedRanking | id = Utils.MyUtils.stringFromRankingId rnkidstr, rankingowneraddr = rnkownerstr, rankingname = rnknamestr }
+                --         newAppInfo =
+                --             { appInfo | selectedRanking = newRnkInfo }
+                --         updatedUiState =
+                --             ensuredCorrectSelectedUI newAppInfo allLists
+                --     in
+                --     ( AppOps SR.Types.WalletOperational allLists newAppInfo updatedUiState emptyTxRecord, fetchedSingleRanking rnkidstr )
+                ClickedSelectedOwnedRanking rnkidstr rnkownerstr rnknamestr ->
                     let
                         _ =
-                            Debug.log "on click " rnkidstr
-
-                        newSelectedRanking =
-                            appInfo.selectedRanking
-
-                        newRnkInfo =
-                            { newSelectedRanking | id = Utils.MyUtils.stringFromRankingId rnkidstr, rankingowneraddr = rnkownerstr, rankingname = rnknamestr }
+                            Debug.log "on click owner" rnkidstr
 
                         newAppInfo =
-                            { appInfo | selectedRanking = newRnkInfo }
+                            updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
                     in
-                    if SR.ListOps.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking allLists.lownedUserRanking appInfo.user then
-                        ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, fetchedSingleRanking rnkidstr )
+                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, fetchedSingleRanking rnkidstr )
 
-                    else if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
-                        ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, fetchedSingleRanking rnkidstr )
+                ClickedSelectedMemberRanking rnkidstr rnkownerstr rnknamestr ->
+                    let
+                        _ =
+                            Debug.log "on click member" rnkidstr
 
-                    else
-                        ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, fetchedSingleRanking rnkidstr )
+                        newAppInfo =
+                            updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
+                    in
+                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, fetchedSingleRanking rnkidstr )
+
+                ClickedSelectedNeitherOwnerNorMember rnkidstr rnkownerstr rnknamestr ->
+                    let
+                        _ =
+                            Debug.log "on click other " rnkidstr
+
+                        newAppInfo =
+                            updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
+                    in
+                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, fetchedSingleRanking rnkidstr )
 
                 -- this is the response from createNewPlayerListWithCurrentUser Cmd
                 -- it had the Http.expectStringResponse in it
@@ -510,11 +534,12 @@ handleWalletStateOperational msg model =
                     ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                 ResetToShowSelected ->
-                    let
-                        uiType =
-                            ensuredCorrectSelectedUI appInfo allLists
-                    in
-                    ( AppOps SR.Types.WalletOperational allLists appInfo uiType emptyTxRecord, Cmd.none )
+                    -- let
+                    --     uiType =
+                    --         ensuredCorrectSelectedUI appInfo allLists
+                    -- in
+                    -- ( AppOps SR.Types.WalletOperational allLists appInfo uiType emptyTxRecord, Cmd.none )
+                    ( model, Cmd.none )
 
                 ChangedUIStateToCreateNewLadder ->
                     let
@@ -724,6 +749,21 @@ handleWalletStateOperational msg model =
 
         Failure str ->
             ( Failure str, Cmd.none )
+
+
+updateAppInfoOnRankingSelected : SR.Types.AppInfo -> Internal.Types.RankingId -> String -> String -> SR.Types.AppInfo
+updateAppInfoOnRankingSelected appInfo rnkid rnkownerstr rnknamestr =
+    let
+        newSelectedRanking =
+            appInfo.selectedRanking
+
+        newRnkInfo =
+            { newSelectedRanking | id = Utils.MyUtils.stringFromRankingId rnkid, rankingowneraddr = rnkownerstr, rankingname = rnknamestr }
+
+        newAppInfo =
+            { appInfo | selectedRanking = newRnkInfo }
+    in
+    newAppInfo
 
 
 handleGlobalRankingsReceived : RemoteData.WebData (List SR.Types.RankingInfo) -> Model -> ( Model, Cmd Msg )
@@ -1133,16 +1173,26 @@ handleUndecided model =
             Failure "Fail in handleUndecided"
 
 
-ensuredCorrectSelectedUI : SR.Types.AppInfo -> SR.Types.AllLists -> SR.Types.UIState
-ensuredCorrectSelectedUI appInfo allLists =
-    if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking (SR.ListOps.extractRankingList allLists.userRankings) appInfo.user then
-        SR.Types.UISelectedRankingUserIsOwner
 
-    else if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
-        SR.Types.UISelectedRankingUserIsPlayer
-
-    else
-        SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
+-- ensuredCorrectSelectedUI : SR.Types.AppInfo -> SR.Types.AllLists -> SR.Types.UIState
+-- ensuredCorrectSelectedUI appInfo allLists =
+--     --if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking (SR.ListOps.extractRankingList allLists.userRankings) appInfo.user then
+--     let
+--         _ =
+--             Debug.log "member?" SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user
+--     in
+--     if SR.ListOps.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking allLists.lownedUserRanking appInfo.user then
+--         SR.Types.UISelectedRankingUserIsOwner
+--     else if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
+--         SR.Types.UISelectedRankingUserIsPlayer
+--     else
+--         SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
+-- if SR.ListOps.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking allLists.lownedUserRanking appInfo.user then
+--                 ( AppOps SR.Types.WalletOperational allLists newAppInfo updatedUiState emptyTxRecord, fetchedSingleRanking rnkidstr )
+--             else if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
+--                 ( AppOps SR.Types.WalletOperational allLists newAppInfo updatedUiState emptyTxRecord, fetchedSingleRanking rnkidstr )
+--             else
+--                 ( AppOps SR.Types.WalletOperational allLists newAppInfo updatedUiState emptyTxRecord, fetchedSingleRanking rnkidstr )
 
 
 createNewPlayerListWithNewResultAndUpdateJsonBin : Model -> ( Model, Cmd Msg )
@@ -1343,13 +1393,13 @@ updateOnUserListReceived model userList =
 updateSelectedRankingPlayerList : Model -> List SR.Types.UserPlayer -> Model
 updateSelectedRankingPlayerList model luplayers =
     case model of
-        AppOps walletState allLists appInfo _ txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 resetSelectedRankingPlayerList =
                     { allLists | userPlayers = luplayers }
 
-                uiState =
-                    ensuredCorrectSelectedUI appInfo allLists
+                -- uiState =
+                --     ensuredCorrectSelectedUI appInfo allLists
             in
             AppOps walletState resetSelectedRankingPlayerList appInfo uiState txRec
 
@@ -1360,13 +1410,13 @@ updateSelectedRankingPlayerList model luplayers =
 updateUserList : Model -> List SR.Types.User -> Model
 updateUserList model lusers =
     case model of
-        AppOps walletState allLists appInfo _ txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 resetUserList =
                     { allLists | users = lusers }
 
-                uiState =
-                    ensuredCorrectSelectedUI appInfo allLists
+                -- uiState =
+                --     ensuredCorrectSelectedUI appInfo allLists
             in
             AppOps walletState resetUserList appInfo uiState txRec
 
@@ -1396,13 +1446,12 @@ updatedSelectedRankingOnPlayersReceived model luplayer =
                 allListsPlayersAdded =
                     { allLists | userPlayers = luplayer }
 
-                uistate =
-                    ensuredCorrectSelectedUI appInfo allLists
-
+                -- uistate =
+                --     ensuredCorrectSelectedUI appInfo allLists
                 _ =
                     Debug.log "userPlayers " allListsPlayersAdded.userPlayers
             in
-            AppOps walletState allListsPlayersAdded newAppChallengerAndPlayer uistate emptyTxRecord
+            AppOps walletState allListsPlayersAdded newAppChallengerAndPlayer uiState emptyTxRecord
 
         _ ->
             Failure <| "updatedSelectedRankingOnPlayersReceived : "
@@ -1488,19 +1537,20 @@ greetingHeading greetingStr =
         ]
 
 
-rankingbuttons : List SR.Types.RankingInfo -> Element Msg
-rankingbuttons rankingList =
-    Element.column Grid.section <|
-        [ Element.el Heading.h5 <| Element.text "Global Rankings"
-        , Element.column (Card.simple ++ Grid.simple) <|
-            insertRankingList rankingList
-        , Element.paragraph (Card.fill ++ Color.warning) <|
-            [ Element.el [ Font.bold ] <| Element.text "Please note: "
-            , Element.paragraph [] <|
-                List.singleton <|
-                    Element.text "Terms and Conditions Apply"
-            ]
-        ]
+
+-- rankingbuttons : List SR.Types.RankingInfo -> Element Msg
+-- rankingbuttons rankingList =
+--     Element.column Grid.section <|
+--         [ Element.el Heading.h5 <| Element.text "Global Rankings"
+--         , Element.column (Card.simple ++ Grid.simple) <|
+--             insertRankingList rankingList
+--         , Element.paragraph (Card.fill ++ Color.warning) <|
+--             [ Element.el [ Font.bold ] <| Element.text "Please note: "
+--             , Element.paragraph [] <|
+--                 List.singleton <|
+--                     Element.text "Terms and Conditions Apply"
+--             ]
+--         ]
 
 
 ownedrankingbuttons : List SR.Types.UserRanking -> Element Msg
@@ -1513,7 +1563,7 @@ ownedrankingbuttons urankingList =
     Element.column Grid.section <|
         [ Element.el Heading.h5 <| Element.text "Your Created Rankings:"
         , Element.column (Card.simple ++ Grid.simple) <|
-            insertRankingList newRankingList
+            insertOwnedRankingList newRankingList
         ]
 
 
@@ -1527,7 +1577,7 @@ memberrankingbuttons urankingList =
     Element.column Grid.section <|
         [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
         , Element.column (Card.simple ++ Grid.simple) <|
-            insertRankingList newRankingList
+            insertMemberRankingList newRankingList
         ]
 
 
@@ -1541,34 +1591,21 @@ otherrankingbuttons urankingList =
     Element.column Grid.section <|
         [ Element.el Heading.h5 <| Element.text "Other Rankings: "
         , Element.column (Card.simple ++ Grid.simple) <|
-            insertRankingList newRankingList
+            insertNeitherOwnerNorMemberRankingList newRankingList
         ]
 
 
-addRankingInfoToAnyElText : SR.Types.RankingInfo -> Element Msg
-addRankingInfoToAnyElText rankingobj =
-    Element.column Grid.simple <|
-        [ Input.button (Button.fill ++ Color.primary) <|
-            { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr rankingobj.rankingname)
-            , label = Element.text rankingobj.rankingname
-            }
-        ]
 
-
-insertRankingList : List SR.Types.RankingInfo -> List (Element Msg)
-insertRankingList rnkgInfoList =
-    let
-        mapOutRankingList =
-            List.map
-                addRankingInfoToAnyElText
-                rnkgInfoList
-    in
-    mapOutRankingList
-
-
-
--- insertOwnedRankingList : List SR.Types.RankingInfo -> List (Element Msg)
--- insertOwnedRankingList rnkgInfoList =
+-- addRankingInfoToAnyElText : SR.Types.RankingInfo -> Element Msg
+-- addRankingInfoToAnyElText rankingobj =
+--     Element.column Grid.simple <|
+--         [ Input.button (Button.fill ++ Color.primary) <|
+--             { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr rankingobj.rankingname)
+--             , label = Element.text rankingobj.rankingname
+--             }
+--         ]
+-- insertRankingList : List SR.Types.RankingInfo -> List (Element Msg)
+-- insertRankingList rnkgInfoList =
 --     let
 --         mapOutRankingList =
 --             List.map
@@ -1576,6 +1613,69 @@ insertRankingList rnkgInfoList =
 --                 rnkgInfoList
 --     in
 --     mapOutRankingList
+
+
+insertOwnedRankingList : List SR.Types.RankingInfo -> List (Element Msg)
+insertOwnedRankingList rnkgInfoList =
+    let
+        mapOutRankingList =
+            List.map
+                ownedRankingInfoBtn
+                rnkgInfoList
+    in
+    mapOutRankingList
+
+
+ownedRankingInfoBtn : SR.Types.RankingInfo -> Element Msg
+ownedRankingInfoBtn rankingobj =
+    Element.column Grid.simple <|
+        [ Input.button (Button.fill ++ Color.primary) <|
+            { onPress = Just (ClickedSelectedOwnedRanking (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr rankingobj.rankingname)
+            , label = Element.text rankingobj.rankingname
+            }
+        ]
+
+
+insertMemberRankingList : List SR.Types.RankingInfo -> List (Element Msg)
+insertMemberRankingList rnkgInfoList =
+    let
+        mapOutRankingList =
+            List.map
+                memberRankingInfoBtn
+                rnkgInfoList
+    in
+    mapOutRankingList
+
+
+memberRankingInfoBtn : SR.Types.RankingInfo -> Element Msg
+memberRankingInfoBtn rankingobj =
+    Element.column Grid.simple <|
+        [ Input.button (Button.fill ++ Color.primary) <|
+            { onPress = Just (ClickedSelectedMemberRanking (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr rankingobj.rankingname)
+            , label = Element.text rankingobj.rankingname
+            }
+        ]
+
+
+insertNeitherOwnerNorMemberRankingList : List SR.Types.RankingInfo -> List (Element Msg)
+insertNeitherOwnerNorMemberRankingList rnkgInfoList =
+    let
+        mapOutRankingList =
+            List.map
+                neitherOwnerNorMemberRankingInfoBtn
+                rnkgInfoList
+    in
+    mapOutRankingList
+
+
+neitherOwnerNorMemberRankingInfoBtn : SR.Types.RankingInfo -> Element Msg
+neitherOwnerNorMemberRankingInfoBtn rankingobj =
+    Element.column Grid.simple <|
+        [ Input.button (Button.fill ++ Color.primary) <|
+            { onPress = Just (ClickedSelectedNeitherOwnerNorMember (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr rankingobj.rankingname)
+            , label = Element.text rankingobj.rankingname
+            }
+        ]
 
 
 playerbuttons : Model -> Element Msg
