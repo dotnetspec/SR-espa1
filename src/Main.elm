@@ -209,7 +209,8 @@ handleWalletStateUnknown msg model =
                             )
 
                         Just uaddr ->
-                            ( gotWalletAddrApplyToUser model uaddr, gotUserList )
+                            --( gotWalletAddrApplyToUser model uaddr, gotUserList )
+                            ( gotWalletAddrApplyToUser model uaddr, Cmd.none )
 
                 _ ->
                     ( Failure "handleWalletStateUnknown at Rinkeby"
@@ -230,7 +231,17 @@ handleWalletStateLocked msg model =
                 WalletStatus walletSentry_ ->
                     ( AppOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
 
+                UsersReceived userList ->
+                    ( model, Cmd.none )
+
+                GlobalRankingsReceived lgranking ->
+                    ( model, Cmd.none )
+
                 _ ->
+                    let
+                        _ =
+                            Debug.log "msg" msg
+                    in
                     ( Failure "handleWalletStateLocked"
                     , Cmd.none
                     )
@@ -470,8 +481,14 @@ handleWalletStateOperational msg model =
                         newAppInfo =
                             { appInfo | selectedRanking = newRnkInfo }
                     in
-                    --todo: branch for all 3 UI views
-                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, fetchedSingleRanking rnkidstr )
+                    if SR.ListOps.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking allLists.lownedUserRanking appInfo.user then
+                        ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, fetchedSingleRanking rnkidstr )
+
+                    else if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
+                        ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, fetchedSingleRanking rnkidstr )
+
+                    else
+                        ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, fetchedSingleRanking rnkidstr )
 
                 -- this is the response from createNewPlayerListWithCurrentUser Cmd
                 -- it had the Http.expectStringResponse in it
@@ -694,7 +711,7 @@ handleWalletStateOperational msg model =
                         newAppInfo =
                             { appInfo | user = userWithUpdatedAddr }
                     in
-                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UIRenderAllRankings { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewUser allLists.users userWithUpdatedAddr, gotRankingList ] )
+                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UIRenderAllRankings { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewUser allLists.users userWithUpdatedAddr, Cmd.none ] )
 
                 Fail str ->
                     ( Failure str, Cmd.none )
