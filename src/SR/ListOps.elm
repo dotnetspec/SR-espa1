@@ -7,6 +7,7 @@ module SR.ListOps exposing
     , createAllUserAsOwnerGlobalRankingList
     , createduserRankingPlayerList
     , doesCurrentRankingIdNOTMatchId
+    , extractAndSortPlayerList
     , extractPlayersFromWebData
     , extractRankingInfoListFromMaybeList
     , extractRankingList
@@ -46,6 +47,20 @@ import RemoteData
 import SR.Defaults
 import SR.Types
 import Utils.MyUtils
+
+
+extractAndSortPlayerList : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.User -> List SR.Types.UserPlayer
+extractAndSortPlayerList rdlPlayer luser =
+    let
+        lplayer =
+            extractPlayersFromWebData rdlPlayer
+
+        convertedPlayerListToUserPlayerList =
+            convertPlayersToUserPlayers
+                lplayer
+                luser
+    in
+    sortedPlayerListByRank <| convertedPlayerListToUserPlayerList
 
 
 convertMaybeUserRankingListToList : Maybe (List SR.Types.UserRanking) -> List SR.Types.UserRanking

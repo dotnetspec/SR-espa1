@@ -1,4 +1,4 @@
-module Testdata.TestDefaults exposing (..)
+module Testdata.TestDefaults exposing (simWalletSentryDataT1, simWalletSentryDataT11)
 
 import Eth.Net as Net exposing (NetworkId(..))
 import Eth.Sentry.Wallet
@@ -21,6 +21,11 @@ import Internal.Types
 -- Test 11 - 0x450dcBeB535029B62f042222D95a009F59408D5d
 
 
-simWalletSentryData : Eth.Sentry.Wallet.WalletSentry
-simWalletSentryData =
+simWalletSentryDataT1 : Eth.Sentry.Wallet.WalletSentry
+simWalletSentryDataT1 =
     { account = Just (Internal.Types.Address "0x4A0a14bA869bEe85c490A5E6401D3f740039a01F"), networkId = Net.toNetworkId 4 }
+
+
+simWalletSentryDataT11 : Eth.Sentry.Wallet.WalletSentry
+simWalletSentryDataT11 =
+    { account = Just (Internal.Types.Address "0x450dcBeB535029B62f042222D95a009F59408D5d"), networkId = Net.toNetworkId 4 }

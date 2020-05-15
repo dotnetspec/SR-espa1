@@ -15,6 +15,10 @@ import Shrink
 import Test exposing (..)
 
 
+
+--userFuzzer : Fuzzer SR.Types.User -> Fuzzer (a -> b) -> Fuzzer b
+
+
 userFuzzer : Fuzzer SR.Types.User
 userFuzzer =
     Fuzz.map5
@@ -26,6 +30,7 @@ userFuzzer =
         Fuzz.string
         |> Fuzz.andMap Fuzz.string
         |> Fuzz.andMap Fuzz.string
+        |> Fuzz.andMap (Fuzz.list Fuzz.string)
 
 
 gotUserFromUserListTest : Test

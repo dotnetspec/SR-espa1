@@ -216,12 +216,12 @@ handleWalletStateUnknown msg model =
                             ( gotWalletAddrApplyToUser model uaddr, Cmd.none )
 
                 _ ->
-                    ( Failure "handleWalletStateUnknown at Rinkeby"
+                    ( Failure "Please install and open an Etherum wallet on Rinkeby"
                     , Cmd.none
                     )
 
         _ ->
-            ( Failure "handleWalletStateUnknown here"
+            ( model
             , Cmd.none
             )
 
@@ -625,7 +625,7 @@ handleWalletStateOperational msg model =
                     createNewPlayerListWithNewChallengeAndUpdateJsonBin model
 
                 PlayersReceived lplayer ->
-                    ( updatedSelectedRankingOnPlayersReceived model (extractAndSortPlayerList lplayer allLists.users), Cmd.none )
+                    ( updatedSelectedRankingOnPlayersReceived model (SR.ListOps.extractAndSortPlayerList lplayer allLists.users), Cmd.none )
 
                 ChangedUIStateToEnterResult player ->
                     ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIEnterResult emptyTxRecord, Cmd.none )
@@ -815,12 +815,10 @@ handleGlobalRankingsReceived rmtrnkingdata model =
                 allListsUpdated =
                     addedUserRankingOtherListToAllLists
 
-                _ =
-                    Debug.log "lownedUserRanking : " allListsUpdated.lownedUserRanking
-
-                _ =
-                    Debug.log "luserRankingOwner : " luserRankingOwner
-
+                -- _ =
+                --     Debug.log "lownedUserRanking : " allListsUpdated.lownedUserRanking
+                -- _ =
+                --     Debug.log "luserRankingOwner : " luserRankingOwner
                 -- _ =
                 --     Debug.log "combined lists : " ((luserRankingOwner ++ luserRankingPlayer) ++ luserRankingOther)
                 --     _ =
@@ -1316,20 +1314,6 @@ handleNewUserInputs model msg =
             Failure "NewUserNameInputChg"
 
 
-extractAndSortPlayerList : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.User -> List SR.Types.UserPlayer
-extractAndSortPlayerList rdlPlayer luser =
-    let
-        lplayer =
-            SR.ListOps.extractPlayersFromWebData rdlPlayer
-
-        convertedPlayerListToUserPlayerList =
-            SR.ListOps.convertPlayersToUserPlayers
-                lplayer
-                luser
-    in
-    SR.ListOps.sortedPlayerListByRank <| convertedPlayerListToUserPlayerList
-
-
 updatedForChallenge : Model -> List SR.Types.UserPlayer -> SR.Types.UserPlayer -> SR.Types.User -> Model
 updatedForChallenge model luplayer opponentAsPlayer user =
     case model of
@@ -1435,21 +1419,14 @@ updatedSelectedRankingOnPlayersReceived model luplayer =
                 newAppChallengerAndPlayer =
                     { newAppPlayer | challenger = SR.ListOps.gotUserPlayerFromPlayerListStrAddress luplayer newAppPlayer.player.player.challengeraddress }
 
-                -- current
-                --
                 userPlayerOwner =
                     SR.ListOps.gotRankingOwnerAsUserPlayer appInfo.selectedRanking allLists.userRankings luplayer
-
-                _ =
-                    Debug.log "userPlayerOwner" userPlayerOwner
 
                 allListsPlayersAdded =
                     { allLists | userPlayers = luplayer }
 
                 -- uistate =
                 --     ensuredCorrectSelectedUI appInfo allLists
-                _ =
-                    Debug.log "userPlayers " allListsPlayersAdded.userPlayers
             in
             AppOps walletState allListsPlayersAdded newAppChallengerAndPlayer uiState emptyTxRecord
 
@@ -1537,22 +1514,6 @@ greetingHeading greetingStr =
         ]
 
 
-
--- rankingbuttons : List SR.Types.RankingInfo -> Element Msg
--- rankingbuttons rankingList =
---     Element.column Grid.section <|
---         [ Element.el Heading.h5 <| Element.text "Global Rankings"
---         , Element.column (Card.simple ++ Grid.simple) <|
---             insertRankingList rankingList
---         , Element.paragraph (Card.fill ++ Color.warning) <|
---             [ Element.el [ Font.bold ] <| Element.text "Please note: "
---             , Element.paragraph [] <|
---                 List.singleton <|
---                     Element.text "Terms and Conditions Apply"
---             ]
---         ]
-
-
 ownedrankingbuttons : List SR.Types.UserRanking -> Element Msg
 ownedrankingbuttons urankingList =
     let
@@ -1593,26 +1554,6 @@ otherrankingbuttons urankingList =
         , Element.column (Card.simple ++ Grid.simple) <|
             insertNeitherOwnerNorMemberRankingList newRankingList
         ]
-
-
-
--- addRankingInfoToAnyElText : SR.Types.RankingInfo -> Element Msg
--- addRankingInfoToAnyElText rankingobj =
---     Element.column Grid.simple <|
---         [ Input.button (Button.fill ++ Color.primary) <|
---             { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr rankingobj.rankingname)
---             , label = Element.text rankingobj.rankingname
---             }
---         ]
--- insertRankingList : List SR.Types.RankingInfo -> List (Element Msg)
--- insertRankingList rnkgInfoList =
---     let
---         mapOutRankingList =
---             List.map
---                 addRankingInfoToAnyElText
---                 rnkgInfoList
---     in
---     mapOutRankingList
 
 
 insertOwnedRankingList : List SR.Types.RankingInfo -> List (Element Msg)
