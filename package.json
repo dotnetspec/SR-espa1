@@ -10,7 +10,8 @@
     "build": "webpack",
     "prod": "webpack -p",
     "analyse": "elm-analyse -s -p 3001 -o",
-    "debug": "webpack-dev-server --hot --colors --port 9229"
+    "debug": "webpack-dev-server --hot --colors --port 9229",
+    "cypress:open": "cypress open"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +33,7 @@
     "concurrently": "^5.0.0",
     "copy-webpack-plugin": "^5.1.1",
     "css-loader": "^2.1.1",
+    "cypress": "^4.5.0",
     "elm-analyse": "^0.16.5",
     "elm-hot-webpack-loader": "^1.1.6",
     "elm-live": "^4.0.1",
