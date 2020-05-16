@@ -2295,12 +2295,45 @@ greetingView greetingMsg =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
-        AppOps _ _ _ _ txRec ->
+        AppOps walletStatus _ _ _ txRec ->
             -- the orig code uses Ports.walletSentry ... same as here:
-            Sub.batch
-                [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
-                , Eth.Sentry.Tx.listen txRec.txSentry
-                ]
+            case walletStatus of
+                SR.Types.WalletStateUnknown ->
+                    Sub.batch
+                        [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+                        , Eth.Sentry.Tx.listen txRec.txSentry
+                        ]
+
+                SR.Types.WalletStateMissing ->
+                    Sub.batch
+                        [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+                        , Eth.Sentry.Tx.listen txRec.txSentry
+                        ]
+
+                SR.Types.WalletStateLocked ->
+                    Sub.none
+
+                SR.Types.WalletStateAwaitOpening ->
+                    Sub.batch
+                        [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+                        , Eth.Sentry.Tx.listen txRec.txSentry
+                        ]
+
+                SR.Types.WalletOpened ->
+                    Sub.batch
+                        [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+                        , Eth.Sentry.Tx.listen txRec.txSentry
+                        ]
+
+                SR.Types.WalletOperational ->
+                    Sub.none
+
+                _ ->
+                    let
+                        _ =
+                            Debug.log "walletStatus :" walletStatus
+                    in
+                    Sub.none
 
         Failure _ ->
             Sub.none
