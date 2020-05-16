@@ -9,9 +9,8 @@ import Fuzz exposing (Fuzzer, int, list, string)
 import Internal.Types
 import Json.Encode
 import SR.Decode
-import SR.GlobalListOps
+import SR.Defaults
 import SR.ListOps
-import SR.PlayerListOps
 import SR.Types
 import Shrink
 import Test exposing (..)
@@ -39,32 +38,72 @@ rankingInfoFuzzer =
 testsortPlayerListByRank : Test
 testsortPlayerListByRank =
     let
-        listOfPlayers =
-            [ { address = ""
-              , rank = 2
-              , challengeraddress = ""
+        -- listOfPlayers =
+        --     [ { address = ""
+        --       , rank = 2
+        --       , challengeraddress = ""
+        --       }
+        --     , { address = ""
+        --       , rank = 1
+        --       , challengeraddress = ""
+        --       }
+        --     ]
+        -- output =
+        --     [ { address = ""
+        --       , rank = 1
+        --       , challengeraddress = ""
+        --       }
+        --     , { address = ""
+        --       , rank = 2
+        --       , challengeraddress = ""
+        --       }
+        --     ]
+        player =
+            { address = ""
+            , rank = 2
+            , challengeraddress = ""
+            }
+
+        challenger =
+            { address = ""
+            , rank = 1
+            , challengeraddress = ""
+            }
+
+        listOfUserPlayers =
+            [ { player = player
+              , user = SR.Defaults.emptyUser
               }
-            , { address = ""
-              , rank = 1
-              , challengeraddress = ""
+            , { player = challenger
+              , user = SR.Defaults.emptyUser
               }
             ]
 
+        outputplayer =
+            { address = ""
+            , rank = 1
+            , challengeraddress = ""
+            }
+
+        outputchallenger =
+            { address = ""
+            , rank = 2
+            , challengeraddress = ""
+            }
+
         output =
-            [ { address = ""
-              , rank = 1
-              , challengeraddress = ""
+            [ { player = outputplayer
+              , user = SR.Defaults.emptyUser
               }
-            , { address = ""
-              , rank = 2
-              , challengeraddress = ""
+            , { player = outputchallenger
+              , user = SR.Defaults.emptyUser
               }
             ]
     in
     describe "testsortPlayerListByRank test"
         [ test "missing rankingowneraddr results in entry being excluded" <|
             \_ ->
-                SR.PlayerListOps.sortedPlayerListByRank listOfPlayers
+                SR.ListOps.sortedPlayerListByRank listOfUserPlayers
                     |> Expect.equal output
         ]
 
@@ -75,20 +114,20 @@ testsortPlayerListByRank =
 
 ownerValidatedRankingListTest : Test
 ownerValidatedRankingListTest =
-    skip <|
-        fuzz (Fuzz.list rankingInfoFuzzer) "a globalranking list entry must have valid owneraddresses" <|
-            \list ->
-                case SR.ListOps.ownerValidatedRankingList list of
-                    [] ->
-                        Expect.pass
+    --skip <|
+    fuzz (Fuzz.list rankingInfoFuzzer) "a globalranking list entry must have valid owneraddresses" <|
+        \list ->
+            case SR.ListOps.ownerValidatedRankingList list of
+                [] ->
+                    Expect.pass
 
-                    --Expect.true "true" True
-                    globalRankingList ->
-                        -- let
-                        --     _ =
-                        --         Debug.log "globalRankingList" globalRankingList
-                        -- in
-                        Expect.true "true" <| List.all isValidOwnerAddress <| SR.GlobalListOps.ownerValidatedRankingList globalRankingList
+                --Expect.true "true" True
+                globalRankingList ->
+                    -- let
+                    --     _ =
+                    --         Debug.log "globalRankingList" globalRankingList
+                    -- in
+                    Expect.true "true" <| List.all isValidOwnerAddress <| SR.ListOps.ownerValidatedRankingList globalRankingList
 
 
 

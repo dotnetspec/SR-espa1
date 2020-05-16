@@ -9,12 +9,14 @@ import Fuzz exposing (Fuzzer, int, list, string)
 import Internal.Types
 import Json.Encode
 import SR.Decode
-import SR.GlobalListOps
 import SR.ListOps
-import SR.PlayerListOps
 import SR.Types
 import Shrink
 import Test exposing (..)
+
+
+
+--userFuzzer : Fuzzer SR.Types.User -> Fuzzer (a -> b) -> Fuzzer b
 
 
 userFuzzer : Fuzzer SR.Types.User
@@ -28,6 +30,7 @@ userFuzzer =
         Fuzz.string
         |> Fuzz.andMap Fuzz.string
         |> Fuzz.andMap Fuzz.string
+        |> Fuzz.andMap (Fuzz.list Fuzz.string)
 
 
 gotUserFromUserListTest : Test

@@ -1,4 +1,4 @@
-module SR.Elements exposing (ethereumWalletWarning, footer, justParasimpleUserInfoText, placeholder, selectedRankingHeaderEl, simpleUserInfoText)
+module SR.Elements exposing (ethereumWalletWarning, footer, justParasimpleUserInfoText, legalUserInfoText, placeholder, selectedRankingHeaderEl, simpleUserInfoText)
 
 --import RemoteData
 
@@ -50,6 +50,16 @@ justParasimpleUserInfoText =
     Element.paragraph [] <|
         List.singleton <|
             Element.text "Use of this application is without any liablity whatsoever"
+
+
+legalUserInfoText : Element msg
+legalUserInfoText =
+    Element.paragraph (Card.fill ++ Color.warning) <|
+        [ Element.el [ Font.bold ] <| Element.text "Please note: "
+        , Element.paragraph [] <|
+            List.singleton <|
+                Element.text "Terms and Conditions Apply"
+        ]
 
 
 selectedHeading : SR.Types.User -> SR.Types.RankingInfo -> Element msg

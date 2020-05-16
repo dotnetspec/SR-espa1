@@ -4,7 +4,6 @@ import Browser
 import Element exposing (Element)
 import Element.Font as Font
 import Element.Input as Input
-import Eth
 import Eth.Net as Net exposing (NetworkId(..))
 import Eth.Sentry.Tx
 import Eth.Sentry.Wallet
@@ -18,7 +17,6 @@ import Framework.Color as Color
 import Framework.Grid as Grid
 import Framework.Heading as Heading
 import Framework.Input as Input
-import Framework.Tag as Tag
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -26,16 +24,13 @@ import Http
 import Internal.Types
 import Json.Encode
 import Ports
-import Process
 import RemoteData
 import SR.Constants
 import SR.Decode
 import SR.Defaults
 import SR.Elements
 import SR.Encode
-import SR.GlobalListOps
 import SR.ListOps
-import SR.PlayerListOps
 import SR.Types
 import Task
 import Time exposing (Posix)
@@ -58,30 +53,21 @@ main =
 -- it will go from 1 state to another
 -- functions like view will just reflect
 -- current state of model
---nb: each variant added to model has to be handled e.g. do you need 'failure' if it's anyway handled by RemoteData?
---we have to have a separate VARIANT for the user to move on from wallet_status sub - avoiding looping
--- maybe that can be handled by poll block?
 
 
 type Model
-    = WalletOps SR.Types.WalletState SR.Types.AllLists SR.Types.AppInfo SR.Types.UIState TxRecord
-    | AppOps SR.Types.AllLists SR.Types.AppInfo SR.Types.UIState TxRecord
+    = AppOps SR.Types.WalletState SR.Types.AllLists SR.Types.AppInfo SR.Types.UIState TxRecord
     | Failure String
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    let
-        node =
-            --Net.toNetworkId networkId
-            --currently hardcode
-            Net.toNetworkId 4
-                |> Ports.ethNode
-    in
-    ( WalletOps SR.Types.WalletStateUnknown SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UILoading emptyTxRecord
+    ( AppOps SR.Types.WalletStateUnknown SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UILoading emptyTxRecord
     , Cmd.batch
-        [ Ports.log "Sending out msg from init "
-        , Task.attempt PollBlock (Eth.getBlockNumber node.http)
+        [ gotUserList
+        , gotRankingList
+        , Ports.log
+            "Sending out msg from init "
         ]
     )
 
@@ -134,268 +120,341 @@ getTime =
 
 
 type Msg
-    = -- WalletOps
-      WalletStatus Eth.Sentry.Wallet.WalletSentry
-    | MissingWalletInstructions
-    | OpenWalletInstructions
-    | Fail String
-      -- AppOps
-    | GotGlobalRankingsJson (RemoteData.WebData (List SR.Types.RankingInfo))
-    | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
-    | ClickedSelectedRanking Internal.Types.RankingId String String
-    | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
-    | SentUserInfoAndDecodedResponseToNewUser (RemoteData.WebData (List SR.Types.User))
+    = -- User Ops
+      ClickedSelectedRanking Internal.Types.RankingId String String
+    | ClickedSelectedOwnedRanking Internal.Types.RankingId String String
+    | ClickedSelectedMemberRanking Internal.Types.RankingId String String
+    | ClickedSelectedNeitherOwnerNorMember Internal.Types.RankingId String String
     | ResetToShowGlobal
     | ResetToShowSelected
-    | AddedNewRankingToGlobalList (RemoteData.WebData (List SR.Types.RankingInfo))
-    | SentResultToWallet SR.Types.ResultOfMatch
-    | ProcessResult SR.Types.ResultOfMatch
-    | SentResultToJsonbin (Result Http.Error ())
     | DeletedRanking String
-    | DeletedRankingFromGlobalList (RemoteData.WebData (List SR.Types.RankingInfo))
-    | DeletedSingleRankingFromJsonBin (RemoteData.WebData (List SR.Types.RankingInfo))
     | ChallengeOpponentClicked SR.Types.UserPlayer
     | ClickedJoinSelected
-    | ReturnFromPlayerListUpdate (RemoteData.WebData (List SR.Types.Player))
-    | ReturnFromUserListUpdate (RemoteData.WebData (List SR.Types.User))
     | LadderNameInputChg String
     | LadderDescInputChg String
     | ClickedNewRankingRequested SR.Types.RankingInfo
     | ChangedUIStateToCreateNewLadder
     | NewChallengeConfirmClicked
     | ChangedUIStateToEnterResult SR.Types.UserPlayer
-      -- User/AppOps
-    | UsersReceived (RemoteData.WebData (List SR.Types.User))
     | NewUserNameInputChg String
     | NewUserDescInputChg String
     | NewUserEmailInputChg String
     | NewUserMobileInputChg String
     | CreateNewUserRequested SR.Types.User
+      -- App Only Ops
+    | MissingWalletInstructions
+    | OpenWalletInstructions
+    | Fail String
+    | NoOp
+    | SentResultToJsonbin (Result Http.Error ())
+    | SentUserInfoAndDecodedResponseToNewUser (RemoteData.WebData (List SR.Types.User))
+    | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
+    | GlobalRankingsReceived (RemoteData.WebData (List SR.Types.RankingInfo))
+    | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
+    | UsersReceived (RemoteData.WebData (List SR.Types.User))
+    | ReturnFromPlayerListUpdate (RemoteData.WebData (List SR.Types.Player))
+    | ReturnFromUserListUpdate (RemoteData.WebData (List SR.Types.User))
+    | DeletedRankingFromGlobalList (RemoteData.WebData (List SR.Types.RankingInfo))
+    | DeletedSingleRankingFromJsonBin (RemoteData.WebData (List SR.Types.RankingInfo))
+    | SentResultToWallet SR.Types.ResultOfMatch
+    | AddedNewRankingToGlobalList (RemoteData.WebData (List SR.Types.RankingInfo))
     | TimeUpdated Posix
-      --Wallet and User/App Ops
-    | PollBlock (Result Http.Error Int)
+    | ProcessResult SR.Types.ResultOfMatch
+      --Wallet Ops
     | WatchTxHash (Result String Eth.Types.TxHash)
     | WatchTx (Result String Eth.Types.Tx)
     | WatchTxReceipt (Result String Eth.Types.TxReceipt)
     | TrackTx Eth.Sentry.Tx.TxTracker
     | TxSentryMsg Eth.Sentry.Tx.Msg
+    | WalletStatus Eth.Sentry.Wallet.WalletSentry
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msgOfTransitonThatAlreadyHappened currentmodel =
     case currentmodel of
-        WalletOps walletState allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             case walletState of
                 SR.Types.WalletStateUnknown ->
                     handleWalletStateUnknown msgOfTransitonThatAlreadyHappened currentmodel
 
                 SR.Types.WalletStateLocked ->
-                    let
-                        _ =
-                            Debug.log "WalletStateLocked" msgOfTransitonThatAlreadyHappened
-                    in
-                    handleWalletStateLocked msgOfTransitonThatAlreadyHappened
+                    handleWalletStateLocked msgOfTransitonThatAlreadyHappened currentmodel
 
                 SR.Types.WalletStateAwaitOpening ->
-                    let
-                        _ =
-                            Debug.log "WalletStateAwaitOpening appInfo" appInfo
-                    in
                     handleWalletStateAwaitOpening msgOfTransitonThatAlreadyHappened currentmodel
 
-                SR.Types.WalletOpenedAndOperational ->
-                    let
-                        _ =
-                            Debug.log "appInfo" appInfo
-                    in
-                    handleWalletStateOpenedAndOperational msgOfTransitonThatAlreadyHappened currentmodel
+                SR.Types.WalletOpened ->
+                    handledWalletStateOpened msgOfTransitonThatAlreadyHappened currentmodel
+
+                SR.Types.WalletOperational ->
+                    handleWalletStateOperational msgOfTransitonThatAlreadyHappened currentmodel
 
                 SR.Types.WalletWaitingForTransactionReceipt ->
-                    let
-                        _ =
-                            Debug.log "WalletWaitingForTransactionReceipt: " "b4 WalletOps"
-                    in
-                    handleWalletWaitingForTransactionReceipt msgOfTransitonThatAlreadyHappened allLists appInfo txRec
+                    handleWalletWaitingForTransactionReceipt msgOfTransitonThatAlreadyHappened walletState allLists appInfo txRec
 
                 _ ->
                     ( Failure "WalletState failure", Cmd.none )
 
-        AppOps allLists appInfo uiState txRec ->
-            case msgOfTransitonThatAlreadyHappened of
-                GotGlobalRankingsJson rmtrnkingdata ->
-                    let
-                        extractedList =
-                            SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData rmtrnkingdata
+        Failure str ->
+            ( Failure <| "Model failure in AppOps: " ++ str, Cmd.none )
 
-                        allUserAsOwnerGlobal =
-                            SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
 
-                        currentUserAsPlayer =
-                            SR.GlobalListOps.gotUserIsPlayerNonUserRankingList appInfo.user extractedList
+handleWalletStateUnknown : Msg -> Model -> ( Model, Cmd Msg )
+handleWalletStateUnknown msg model =
+    case msg of
+        WalletStatus walletSentry_ ->
+            let
+                _ =
+                    Debug.log "ws in unknown" walletSentry_
+            in
+            case walletSentry_.networkId of
+                Rinkeby ->
+                    case walletSentry_.account of
+                        Nothing ->
+                            ( AppOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
+                            , Cmd.none
+                            )
 
-                        addedRankingListToAllLists =
-                            { allLists
-                                | userRankings = allUserAsOwnerGlobal
-                            }
+                        Just uaddr ->
+                            --( gotWalletAddrApplyToUser model uaddr, gotUserList )
+                            ( gotWalletAddrApplyToUser model uaddr, Cmd.none )
 
-                        userRankingOwner =
-                            SR.GlobalListOps.gotUserOwnedGlobalRankingList allUserAsOwnerGlobal appInfo.user
-
-                        userRankingPlayer =
-                            SR.GlobalListOps.createduserRankingPlayerList currentUserAsPlayer allLists.users
-
-                        -- current
-                        ownerPlayerCombinedList =
-                            userRankingOwner ++ userRankingPlayer
-
-                        userRankingOther =
-                            SR.GlobalListOps.gotOthersGlobalRankingList ownerPlayerCombinedList allUserAsOwnerGlobal
-
-                        _ =
-                            Debug.log "combined lists : " ((userRankingOwner ++ userRankingPlayer) ++ userRankingOther)
-                    in
-                    ( AppOps addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
-
-                ClickedSelectedRanking rnkidstr rnkownerstr rnknamestr ->
-                    let
-                        _ =
-                            Debug.log "on click " rnkidstr
-
-                        newSelectedRanking =
-                            appInfo.selectedRanking
-
-                        newRnkInfo =
-                            { newSelectedRanking | id = Utils.MyUtils.stringFromRankingId rnkidstr, rankingowneraddr = rnkownerstr, rankingname = rnknamestr }
-
-                        newAppInfo =
-                            { appInfo | selectedRanking = newRnkInfo }
-                    in
-                    ( AppOps allLists newAppInfo uiState emptyTxRecord, fetchedSingleRanking rnkidstr )
-
-                -- this is the response from createNewPlayerListWithCurrentUser Cmd
-                -- it had the Http.expectStringResponse in it
-                -- it's already created the new ranking with current player as the first entry
-                -- the result now is the ranking id only at this point which was pulled out by the decoder
-                SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
-                    ( AppOps allLists appInfo SR.Types.CreateNewLadder emptyTxRecord
-                    , addedNewRankingListEntryInGlobal idValueFromDecoder
-                        allLists.userRankings
-                        appInfo.selectedRanking
-                        appInfo.user.ethaddress
-                        allLists.users
+                _ ->
+                    ( Failure "Please install and open an Etherum wallet on Rinkeby"
+                    , Cmd.none
                     )
 
-                SentUserInfoAndDecodedResponseToNewUser serverResponse ->
-                    ( AppOps allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+        _ ->
+            ( model
+            , Cmd.none
+            )
 
-                ResetToShowGlobal ->
-                    ( AppOps allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
-                ResetToShowSelected ->
+handleWalletStateLocked : Msg -> Model -> ( Model, Cmd Msg )
+handleWalletStateLocked msg model =
+    case model of
+        AppOps walletState allLists appInfo uiState txRec ->
+            case msg of
+                WalletStatus walletSentry_ ->
                     let
-                        uiType =
-                            ensuredCorrectSelectedUI appInfo allLists
+                        _ =
+                            Debug.log "ws in locked" walletSentry_
                     in
-                    ( AppOps allLists appInfo uiType emptyTxRecord, Cmd.none )
+                    ( AppOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
 
-                ChangedUIStateToCreateNewLadder ->
+                UsersReceived userList ->
+                    ( model, Cmd.none )
+
+                GlobalRankingsReceived lgranking ->
+                    ( model, Cmd.none )
+
+                _ ->
                     let
-                        rankingInfoFromModel =
-                            appInfo.selectedRanking
-
-                        rankingWithFieldsCleared =
-                            { rankingInfoFromModel | rankingname = "", rankingdesc = "" }
-
-                        newAppInfo =
-                            { appInfo | selectedRanking = rankingWithFieldsCleared }
+                        _ =
+                            Debug.log "msg" msg
                     in
-                    ( AppOps allLists newAppInfo SR.Types.CreateNewLadder emptyTxRecord, Cmd.none )
+                    ( Failure "handleWalletStateLocked"
+                    , Cmd.none
+                    )
 
-                AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
+        _ ->
+            ( Failure "handleWalletStateLocked model"
+            , Cmd.none
+            )
+
+
+handleWalletStateAwaitOpening : Msg -> Model -> ( Model, Cmd Msg )
+handleWalletStateAwaitOpening msg model =
+    case model of
+        AppOps walletState allLists appInfo uiState txRec ->
+            case msg of
+                WalletStatus walletSentry_ ->
                     let
-                        extractedList =
-                            SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData updatedListAfterNewEntryAddedToGlobalList
-
-                        allGlobal =
-                            SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
-
-                        addedRankingListToAllLists =
-                            { allLists
-                                | userRankings = allGlobal
-                            }
+                        _ =
+                            Debug.log "ws in awaitopening" walletSentry_
                     in
-                    ( AppOps addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+                    case walletSentry_.networkId of
+                        Rinkeby ->
+                            case walletSentry_.account of
+                                Nothing ->
+                                    ( AppOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
+                                    , Cmd.none
+                                    )
 
-                LadderNameInputChg namefield ->
+                                Just uaddr ->
+                                    handledWalletStateOpened msg (gotWalletAddrApplyToUser model uaddr)
+
+                        _ ->
+                            ( Failure "handleWalletStateAwaitOpening"
+                            , Cmd.none
+                            )
+
+                _ ->
+                    ( Failure "handleWalletStateAwaitOpening"
+                    , Cmd.none
+                    )
+
+        _ ->
+            ( Failure "handleWalletStateAwaitOpening"
+            , Cmd.none
+            )
+
+
+handledWalletStateOpened : Msg -> Model -> ( Model, Cmd Msg )
+handledWalletStateOpened msg model =
+    case model of
+        AppOps walletState allLists appInfo uiState txRec ->
+            case msg of
+                WalletStatus walletSentry_ ->
                     let
-                        newSelectedRanking =
-                            appInfo.selectedRanking
-
-                        updatedSelectedRanking =
-                            { newSelectedRanking | rankingname = namefield }
-
-                        newAppInfo =
-                            { appInfo | selectedRanking = updatedSelectedRanking }
+                        _ =
+                            Debug.log "ws in opened" walletSentry_
                     in
-                    ( AppOps allLists newAppInfo SR.Types.CreateNewLadder emptyTxRecord, Cmd.none )
+                    if SR.ListOps.isUserInListStrAddr allLists.users appInfo.user.ethaddress then
+                        ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
-                LadderDescInputChg descfield ->
+                    else
+                        ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UICreateNewUser emptyTxRecord, Cmd.none )
+
+                UsersReceived userList ->
                     let
-                        newSelectedRanking =
-                            appInfo.selectedRanking
-
-                        updatedSelectedRanking =
-                            { newSelectedRanking | rankingdesc = descfield }
-
-                        newAppInfo =
-                            { appInfo | selectedRanking = updatedSelectedRanking }
+                        userLAddedToAllLists =
+                            { allLists | users = SR.ListOps.validatedUserList <| SR.ListOps.extractUsersFromWebData userList }
                     in
-                    ( AppOps allLists newAppInfo SR.Types.CreateNewLadder emptyTxRecord, Cmd.none )
+                    updateOnUserListReceived model userLAddedToAllLists.users
 
-                ClickedNewRankingRequested newLadderRnkInfo ->
+                GlobalRankingsReceived rmtrnkingdata ->
+                    handleGlobalRankingsReceived rmtrnkingdata model
+
+                NoOp ->
+                    ( model, Cmd.none )
+
+                _ ->
                     let
-                        txParams =
-                            { to = txRec.account
-                            , from = txRec.account
-                            , gas = Nothing
-                            , gasPrice = Just <| Eth.Units.gwei 4
-                            , value = Just <| Eth.Units.gwei 1
-                            , data = Nothing
-                            , nonce = Nothing
-                            }
-
-                        ( newSentry, sentryCmd ) =
-                            Eth.Sentry.Tx.customSend
-                                txRec.txSentry
-                                { onSign = Just WatchTxHash
-                                , onBroadcast = Just WatchTx
-                                , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
-                                }
-                                txParams
-
-                        newAppInfo =
-                            { appInfo | selectedRanking = newLadderRnkInfo }
+                        _ =
+                            Debug.log "handledWalletStateOpened1" msg
                     in
-                    ( AppOps allLists newAppInfo SR.Types.CreateNewLadder { txRec | txSentry = newSentry }, sentryCmd )
+                    ( Failure "handledWalletStateOpened2"
+                    , Cmd.none
+                    )
 
-                NewChallengeConfirmClicked ->
-                    createNewPlayerListWithNewChallengeAndUpdateJsonBin currentmodel
+        Failure str ->
+            ( Failure "handledWalletStateOpened3", Cmd.none )
 
-                Fail str ->
-                    ( Failure str, Cmd.none )
 
-                PlayersReceived players ->
-                    ( updateSelectedRankingOnPlayersReceived currentmodel (extractAndSortPlayerList players), Cmd.none )
+handleWalletStateOperational : Msg -> Model -> ( Model, Cmd Msg )
+handleWalletStateOperational msg model =
+    case model of
+        AppOps walletState allLists appInfo uiState txRec ->
+            case msg of
+                -- nb. walletSentry is constantly being updated via the sub
+                WalletStatus walletSentry_ ->
+                    let
+                        _ =
+                            Debug.log "ws in operational" walletSentry_
+                    in
+                    ( model, Cmd.none )
 
                 TxSentryMsg subMsg ->
                     let
+                        _ =
+                            Debug.log "handleTxSubMsg subMsg" <| handleTxSubMsg subMsg
+
                         ( subModel, subCmd ) =
                             Eth.Sentry.Tx.update subMsg txRec.txSentry
                     in
-                    ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo uiState { txRec | txSentry = subModel }, subCmd )
+                    if handleTxSubMsg subMsg then
+                        ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings txRec, Cmd.none )
 
-                ChangedUIStateToEnterResult player ->
-                    ( AppOps allLists appInfo SR.Types.UIEnterResult emptyTxRecord, Cmd.none )
+                    else
+                        ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
+
+                WatchTxHash (Ok txHash) ->
+                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txHash = Just txHash }, Cmd.none )
+
+                WatchTxHash (Err err) ->
+                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
+
+                WatchTx (Ok tx) ->
+                    let
+                        _ =
+                            Debug.log "handleWalletStateOpenedAndOperational" "tx Ok"
+                    in
+                    AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx } |> update (ProcessResult SR.Types.Won)
+
+                WatchTx (Err err) ->
+                    let
+                        _ =
+                            Debug.log "handleWalletStateOpenedAndOperational tx err" err
+                    in
+                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving Tx: " ++ err) :: txRec.errors }, Cmd.none )
+
+                WatchTxReceipt (Ok txReceipt) ->
+                    let
+                        _ =
+                            Debug.log "handleWalletStateOpenedAndOperational Receipt" txReceipt
+                    in
+                    AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord
+                        |> update (ProcessResult SR.Types.Won)
+
+                WatchTxReceipt (Err err) ->
+                    let
+                        _ =
+                            Debug.log "tx err" err
+                    in
+                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
+
+                TrackTx blockDepth ->
+                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | blockDepth = Just blockDepth }, Cmd.none )
+
+                UsersReceived userList ->
+                    let
+                        userLAddedToAllLists =
+                            { allLists | users = SR.ListOps.validatedUserList <| SR.ListOps.extractUsersFromWebData userList }
+                    in
+                    updateOnUserListReceived model userLAddedToAllLists.users
+
+                ProcessResult result ->
+                    let
+                        _ =
+                            Debug.log "process result" result
+                    in
+                    case result of
+                        SR.Types.Won ->
+                            let
+                                newModel =
+                                    handleWon model
+                            in
+                            case newModel of
+                                AppOps thewalletState allTheLists theAppInfo theUIState thetxRec ->
+                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.userPlayers )
+
+                                _ ->
+                                    ( Failure "result won", Cmd.none )
+
+                        SR.Types.Lost ->
+                            let
+                                newModel =
+                                    handleLost model
+                            in
+                            case newModel of
+                                AppOps thewalletState allTheLists theAppInfo theUIState thetxRec ->
+                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.userPlayers )
+
+                                _ ->
+                                    ( Failure "result lost", Cmd.none )
+
+                        SR.Types.Undecided ->
+                            let
+                                newModel =
+                                    handleUndecided model
+                            in
+                            case newModel of
+                                AppOps thewalletState allTheLists theAppInfo theUIState thetxRec ->
+                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.userPlayers )
+
+                                _ ->
+                                    ( Failure "result lost", Cmd.none )
 
                 SentResultToWallet result ->
                     let
@@ -421,21 +480,185 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                                 }
                                 txParams
                     in
-                    ( WalletOps SR.Types.WalletWaitingForTransactionReceipt allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
-                      --|> update (ProcessResult SR.Types.Won)
+                    ( AppOps SR.Types.WalletWaitingForTransactionReceipt allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
                     , sentryCmd
                     )
 
                 SentResultToJsonbin a ->
-                    ( AppOps allLists
+                    ( AppOps SR.Types.WalletOperational
+                        allLists
                         appInfo
                         uiState
                         txRec
                     , Cmd.none
                     )
 
+                GlobalRankingsReceived rmtrnkingdata ->
+                    handleGlobalRankingsReceived rmtrnkingdata model
+
+                -- ClickedSelectedRanking rnkidstr rnkownerstr rnknamestr ->
+                --     let
+                --         _ =
+                --             Debug.log "on click " rnkidstr
+                --         newSelectedRanking =
+                --             appInfo.selectedRanking
+                --         newRnkInfo =
+                --             { newSelectedRanking | id = Utils.MyUtils.stringFromRankingId rnkidstr, rankingowneraddr = rnkownerstr, rankingname = rnknamestr }
+                --         newAppInfo =
+                --             { appInfo | selectedRanking = newRnkInfo }
+                --         updatedUiState =
+                --             ensuredCorrectSelectedUI newAppInfo allLists
+                --     in
+                --     ( AppOps SR.Types.WalletOperational allLists newAppInfo updatedUiState emptyTxRecord, fetchedSingleRanking rnkidstr )
+                ClickedSelectedOwnedRanking rnkidstr rnkownerstr rnknamestr ->
+                    let
+                        _ =
+                            Debug.log "on click owner" rnkidstr
+
+                        newAppInfo =
+                            updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
+                    in
+                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, fetchedSingleRanking rnkidstr )
+
+                ClickedSelectedMemberRanking rnkidstr rnkownerstr rnknamestr ->
+                    let
+                        _ =
+                            Debug.log "on click member" rnkidstr
+
+                        newAppInfo =
+                            updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
+                    in
+                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, fetchedSingleRanking rnkidstr )
+
+                ClickedSelectedNeitherOwnerNorMember rnkidstr rnkownerstr rnknamestr ->
+                    let
+                        _ =
+                            Debug.log "on click other " rnkidstr
+
+                        newAppInfo =
+                            updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
+                    in
+                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, fetchedSingleRanking rnkidstr )
+
+                -- this is the response from createNewPlayerListWithCurrentUser Cmd
+                -- it had the Http.expectStringResponse in it
+                -- it's already created the new ranking with current player as the first entry
+                -- the result now is the ranking id only at this point which was pulled out by the decoder
+                SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
+                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.CreateNewLadder emptyTxRecord
+                    , addedNewRankingListEntryInGlobal idValueFromDecoder
+                        allLists.userRankings
+                        appInfo.selectedRanking
+                        appInfo.user.ethaddress
+                        allLists.users
+                    )
+
+                SentUserInfoAndDecodedResponseToNewUser serverResponse ->
+                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+
+                ResetToShowGlobal ->
+                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+
+                ResetToShowSelected ->
+                    -- let
+                    --     uiType =
+                    --         ensuredCorrectSelectedUI appInfo allLists
+                    -- in
+                    -- ( AppOps SR.Types.WalletOperational allLists appInfo uiType emptyTxRecord, Cmd.none )
+                    ( model, Cmd.none )
+
+                ChangedUIStateToCreateNewLadder ->
+                    let
+                        rankingInfoFromModel =
+                            appInfo.selectedRanking
+
+                        rankingWithFieldsCleared =
+                            { rankingInfoFromModel | rankingname = "", rankingdesc = "" }
+
+                        newAppInfo =
+                            { appInfo | selectedRanking = rankingWithFieldsCleared }
+                    in
+                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.CreateNewLadder emptyTxRecord, Cmd.none )
+
+                AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
+                    let
+                        extractedList =
+                            SR.ListOps.ownerValidatedRankingList <| SR.ListOps.extractRankingsFromWebData updatedListAfterNewEntryAddedToGlobalList
+
+                        allGlobal =
+                            SR.ListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
+
+                        addedRankingListToAllLists =
+                            { allLists
+                                | userRankings = allGlobal
+                            }
+                    in
+                    ( AppOps SR.Types.WalletOperational addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+
+                LadderNameInputChg namefield ->
+                    let
+                        newSelectedRanking =
+                            appInfo.selectedRanking
+
+                        updatedSelectedRanking =
+                            { newSelectedRanking | rankingname = namefield }
+
+                        newAppInfo =
+                            { appInfo | selectedRanking = updatedSelectedRanking }
+                    in
+                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.CreateNewLadder emptyTxRecord, Cmd.none )
+
+                LadderDescInputChg descfield ->
+                    let
+                        newSelectedRanking =
+                            appInfo.selectedRanking
+
+                        updatedSelectedRanking =
+                            { newSelectedRanking | rankingdesc = descfield }
+
+                        newAppInfo =
+                            { appInfo | selectedRanking = updatedSelectedRanking }
+                    in
+                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.CreateNewLadder emptyTxRecord, Cmd.none )
+
+                ClickedNewRankingRequested newLadderRnkInfo ->
+                    let
+                        txParams =
+                            { to = txRec.account
+                            , from = txRec.account
+                            , gas = Nothing
+                            , gasPrice = Just <| Eth.Units.gwei 4
+                            , value = Just <| Eth.Units.gwei 1
+                            , data = Nothing
+                            , nonce = Nothing
+                            }
+
+                        ( newSentry, sentryCmd ) =
+                            Eth.Sentry.Tx.customSend
+                                txRec.txSentry
+                                { onSign = Just WatchTxHash
+                                , onBroadcast = Just WatchTx
+                                , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                                }
+                                txParams
+
+                        newAppInfo =
+                            { appInfo | selectedRanking = newLadderRnkInfo }
+                    in
+                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.CreateNewLadder { txRec | txSentry = newSentry }, sentryCmd )
+
+                NewChallengeConfirmClicked ->
+                    createNewPlayerListWithNewChallengeAndUpdateJsonBin model
+
+                PlayersReceived lplayer ->
+                    ( updatedSelectedRankingOnPlayersReceived model (SR.ListOps.extractAndSortPlayerList lplayer allLists.users), Cmd.none )
+
+                ChangedUIStateToEnterResult player ->
+                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIEnterResult emptyTxRecord, Cmd.none )
+
                 DeletedRanking uaddr ->
-                    ( AppOps allLists
+                    ( AppOps SR.Types.WalletOperational
+                        allLists
                         appInfo
                         uiState
                         txRec
@@ -443,84 +666,72 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     )
 
                 DeletedSingleRankingFromJsonBin result ->
-                    ( AppOps allLists
+                    ( AppOps SR.Types.WalletOperational
+                        allLists
                         appInfo
                         uiState
                         txRec
-                    , deleteSelectedRankingFromGlobalList appInfo.selectedRanking.id (SR.GlobalListOps.extractRankingList allLists.userRankings) allLists.users appInfo.user.ethaddress
+                    , deleteSelectedRankingFromGlobalList appInfo.selectedRanking.id (SR.ListOps.extractRankingList allLists.userRankings) allLists.users appInfo.user.ethaddress
                     )
 
                 ChallengeOpponentClicked opponentAsPlayer ->
-                    ( updatedForChallenge currentmodel allLists.userPlayers opponentAsPlayer appInfo.user, Cmd.none )
+                    ( updatedForChallenge model allLists.userPlayers opponentAsPlayer appInfo.user, Cmd.none )
 
                 DeletedRankingFromGlobalList updatedListAfterRankingDeletedFromGlobalList ->
                     let
                         extractedList =
-                            SR.GlobalListOps.ownerValidatedRankingList <| Utils.MyUtils.extractRankingsFromWebData updatedListAfterRankingDeletedFromGlobalList
+                            SR.ListOps.ownerValidatedRankingList <| SR.ListOps.extractRankingsFromWebData updatedListAfterRankingDeletedFromGlobalList
 
                         allGlobal =
-                            SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
+                            SR.ListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
 
                         addedRankingListToAllLists =
                             { allLists
                                 | userRankings = allGlobal
                             }
                     in
-                    ( AppOps addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+                    ( AppOps SR.Types.WalletOperational addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
-                -- current
                 ClickedJoinSelected ->
                     -- this updates the player and user lists
-                    ( currentmodel, Cmd.batch [ addCurrentUserToPlayerList appInfo.selectedRanking.id allLists.userPlayers appInfo.user, updateUsersJoinRankings appInfo.selectedRanking.id appInfo.user allLists.users ] )
+                    ( model, Cmd.batch [ addCurrentUserToPlayerList appInfo.selectedRanking.id allLists.userPlayers appInfo.user, updateUsersJoinRankings appInfo.selectedRanking.id appInfo.user allLists.users ] )
 
                 ReturnFromPlayerListUpdate response ->
                     let
+                        lplayer =
+                            SR.ListOps.extractPlayersFromWebData response
+
                         convertedToUserPlayers =
-                            Utils.MyUtils.convertPlayersToUserPlayers (Utils.MyUtils.extractPlayersFromWebData response)
+                            SR.ListOps.convertPlayersToUserPlayers
+                                lplayer
+                                allLists.users
+
+                        -- lplayer
+                        -- allLists.users
                     in
-                    ( updateSelectedRankingPlayerList currentmodel convertedToUserPlayers, Cmd.none )
+                    ( updateSelectedRankingPlayerList model convertedToUserPlayers, Cmd.none )
 
                 ReturnFromUserListUpdate response ->
-                    ( updateUserList currentmodel (Utils.MyUtils.extractUsersFromWebData response), Cmd.none )
+                    ( updateUserList model (SR.ListOps.extractUsersFromWebData response), Cmd.none )
 
-                PollBlock (Ok blockNumber) ->
-                    ( currentmodel
-                    , Cmd.none
-                    )
-
-                PollBlock (Err error) ->
-                    ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo uiState txRec, Cmd.none )
-
-                -- old UserOps
                 TimeUpdated posixTime ->
                     let
                         _ =
                             Debug.log "posixtime" posixTime
                     in
-                    ( currentmodel, Cmd.none )
-
-                UsersReceived userList ->
-                    let
-                        userLAddedToAllLists =
-                            { allLists | users = SR.ListOps.validatedUserList <| Utils.MyUtils.extractUsersFromWebData userList }
-                    in
-                    if SR.ListOps.isUserInListStrAddr userLAddedToAllLists.users appInfo.user.ethaddress then
-                        ( updateOnUserListReceived currentmodel userLAddedToAllLists.users, gotRankingList )
-
-                    else
-                        ( updateOnUserListReceived currentmodel userLAddedToAllLists.users, Cmd.none )
+                    ( model, Cmd.none )
 
                 NewUserNameInputChg namefield ->
-                    ( handleNewUserInputs currentmodel (NewUserNameInputChg namefield), Cmd.none )
+                    ( handleNewUserInputs model (NewUserNameInputChg namefield), Cmd.none )
 
                 NewUserDescInputChg namefield ->
-                    ( handleNewUserInputs currentmodel (NewUserDescInputChg namefield), Cmd.none )
+                    ( handleNewUserInputs model (NewUserDescInputChg namefield), Cmd.none )
 
                 NewUserEmailInputChg namefield ->
-                    ( handleNewUserInputs currentmodel (NewUserEmailInputChg namefield), Cmd.none )
+                    ( handleNewUserInputs model (NewUserEmailInputChg namefield), Cmd.none )
 
                 NewUserMobileInputChg namefield ->
-                    ( handleNewUserInputs currentmodel (NewUserMobileInputChg namefield), Cmd.none )
+                    ( handleNewUserInputs model (NewUserMobileInputChg namefield), Cmd.none )
 
                 CreateNewUserRequested userInfo ->
                     let
@@ -551,120 +762,113 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                         newAppInfo =
                             { appInfo | user = userWithUpdatedAddr }
                     in
-                    ( AppOps allLists newAppInfo SR.Types.UIRenderAllRankings { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewUser allLists.users userWithUpdatedAddr, gotRankingList ] )
+                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UIRenderAllRankings { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewUser allLists.users userWithUpdatedAddr, Cmd.none ] )
+
+                Fail str ->
+                    ( Failure str, Cmd.none )
+
+                NoOp ->
+                    ( model, Cmd.none )
 
                 _ ->
-                    let
-                        _ =
-                            Debug.log "AppOps: msgOfTransitonThatAlreadyHappened" msgOfTransitonThatAlreadyHappened
-                    in
-                    --todo: better logic. This should go to failure model rather than fall thru to UserOps
-                    -- but currently logic needs to do this
-                    ( AppOps allLists appInfo SR.Types.UICreateNewUser txRec, Cmd.none )
+                    ( model, Cmd.none )
 
         Failure str ->
-            ( Failure <| "Model failure in AppOps: " ++ str, Cmd.none )
+            ( Failure str, Cmd.none )
 
 
-handleWalletStateUnknown : Msg -> Model -> ( Model, Cmd Msg )
-handleWalletStateUnknown msg model =
-    case msg of
-        WalletStatus walletSentry_ ->
-            case walletSentry_.networkId of
-                Rinkeby ->
-                    case walletSentry_.account of
-                        Nothing ->
-                            let
-                                _ =
-                                    Debug.log "nothing : " "set to locked"
-                            in
-                            ( WalletOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
-                            , Cmd.none
-                            )
+updateAppInfoOnRankingSelected : SR.Types.AppInfo -> Internal.Types.RankingId -> String -> String -> SR.Types.AppInfo
+updateAppInfoOnRankingSelected appInfo rnkid rnkownerstr rnknamestr =
+    let
+        newSelectedRanking =
+            appInfo.selectedRanking
 
-                        Just uaddr ->
-                            ( handleGotUser model uaddr, gotUserList )
+        newRnkInfo =
+            { newSelectedRanking | id = Utils.MyUtils.stringFromRankingId rnkid, rankingowneraddr = rnkownerstr, rankingname = rnknamestr }
 
-                _ ->
-                    ( Failure "handleWalletStateUnknown"
-                    , Cmd.none
-                    )
-
-        _ ->
-            ( Failure "handleWalletStateUnknown"
-            , Cmd.none
-            )
+        newAppInfo =
+            { appInfo | selectedRanking = newRnkInfo }
+    in
+    newAppInfo
 
 
-handleWalletStateLocked : Msg -> ( Model, Cmd Msg )
-handleWalletStateLocked msg =
-    case msg of
-        WalletStatus walletSentry_ ->
-            ( WalletOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
-
-        PollBlock (Ok blockNumber) ->
-            ( AppOps SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
-
-        PollBlock (Err error) ->
-            ( AppOps SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
-
-        _ ->
-            ( Failure "handleWalletStateLocked"
-            , Cmd.none
-            )
-
-
-handleWalletStateAwaitOpening : Msg -> Model -> ( Model, Cmd Msg )
-handleWalletStateAwaitOpening msg model =
+handleGlobalRankingsReceived : RemoteData.WebData (List SR.Types.RankingInfo) -> Model -> ( Model, Cmd Msg )
+handleGlobalRankingsReceived rmtrnkingdata model =
     case model of
-        WalletOps walletState allLists appInfo uiState txRec ->
-            case msg of
-                WalletStatus walletSentry_ ->
-                    case walletSentry_.networkId of
-                        Rinkeby ->
-                            case walletSentry_.account of
-                                Nothing ->
-                                    let
-                                        _ =
-                                            Debug.log "nothing : " "set to locked"
-                                    in
-                                    ( WalletOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
-                                    , Cmd.none
-                                    )
+        AppOps walletState allLists appInfo uiState txRec ->
+            let
+                extractedList =
+                    SR.ListOps.ownerValidatedRankingList <| SR.ListOps.extractRankingsFromWebData rmtrnkingdata
 
-                                Just uaddr ->
-                                    let
-                                        _ =
-                                            Debug.log "handleWalletStateAwaitOpening : " uaddr
-                                    in
-                                    handleWalletStateOpenedAndOperational msg (handleGotUser model uaddr)
+                allUserAsOwnerGlobal =
+                    SR.ListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
 
-                        _ ->
-                            ( Failure "handleWalletStateAwaitOpening"
-                            , Cmd.none
-                            )
+                currentUserAsPlayer =
+                    SR.ListOps.gotUserIsPlayerNonUserRankingList appInfo.user extractedList
 
-                _ ->
-                    ( Failure "handleWalletStateAwaitOpening"
-                    , Cmd.none
-                    )
+                addedRankingListToAllLists =
+                    { allLists
+                        | userRankings = allUserAsOwnerGlobal
+                    }
 
-        _ ->
-            ( Failure "handleWalletStateAwaitOpening"
-            , Cmd.none
-            )
+                luserRankingOwner =
+                    SR.ListOps.gotUserOwnedGlobalRankingList allUserAsOwnerGlobal appInfo.user
+
+                addedlUserRankingOwnerListToAllLists =
+                    { addedRankingListToAllLists
+                        | lownedUserRanking = luserRankingOwner
+                    }
+
+                luserRankingPlayer =
+                    SR.ListOps.createduserRankingPlayerList currentUserAsPlayer allLists.users
+
+                addedUserRankingMemberListToAllLists =
+                    { addedlUserRankingOwnerListToAllLists
+                        | lmemberUserRanking = luserRankingPlayer
+                    }
+
+                ownerPlayerCombinedList =
+                    luserRankingOwner ++ luserRankingPlayer
+
+                luserRankingOther =
+                    SR.ListOps.gotOthersGlobalRankingList ownerPlayerCombinedList allUserAsOwnerGlobal
+
+                addedUserRankingOtherListToAllLists =
+                    { addedUserRankingMemberListToAllLists
+                        | lotherUserRanking = luserRankingOther
+                    }
+
+                allListsUpdated =
+                    addedUserRankingOtherListToAllLists
+
+                -- _ =
+                --     Debug.log "lownedUserRanking : " allListsUpdated.lownedUserRanking
+                -- _ =
+                --     Debug.log "luserRankingOwner : " luserRankingOwner
+                -- _ =
+                --     Debug.log "combined lists : " ((luserRankingOwner ++ luserRankingPlayer) ++ luserRankingOther)
+                --     _ =
+                --         Debug.log "combined lists : " ((allListsUpdated.lownedUserRanking ++ allListsUpdated.lmemberUserRanking) ++ allListsUpdated.lotherUserRanking)
+            in
+            ( AppOps SR.Types.WalletOperational allListsUpdated appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+
+        Failure str ->
+            ( Failure str, Cmd.none )
 
 
-handleWalletWaitingForTransactionReceipt : Msg -> SR.Types.AllLists -> SR.Types.AppInfo -> TxRecord -> ( Model, Cmd Msg )
-handleWalletWaitingForTransactionReceipt msg allLists appInfo txRec =
+handleWalletWaitingForTransactionReceipt : Msg -> SR.Types.WalletState -> SR.Types.AllLists -> SR.Types.AppInfo -> TxRecord -> ( Model, Cmd Msg )
+handleWalletWaitingForTransactionReceipt msg walletState allLists appInfo txRec =
     let
         _ =
             Debug.log "Msg" msg
     in
     case msg of
         WalletStatus walletSentry_ ->
-            ( WalletOps SR.Types.WalletWaitingForTransactionReceipt allLists appInfo SR.Types.UIWaitingForTxReceipt txRec
-              --|> update (ProcessResult SR.Types.Won)
+            let
+                _ =
+                    Debug.log "ws in WaitingForTransactionReceipt" walletSentry_
+            in
+            ( AppOps SR.Types.WalletWaitingForTransactionReceipt allLists appInfo SR.Types.UIWaitingForTxReceipt txRec
             , Cmd.none
             )
 
@@ -678,234 +882,47 @@ handleWalletWaitingForTransactionReceipt msg allLists appInfo txRec =
                     Eth.Sentry.Tx.update subMsg txRec.txSentry
             in
             if handleTxSubMsg subMsg then
-                ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }, subCmd )
+                ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }, subCmd )
 
             else
-                ( AppOps SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
+                ( AppOps walletState SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
 
         WatchTxHash (Ok txHash) ->
-            --( { txRec | txHash = Just txHash }, Cmd.none )
-            ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txHash = Just txHash }, Cmd.none )
+            ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txHash = Just txHash }, Cmd.none )
 
         WatchTxHash (Err err) ->
-            --( { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
-            ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
+            ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
 
         WatchTx (Ok tx) ->
             let
                 _ =
                     Debug.log "handleWalletWaitingForTransactionReceipt" "tx ok"
             in
-            -- WalletOps SR.Types.WalletOpenedAndOperational { txRec | tx = Just tx }
-            --     |> update (ProcessResult SR.Types.Won)
-            --( UserOps SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
-            AppOps allLists appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx } |> update (ProcessResult SR.Types.Won)
+            AppOps walletState allLists appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx } |> update (ProcessResult SR.Types.Won)
 
         WatchTx (Err err) ->
             let
                 _ =
                     Debug.log "handleWalletWaitingForTransactionReceipt tx err" err
             in
-            ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving Tx: " ++ err) :: txRec.errors }, Cmd.none )
+            ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving Tx: " ++ err) :: txRec.errors }, Cmd.none )
 
         WatchTxReceipt (Ok txReceipt) ->
             let
                 _ =
                     Debug.log "handleWalletWaitingForTransactionReceipt tx ok" txReceipt
             in
-            AppOps allLists appInfo SR.Types.UIRenderAllRankings { txRec | txReceipt = Just txReceipt } |> update (ProcessResult SR.Types.Won)
+            AppOps walletState allLists appInfo SR.Types.UIRenderAllRankings { txRec | txReceipt = Just txReceipt } |> update (ProcessResult SR.Types.Won)
 
         WatchTxReceipt (Err err) ->
             let
                 _ =
                     Debug.log "tx err" err
             in
-            ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
+            ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
 
         _ ->
             ( Failure "handleWalletStateUnknown"
-            , Cmd.none
-            )
-
-
-handleWalletStateOpenedAndOperational : Msg -> Model -> ( Model, Cmd Msg )
-handleWalletStateOpenedAndOperational msg model =
-    let
-        _ =
-            Debug.log "in opend and op" "with model"
-    in
-    case model of
-        WalletOps walletState allLists appInfo uiState txRec ->
-            case msg of
-                WalletStatus walletSentry_ ->
-                    if appInfo.user.ethaddress == "" then
-                        ( AppOps allLists appInfo SR.Types.UICreateNewUser emptyTxRecord, Cmd.none )
-
-                    else
-                        ( AppOps allLists appInfo SR.Types.UILoading emptyTxRecord, gotUserList )
-
-                PollBlock (Ok blockNumber) ->
-                    ( AppOps allLists appInfo SR.Types.UIRenderAllRankings txRec, Cmd.none )
-
-                PollBlock (Err error) ->
-                    ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt txRec, Cmd.none )
-
-                OpenWalletInstructions ->
-                    ( WalletOps SR.Types.WalletStateLocked allLists appInfo SR.Types.UIWaitingForTxReceipt txRec, Cmd.none )
-
-                TxSentryMsg subMsg ->
-                    let
-                        _ =
-                            Debug.log "handleTxSubMsg subMsg" <| handleTxSubMsg subMsg
-                    in
-                    let
-                        ( subModel, subCmd ) =
-                            Eth.Sentry.Tx.update subMsg txRec.txSentry
-                    in
-                    if handleTxSubMsg subMsg then
-                        ( AppOps allLists appInfo SR.Types.UIRenderAllRankings txRec, Cmd.none )
-
-                    else
-                        ( AppOps allLists appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
-
-                WatchTxHash (Ok txHash) ->
-                    ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txHash = Just txHash }, Cmd.none )
-
-                WatchTxHash (Err err) ->
-                    ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
-
-                WatchTx (Ok tx) ->
-                    let
-                        _ =
-                            Debug.log "handleWalletStateOpenedAndOperational" "tx Ok"
-                    in
-                    AppOps allLists appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx } |> update (ProcessResult SR.Types.Won)
-
-                WatchTx (Err err) ->
-                    let
-                        _ =
-                            Debug.log "handleWalletStateOpenedAndOperational tx err" err
-                    in
-                    ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving Tx: " ++ err) :: txRec.errors }, Cmd.none )
-
-                WatchTxReceipt (Ok txReceipt) ->
-                    let
-                        _ =
-                            Debug.log "handleWalletStateOpenedAndOperational Receipt" txReceipt
-                    in
-                    AppOps allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord
-                        |> update (ProcessResult SR.Types.Won)
-
-                WatchTxReceipt (Err err) ->
-                    let
-                        _ =
-                            Debug.log "tx err" err
-                    in
-                    ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
-
-                TrackTx blockDepth ->
-                    ( WalletOps SR.Types.WalletOpenedAndOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | blockDepth = Just blockDepth }, Cmd.none )
-
-                ProcessResult result ->
-                    let
-                        _ =
-                            Debug.log "process result" result
-                    in
-                    case result of
-                        SR.Types.Won ->
-                            let
-                                newModel =
-                                    handleWon model
-                            in
-                            case newModel of
-                                AppOps allTheLists theAppInfo theUIState thetxRec ->
-                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.userPlayers )
-
-                                _ ->
-                                    ( Failure "result won", Cmd.none )
-
-                        SR.Types.Lost ->
-                            let
-                                newModel =
-                                    handleLost model
-                            in
-                            case newModel of
-                                AppOps allTheLists theAppInfo theUIState thetxRec ->
-                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.userPlayers )
-
-                                _ ->
-                                    ( Failure "result lost", Cmd.none )
-
-                        SR.Types.Undecided ->
-                            let
-                                newModel =
-                                    handleUndecided model
-                            in
-                            case newModel of
-                                AppOps allTheLists theAppInfo theUIState thetxRec ->
-                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.userPlayers )
-
-                                _ ->
-                                    ( Failure "result lost", Cmd.none )
-
-                SentResultToWallet result ->
-                    let
-                        _ =
-                            Debug.log "SentResultToWallet" result
-
-                        txParams =
-                            { to = txRec.account
-                            , from = txRec.account
-                            , gas = Nothing
-                            , gasPrice = Just <| Eth.Units.gwei 4
-                            , value = Just <| Eth.Units.gwei 1
-                            , data = Nothing
-                            , nonce = Nothing
-                            }
-
-                        ( newSentry, sentryCmd ) =
-                            Eth.Sentry.Tx.customSend
-                                txRec.txSentry
-                                { onSign = Just WatchTxHash
-                                , onBroadcast = Just WatchTx
-                                , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
-                                }
-                                txParams
-                    in
-                    ( WalletOps SR.Types.WalletWaitingForTransactionReceipt allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
-                    , sentryCmd
-                    )
-
-                SentResultToJsonbin a ->
-                    ( AppOps allLists
-                        appInfo
-                        uiState
-                        txRec
-                    , Cmd.none
-                    )
-
-                Fail str ->
-                    let
-                        _ =
-                            Debug.log "Fail: handleWalletStateOpenedAndOperational" msg
-                    in
-                    ( Failure <| "WalletOps 1" ++ str, Cmd.none )
-
-                _ ->
-                    let
-                        _ =
-                            Debug.log "Fail: msg " msg
-                    in
-                    ( Failure "handleWalletStateOpenedAndOperational"
-                    , Cmd.none
-                    )
-
-        _ ->
-            let
-                _ =
-                    Debug.log "Fail: msg " msg
-            in
-            ( Failure "handleWalletStateOpenedAndOperational"
             , Cmd.none
             )
 
@@ -959,10 +976,10 @@ handleTxSubMsg subMsg =
             False
 
 
-handleGotUser : Model -> Eth.Types.Address -> Model
-handleGotUser model uaddr =
+gotWalletAddrApplyToUser : Model -> Eth.Types.Address -> Model
+gotWalletAddrApplyToUser model uaddr =
     case model of
-        WalletOps walletState allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 newAppInfoUser =
                     appInfo.user
@@ -972,24 +989,17 @@ handleGotUser model uaddr =
 
                 newAppInfo =
                     { appInfo | user = newUserWithAddr }
-
-                _ =
-                    Debug.log "newUserWithAddr" newUserWithAddr.ethaddress
             in
-            if newUserWithAddr.ethaddress == "" then
-                AppOps SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UICreateNewUser emptyTxRecord
-
-            else
-                AppOps SR.Defaults.emptyAllLists newAppInfo SR.Types.UILoading emptyTxRecord
+            AppOps SR.Types.WalletOpened allLists newAppInfo SR.Types.UILoading emptyTxRecord
 
         _ ->
-            Failure "handleGotUser"
+            Failure "gotWalletAddrApplyToUser"
 
 
 handleWon : Model -> Model
 handleWon model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 whoHigher =
                     isOpponentHigherRank appInfo.player appInfo.challenger
@@ -999,10 +1009,10 @@ handleWon model =
                     let
                         -- update the player list for both players challenger to emptyPlayer and change rankings
                         updatedPlayerListForPlayer =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.challenger.player.rank
+                            SR.ListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.challenger.player.rank
 
                         updatedPlayerListForPlayerAndChallenger =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger (appInfo.challenger.player.rank + 1)
+                            SR.ListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger (appInfo.challenger.player.rank + 1)
 
                         --update current player now
                         newUserPlayerPlayer =
@@ -1024,7 +1034,8 @@ handleWon model =
                             { allLists | userPlayers = updatedPlayerListForPlayerAndChallenger }
                     in
                     --nb. higher rank is a lower number and vice versa!
-                    AppOps newAllLists
+                    AppOps walletState
+                        newAllLists
                         newAppInfo
                         SR.Types.UISelectedRankingUserIsPlayer
                         txRec
@@ -1034,10 +1045,10 @@ handleWon model =
                         --no ranking change - just update the player list for both players challenger to emptyPlayer, no rank change
                         --update the player list
                         updatedPlayerListForPlayer =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.player.player.rank
+                            SR.ListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.player.player.rank
 
                         updatedPlayerListForPlayerAndChallenger =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.player.rank
+                            SR.ListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.player.rank
 
                         --update current player now
                         newUserPlayerPlayer =
@@ -1059,7 +1070,8 @@ handleWon model =
                             { allLists | userPlayers = updatedPlayerListForPlayerAndChallenger }
                     in
                     --nb. higher rank is a lower number and vice versa!
-                    AppOps newAllLists
+                    AppOps walletState
+                        newAllLists
                         newAppInfo
                         SR.Types.UISelectedRankingUserIsPlayer
                         txRec
@@ -1071,7 +1083,7 @@ handleWon model =
 handleLost : Model -> Model
 handleLost model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 whoHigher =
                     isOpponentHigherRank appInfo.player appInfo.challenger
@@ -1080,10 +1092,10 @@ handleLost model =
                 SR.Types.OpponentRankHigher ->
                     let
                         updatedPlayerListForPlayer =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.player.player.rank
+                            SR.ListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.player.player.rank
 
                         updatedPlayerListForPlayerAndChallenger =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.player.rank
+                            SR.ListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.player.rank
 
                         --update current player now
                         newUserPlayer =
@@ -1105,7 +1117,8 @@ handleLost model =
                             { allLists | userPlayers = updatedPlayerListForPlayerAndChallenger }
                     in
                     --nb. higher rank is a lower number and vice versa!
-                    AppOps newAllLists
+                    AppOps walletState
+                        newAllLists
                         newAppInfo
                         SR.Types.UISelectedRankingUserIsPlayer
                         txRec
@@ -1114,10 +1127,10 @@ handleLost model =
                     --nb. higher rank is a lower number and vice versa!
                     let
                         updatedPlayerListForPlayer =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player (appInfo.player.player.rank + 1)
+                            SR.ListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player (appInfo.player.player.rank + 1)
 
                         updatedPlayerListForPlayerAndChallenger =
-                            SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.player.player.rank
+                            SR.ListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.player.player.rank
 
                         --update current player now
                         newUserPlayer =
@@ -1138,7 +1151,8 @@ handleLost model =
                         newAllLists =
                             { allLists | userPlayers = updatedPlayerListForPlayerAndChallenger }
                     in
-                    AppOps newAllLists
+                    AppOps walletState
+                        newAllLists
                         newAppInfo
                         SR.Types.UISelectedRankingUserIsPlayer
                         txRec
@@ -1150,13 +1164,13 @@ handleLost model =
 handleUndecided : Model -> Model
 handleUndecided model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 updatedPlayerListForPlayer =
-                    SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.player.player.rank
+                    SR.ListOps.setPlayerInPlayerListWithChallengeResult allLists.userPlayers appInfo.player appInfo.player.player.rank
 
                 updatedPlayerListForPlayerAndChallenger =
-                    SR.PlayerListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.player.rank
+                    SR.ListOps.setPlayerInPlayerListWithChallengeResult updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.player.rank
 
                 --update current player now
                 newUserPlayer =
@@ -1177,7 +1191,8 @@ handleUndecided model =
                 newAllLists =
                     { allLists | userPlayers = updatedPlayerListForPlayerAndChallenger }
             in
-            AppOps newAllLists
+            AppOps walletState
+                newAllLists
                 newAppInfo
                 SR.Types.UISelectedRankingUserIsPlayer
                 txRec
@@ -1186,40 +1201,50 @@ handleUndecided model =
             Failure "Fail in handleUndecided"
 
 
-ensuredCorrectSelectedUI : SR.Types.AppInfo -> SR.Types.AllLists -> SR.Types.UIState
-ensuredCorrectSelectedUI appInfo allLists =
-    if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking (SR.GlobalListOps.extractRankingList allLists.userRankings) appInfo.user then
-        SR.Types.UISelectedRankingUserIsOwner
 
-    else if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
-        SR.Types.UISelectedRankingUserIsPlayer
-
-    else
-        SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
+-- ensuredCorrectSelectedUI : SR.Types.AppInfo -> SR.Types.AllLists -> SR.Types.UIState
+-- ensuredCorrectSelectedUI appInfo allLists =
+--     --if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking (SR.ListOps.extractRankingList allLists.userRankings) appInfo.user then
+--     let
+--         _ =
+--             Debug.log "member?" SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user
+--     in
+--     if SR.ListOps.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking allLists.lownedUserRanking appInfo.user then
+--         SR.Types.UISelectedRankingUserIsOwner
+--     else if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
+--         SR.Types.UISelectedRankingUserIsPlayer
+--     else
+--         SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
+-- if SR.ListOps.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking allLists.lownedUserRanking appInfo.user then
+--                 ( AppOps SR.Types.WalletOperational allLists newAppInfo updatedUiState emptyTxRecord, fetchedSingleRanking rnkidstr )
+--             else if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
+--                 ( AppOps SR.Types.WalletOperational allLists newAppInfo updatedUiState emptyTxRecord, fetchedSingleRanking rnkidstr )
+--             else
+--                 ( AppOps SR.Types.WalletOperational allLists newAppInfo updatedUiState emptyTxRecord, fetchedSingleRanking rnkidstr )
 
 
 createNewPlayerListWithNewResultAndUpdateJsonBin : Model -> ( Model, Cmd Msg )
 createNewPlayerListWithNewResultAndUpdateJsonBin model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 -- add respective challenger addresses to player and challenger (who is also a player type)
                 newplayerListWithPlayerUpdated =
-                    SR.PlayerListOps.updatePlayerRankWithWonResult allLists.userPlayers appInfo.player
+                    SR.ListOps.updatePlayerRankWithWonResult allLists.userPlayers appInfo.player
 
                 challengerAsPlayer =
-                    SR.PlayerListOps.gotPlayerFromPlayerListStrAddress allLists.userPlayers appInfo.challenger.player.address
+                    SR.ListOps.gotUserPlayerFromPlayerListStrAddress allLists.userPlayers appInfo.challenger.player.address
 
                 newplayerListWithPlayerAndChallengerUpdated =
-                    SR.PlayerListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.player.address
+                    SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.player.address
 
                 sortedByRankingnewplayerListWithPlayerAndChallengerUpdated =
-                    SR.PlayerListOps.sortedPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
+                    SR.ListOps.sortedPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
 
                 newAllLists =
                     { allLists | userPlayers = sortedByRankingnewplayerListWithPlayerAndChallengerUpdated }
             in
-            ( AppOps newAllLists appInfo uiState txRec, updatePlayerList appInfo.selectedRanking.id newAllLists.userPlayers )
+            ( AppOps walletState newAllLists appInfo uiState txRec, updatePlayerList appInfo.selectedRanking.id newAllLists.userPlayers )
 
         _ ->
             ( Failure "createNewPlayerListWithNewResultAndUpdateJsonBin", Cmd.none )
@@ -1228,34 +1253,34 @@ createNewPlayerListWithNewResultAndUpdateJsonBin model =
 createNewPlayerListWithNewChallengeAndUpdateJsonBin : Model -> ( Model, Cmd Msg )
 createNewPlayerListWithNewChallengeAndUpdateJsonBin model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 -- add respective challenger addresses to player and challenger (who is also a player type)
                 newplayerListWithPlayerUpdated =
-                    SR.PlayerListOps.setPlayerInPlayerListWithNewChallengerAddr allLists.userPlayers appInfo.player appInfo.challenger.player.address
+                    SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr allLists.userPlayers appInfo.player appInfo.challenger.player.address
 
                 challengerAsPlayer =
-                    SR.PlayerListOps.gotPlayerFromPlayerListStrAddress allLists.userPlayers appInfo.challenger.player.address
+                    SR.ListOps.gotUserPlayerFromPlayerListStrAddress allLists.userPlayers appInfo.challenger.player.address
 
                 newplayerListWithPlayerAndChallengerUpdated =
-                    SR.PlayerListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.player.address
+                    SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.player.address
 
                 sortedByRankingnewplayerListWithPlayerAndChallengerUpdated =
-                    SR.PlayerListOps.sortedPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
+                    SR.ListOps.sortedPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
 
                 newAllLists =
                     { allLists | userPlayers = sortedByRankingnewplayerListWithPlayerAndChallengerUpdated }
             in
-            ( AppOps newAllLists appInfo uiState txRec, updatePlayerList appInfo.selectedRanking.id newAllLists.userPlayers )
+            ( AppOps walletState newAllLists appInfo uiState txRec, updatePlayerList appInfo.selectedRanking.id newAllLists.userPlayers )
 
         _ ->
             ( Failure "createNewPlayerListWithNewChallengeAndUpdateJsonBin", Cmd.none )
 
 
 handleNewUserInputs : Model -> Msg -> Model
-handleNewUserInputs currentmodel msg =
-    case currentmodel of
-        AppOps allLists appInfo uiState txRec ->
+handleNewUserInputs model msg =
+    case model of
+        AppOps walletState allLists appInfo uiState txRec ->
             case msg of
                 NewUserNameInputChg namefield ->
                     let
@@ -1271,7 +1296,7 @@ handleNewUserInputs currentmodel msg =
                         _ =
                             Debug.log "currentUformfield" .username
                     in
-                    AppOps allLists newAppInfo SR.Types.UICreateNewUser txRec
+                    AppOps walletState allLists newAppInfo SR.Types.UICreateNewUser txRec
 
                 NewUserDescInputChg descfield ->
                     let
@@ -1284,7 +1309,7 @@ handleNewUserInputs currentmodel msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    AppOps allLists newAppInfo SR.Types.UICreateNewUser txRec
+                    AppOps walletState allLists newAppInfo SR.Types.UICreateNewUser txRec
 
                 NewUserEmailInputChg emailfield ->
                     let
@@ -1297,7 +1322,7 @@ handleNewUserInputs currentmodel msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    AppOps allLists newAppInfo SR.Types.UICreateNewUser txRec
+                    AppOps walletState allLists newAppInfo SR.Types.UICreateNewUser txRec
 
                 NewUserMobileInputChg mobilefield ->
                     let
@@ -1310,7 +1335,7 @@ handleNewUserInputs currentmodel msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    AppOps allLists newAppInfo SR.Types.UICreateNewUser txRec
+                    AppOps walletState allLists newAppInfo SR.Types.UICreateNewUser txRec
 
                 _ ->
                     Failure "NewUserNameInputChg"
@@ -1319,22 +1344,13 @@ handleNewUserInputs currentmodel msg =
             Failure "NewUserNameInputChg"
 
 
-extractAndSortPlayerList : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.UserPlayer
-extractAndSortPlayerList rdlPlayer =
-    let
-        convertedPlayerListToUserPlayerList =
-            Utils.MyUtils.convertPlayersToUserPlayers <| Utils.MyUtils.extractPlayersFromWebData rdlPlayer
-    in
-    SR.PlayerListOps.sortedPlayerListByRank <| convertedPlayerListToUserPlayerList
-
-
 updatedForChallenge : Model -> List SR.Types.UserPlayer -> SR.Types.UserPlayer -> SR.Types.User -> Model
-updatedForChallenge currentmodel luplayer opponentAsPlayer user =
-    case currentmodel of
-        AppOps allLists appInfo _ txRec ->
+updatedForChallenge model luplayer opponentAsPlayer user =
+    case model of
+        AppOps walletState allLists appInfo _ txRec ->
             let
                 newAppInfoWithPlayer =
-                    { appInfo | player = SR.PlayerListOps.gotCurrentUserAsPlayerFromPlayerList luplayer user }
+                    { appInfo | player = SR.ListOps.gotCurrentUserAsPlayerFromPlayerList luplayer user }
 
                 newAppInfoWithChallengerAndPlayer =
                     { newAppInfoWithPlayer | challenger = opponentAsPlayer }
@@ -1342,7 +1358,7 @@ updatedForChallenge currentmodel luplayer opponentAsPlayer user =
                 newAllListsWithSelectedRankingUpdate =
                     updateSelectedRankingOnChallenge allLists newAppInfoWithChallengerAndPlayer
             in
-            AppOps newAllListsWithSelectedRankingUpdate newAppInfoWithChallengerAndPlayer SR.Types.UIChallenge txRec
+            AppOps walletState newAllListsWithSelectedRankingUpdate newAppInfoWithChallengerAndPlayer SR.Types.UIChallenge txRec
 
         _ ->
             Failure <| "updatedForChallenge : "
@@ -1353,10 +1369,10 @@ updateSelectedRankingOnChallenge allLists appInfo =
     allLists
 
 
-updateOnUserListReceived : Model -> List SR.Types.User -> Model
+updateOnUserListReceived : Model -> List SR.Types.User -> ( Model, Cmd Msg )
 updateOnUserListReceived model userList =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 gotUserToUpdateAddr =
                     SR.ListOps.singleUserInListStrAddr userList appInfo.user.ethaddress
@@ -1375,74 +1391,77 @@ updateOnUserListReceived model userList =
                     _ =
                         Debug.log "have user" userUpdatedInAppInfo.user.ethaddress
                 in
-                AppOps newAllLists userUpdatedInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord
+                ( AppOps SR.Types.WalletOperational newAllLists userUpdatedInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotRankingList )
 
             else
                 let
                     _ =
-                        Debug.log "no user" appInfo.user.ethaddress
+                        Debug.log "not existing user" appInfo.user.ethaddress
                 in
-                AppOps newAllLists userUpdatedInAppInfo SR.Types.UICreateNewUser txRec
+                ( AppOps SR.Types.WalletOpened newAllLists userUpdatedInAppInfo SR.Types.UICreateNewUser txRec, Cmd.none )
 
         _ ->
-            Failure "should be in AppOps"
+            ( Failure "should be in AppOps", Cmd.none )
 
 
 updateSelectedRankingPlayerList : Model -> List SR.Types.UserPlayer -> Model
-updateSelectedRankingPlayerList currentmodel luplayers =
-    case currentmodel of
-        AppOps allLists appInfo _ txRec ->
+updateSelectedRankingPlayerList model luplayers =
+    case model of
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 resetSelectedRankingPlayerList =
                     { allLists | userPlayers = luplayers }
 
-                uiState =
-                    ensuredCorrectSelectedUI appInfo allLists
+                -- uiState =
+                --     ensuredCorrectSelectedUI appInfo allLists
             in
-            AppOps resetSelectedRankingPlayerList appInfo uiState txRec
+            AppOps walletState resetSelectedRankingPlayerList appInfo uiState txRec
 
         _ ->
             Failure <| "updateSelectedRankingPlayerList : "
 
 
 updateUserList : Model -> List SR.Types.User -> Model
-updateUserList currentmodel lusers =
-    case currentmodel of
-        AppOps allLists appInfo _ txRec ->
+updateUserList model lusers =
+    case model of
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 resetUserList =
                     { allLists | users = lusers }
 
-                uiState =
-                    ensuredCorrectSelectedUI appInfo allLists
+                -- uiState =
+                --     ensuredCorrectSelectedUI appInfo allLists
             in
-            AppOps resetUserList appInfo uiState txRec
+            AppOps walletState resetUserList appInfo uiState txRec
 
         _ ->
             Failure <| "updateSelectedRankingPlayerList : "
 
 
-updateSelectedRankingOnPlayersReceived : Model -> List SR.Types.UserPlayer -> Model
-updateSelectedRankingOnPlayersReceived currentmodel lplayers =
-    case currentmodel of
-        AppOps allLists appInfo uiState txRec ->
+updatedSelectedRankingOnPlayersReceived : Model -> List SR.Types.UserPlayer -> Model
+updatedSelectedRankingOnPlayersReceived model luplayer =
+    case model of
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 newAppPlayer =
-                    { appInfo | player = SR.PlayerListOps.gotPlayerFromPlayerListStrAddress lplayers appInfo.user.ethaddress }
+                    { appInfo | player = SR.ListOps.gotUserPlayerFromPlayerListStrAddress luplayer appInfo.user.ethaddress }
 
                 newAppChallengerAndPlayer =
-                    { newAppPlayer | challenger = SR.PlayerListOps.gotPlayerFromPlayerListStrAddress lplayers newAppPlayer.player.player.challengeraddress }
+                    { newAppPlayer | challenger = SR.ListOps.gotUserPlayerFromPlayerListStrAddress luplayer newAppPlayer.player.player.challengeraddress }
+
+                userPlayerOwner =
+                    SR.ListOps.gotRankingOwnerAsUserPlayer appInfo.selectedRanking allLists.userRankings luplayer
 
                 allListsPlayersAdded =
-                    { allLists | userPlayers = lplayers }
+                    { allLists | userPlayers = luplayer }
 
-                uistate =
-                    ensuredCorrectSelectedUI appInfo allLists
+                -- uistate =
+                --     ensuredCorrectSelectedUI appInfo allLists
             in
-            AppOps allListsPlayersAdded newAppChallengerAndPlayer uistate emptyTxRecord
+            AppOps walletState allListsPlayersAdded newAppChallengerAndPlayer uiState emptyTxRecord
 
         _ ->
-            Failure <| "updateSelectedRankingOnPlayersReceived : "
+            Failure <| "updatedSelectedRankingOnPlayersReceived : "
 
 
 
@@ -1452,7 +1471,7 @@ updateSelectedRankingOnPlayersReceived currentmodel lplayers =
 view : Model -> Html Msg
 view model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             case uiState of
                 SR.Types.CreateNewLadder ->
                     inputNewLadderview model
@@ -1467,7 +1486,11 @@ view model =
                     selectedUserIsNeitherOwnerNorPlayerView model
 
                 SR.Types.UIRenderAllRankings ->
-                    globalResponsiveview (SR.GlobalListOps.extractRankingList allLists.userRankings) appInfo.user
+                    -- let
+                    --     _ =
+                    --         Debug.log "allLists.lownedUserRanking" allLists.lownedUserRanking
+                    -- in
+                    globalResponsiveview allLists.lownedUserRanking allLists.lmemberUserRanking allLists.lotherUserRanking appInfo.user
 
                 SR.Types.UIEnterResult ->
                     displayResultBeforeConfirmView model
@@ -1507,38 +1530,6 @@ refresh the browser"""
                 _ ->
                     greetingView <| "Loading ... "
 
-        WalletOps walletState allLists appInfo uiState txRec ->
-            case walletState of
-                SR.Types.WalletStateUnknown ->
-                    greetingView <| "Wallet State unknown"
-
-                SR.Types.Missing ->
-                    greetingView "MissingWalletInstructions"
-
-                SR.Types.WalletStateLocked ->
-                    case uiState of
-                        SR.Types.UIDisplayWalletLockedInstructions ->
-                            let
-                                _ =
-                                    Debug.log "ui wallet loack " "here"
-                            in
-                            greetingView "OpenWalletInstructions"
-
-                        _ ->
-                            greetingView "OpenWalletInstructions"
-
-                SR.Types.WalletStateAwaitOpening ->
-                    greetingView "OpenWalletInstructions"
-
-                SR.Types.WalletOpenedWithoutUserCheck uaddr ->
-                    greetingView "User unchecked "
-
-                SR.Types.WalletOpenedAndOperational ->
-                    greetingView "WalletOpenedAndOperational"
-
-                SR.Types.WalletWaitingForTransactionReceipt ->
-                    greetingView "Please wait while the transaction is mined"
-
         Failure str ->
             greetingView <| "Model failure in view: " ++ str
 
@@ -1553,46 +1544,113 @@ greetingHeading greetingStr =
         ]
 
 
-rankingbuttons : List SR.Types.RankingInfo -> Element Msg
-rankingbuttons rankingList =
+ownedrankingbuttons : List SR.Types.UserRanking -> Element Msg
+ownedrankingbuttons urankingList =
+    let
+        newRankingList =
+            SR.ListOps.extractRankingList urankingList
+    in
     Element.column Grid.section <|
-        [ Element.el Heading.h5 <| Element.text "Global Rankings"
+        [ Element.el Heading.h5 <| Element.text "Your Created Rankings:"
         , Element.column (Card.simple ++ Grid.simple) <|
-            insertRankingList rankingList
-        , Element.paragraph (Card.fill ++ Color.warning) <|
-            [ Element.el [ Font.bold ] <| Element.text "Please note: "
-            , Element.paragraph [] <|
-                List.singleton <|
-                    Element.text "Clicking 'Create New' interacts with your Ethereum wallet"
-            ]
+            insertOwnedRankingList newRankingList
         ]
 
 
-addRankingInfoToAnyElText : SR.Types.RankingInfo -> Element Msg
-addRankingInfoToAnyElText rankingobj =
-    Element.column Grid.simple <|
-        [ Input.button (Button.fill ++ Color.primary) <|
-            { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr rankingobj.rankingname)
-            , label = Element.text rankingobj.rankingname
-            }
+memberrankingbuttons : List SR.Types.UserRanking -> Element Msg
+memberrankingbuttons urankingList =
+    let
+        newRankingList =
+            SR.ListOps.extractRankingList urankingList
+    in
+    Element.column Grid.section <|
+        [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
+        , Element.column (Card.simple ++ Grid.simple) <|
+            insertMemberRankingList newRankingList
         ]
 
 
-insertRankingList : List SR.Types.RankingInfo -> List (Element Msg)
-insertRankingList rnkgInfoList =
+otherrankingbuttons : List SR.Types.UserRanking -> Element Msg
+otherrankingbuttons urankingList =
+    let
+        newRankingList =
+            --SR.ListOps.gotRankingListFromUserRankingList urankingList
+            SR.ListOps.extractRankingList urankingList
+    in
+    Element.column Grid.section <|
+        [ Element.el Heading.h5 <| Element.text "Other Rankings: "
+        , Element.column (Card.simple ++ Grid.simple) <|
+            insertNeitherOwnerNorMemberRankingList newRankingList
+        ]
+
+
+insertOwnedRankingList : List SR.Types.RankingInfo -> List (Element Msg)
+insertOwnedRankingList rnkgInfoList =
     let
         mapOutRankingList =
             List.map
-                addRankingInfoToAnyElText
+                ownedRankingInfoBtn
                 rnkgInfoList
     in
     mapOutRankingList
 
 
+ownedRankingInfoBtn : SR.Types.RankingInfo -> Element Msg
+ownedRankingInfoBtn rankingobj =
+    Element.column Grid.simple <|
+        [ Input.button (Button.fill ++ Color.primary) <|
+            { onPress = Just (ClickedSelectedOwnedRanking (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr rankingobj.rankingname)
+            , label = Element.text rankingobj.rankingname
+            }
+        ]
+
+
+insertMemberRankingList : List SR.Types.RankingInfo -> List (Element Msg)
+insertMemberRankingList rnkgInfoList =
+    let
+        mapOutRankingList =
+            List.map
+                memberRankingInfoBtn
+                rnkgInfoList
+    in
+    mapOutRankingList
+
+
+memberRankingInfoBtn : SR.Types.RankingInfo -> Element Msg
+memberRankingInfoBtn rankingobj =
+    Element.column Grid.simple <|
+        [ Input.button (Button.fill ++ Color.primary) <|
+            { onPress = Just (ClickedSelectedMemberRanking (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr rankingobj.rankingname)
+            , label = Element.text rankingobj.rankingname
+            }
+        ]
+
+
+insertNeitherOwnerNorMemberRankingList : List SR.Types.RankingInfo -> List (Element Msg)
+insertNeitherOwnerNorMemberRankingList rnkgInfoList =
+    let
+        mapOutRankingList =
+            List.map
+                neitherOwnerNorMemberRankingInfoBtn
+                rnkgInfoList
+    in
+    mapOutRankingList
+
+
+neitherOwnerNorMemberRankingInfoBtn : SR.Types.RankingInfo -> Element Msg
+neitherOwnerNorMemberRankingInfoBtn rankingobj =
+    Element.column Grid.simple <|
+        [ Input.button (Button.fill ++ Color.primary) <|
+            { onPress = Just (ClickedSelectedNeitherOwnerNorMember (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr rankingobj.rankingname)
+            , label = Element.text rankingobj.rankingname
+            }
+        ]
+
+
 playerbuttons : Model -> Element Msg
 playerbuttons model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             Element.column Grid.section <|
                 [ SR.Elements.selectedRankingHeaderEl appInfo.selectedRanking
                 , Element.column (Card.simple ++ Grid.simple) <|
@@ -1609,11 +1667,11 @@ playerbuttons model =
             Element.text "Error"
 
 
-addPlayerInfoToAnyElText : Model -> SR.Types.UserPlayer -> Element Msg
-addPlayerInfoToAnyElText model uplayer =
-    --nb. 'player' is the player that's being mapped cf. appInfo.player which is current user as player (single instance)
+configureThenAddPlayerRankingBtns : Model -> SR.Types.UserPlayer -> Element Msg
+configureThenAddPlayerRankingBtns model uplayer =
+    --nb. 'uplayer' is the player that's being mapped cf. appInfo.player which is current user as player (single instance)
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 playerAsUser =
                     SR.ListOps.gotUserFromUserList allLists.users uplayer.player.address
@@ -1648,12 +1706,13 @@ addPlayerInfoToAnyElText model uplayer =
 
                     else
                         False
+
+                -- isCurrentUserOwnerOfSelectedUserRanking =
+                --     SR.ListOps.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking allLists.userRankings appInfo.user
+                -- _ =
+                --     Debug.log "isPlayerSelectedRankingOwner" <| isCurrentUserOwnerOfSelectedUserRanking
             in
             if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
-                -- let
-                --     _ =
-                --         Debug.log "isCurrentUserInAChallenge" isCurrentUserInAChallenge
-                -- in
                 if isPlayerCurrentUser then
                     if isCurrentUserInAChallenge then
                         Element.column Grid.simple <|
@@ -1692,7 +1751,7 @@ addPlayerInfoToAnyElText model uplayer =
 
                 else
                     Element.column Grid.simple <|
-                        [ Input.button (Button.fill ++ Color.primary) <|
+                        [ Input.button (Button.fill ++ Color.light) <|
                             { onPress = Just <| ChallengeOpponentClicked uplayer
                             , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
                             }
@@ -1714,11 +1773,11 @@ addPlayerInfoToAnyElText model uplayer =
 insertPlayerList : Model -> List (Element Msg)
 insertPlayerList model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 mapOutPlayerList =
                     List.map
-                        (addPlayerInfoToAnyElText model)
+                        (configureThenAddPlayerRankingBtns model)
                         allLists.userPlayers
             in
             mapOutPlayerList
@@ -1829,7 +1888,7 @@ newrankinhomebutton user rnkInfo =
 confirmChallengebutton : Model -> Element Msg
 confirmChallengebutton model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 playerAsUser =
                     SR.ListOps.gotUserFromUserList allLists.users appInfo.player.player.address
@@ -1871,7 +1930,7 @@ confirmChallengebutton model =
 confirmResultbutton : Model -> Element Msg
 confirmResultbutton model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 playerAsUser =
                     SR.ListOps.gotUserFromUserList allLists.users appInfo.player.player.address
@@ -1920,7 +1979,7 @@ confirmResultbutton model =
 acknoweldgeTxErrorbtn : Model -> Element Msg
 acknoweldgeTxErrorbtn model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             Element.column Grid.section <|
                 [ Element.column (Card.simple ++ Grid.simple) <|
                     [ Element.wrappedRow Grid.simple <|
@@ -1984,7 +2043,7 @@ newuserConfirmPanel user =
 inputNewUser : Model -> Element Msg
 inputNewUser model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 isValidated =
                     if String.length appInfo.user.username > 5 && String.length appInfo.user.username < 9 then
@@ -2071,8 +2130,8 @@ inputNewLadder newladder =
         ]
 
 
-globalResponsiveview : List SR.Types.RankingInfo -> SR.Types.User -> Html Msg
-globalResponsiveview rankingList user =
+globalResponsiveview : List SR.Types.UserRanking -> List SR.Types.UserRanking -> List SR.Types.UserRanking -> SR.Types.User -> Html Msg
+globalResponsiveview lowneduranking lmemberusranking lotheruranking user =
     Framework.responsiveLayout
         []
     <|
@@ -2080,14 +2139,16 @@ globalResponsiveview rankingList user =
             Framework.container
             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <| Element.text ("SportRank - " ++ user.username)
             , globalhomebutton
-            , rankingbuttons rankingList
+            , ownedrankingbuttons lowneduranking
+            , memberrankingbuttons lmemberusranking
+            , otherrankingbuttons lotheruranking
             ]
 
 
 selectedUserIsOwnerView : Model -> Html Msg
 selectedUserIsOwnerView model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             Framework.responsiveLayout [] <|
                 Element.column
                     Framework.container
@@ -2103,7 +2164,7 @@ selectedUserIsOwnerView model =
 selectedUserIsPlayerView : Model -> Html Msg
 selectedUserIsPlayerView model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             Framework.responsiveLayout [] <|
                 Element.column
                     Framework.container
@@ -2119,7 +2180,7 @@ selectedUserIsPlayerView model =
 selectedUserIsNeitherOwnerNorPlayerView : Model -> Html Msg
 selectedUserIsNeitherOwnerNorPlayerView model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             Framework.responsiveLayout [] <|
                 Element.column
                     Framework.container
@@ -2135,7 +2196,7 @@ selectedUserIsNeitherOwnerNorPlayerView model =
 inputNewUserview : Model -> Html Msg
 inputNewUserview model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             Framework.responsiveLayout [] <|
                 Element.column
                     Framework.container
@@ -2151,7 +2212,7 @@ inputNewUserview model =
 inputNewLadderview : Model -> Html Msg
 inputNewLadderview model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             Framework.responsiveLayout [] <|
                 Element.column
                     Framework.container
@@ -2167,7 +2228,7 @@ inputNewLadderview model =
 displayChallengeBeforeConfirmView : Model -> Html Msg
 displayChallengeBeforeConfirmView model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 playerAsUser =
                     SR.ListOps.gotUserFromUserList allLists.users appInfo.player.player.address
@@ -2186,7 +2247,7 @@ displayChallengeBeforeConfirmView model =
 displayResultBeforeConfirmView : Model -> Html Msg
 displayResultBeforeConfirmView model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 playerAsUser =
                     SR.ListOps.gotUserFromUserList allLists.users appInfo.player.player.address
@@ -2205,7 +2266,7 @@ displayResultBeforeConfirmView model =
 txErrorView : Model -> Html Msg
 txErrorView model =
     case model of
-        AppOps allLists appInfo uiState txRec ->
+        AppOps walletState allLists appInfo uiState txRec ->
             let
                 playerAsUser =
                     SR.ListOps.gotUserFromUserList allLists.users appInfo.player.player.address
@@ -2234,14 +2295,45 @@ greetingView greetingMsg =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
-        WalletOps _ _ _ _ txRec ->
-            Sub.batch
-                [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
-                , Eth.Sentry.Tx.listen txRec.txSentry
-                ]
+        AppOps walletStatus _ _ _ txRec ->
+            -- the orig code uses Ports.walletSentry ... same as here:
+            case walletStatus of
+                SR.Types.WalletStateUnknown ->
+                    Sub.batch
+                        [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+                        , Eth.Sentry.Tx.listen txRec.txSentry
+                        ]
 
-        AppOps _ _ _ _ ->
-            Sub.none
+                SR.Types.WalletStateMissing ->
+                    Sub.batch
+                        [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+                        , Eth.Sentry.Tx.listen txRec.txSentry
+                        ]
+
+                SR.Types.WalletStateLocked ->
+                    Sub.none
+
+                SR.Types.WalletStateAwaitOpening ->
+                    Sub.batch
+                        [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+                        , Eth.Sentry.Tx.listen txRec.txSentry
+                        ]
+
+                SR.Types.WalletOpened ->
+                    Sub.batch
+                        [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+                        , Eth.Sentry.Tx.listen txRec.txSentry
+                        ]
+
+                SR.Types.WalletOperational ->
+                    Sub.none
+
+                _ ->
+                    let
+                        _ =
+                            Debug.log "walletStatus :" walletStatus
+                    in
+                    Sub.none
 
         Failure _ ->
             Sub.none
@@ -2292,8 +2384,6 @@ fetchedSingleRanking (Internal.Types.RankingId rankingId) =
         , method = "GET"
         , timeout = Nothing
         , tracker = Nothing
-
-        --, url = "https://api.jsonbin.io/b/" ++ rankingId ++ "/latest"
         , url = SR.Constants.jsonbinUrlForCreateNewBinAndRespond ++ rankingId ++ "/latest"
         }
 
@@ -2302,7 +2392,7 @@ gotRankingList : Cmd Msg
 gotRankingList =
     Http.request
         { body = Http.emptyBody
-        , expect = Http.expectJson (RemoteData.fromResult >> GotGlobalRankingsJson) SR.Decode.rankingsDecoder
+        , expect = Http.expectJson (RemoteData.fromResult >> GlobalRankingsReceived) SR.Decode.rankingsDecoder
         , headers = [ SR.Defaults.secretKey, SR.Defaults.globalContainerId, SR.Defaults.globalContainerId ]
         , method = "GET"
         , timeout = Nothing
@@ -2416,7 +2506,7 @@ addCurrentUserToPlayerList intrankingId luPlayer userRec =
             newUserPlayer :: luPlayer
 
         sortedSelectedRankingListWithNewPlayerJsonObjAdded =
-            SR.PlayerListOps.sortedPlayerListByRank selectedRankingListWithNewPlayerJsonObjAdded
+            SR.ListOps.sortedPlayerListByRank selectedRankingListWithNewPlayerJsonObjAdded
     in
     --AddedNewRankingToGlobalList is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
@@ -2438,7 +2528,7 @@ jsonEncodeNewSelectedRankingPlayerList : List SR.Types.UserPlayer -> Json.Encode
 jsonEncodeNewSelectedRankingPlayerList luplayers =
     let
         lplayers =
-            Utils.MyUtils.convertUserPlayersToPlayers luplayers
+            SR.ListOps.convertUserPlayersToPlayers luplayers
 
         encodePlayerObj : SR.Types.Player -> Json.Encode.Value
         encodePlayerObj player =
@@ -2496,7 +2586,7 @@ jsonEncodeNewGlobalRankingList : List SR.Types.UserRanking -> Json.Encode.Value
 jsonEncodeNewGlobalRankingList lotherrankingInfo =
     let
         newRankingInfoList =
-            SR.GlobalListOps.extractRankingList lotherrankingInfo
+            SR.ListOps.extractRankingList lotherrankingInfo
 
         encodeAglobalRankingObj : SR.Types.RankingInfo -> Json.Encode.Value
         encodeAglobalRankingObj rankingInfo =
@@ -2592,7 +2682,7 @@ deleteSelectedRankingFromGlobalList rankingId lrankingInfo luser rankingowneradd
             SR.ListOps.filterSelectedRankingOutOfGlobalList rankingId lrankingInfo
 
         newUserRankingList =
-            SR.GlobalListOps.createAllUserAsOwnerGlobalRankingList globalListWithDeletedRankingInfoRemoved luser
+            SR.ListOps.createAllUserAsOwnerGlobalRankingList globalListWithDeletedRankingInfoRemoved luser
     in
     --DeletedRankingFromGlobalList is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
@@ -2600,7 +2690,6 @@ deleteSelectedRankingFromGlobalList rankingId lrankingInfo luser rankingowneradd
     -- the Decoder decodes what comes back in the response
     Http.request
         { body =
-            --Http.jsonBody <| jsonEncodeNewGlobalRankingList globalListWithDeletedRankingInfoRemoved
             Http.jsonBody <| jsonEncodeNewGlobalRankingList newUserRankingList
         , expect = Http.expectJson (RemoteData.fromResult >> DeletedRankingFromGlobalList) SR.Decode.decodeNewRankingListServerResponse
         , headers = [ SR.Defaults.secretKey, SR.Defaults.globalBinName, SR.Defaults.globalContainerId ]
