@@ -203,6 +203,10 @@ handleWalletStateUnknown : Msg -> Model -> ( Model, Cmd Msg )
 handleWalletStateUnknown msg model =
     case msg of
         WalletStatus walletSentry_ ->
+            let
+                _ =
+                    Debug.log "ws in unknown" walletSentry_
+            in
             case walletSentry_.networkId of
                 Rinkeby ->
                     case walletSentry_.account of
@@ -232,6 +236,10 @@ handleWalletStateLocked msg model =
         AppOps walletState allLists appInfo uiState txRec ->
             case msg of
                 WalletStatus walletSentry_ ->
+                    let
+                        _ =
+                            Debug.log "ws in locked" walletSentry_
+                    in
                     ( AppOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
 
                 UsersReceived userList ->
@@ -261,6 +269,10 @@ handleWalletStateAwaitOpening msg model =
         AppOps walletState allLists appInfo uiState txRec ->
             case msg of
                 WalletStatus walletSentry_ ->
+                    let
+                        _ =
+                            Debug.log "ws in awaitopening" walletSentry_
+                    in
                     case walletSentry_.networkId of
                         Rinkeby ->
                             case walletSentry_.account of
@@ -294,6 +306,10 @@ handledWalletStateOpened msg model =
         AppOps walletState allLists appInfo uiState txRec ->
             case msg of
                 WalletStatus walletSentry_ ->
+                    let
+                        _ =
+                            Debug.log "ws in opened" walletSentry_
+                    in
                     if SR.ListOps.isUserInListStrAddr allLists.users appInfo.user.ethaddress then
                         ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
@@ -314,6 +330,10 @@ handledWalletStateOpened msg model =
                     ( model, Cmd.none )
 
                 _ ->
+                    let
+                        _ =
+                            Debug.log "handledWalletStateOpened1" msg
+                    in
                     ( Failure "handledWalletStateOpened2"
                     , Cmd.none
                     )
@@ -329,6 +349,10 @@ handleWalletStateOperational msg model =
             case msg of
                 -- nb. walletSentry is constantly being updated via the sub
                 WalletStatus walletSentry_ ->
+                    let
+                        _ =
+                            Debug.log "ws in operational" walletSentry_
+                    in
                     ( model, Cmd.none )
 
                 TxSentryMsg subMsg ->
@@ -383,12 +407,13 @@ handleWalletStateOperational msg model =
                 TrackTx blockDepth ->
                     ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | blockDepth = Just blockDepth }, Cmd.none )
 
-                -- UsersReceived userList ->
-                --     let
-                --         userLAddedToAllLists =
-                --             { allLists | users = SR.ListOps.validatedUserList <| SR.ListOps.extractUsersFromWebData userList }
-                --     in
-                --     updateOnUserListReceived model userLAddedToAllLists.users
+                UsersReceived userList ->
+                    let
+                        userLAddedToAllLists =
+                            { allLists | users = SR.ListOps.validatedUserList <| SR.ListOps.extractUsersFromWebData userList }
+                    in
+                    updateOnUserListReceived model userLAddedToAllLists.users
+
                 ProcessResult result ->
                     let
                         _ =
@@ -468,8 +493,9 @@ handleWalletStateOperational msg model =
                     , Cmd.none
                     )
 
-                -- GlobalRankingsReceived rmtrnkingdata ->
-                --     handleGlobalRankingsReceived rmtrnkingdata model
+                GlobalRankingsReceived rmtrnkingdata ->
+                    handleGlobalRankingsReceived rmtrnkingdata model
+
                 -- ClickedSelectedRanking rnkidstr rnkownerstr rnknamestr ->
                 --     let
                 --         _ =
@@ -838,6 +864,10 @@ handleWalletWaitingForTransactionReceipt msg walletState allLists appInfo txRec 
     in
     case msg of
         WalletStatus walletSentry_ ->
+            let
+                _ =
+                    Debug.log "ws in WaitingForTransactionReceipt" walletSentry_
+            in
             ( AppOps SR.Types.WalletWaitingForTransactionReceipt allLists appInfo SR.Types.UIWaitingForTxReceipt txRec
             , Cmd.none
             )
@@ -1361,7 +1391,7 @@ updateOnUserListReceived model userList =
                     _ =
                         Debug.log "have user" userUpdatedInAppInfo.user.ethaddress
                 in
-                ( AppOps SR.Types.WalletOpened newAllLists userUpdatedInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotRankingList )
+                ( AppOps SR.Types.WalletOperational newAllLists userUpdatedInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotRankingList )
 
             else
                 let
@@ -1518,7 +1548,6 @@ ownedrankingbuttons : List SR.Types.UserRanking -> Element Msg
 ownedrankingbuttons urankingList =
     let
         newRankingList =
-            --SR.ListOps.gotRankingListFromUserRankingList urankingList
             SR.ListOps.extractRankingList urankingList
     in
     Element.column Grid.section <|
@@ -1532,7 +1561,6 @@ memberrankingbuttons : List SR.Types.UserRanking -> Element Msg
 memberrankingbuttons urankingList =
     let
         newRankingList =
-            --SR.ListOps.gotRankingListFromUserRankingList urankingList
             SR.ListOps.extractRankingList urankingList
     in
     Element.column Grid.section <|

@@ -28,31 +28,36 @@ start =
         |> ProgramTest.start ()
 
 
+globalListTest : Test
+globalListTest =
+    describe "SportsRank frontend"
+        [ --skip <|
+          test "happy path: successful creation of home page - DataT1" <|
+            \() ->
+                start
+                    |> ProgramTest.update (Main.WalletStatus Testdata.TestDefaults.simWalletSentryDataT1)
+                    |> ProgramTest.update (Main.UsersReceived Testdata.UserTestData.usersJson)
+                    |> ProgramTest.update (Main.GlobalRankingsReceived Testdata.GlobalTestData.globalRankingsJson)
+                    |> expectViewHas
+                        [ text "SportRank - Test 1"
+                        , text "Click to continue"
+                        , text "Test 4"
+                        ]
+        ]
 
--- globalListTest : Test
--- globalListTest =
---     describe "SportsRank frontend"
---         [ --skip <|
---           test "happy path: successful creation of home page - walletuser must be Test 1" <|
---             \() ->
---                 start
---                     |> ProgramTest.update (Main.WalletStatus Testdata.TestDefaults.simWalletSentryDataT1)
---                     |> ProgramTest.update (Main.UsersReceived Testdata.UserTestData.usersJson)
---                     |> ProgramTest.update (Main.GlobalRankingsReceived Testdata.GlobalTestData.globalRankingsJson)
---                     |> expectViewHas
---                         [ text "SportRank - Test 1"
---                         , text "Click to continue"
---                         , text "Test 4"
---                         ]
---         ]
+
+
 -- create new tests
--- createNewLadderTest : Test
--- createNewLadderTest =
---     --skip <|
---     test "SRProgramTest - new user brings up correct new user UI header - requ T11 login" <|
---         \() ->
---             start
---                 |> ProgramTest.update (Main.WalletStatus Testdata.TestDefaults.simWalletSentryDataT11)
---                 |> ProgramTest.update Main.ChangedUIStateToCreateNewLadder
---                 |> expectViewHas
---                     [ text "Create New Ladder Ranking" ]
+
+
+createNewLadderTest : Test
+createNewLadderTest =
+    --skip <|
+    test "SRProgramTest - create new ladder brings up correct header" <|
+        \() ->
+            start
+                |> ProgramTest.update (Main.WalletStatus Testdata.TestDefaults.simWalletSentryDataT1)
+                |> ProgramTest.update (Main.GlobalRankingsReceived Testdata.GlobalTestData.globalRankingsJson)
+                |> ProgramTest.update Main.ChangedUIStateToCreateNewLadder
+                |> expectViewHas
+                    [ text "Create New Ladder Ranking" ]
