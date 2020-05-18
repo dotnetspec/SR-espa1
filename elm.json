@@ -31,11 +31,13 @@
             "krisajenkins/remotedata": "6.0.1",
             "mdgriffith/elm-ui": "1.1.5",
             "prozacchiwawa/elm-keccak": "2.0.0",
+            "rtfeldman/elm-css": "16.0.1",
             "rtfeldman/elm-hex": "1.0.0",
             "the-sett/lazy-list": "1.1.1",
             "zwilias/elm-utf-tools": "2.0.1"
         },
         "indirect": {
+            "Skinney/murmur3": "2.0.8",
             "elm/bytes": "1.0.8",
             "elm/file": "1.0.5",
             "elm/virtual-dom": "1.0.2",
@@ -47,7 +49,6 @@
             "avh4/elm-program-test": "3.2.0"
         },
         "indirect": {
-            "Skinney/murmur3": "2.0.8",
             "avh4/elm-fifo": "1.0.4"
         }
     }

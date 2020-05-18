@@ -1537,9 +1537,10 @@ refresh the browser"""
 greetingHeading : String -> Element Msg
 greetingHeading greetingStr =
     Element.column Grid.section <|
-        [ Element.el Heading.h5 <| Element.text "Initializing ..."
+        [ Element.el (List.append Heading.h5 [ Element.htmlAttribute (Html.Attributes.id "greetingInitStr") ]) <| Element.text "Initializing ..."
         , Element.column Card.fill
-            [ Element.el Heading.h6 <| Element.text greetingStr
+            [ Element.el (List.append Heading.h5 [ Element.htmlAttribute (Html.Attributes.id "greetingHeadingStr") ]) <|
+                Element.text greetingStr
             ]
         ]
 
