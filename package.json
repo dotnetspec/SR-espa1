@@ -22,7 +22,8 @@
     "elm-ethereum-ports": "^1.0.1",
     "elm-webpack-loader": "^6.0.1",
     "ethers": "^4.0.45",
-    "purecss": "^1.0.0"
+    "purecss": "^1.0.0",
+    "web3": "^1.2.7"
   },
   "devDependencies": {
     "@babel/core": "^7.8.3",

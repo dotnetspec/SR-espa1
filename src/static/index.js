@@ -1,7 +1,11 @@
+//import Web3 from 'web3';
+//var Web3 = require('web3');
+//var Eth = require('web3-eth');
 var elm_ethereum_ports = require('elm-ethereum-ports');
 const { Elm } = require('Main');
 var node = document.getElementById("elmapp");
 var setOfFlags = {};
+//const web3 = new Web3(Web3.givenProvider || 'wss://rinkeby.infura.io/ws' || 'ws://localhost:8546', null, {});
 
 window.addEventListener('load', function () {
     if (typeof ethereum !== 'undefined') {

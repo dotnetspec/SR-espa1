@@ -211,12 +211,20 @@ handleWalletStateUnknown msg model =
                 Rinkeby ->
                     case walletSentry_.account of
                         Nothing ->
+                            let
+                                _ =
+                                    Debug.log "Nothing in unknown" walletSentry_
+                            in
                             ( AppOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
                             , Cmd.none
                             )
 
                         Just uaddr ->
                             --( gotWalletAddrApplyToUser model uaddr, gotUserList )
+                            let
+                                _ =
+                                    Debug.log "addr etc in unknown" walletSentry_
+                            in
                             ( gotWalletAddrApplyToUser model uaddr, Cmd.none )
 
                 _ ->
