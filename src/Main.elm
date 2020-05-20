@@ -685,13 +685,6 @@ handleWalletStateOperational msg model =
                     ( AppOps SR.Types.WalletOperational addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                 ClickedJoinSelected ->
-                    -- this updates the player and user lists
-                    let
-                        _ =
-                            Debug.log "clickedjoinsel" "here"
-                    in
-                    --if SR.ListOps.isUserInListStrAddr allLists.userRankings.userInfo appInfo.userRec.ethaddress then
-                    --if SR.ListOps.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking allLists.userRankings appInfo.user || SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
                     if SR.ListOps.isRegistered allLists.users appInfo.user then
                         ( model, Cmd.batch [ addCurrentUserToPlayerList appInfo.selectedRanking.id allLists.userPlayers appInfo.user, updateUsersJoinRankings appInfo.selectedRanking.id appInfo.user allLists.users ] )
 
@@ -707,9 +700,6 @@ handleWalletStateOperational msg model =
                             SR.ListOps.convertPlayersToUserPlayers
                                 lplayer
                                 allLists.users
-
-                        -- lplayer
-                        -- allLists.users
                     in
                     ( updateSelectedRankingPlayerList model convertedToUserPlayers, Cmd.none )
 
@@ -842,15 +832,6 @@ handleGlobalRankingsReceived rmtrnkingdata model =
 
                 allListsUpdated =
                     addedUserRankingOtherListToAllLists
-
-                -- _ =
-                --     Debug.log "lownedUserRanking : " allListsUpdated.lownedUserRanking
-                -- _ =
-                --     Debug.log "luserRankingOwner : " luserRankingOwner
-                -- _ =
-                --     Debug.log "combined lists : " ((luserRankingOwner ++ luserRankingPlayer) ++ luserRankingOther)
-                --     _ =
-                --         Debug.log "combined lists : " ((allListsUpdated.lownedUserRanking ++ allListsUpdated.lmemberUserRanking) ++ allListsUpdated.lotherUserRanking)
             in
             ( AppOps SR.Types.WalletOperational allListsUpdated appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
@@ -1476,10 +1457,6 @@ view model =
                     selectedUserIsNeitherOwnerNorPlayerView model
 
                 SR.Types.UIRenderAllRankings ->
-                    -- let
-                    --     _ =
-                    --         Debug.log "allLists.lownedUserRanking" allLists.lownedUserRanking
-                    -- in
                     globalResponsiveview allLists.lownedUserRanking allLists.lmemberUserRanking allLists.lotherUserRanking appInfo.user
 
                 SR.Types.UIEnterResult ->
@@ -1587,8 +1564,9 @@ insertOwnedRankingList lrankinginfo =
                 ownedRankingInfoBtn
                 lrankinginfo
     in
+    --Element.el (List.append Heading.h5 [ Element.htmlAttribute (Html.Attributes.id "greetingInitStr") ])
     if List.isEmpty lrankinginfo then
-        [ Input.button (Button.simple ++ Color.info) <|
+        [ Input.button (Button.simple ++ (Color.info ++ [ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ])) <|
             { onPress = Just <| ClickedCreateNewLadder
             , label = Element.text "Create New"
             }
@@ -2045,31 +2023,34 @@ inputNewUser model =
 and between 6-8 characters"""
             in
             Element.column Grid.section <|
-                [ Element.el Heading.h5 <| Element.text "New User Details"
+                [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
                 , Element.wrappedRow (Card.fill ++ Grid.simple)
                     [ Element.column Grid.simple
                         [ Input.text
-                            Input.simple
+                            (Input.simple
+                                ++ [ Input.focusedOnLoad ]
+                                ++ [ Element.htmlAttribute (Html.Attributes.id "userDetails") ]
+                            )
                             { onChange = NewUserNameInputChg
                             , text = appInfo.user.username
                             , placeholder = Nothing
                             , label = Input.labelLeft Input.label <| Element.text "Username"
                             }
                         , nameChgValidationErr
-                        , Input.multiline Input.simple
+                        , Input.multiline (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
                             { onChange = NewUserDescInputChg
                             , text = appInfo.user.description
                             , placeholder = Nothing
                             , label = Input.labelLeft Input.label <| Element.text "Description"
                             , spellcheck = False
                             }
-                        , Input.text Input.simple
+                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
                             { onChange = NewUserEmailInputChg
                             , text = appInfo.user.email
                             , placeholder = Nothing
                             , label = Input.labelLeft Input.label <| Element.text "Email"
                             }
-                        , Input.text Input.simple
+                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
                             { onChange = NewUserMobileInputChg
                             , text = appInfo.user.mobile
                             , placeholder = Nothing
@@ -2129,8 +2110,6 @@ globalResponsiveview lowneduranking lmemberusranking lotheruranking user =
         Element.column
             Framework.container
             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <| Element.text ("SportRank - " ++ userName)
-
-            --, globalhomebutton
             , ownedrankingbuttons lowneduranking
             , memberrankingbuttons lmemberusranking
             , otherrankingbuttons lotheruranking
