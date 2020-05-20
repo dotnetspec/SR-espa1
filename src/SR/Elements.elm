@@ -1,4 +1,4 @@
-module SR.Elements exposing (ethereumWalletWarning, footer, justParasimpleUserInfoText, legalUserInfoText, placeholder, selectedRankingHeaderEl, simpleUserInfoText)
+module SR.Elements exposing (ethereumWalletWarning, footer, justParasimpleUserInfoText, legalUserInfoText, placeholder, selectedRankingHeaderEl, simpleUserInfoText, warningParagraph)
 
 --import RemoteData
 
@@ -21,6 +21,18 @@ import Internal.Types
 import SR.Defaults
 import SR.Types
 import Utils.MyUtils
+
+
+warningParagraph : Element msg
+warningParagraph =
+    Element.paragraph (Card.fill ++ Color.warning) <|
+        [ Element.el [ Font.bold ] <| Element.text "Please note: "
+        , Element.paragraph [] <|
+            List.singleton <|
+                Element.text """Clicking 'Register' interacts with your Ethereum wallet. 
+               
+Use of this application is without any liablity whatsoever."""
+        ]
 
 
 globalHeading : SR.Types.User -> Element msg

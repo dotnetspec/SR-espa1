@@ -27,6 +27,7 @@ module SR.ListOps exposing
     , gotUserListFromRemData
     , gotUserOwnedGlobalRankingList
     , gotUserPlayerFromPlayerListStrAddress
+    , isRegistered
     , isUserInListStrAddr
     , isUserMemberOfSelectedRanking
     , isUserOwnerOfSelectedUserRanking
@@ -37,7 +38,9 @@ module SR.ListOps exposing
     , singleUserInListStrAddr
     , sortedPlayerListByRank
     , updatePlayerRankWithWonResult
-    , validatedUserList
+    ,  validatedUserList
+       -- to be privatized
+
     )
 
 import Eth.Utils
@@ -47,6 +50,19 @@ import RemoteData
 import SR.Defaults
 import SR.Types
 import Utils.MyUtils
+
+
+isRegistered : List SR.Types.User -> SR.Types.User -> Bool
+isRegistered luser user =
+    let
+        newUser =
+            gotUserFromUserList luser user.ethaddress
+    in
+    if newUser.username == "" then
+        False
+
+    else
+        True
 
 
 extractAndSortPlayerList : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.User -> List SR.Types.UserPlayer
@@ -205,19 +221,6 @@ addedNewJoinedRankingIdToUser rankingId user lUser =
             newUser :: lUser
     in
     newUserList
-
-
-isUserInListStrAddr : List SR.Types.User -> String -> Bool
-isUserInListStrAddr userlist uaddr =
-    let
-        gotSingleUserFromList =
-            singleUserInListStrAddr userlist uaddr
-    in
-    if gotSingleUserFromList.ethaddress == "" then
-        False
-
-    else
-        True
 
 
 isUserMemberOfSelectedRanking : List SR.Types.UserPlayer -> SR.Types.User -> Bool
@@ -901,3 +904,20 @@ gotRankingListFromRemData globalList =
                 Http.BadBody s ->
                     [ SR.Defaults.emptyRankingInfo
                     ]
+
+
+
+-- private
+
+
+isUserInListStrAddr : List SR.Types.User -> String -> Bool
+isUserInListStrAddr userlist uaddr =
+    let
+        gotSingleUserFromList =
+            singleUserInListStrAddr userlist uaddr
+    in
+    if gotSingleUserFromList.ethaddress == "" then
+        False
+
+    else
+        True

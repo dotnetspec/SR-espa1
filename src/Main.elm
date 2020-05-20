@@ -132,9 +132,8 @@ type Msg
     | ClickedJoinSelected
     | LadderNameInputChg String
     | LadderDescInputChg String
-    | ClickedNewRankingRequested SR.Types.RankingInfo
-    | ChangedUIStateToCreateNewLadder
-    | NewChallengeConfirmClicked
+    | ClickedCreateNewLadder
+    | ClickedNewChallengeConfirm
     | ChangedUIStateToEnterResult SR.Types.UserPlayer
     | NewUserNameInputChg String
     | NewUserDescInputChg String
@@ -203,28 +202,15 @@ handleWalletStateUnknown : Msg -> Model -> ( Model, Cmd Msg )
 handleWalletStateUnknown msg model =
     case msg of
         WalletStatus walletSentry_ ->
-            let
-                _ =
-                    Debug.log "ws in unknown" walletSentry_
-            in
             case walletSentry_.networkId of
                 Rinkeby ->
                     case walletSentry_.account of
                         Nothing ->
-                            let
-                                _ =
-                                    Debug.log "Nothing in unknown" walletSentry_
-                            in
                             ( AppOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
                             , Cmd.none
                             )
 
                         Just uaddr ->
-                            --( gotWalletAddrApplyToUser model uaddr, gotUserList )
-                            let
-                                _ =
-                                    Debug.log "addr etc in unknown" walletSentry_
-                            in
                             ( gotWalletAddrApplyToUser model uaddr, Cmd.none )
 
                 _ ->
@@ -314,10 +300,6 @@ handledWalletStateOpened msg model =
         AppOps walletState allLists appInfo uiState txRec ->
             case msg of
                 WalletStatus walletSentry_ ->
-                    let
-                        _ =
-                            Debug.log "ws in opened" walletSentry_
-                    in
                     if SR.ListOps.isUserInListStrAddr allLists.users appInfo.user.ethaddress then
                         ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
@@ -575,18 +557,46 @@ handleWalletStateOperational msg model =
                     -- ( AppOps SR.Types.WalletOperational allLists appInfo uiType emptyTxRecord, Cmd.none )
                     ( model, Cmd.none )
 
-                ChangedUIStateToCreateNewLadder ->
-                    let
-                        rankingInfoFromModel =
-                            appInfo.selectedRanking
+                ClickedCreateNewLadder ->
+                    if SR.ListOps.isRegistered allLists.users appInfo.user then
+                        let
+                            rankingInfoFromModel =
+                                appInfo.selectedRanking
 
-                        rankingWithFieldsCleared =
-                            { rankingInfoFromModel | rankingname = "", rankingdesc = "" }
+                            rankingWithFieldsCleared =
+                                { rankingInfoFromModel | rankingname = "", rankingdesc = "" }
 
-                        newAppInfo =
-                            { appInfo | selectedRanking = rankingWithFieldsCleared }
-                    in
-                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.CreateNewLadder emptyTxRecord, Cmd.none )
+                            newAppInfo =
+                                { appInfo | selectedRanking = rankingWithFieldsCleared }
+
+                            txParams =
+                                { to = txRec.account
+                                , from = txRec.account
+                                , gas = Nothing
+                                , gasPrice = Just <| Eth.Units.gwei 4
+                                , value = Just <| Eth.Units.gwei 1
+                                , data = Nothing
+                                , nonce = Nothing
+                                }
+
+                            ( newSentry, sentryCmd ) =
+                                Eth.Sentry.Tx.customSend
+                                    txRec.txSentry
+                                    { onSign = Just WatchTxHash
+                                    , onBroadcast = Just WatchTx
+                                    , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                                    }
+                                    txParams
+
+                            --     newAppInfo =
+                            --         { appInfo | selectedRanking = newLadderRnkInfo }
+                            -- in
+                            -- ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.CreateNewLadder { txRec | txSentry = newSentry }, sentryCmd )
+                        in
+                        ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.CreateNewLadder { txRec | txSentry = newSentry }, sentryCmd )
+
+                    else
+                        ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UICreateNewUser emptyTxRecord, Cmd.none )
 
                 AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
                     let
@@ -629,33 +639,7 @@ handleWalletStateOperational msg model =
                     in
                     ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.CreateNewLadder emptyTxRecord, Cmd.none )
 
-                ClickedNewRankingRequested newLadderRnkInfo ->
-                    let
-                        txParams =
-                            { to = txRec.account
-                            , from = txRec.account
-                            , gas = Nothing
-                            , gasPrice = Just <| Eth.Units.gwei 4
-                            , value = Just <| Eth.Units.gwei 1
-                            , data = Nothing
-                            , nonce = Nothing
-                            }
-
-                        ( newSentry, sentryCmd ) =
-                            Eth.Sentry.Tx.customSend
-                                txRec.txSentry
-                                { onSign = Just WatchTxHash
-                                , onBroadcast = Just WatchTx
-                                , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
-                                }
-                                txParams
-
-                        newAppInfo =
-                            { appInfo | selectedRanking = newLadderRnkInfo }
-                    in
-                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.CreateNewLadder { txRec | txSentry = newSentry }, sentryCmd )
-
-                NewChallengeConfirmClicked ->
+                ClickedNewChallengeConfirm ->
                     createNewPlayerListWithNewChallengeAndUpdateJsonBin model
 
                 PlayersReceived lplayer ->
@@ -702,7 +686,17 @@ handleWalletStateOperational msg model =
 
                 ClickedJoinSelected ->
                     -- this updates the player and user lists
-                    ( model, Cmd.batch [ addCurrentUserToPlayerList appInfo.selectedRanking.id allLists.userPlayers appInfo.user, updateUsersJoinRankings appInfo.selectedRanking.id appInfo.user allLists.users ] )
+                    let
+                        _ =
+                            Debug.log "clickedjoinsel" "here"
+                    in
+                    --if SR.ListOps.isUserInListStrAddr allLists.userRankings.userInfo appInfo.userRec.ethaddress then
+                    --if SR.ListOps.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking allLists.userRankings appInfo.user || SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
+                    if SR.ListOps.isRegistered allLists.users appInfo.user then
+                        ( model, Cmd.batch [ addCurrentUserToPlayerList appInfo.selectedRanking.id allLists.userPlayers appInfo.user, updateUsersJoinRankings appInfo.selectedRanking.id appInfo.user allLists.users ] )
+
+                    else
+                        ( AppOps walletState allLists appInfo SR.Types.UICreateNewUser txRec, Cmd.none )
 
                 ReturnFromPlayerListUpdate response ->
                     let
@@ -1394,19 +1388,7 @@ updateOnUserListReceived model userList =
                 newAllLists =
                     { allLists | users = userList }
             in
-            if SR.ListOps.isUserInListStrAddr userList userUpdatedInAppInfo.user.ethaddress then
-                let
-                    _ =
-                        Debug.log "have user" userUpdatedInAppInfo.user.ethaddress
-                in
-                ( AppOps SR.Types.WalletOperational newAllLists userUpdatedInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotRankingList )
-
-            else
-                let
-                    _ =
-                        Debug.log "not existing user" appInfo.user.ethaddress
-                in
-                ( AppOps SR.Types.WalletOpened newAllLists userUpdatedInAppInfo SR.Types.UICreateNewUser txRec, Cmd.none )
+            ( AppOps SR.Types.WalletOperational newAllLists userUpdatedInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotRankingList )
 
         _ ->
             ( Failure "should be in AppOps", Cmd.none )
@@ -1533,6 +1515,10 @@ before continuing and
 refresh the browser"""
 
                 SR.Types.UICreateNewUser ->
+                    let
+                        _ =
+                            Debug.log "UICreateNewUser" "here"
+                    in
                     inputNewUserview model
 
                 _ ->
@@ -1594,14 +1580,22 @@ otherrankingbuttons urankingList =
 
 
 insertOwnedRankingList : List SR.Types.RankingInfo -> List (Element Msg)
-insertOwnedRankingList rnkgInfoList =
+insertOwnedRankingList lrankinginfo =
     let
         mapOutRankingList =
             List.map
                 ownedRankingInfoBtn
-                rnkgInfoList
+                lrankinginfo
     in
-    mapOutRankingList
+    if List.isEmpty lrankinginfo then
+        [ Input.button (Button.simple ++ Color.info) <|
+            { onPress = Just <| ClickedCreateNewLadder
+            , label = Element.text "Create New"
+            }
+        ]
+
+    else
+        mapOutRankingList
 
 
 ownedRankingInfoBtn : SR.Types.RankingInfo -> Element Msg
@@ -1615,14 +1609,18 @@ ownedRankingInfoBtn rankingobj =
 
 
 insertMemberRankingList : List SR.Types.RankingInfo -> List (Element Msg)
-insertMemberRankingList rnkgInfoList =
+insertMemberRankingList lrankinginfo =
     let
         mapOutRankingList =
             List.map
                 memberRankingInfoBtn
-                rnkgInfoList
+                lrankinginfo
     in
-    mapOutRankingList
+    if List.isEmpty lrankinginfo then
+        [ Element.text "Please Click On A Ranking Below To Join" ]
+
+    else
+        mapOutRankingList
 
 
 memberRankingInfoBtn : SR.Types.RankingInfo -> Element Msg
@@ -1795,25 +1793,6 @@ insertPlayerList model =
             [ Element.text "error" ]
 
 
-globalhomebutton : Element Msg
-globalhomebutton =
-    Element.column Grid.section <|
-        [ Element.el Heading.h6 <| Element.text "Click to continue ..."
-        , Element.column (Card.simple ++ Grid.simple) <|
-            [ Element.wrappedRow Grid.simple <|
-                [ Input.button (Button.simple ++ Color.simple) <|
-                    { onPress = Just <| ResetToShowGlobal
-                    , label = Element.text "Home"
-                    }
-                , Input.button (Button.simple ++ Color.info ++ [ Element.htmlAttribute (Html.Attributes.id "createnewladderbtn") ]) <|
-                    { onPress = Just <| ChangedUIStateToCreateNewLadder
-                    , label = Element.text "Create New"
-                    }
-                ]
-            ]
-        ]
-
-
 selecteduserIsOwnerhomebutton : SR.Types.User -> Element Msg
 selecteduserIsOwnerhomebutton user =
     Element.column Grid.section <|
@@ -1880,7 +1859,7 @@ newrankinhomebutton user rnkInfo =
                     , label = Element.text "Cancel"
                     }
                 , Input.button (Button.simple ++ Color.info) <|
-                    { onPress = Just <| ClickedNewRankingRequested rnkInfo
+                    { onPress = Just <| ClickedCreateNewLadder
                     , label = Element.text "Create New"
                     }
                 ]
@@ -1925,7 +1904,7 @@ confirmChallengebutton model =
                             , label = Element.text "Cancel"
                             }
                         , Input.button (Button.simple ++ Color.info) <|
-                            { onPress = Just <| NewChallengeConfirmClicked
+                            { onPress = Just <| ClickedNewChallengeConfirm
                             , label = Element.text "Confirm"
                             }
                         ]
@@ -2027,18 +2006,13 @@ acknoweldgeTxErrorbtn model =
 newuserConfirmPanel : SR.Types.User -> Element Msg
 newuserConfirmPanel user =
     Element.column Grid.section <|
-        [ Element.paragraph (Card.fill ++ Color.warning) <|
-            [ Element.el [ Font.bold ] <| Element.text "Please note: "
-            , Element.paragraph [] <|
-                List.singleton <|
-                    Element.text "Clicking 'Register' interacts with your Ethereum wallet"
-            ]
+        [ SR.Elements.warningParagraph
         , Element.el Heading.h6 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
-                [ Input.button (Button.simple ++ Color.disabled) <|
-                    { onPress = Nothing
-                    , label = Element.text "Home"
+                [ Input.button (Button.simple ++ Color.info) <|
+                    { onPress = Just <| ResetToShowGlobal
+                    , label = Element.text "Cancel"
                     }
                 , Input.button (Button.simple ++ Color.info) <|
                     { onPress = Just <| CreateNewUserRequested user
@@ -2141,13 +2115,22 @@ inputNewLadder newladder =
 
 globalResponsiveview : List SR.Types.UserRanking -> List SR.Types.UserRanking -> List SR.Types.UserRanking -> SR.Types.User -> Html Msg
 globalResponsiveview lowneduranking lmemberusranking lotheruranking user =
+    let
+        userName =
+            if user.username /= "" then
+                user.username
+
+            else
+                "New User"
+    in
     Framework.responsiveLayout
         []
     <|
         Element.column
             Framework.container
-            [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <| Element.text ("SportRank - " ++ user.username)
-            , globalhomebutton
+            [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <| Element.text ("SportRank - " ++ userName)
+
+            --, globalhomebutton
             , ownedrankingbuttons lowneduranking
             , memberrankingbuttons lmemberusranking
             , otherrankingbuttons lotheruranking
