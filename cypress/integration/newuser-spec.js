@@ -4,22 +4,24 @@
 describe('New User Home Page', () => {
     context('Actions', () => {
         beforeEach(() => {
-            cy.visit('/')
-            cy.wait(150)
-            //cy.get('#createnewrankingbtn > .s').click()
-            //cy.wait(150)
+            //currently have problems if reload for each test
+            //best to carry on with the loaded user regist page
         })
 
         it('successfully loads create new user page', () => {
-            cy.wait(150)
-            cy.get('#createnewrankingbtn > .s').click()
-            cy.contains('Create New User')
-            cy.contains('Please Enter Your User Details And Click \'Register\' below:')
+
+            cy.visit('/')
+            cy.get('#registerbtn').click()
+            //don't know why currently, below causes problems
+            //and is best left to the next test ...
+            //cy.contains('Create New User')
+            //cy.contains('Please Enter Your User Details And Click \'Register\' below:')
         })
 
         it('successfully validates username', () => {
-            cy.wait(150)
-            cy.get('#createnewrankingbtn > .s').click()
+
+            //cy.contains('Create New User')
+            //cy.contains('Please Enter Your User Details And Click \'Register\' below:')
             cy.get('#userDetails')
                 .type('jonnahb').should('have.value', 'jonnahb')
 
@@ -39,8 +41,7 @@ describe('New User Home Page', () => {
         })
 
         it('successfully validates description', () => {
-            cy.wait(150)
-            cy.get('#createnewrankingbtn > .s').click()
+
             cy.get('#userDescription')
                 .type('jonnahb').should('have.value', 'jonnahb')
 
@@ -60,8 +61,7 @@ describe('New User Home Page', () => {
         })
 
         it('successfully validates email', () => {
-            cy.wait(150)
-            cy.get('#createnewrankingbtn > .s').click()
+
             cy.get('#userEmail')
 
                 .type('fake@email.com').should('have.value', 'fake@email.com')
@@ -82,8 +82,7 @@ describe('New User Home Page', () => {
         })
 
         it('successfully validates mobile number', () => {
-            cy.wait(150)
-            cy.get('#createnewrankingbtn > .s').click()
+
             cy.get('#userMobile')
                 .clear()
                 .type('1234567890').should('have.value', '1234567890')
@@ -101,6 +100,12 @@ describe('New User Home Page', () => {
                 // Delay each keypress by 0.1 sec
                 .type('1234567890', { delay: 100 })
                 .should('have.value', '1234567890')
+        })
+
+        it('successfully confirms page header', () => {
+
+            cy.contains('Create New User')
+            cy.contains('Please Enter Your User Details And Click \'Register\' below:')
         })
     })
 })

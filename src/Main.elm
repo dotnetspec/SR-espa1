@@ -35,6 +35,7 @@ import SR.Types
 import Task
 import Time exposing (Posix)
 import Utils.MyUtils
+import Utils.Validation.Validate
 import Validate
 
 
@@ -126,6 +127,7 @@ type Msg
     | ClickedSelectedOwnedRanking Internal.Types.RankingId String String
     | ClickedSelectedMemberRanking Internal.Types.RankingId String String
     | ClickedSelectedNeitherOwnerNorMember Internal.Types.RankingId String String
+    | ClickedRegisterNewUser
     | ResetToShowGlobal
     | ResetToShowSelected
     | DeletedRanking String
@@ -725,6 +727,9 @@ handleWalletStateOperational msg model =
 
                 NewUserMobileInputChg namefield ->
                     ( handleNewUserInputs model (NewUserMobileInputChg namefield), Cmd.none )
+
+                ClickedRegisterNewUser ->
+                    ( AppOps walletState allLists appInfo SR.Types.UICreateNewUser txRec, Cmd.none )
 
                 CreateNewUserRequested userInfo ->
                     let
@@ -1513,57 +1518,87 @@ greetingHeading greetingStr =
         ]
 
 
-ownedrankingbuttons : List SR.Types.UserRanking -> Element Msg
-ownedrankingbuttons urankingList =
+ownedrankingbuttons : List SR.Types.UserRanking -> SR.Types.User -> Element Msg
+ownedrankingbuttons urankingList user =
     let
         newRankingList =
             SR.ListOps.extractRankingList urankingList
     in
-    Element.column Grid.section <|
-        [ Element.el Heading.h5 <| Element.text "Your Created Rankings:"
-        , Element.column (Card.simple ++ Grid.simple) <|
-            insertOwnedRankingList newRankingList
-        ]
+    if user.username == "" then
+        Element.text ""
+
+    else
+        Element.column Grid.section <|
+            [ Element.el []
+                (Input.button
+                    ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
+                        ++ Button.simple
+                        ++ Color.info
+                    )
+                 <|
+                    { onPress = Just <| ClickedCreateNewLadder
+                    , label = Element.text "Create New"
+                    }
+                )
+            , Element.el Heading.h5 <| Element.text "Your Created Rankings:"
+            , Element.column (Card.simple ++ Grid.simple) <|
+                insertOwnedRankingList newRankingList user
+            ]
 
 
-memberrankingbuttons : List SR.Types.UserRanking -> Element Msg
-memberrankingbuttons urankingList =
+
+--determineOwnedRankingButtonsDisplay :
+
+
+memberrankingbuttons : List SR.Types.UserRanking -> SR.Types.User -> Element Msg
+memberrankingbuttons urankingList user =
     let
         newRankingList =
             SR.ListOps.extractRankingList urankingList
     in
-    Element.column Grid.section <|
-        [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
-        , Element.column (Card.simple ++ Grid.simple) <|
-            insertMemberRankingList newRankingList
-        ]
+    if user.username == "" then
+        Element.text ""
+
+    else
+        Element.column Grid.section <|
+            [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
+            , Element.column (Card.simple ++ Grid.simple) <|
+                insertMemberRankingList newRankingList
+            ]
 
 
-otherrankingbuttons : List SR.Types.UserRanking -> Element Msg
-otherrankingbuttons urankingList =
+otherrankingbuttons : List SR.Types.UserRanking -> SR.Types.User -> Element Msg
+otherrankingbuttons urankingList user =
     let
         newRankingList =
             --SR.ListOps.gotRankingListFromUserRankingList urankingList
             SR.ListOps.extractRankingList urankingList
     in
-    Element.column Grid.section <|
-        [ Element.el Heading.h5 <| Element.text "Other Rankings: "
-        , Element.column (Card.simple ++ Grid.simple) <|
-            insertNeitherOwnerNorMemberRankingList newRankingList
-        ]
+    if user.username == "" then
+        Element.column Grid.section <|
+            [ Element.el Heading.h5 <| Element.text "View Rankings: "
+            , Element.column (Card.simple ++ Grid.simple) <|
+                insertNeitherOwnerNorMemberRankingList newRankingList
+            ]
+
+    else
+        Element.column Grid.section <|
+            [ Element.el Heading.h5 <| Element.text "Other Rankings: "
+            , Element.column (Card.simple ++ Grid.simple) <|
+                insertNeitherOwnerNorMemberRankingList newRankingList
+            ]
 
 
-insertOwnedRankingList : List SR.Types.RankingInfo -> List (Element Msg)
-insertOwnedRankingList lrankinginfo =
+insertOwnedRankingList : List SR.Types.RankingInfo -> SR.Types.User -> List (Element Msg)
+insertOwnedRankingList lrankinginfo user =
     let
         mapOutRankingList =
             List.map
                 ownedRankingInfoBtn
                 lrankinginfo
     in
-    --Element.el (List.append Heading.h5 [ Element.htmlAttribute (Html.Attributes.id "greetingInitStr") ])
-    if List.isEmpty lrankinginfo then
-        [ Input.button (Button.simple ++ (Color.info ++ [ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ])) <|
+    if user.username == "" then
+        [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ] ++ Button.simple ++ Color.info) <|
             { onPress = Just <| ClickedCreateNewLadder
             , label = Element.text "Create New"
             }
@@ -1989,7 +2024,7 @@ newuserConfirmPanel user =
                     { onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Cancel"
                     }
-                , Input.button (Button.simple ++ Color.info) <|
+                , Input.button (Button.simple ++ enableButton (Utils.Validation.Validate.isUserNameValidated user.username)) <|
                     { onPress = Just <| CreateNewUserRequested user
                     , label = Element.text "Register"
                     }
@@ -1998,20 +2033,27 @@ newuserConfirmPanel user =
         ]
 
 
+enableButton : Bool -> List (Element.Attribute msg)
+enableButton enable =
+    if enable then
+        Color.info
+
+    else
+        Color.disabled
+
+
 inputNewUser : Model -> Element Msg
 inputNewUser model =
     case model of
         AppOps walletState allLists appInfo uiState txRec ->
             let
-                isNameValidated =
-                    if String.length appInfo.user.username > 3 && String.length appInfo.user.username < 9 then
-                        True
-
-                    else
-                        False
-
+                -- isNameValidated =
+                --     if String.length appInfo.user.username > 3 && String.length appInfo.user.username < 9 then
+                --         True
+                --     else
+                --         False
                 nameChgValidationErr =
-                    if isNameValidated then
+                    if Utils.Validation.Validate.isUserNameValidated appInfo.user.username then
                         Element.el [ Font.color SR.Types.colors.green, Font.center ] <| Element.text "Username OK!"
 
                     else
@@ -2020,7 +2062,6 @@ inputNewUser model =
 and between 4-8 characters"""
 
                 isEmailValidated =
-                    --if String.length appInfo.user.email > 3 && String.length appInfo.user.email < 9 then
                     if Validate.isValidEmail appInfo.user.email then
                         True
 
@@ -2036,7 +2077,7 @@ and between 4-8 characters"""
                             Element.text """Email must be valid"""
 
                 isMobileValidated =
-                    if String.length appInfo.user.mobile > 3 && String.length appInfo.user.email < 20 then
+                    if String.length appInfo.user.mobile > 4 && String.length appInfo.user.mobile < 25 then
                         True
 
                     else
@@ -2044,10 +2085,10 @@ and between 4-8 characters"""
 
                 mobileValidationErr =
                     if isMobileValidated then
-                        Element.el [ Font.color SR.Types.colors.green, Font.center ] <| Element.text "Mobile OK!"
+                        Element.el (List.append [ Font.color SR.Types.colors.green, Font.center ] [ Element.htmlAttribute (Html.Attributes.id "userMobileValid") ]) <| Element.text "Mobile OK!"
 
                     else
-                        Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <|
+                        Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.htmlAttribute (Html.Attributes.id "userMobileInvalid") ]) <|
                             Element.text """Mobile number must be valid"""
             in
             Element.column Grid.section <|
@@ -2081,7 +2122,7 @@ and between 4-8 characters"""
                         , emailValidationErr
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
                             { onChange = NewUserMobileInputChg
-                            , text = appInfo.user.mobile
+                            , text = Utils.Validation.Validate.validatedMaxTextLength appInfo.user.mobile 25
                             , placeholder = Nothing
                             , label = Input.labelLeft Input.label <| Element.text "Mobile"
                             }
@@ -2093,10 +2134,6 @@ and between 4-8 characters"""
 
         _ ->
             Element.text "Fail on inputNewUser"
-
-
-
--- inputNewLadder updates view on every text entry
 
 
 inputNewLadder : SR.Types.RankingInfo -> Element Msg
@@ -2139,11 +2176,35 @@ globalResponsiveview lowneduranking lmemberusranking lotheruranking user =
     <|
         Element.column
             Framework.container
-            [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <| Element.text ("SportRank - " ++ userName)
-            , ownedrankingbuttons lowneduranking
-            , memberrankingbuttons lmemberusranking
-            , otherrankingbuttons lotheruranking
+            [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+                Element.text ("SportRank - " ++ userName)
+            , displayRegisterBtnIfNewUser
+                user.username
+                ClickedRegisterNewUser
+            , ownedrankingbuttons lowneduranking user
+            , memberrankingbuttons lmemberusranking user
+            , otherrankingbuttons lotheruranking user
             ]
+
+
+displayRegisterBtnIfNewUser : String -> Msg -> Element Msg
+displayRegisterBtnIfNewUser uname msg =
+    if uname /= "" then
+        Element.text ""
+
+    else
+        Input.button
+            ([ Element.htmlAttribute (Html.Attributes.id "registerbtn") ] ++ Button.simple ++ Color.info)
+        <|
+            { onPress = Just <| msg
+
+            --onPress = Nothing
+            , label = Element.text "Register"
+            }
+
+
+
+--)
 
 
 selectedUserIsOwnerView : Model -> Html Msg
