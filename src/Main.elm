@@ -35,6 +35,7 @@ import SR.Types
 import Task
 import Time exposing (Posix)
 import Utils.MyUtils
+import Validate
 
 
 main =
@@ -1492,10 +1493,6 @@ before continuing and
 refresh the browser"""
 
                 SR.Types.UICreateNewUser ->
-                    let
-                        _ =
-                            Debug.log "UICreateNewUser" "here"
-                    in
                     inputNewUserview model
 
                 _ ->
@@ -2006,21 +2003,52 @@ inputNewUser model =
     case model of
         AppOps walletState allLists appInfo uiState txRec ->
             let
-                isValidated =
-                    if String.length appInfo.user.username > 5 && String.length appInfo.user.username < 9 then
+                isNameValidated =
+                    if String.length appInfo.user.username > 3 && String.length appInfo.user.username < 9 then
                         True
 
                     else
                         False
 
                 nameChgValidationErr =
-                    if isValidated then
+                    if isNameValidated then
                         Element.el [ Font.color SR.Types.colors.green, Font.center ] <| Element.text "Username OK!"
 
                     else
                         Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <|
                             Element.text """Username must be unique
-and between 6-8 characters"""
+and between 4-8 characters"""
+
+                isEmailValidated =
+                    --if String.length appInfo.user.email > 3 && String.length appInfo.user.email < 9 then
+                    if Validate.isValidEmail appInfo.user.email then
+                        True
+
+                    else
+                        False
+
+                emailValidationErr =
+                    if isEmailValidated then
+                        Element.el [ Font.color SR.Types.colors.green, Font.center ] <| Element.text "Email OK!"
+
+                    else
+                        Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <|
+                            Element.text """Email must be valid"""
+
+                isMobileValidated =
+                    if String.length appInfo.user.mobile > 3 && String.length appInfo.user.email < 20 then
+                        True
+
+                    else
+                        False
+
+                mobileValidationErr =
+                    if isMobileValidated then
+                        Element.el [ Font.color SR.Types.colors.green, Font.center ] <| Element.text "Mobile OK!"
+
+                    else
+                        Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <|
+                            Element.text """Mobile number must be valid"""
             in
             Element.column Grid.section <|
                 [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
@@ -2050,12 +2078,14 @@ and between 6-8 characters"""
                             , placeholder = Nothing
                             , label = Input.labelLeft Input.label <| Element.text "Email"
                             }
+                        , emailValidationErr
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
                             { onChange = NewUserMobileInputChg
                             , text = appInfo.user.mobile
                             , placeholder = Nothing
                             , label = Input.labelLeft Input.label <| Element.text "Mobile"
                             }
+                        , mobileValidationErr
                         ]
                     ]
                 , SR.Elements.justParasimpleUserInfoText

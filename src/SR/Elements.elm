@@ -61,7 +61,7 @@ justParasimpleUserInfoText : Element msg
 justParasimpleUserInfoText =
     Element.paragraph [] <|
         List.singleton <|
-            Element.text "Use of this application is without any liablity whatsoever"
+            Element.text "Can your challengers reach you if you don't submit contact details?"
 
 
 legalUserInfoText : Element msg
