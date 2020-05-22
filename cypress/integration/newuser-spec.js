@@ -19,9 +19,6 @@ describe('New User Home Page', () => {
         })
 
         it('successfully validates username', () => {
-
-            //cy.contains('Create New User')
-            //cy.contains('Please Enter Your User Details And Click \'Register\' below:')
             cy.get('#userDetails')
                 .type('jonnahb').should('have.value', 'jonnahb')
 

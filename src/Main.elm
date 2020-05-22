@@ -303,11 +303,7 @@ handledWalletStateOpened msg model =
         AppOps walletState allLists appInfo uiState txRec ->
             case msg of
                 WalletStatus walletSentry_ ->
-                    if SR.ListOps.isUserInListStrAddr allLists.users appInfo.user.ethaddress then
-                        ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
-
-                    else
-                        ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UICreateNewUser emptyTxRecord, Cmd.none )
+                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                 UsersReceived userList ->
                     let
@@ -1672,12 +1668,6 @@ playerbuttons model =
                 [ SR.Elements.selectedRankingHeaderEl appInfo.selectedRanking
                 , Element.column (Card.simple ++ Grid.simple) <|
                     insertPlayerList model
-                , Element.paragraph (Card.fill ++ Color.warning) <|
-                    [ Element.el [ Font.bold ] <| Element.text "Please note: "
-                    , Element.paragraph [] <|
-                        List.singleton <|
-                            Element.text "Clicking 'Create New' interacts with your Ethereum wallet"
-                    ]
                 ]
 
         _ ->
@@ -2197,8 +2187,6 @@ displayRegisterBtnIfNewUser uname msg =
             ([ Element.htmlAttribute (Html.Attributes.id "registerbtn") ] ++ Button.simple ++ Color.info)
         <|
             { onPress = Just <| msg
-
-            --onPress = Nothing
             , label = Element.text "Register"
             }
 
