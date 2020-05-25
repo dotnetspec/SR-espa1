@@ -100,8 +100,9 @@ type LadderState
 
 type UIState
     = UIRenderAllRankings
-    | CreateNewLadder
-    | UICreateNewUser
+    | UICreateNewLadder
+    | UIRegisterNewUser
+    | UIUpdateExistingUser
     | UIWalletMissingInstructions
     | UIDisplayWalletLockedInstructions
     | UIDisplayWalletInfoToUser

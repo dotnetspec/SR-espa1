@@ -19,7 +19,7 @@ describe('New User Home Page', () => {
         })
 
         it('successfully validates username', () => {
-            cy.get('#userDetails')
+            cy.get('#userName')
                 .type('jonnahb').should('have.value', 'jonnahb')
 
                 // .type() with special character sequences

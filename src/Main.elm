@@ -128,6 +128,7 @@ type Msg
     | ClickedSelectedMemberRanking Internal.Types.RankingId String String
     | ClickedSelectedNeitherOwnerNorMember Internal.Types.RankingId String String
     | ClickedRegisterNewUser
+    | ClickedUpdateExistingUser
     | ResetToShowGlobal
     | ResetToShowSelected
     | DeletedRanking String
@@ -307,6 +308,9 @@ handledWalletStateOpened msg model =
 
                 UsersReceived userList ->
                     let
+                        _ =
+                            Debug.log "users list " userList
+
                         userLAddedToAllLists =
                             { allLists | users = SR.ListOps.validatedUserList <| SR.ListOps.extractUsersFromWebData userList }
                     in
@@ -534,7 +538,7 @@ handleWalletStateOperational msg model =
                 -- it's already created the new ranking with current player as the first entry
                 -- the result now is the ranking id only at this point which was pulled out by the decoder
                 SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
-                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.CreateNewLadder emptyTxRecord
+                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UICreateNewLadder emptyTxRecord
                     , addedNewRankingListEntryInGlobal idValueFromDecoder
                         allLists.userRankings
                         appInfo.selectedRanking
@@ -549,13 +553,13 @@ handleWalletStateOperational msg model =
                     ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                 ResetToShowSelected ->
-                    -- let
-                    --     uiType =
-                    --         ensuredCorrectSelectedUI appInfo allLists
-                    -- in
-                    -- ( AppOps SR.Types.WalletOperational allLists appInfo uiType emptyTxRecord, Cmd.none )
-                    ( model, Cmd.none )
+                    let
+                        uiType =
+                            ensuredCorrectSelectedUI appInfo allLists
+                    in
+                    ( AppOps SR.Types.WalletOperational allLists appInfo uiType emptyTxRecord, Cmd.none )
 
+                --( model, Cmd.none )
                 ClickedCreateNewLadder ->
                     if SR.ListOps.isRegistered allLists.users appInfo.user then
                         let
@@ -590,12 +594,12 @@ handleWalletStateOperational msg model =
                             --     newAppInfo =
                             --         { appInfo | selectedRanking = newLadderRnkInfo }
                             -- in
-                            -- ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.CreateNewLadder { txRec | txSentry = newSentry }, sentryCmd )
+                            -- ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UICreateNewLadder { txRec | txSentry = newSentry }, sentryCmd )
                         in
-                        ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.CreateNewLadder { txRec | txSentry = newSentry }, sentryCmd )
+                        ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UICreateNewLadder { txRec | txSentry = newSentry }, sentryCmd )
 
                     else
-                        ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UICreateNewUser emptyTxRecord, Cmd.none )
+                        ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRegisterNewUser emptyTxRecord, Cmd.none )
 
                 AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
                     let
@@ -623,7 +627,7 @@ handleWalletStateOperational msg model =
                         newAppInfo =
                             { appInfo | selectedRanking = updatedSelectedRanking }
                     in
-                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.CreateNewLadder emptyTxRecord, Cmd.none )
+                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
 
                 LadderDescInputChg descfield ->
                     let
@@ -636,7 +640,7 @@ handleWalletStateOperational msg model =
                         newAppInfo =
                             { appInfo | selectedRanking = updatedSelectedRanking }
                     in
-                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.CreateNewLadder emptyTxRecord, Cmd.none )
+                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
 
                 ClickedNewChallengeConfirm ->
                     createNewPlayerListWithNewChallengeAndUpdateJsonBin model
@@ -688,7 +692,7 @@ handleWalletStateOperational msg model =
                         ( model, Cmd.batch [ addCurrentUserToPlayerList appInfo.selectedRanking.id allLists.userPlayers appInfo.user, updateUsersJoinRankings appInfo.selectedRanking.id appInfo.user allLists.users ] )
 
                     else
-                        ( AppOps walletState allLists appInfo SR.Types.UICreateNewUser txRec, Cmd.none )
+                        ( AppOps walletState allLists appInfo SR.Types.UIRegisterNewUser txRec, Cmd.none )
 
                 ReturnFromPlayerListUpdate response ->
                     let
@@ -725,7 +729,10 @@ handleWalletStateOperational msg model =
                     ( handleNewUserInputs model (NewUserMobileInputChg namefield), Cmd.none )
 
                 ClickedRegisterNewUser ->
-                    ( AppOps walletState allLists appInfo SR.Types.UICreateNewUser txRec, Cmd.none )
+                    ( AppOps walletState allLists appInfo SR.Types.UIRegisterNewUser txRec, Cmd.none )
+
+                ClickedUpdateExistingUser ->
+                    ( AppOps walletState allLists appInfo SR.Types.UIUpdateExistingUser txRec, Cmd.none )
 
                 CreateNewUserRequested userInfo ->
                     let
@@ -1186,26 +1193,20 @@ handleUndecided model =
             Failure "Fail in handleUndecided"
 
 
+ensuredCorrectSelectedUI : SR.Types.AppInfo -> SR.Types.AllLists -> SR.Types.UIState
+ensuredCorrectSelectedUI appInfo allLists =
+    let
+        _ =
+            Debug.log "member?" SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user
+    in
+    if SR.ListOps.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking allLists.lownedUserRanking appInfo.user then
+        SR.Types.UISelectedRankingUserIsOwner
 
--- ensuredCorrectSelectedUI : SR.Types.AppInfo -> SR.Types.AllLists -> SR.Types.UIState
--- ensuredCorrectSelectedUI appInfo allLists =
---     --if SR.ListOps.isUserSelectedOwnerOfRanking appInfo.selectedRanking (SR.ListOps.extractRankingList allLists.userRankings) appInfo.user then
---     let
---         _ =
---             Debug.log "member?" SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user
---     in
---     if SR.ListOps.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking allLists.lownedUserRanking appInfo.user then
---         SR.Types.UISelectedRankingUserIsOwner
---     else if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
---         SR.Types.UISelectedRankingUserIsPlayer
---     else
---         SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
--- if SR.ListOps.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking allLists.lownedUserRanking appInfo.user then
---                 ( AppOps SR.Types.WalletOperational allLists newAppInfo updatedUiState emptyTxRecord, fetchedSingleRanking rnkidstr )
---             else if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
---                 ( AppOps SR.Types.WalletOperational allLists newAppInfo updatedUiState emptyTxRecord, fetchedSingleRanking rnkidstr )
---             else
---                 ( AppOps SR.Types.WalletOperational allLists newAppInfo updatedUiState emptyTxRecord, fetchedSingleRanking rnkidstr )
+    else if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
+        SR.Types.UISelectedRankingUserIsPlayer
+
+    else
+        SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
 
 
 createNewPlayerListWithNewResultAndUpdateJsonBin : Model -> ( Model, Cmd Msg )
@@ -1281,7 +1282,7 @@ handleNewUserInputs model msg =
                         _ =
                             Debug.log "currentUformfield" .username
                     in
-                    AppOps walletState allLists newAppInfo SR.Types.UICreateNewUser txRec
+                    AppOps walletState allLists newAppInfo SR.Types.UIRegisterNewUser txRec
 
                 NewUserDescInputChg descfield ->
                     let
@@ -1294,7 +1295,7 @@ handleNewUserInputs model msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    AppOps walletState allLists newAppInfo SR.Types.UICreateNewUser txRec
+                    AppOps walletState allLists newAppInfo SR.Types.UIRegisterNewUser txRec
 
                 NewUserEmailInputChg emailfield ->
                     let
@@ -1307,7 +1308,7 @@ handleNewUserInputs model msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    AppOps walletState allLists newAppInfo SR.Types.UICreateNewUser txRec
+                    AppOps walletState allLists newAppInfo SR.Types.UIRegisterNewUser txRec
 
                 NewUserMobileInputChg mobilefield ->
                     let
@@ -1320,7 +1321,7 @@ handleNewUserInputs model msg =
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
                     in
-                    AppOps walletState allLists newAppInfo SR.Types.UICreateNewUser txRec
+                    AppOps walletState allLists newAppInfo SR.Types.UIRegisterNewUser txRec
 
                 _ ->
                     Failure "NewUserNameInputChg"
@@ -1446,7 +1447,7 @@ view model =
     case model of
         AppOps walletState allLists appInfo uiState txRec ->
             case uiState of
-                SR.Types.CreateNewLadder ->
+                SR.Types.UICreateNewLadder ->
                     inputNewLadderview model
 
                 SR.Types.UISelectedRankingUserIsOwner ->
@@ -1493,8 +1494,11 @@ password to open it
 before continuing and
 refresh the browser"""
 
-                SR.Types.UICreateNewUser ->
+                SR.Types.UIRegisterNewUser ->
                     inputNewUserview model
+
+                SR.Types.UIUpdateExistingUser ->
+                    updateExistingUserView model
 
                 _ ->
                     greetingView <| "Loading ... "
@@ -1525,15 +1529,29 @@ ownedrankingbuttons urankingList user =
 
     else
         Element.column Grid.section <|
+            --Element.column (Card.simple ++ Grid.simple) <|
             [ Element.el []
                 (Input.button
                     ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
+                        ++ Button.fill
                         ++ Button.simple
                         ++ Color.info
                     )
                  <|
                     { onPress = Just <| ClickedCreateNewLadder
-                    , label = Element.text "Create New"
+                    , label = Element.text "Create New Ladder"
+                    }
+                )
+            , Element.el []
+                (Input.button
+                    ([ Element.htmlAttribute (Html.Attributes.id "updateProfilebtn") ]
+                        ++ Button.fill
+                        ++ Button.simple
+                        ++ Color.info
+                    )
+                 <|
+                    { onPress = Just <| ClickedUpdateExistingUser
+                    , label = Element.text "Update Profile"
                     }
                 )
             , Element.el Heading.h5 <| Element.text "Your Created Rankings:"
@@ -1829,8 +1847,8 @@ selecteduserIsPlayerHomebutton user =
         ]
 
 
-selecteduserIsNeitherPlayerNorOwnerHomebutton : Element Msg
-selecteduserIsNeitherPlayerNorOwnerHomebutton =
+selecteduserIsNeitherPlayerNorOwnerHomebutton : SR.Types.User -> Element Msg
+selecteduserIsNeitherPlayerNorOwnerHomebutton user =
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
@@ -1839,13 +1857,30 @@ selecteduserIsNeitherPlayerNorOwnerHomebutton =
                     { onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Home"
                     }
-                , Input.button (Button.simple ++ Color.info) <|
-                    { onPress = Just ClickedJoinSelected
-                    , label = Element.text "Join"
-                    }
+                , displayJoinBtnNewOrExistingUser user
+
+                -- Input.button ([ Element.htmlAttribute (Html.Attributes.id "newUserJoinbtn") ] ++ Button.simple ++ Color.info) <|
+                --     { onPress = Just ClickedJoinSelected
+                --     , label = Element.text "Join"
+                --     }
                 ]
             ]
         ]
+
+
+displayJoinBtnNewOrExistingUser : SR.Types.User -> Element Msg
+displayJoinBtnNewOrExistingUser user =
+    if user.username == "" then
+        Input.button ([ Element.htmlAttribute (Html.Attributes.id "newUserJoinbtn") ] ++ Button.simple ++ Color.info) <|
+            { onPress = Just ClickedRegisterNewUser
+            , label = Element.text "Join"
+            }
+
+    else
+        Input.button ([ Element.htmlAttribute (Html.Attributes.id "existingUserJoinbtn") ] ++ Button.simple ++ Color.info) <|
+            { onPress = Just ClickedJoinSelected
+            , label = Element.text "Join"
+            }
 
 
 newrankinhomebutton : SR.Types.User -> SR.Types.RankingInfo -> Element Msg
@@ -2015,7 +2050,7 @@ newuserConfirmPanel user =
                     , label = Element.text "Cancel"
                     }
                 , Input.button (Button.simple ++ enableButton (Utils.Validation.Validate.isUserNameValidated user.username)) <|
-                    { onPress = Just <| CreateNewUserRequested user
+                    { onPress = Just <| ClickedRegisterNewUser
                     , label = Element.text "Register"
                     }
                 ]
@@ -2037,14 +2072,9 @@ inputNewUser model =
     case model of
         AppOps walletState allLists appInfo uiState txRec ->
             let
-                -- isNameValidated =
-                --     if String.length appInfo.user.username > 3 && String.length appInfo.user.username < 9 then
-                --         True
-                --     else
-                --         False
                 nameChgValidationErr =
                     if Utils.Validation.Validate.isUserNameValidated appInfo.user.username then
-                        Element.el [ Font.color SR.Types.colors.green, Font.center ] <| Element.text "Username OK!"
+                        Element.el [ Font.color SR.Types.colors.green, Font.alignLeft ] <| Element.text "Username OK!"
 
                     else
                         Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <|
@@ -2060,11 +2090,12 @@ and between 4-8 characters"""
 
                 emailValidationErr =
                     if isEmailValidated then
-                        Element.el [ Font.color SR.Types.colors.green, Font.center ] <| Element.text "Email OK!"
+                        Element.el [ Font.color SR.Types.colors.green, Font.alignLeft ] <| Element.text "Email OK!"
 
                     else
                         Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <|
-                            Element.text """Email must be valid"""
+                            Element.text """ Email, if
+ entered, must be valid"""
 
                 isMobileValidated =
                     if String.length appInfo.user.mobile > 4 && String.length appInfo.user.mobile < 25 then
@@ -2075,50 +2106,48 @@ and between 4-8 characters"""
 
                 mobileValidationErr =
                     if isMobileValidated then
-                        Element.el (List.append [ Font.color SR.Types.colors.green, Font.center ] [ Element.htmlAttribute (Html.Attributes.id "userMobileValid") ]) <| Element.text "Mobile OK!"
+                        Element.el (List.append [ Font.color SR.Types.colors.green, Font.alignLeft ] [ Element.htmlAttribute (Html.Attributes.id "userMobileValid") ]) <| Element.text "Mobile OK!"
 
                     else
                         Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.htmlAttribute (Html.Attributes.id "userMobileInvalid") ]) <|
-                            Element.text """Mobile number must be valid"""
+                            Element.text """ Mobile number, if
+ entered, must be valid"""
             in
             Element.column Grid.section <|
                 [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
                 , Element.wrappedRow (Card.fill ++ Grid.simple)
-                    [ Element.column Grid.simple
-                        [ Input.text
-                            (Input.simple
-                                ++ [ Input.focusedOnLoad ]
-                                ++ [ Element.htmlAttribute (Html.Attributes.id "userDetails") ]
-                            )
+                    [ Element.column
+                        Grid.simple
+                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
                             { onChange = NewUserNameInputChg
                             , text = appInfo.user.username
                             , placeholder = Nothing
-                            , label = Input.labelLeft Input.label <| Element.text "Username"
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
                             }
                         , nameChgValidationErr
-                        , Input.multiline (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
                             { onChange = NewUserDescInputChg
                             , text = appInfo.user.description
                             , placeholder = Nothing
-                            , label = Input.labelLeft Input.label <| Element.text "Description"
-                            , spellcheck = False
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
                             }
                         , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
                             { onChange = NewUserEmailInputChg
                             , text = appInfo.user.email
                             , placeholder = Nothing
-                            , label = Input.labelLeft Input.label <| Element.text "Email"
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
                             }
                         , emailValidationErr
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
                             { onChange = NewUserMobileInputChg
                             , text = Utils.Validation.Validate.validatedMaxTextLength appInfo.user.mobile 25
                             , placeholder = Nothing
-                            , label = Input.labelLeft Input.label <| Element.text "Mobile"
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
                             }
                         , mobileValidationErr
                         ]
                     ]
+                , Element.text "* required"
                 , SR.Elements.justParasimpleUserInfoText
                 ]
 
@@ -2171,6 +2200,7 @@ globalResponsiveview lowneduranking lmemberusranking lotheruranking user =
             , displayRegisterBtnIfNewUser
                 user.username
                 ClickedRegisterNewUser
+            , Element.text "\n"
             , ownedrankingbuttons lowneduranking user
             , memberrankingbuttons lmemberusranking user
             , otherrankingbuttons lotheruranking user
@@ -2234,13 +2264,22 @@ selectedUserIsNeitherOwnerNorPlayerView model =
             Framework.responsiveLayout [] <|
                 Element.column
                     Framework.container
-                    [ Element.el Heading.h4 <| Element.text <| "SportRank - " ++ appInfo.user.username ++ " - Join?"
-                    , selecteduserIsNeitherPlayerNorOwnerHomebutton
+                    [ newOrExistingUserNameDisplay appInfo.user
+                    , selecteduserIsNeitherPlayerNorOwnerHomebutton appInfo.user
                     , playerbuttons model
                     ]
 
         _ ->
             Html.text "Error"
+
+
+newOrExistingUserNameDisplay : SR.Types.User -> Element msg
+newOrExistingUserNameDisplay user =
+    if user.username == "" then
+        Element.el Heading.h4 <| Element.text <| "SportRank - New User - Join?"
+
+    else
+        Element.el Heading.h4 <| Element.text <| "SportRank - " ++ user.username ++ " - Join?"
 
 
 inputNewUserview : Model -> Html Msg
@@ -2257,6 +2296,22 @@ inputNewUserview model =
 
         _ ->
             Html.text "Fail inputNewUserview"
+
+
+updateExistingUserView : Model -> Html Msg
+updateExistingUserView model =
+    case model of
+        AppOps walletState allLists appInfo uiState txRec ->
+            Framework.responsiveLayout [] <|
+                Element.column
+                    Framework.container
+                    [ Element.el Heading.h4 <| Element.text "Update User Profile"
+                    , inputNewUser model
+                    , newuserConfirmPanel appInfo.user
+                    ]
+
+        _ ->
+            Html.text "Fail updateExistingUserView"
 
 
 inputNewLadderview : Model -> Html Msg
@@ -2496,6 +2551,9 @@ createNewUser originaluserlist newuserinfo =
 
         userListWithJsonObjAdded =
             newUser :: originaluserlist
+
+        _ =
+            Debug.log "originaluserlist " originaluserlist
     in
     --SentUserInfoAndDecodedResponseToNewUser is the Msg handled by update whenever a request is made by button click
     --RemoteData is used throughout the module, including update
@@ -2509,7 +2567,9 @@ createNewUser originaluserlist newuserinfo =
         , method = "PUT"
         , timeout = Nothing
         , tracker = Nothing
-        , url = SR.Constants.jsonbinUrlUpdateUserListAndRespond
+
+        --, url = SR.Constants.jsonbinUrlUpdateUserListAndRespond
+        , url = ""
         }
 
 
