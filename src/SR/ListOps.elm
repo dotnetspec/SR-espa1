@@ -33,7 +33,8 @@ module SR.ListOps exposing
     , isUserOwnerOfSelectedUserRanking
     , isUserSelectedOwnerOfRanking
     , ownerValidatedRankingList
-    ,  removeCurrentUserEntryFromUserList
+    , removeCurrentUserEntryFromUserList
+    ,  removedDuplicateUserFromUserList
        -- to be privatized
 
     , setPlayerInPlayerListWithChallengeResult
@@ -47,15 +48,37 @@ module SR.ListOps exposing
 import Eth.Utils
 import Http
 import Internal.Types
+import List.Unique
 import RemoteData
 import SR.Defaults
 import SR.Types
 import Utils.MyUtils
 
 
+removedDuplicateUserFromUserList : List SR.Types.User -> List SR.Types.User
+removedDuplicateUserFromUserList userList =
+    let
+        laddresses =
+            List.map gotAddressesFromUserList userList
+
+        lremovedDuplicateAddresses =
+            List.Unique.filterDuplicates laddresses
+
+        lusersWithDuplicatesRemoved =
+            List.map (gotUserFromUserList userList) lremovedDuplicateAddresses
+    in
+    lusersWithDuplicatesRemoved
+
+
+gotAddressesFromUserList : SR.Types.User -> String
+gotAddressesFromUserList user =
+    user.ethaddress
+
+
 removeCurrentUserEntryFromUserList : List SR.Types.User -> String -> List SR.Types.User
-removeCurrentUserEntryFromUserList luser uaddr =
-    luser
+removeCurrentUserEntryFromUserList userList uaddr =
+    List.filter (\r -> (String.toLower <| r.ethaddress) /= (String.toLower <| uaddr))
+        (validatedUserList userList)
 
 
 isRegistered : List SR.Types.User -> SR.Types.User -> Bool

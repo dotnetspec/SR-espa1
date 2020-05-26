@@ -7,6 +7,7 @@
     "dependencies": {
         "direct": {
             "Chadtech/elm-bool-extra": "2.4.0",
+            "Chadtech/unique-list": "2.1.4",
             "NoRedInk/elm-json-decode-pipeline": "1.0.0",
             "Orasund/elm-ui-framework": "1.6.1",
             "PaackEng/elm-ui-dialog": "1.0.0",
@@ -41,7 +42,6 @@
             "Skinney/murmur3": "2.0.8",
             "elm/bytes": "1.0.8",
             "elm/file": "1.0.5",
-            "elm/svg": "1.0.1",
             "elm/virtual-dom": "1.0.2",
             "owanturist/elm-union-find": "1.0.0"
         }
@@ -51,7 +51,8 @@
             "avh4/elm-program-test": "3.2.0"
         },
         "indirect": {
-            "avh4/elm-fifo": "1.0.4"
+            "avh4/elm-fifo": "1.0.4",
+            "elm/svg": "1.0.1"
         }
     }
 }

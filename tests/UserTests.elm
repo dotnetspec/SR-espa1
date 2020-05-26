@@ -13,6 +13,7 @@ import SR.ListOps
 import SR.Types
 import Shrink
 import Test exposing (..)
+import Testdata.UserTestData
 
 
 
@@ -36,7 +37,31 @@ userFuzzer =
 gotUserFromUserListTest : Test
 gotUserFromUserListTest =
     let
-        listOfUsers =
+        output =
+            [ { datestamp = 1569839363942
+              , active = True
+              , username = "Test 1"
+              , ethaddress = "0x4a0a14ba869bee85c490a5e6401d3f740039a01f"
+              , description = "t1"
+              , email = "t1@t.com"
+              , mobile = "11111111"
+              , userjoinrankings = []
+              }
+            ]
+    in
+    --only <|
+    describe " a single user must be obtained from the userlist"
+        [ test "gotUserFromUserList" <|
+            \_ ->
+                [ SR.ListOps.gotUserFromUserList Testdata.UserTestData.standardUserList "0x4A0a14bA869bEe85c490A5E6401D3f740039a01F" ]
+                    |> Expect.equal output
+        ]
+
+
+removedDuplicateUserFromUserListTest : Test
+removedDuplicateUserFromUserListTest =
+    let
+        output =
             [ { datestamp = 123456
               , active = True
               , username = "John"
@@ -56,24 +81,12 @@ gotUserFromUserListTest =
               , userjoinrankings = []
               }
             ]
-
-        output =
-            [ { datestamp = 123456
-              , active = True
-              , username = "Alfred"
-              , ethaddress = "0x4A0a14bA869bEe85c490A5E6401D3f740039a01F"
-              , description = "Fit"
-              , email = "j@j.com"
-              , mobile = "123456"
-              , userjoinrankings = []
-              }
-            ]
     in
     --only <|
-    describe " a single user must be obtained from the userlist"
-        [ test "gotUserFromUserList" <|
+    describe " there cannot be more than 1 unique address for each user in the userlist"
+        [ test "removedDuplicateUserFromUserList" <|
             \_ ->
-                [ SR.ListOps.gotUserFromUserList listOfUsers "0x4A0a14bA869bEe85c490A5E6401D3f740039a01F" ]
+                SR.ListOps.removedDuplicateUserFromUserList Testdata.UserTestData.usersWithSameAddressInList
                     |> Expect.equal output
         ]
 

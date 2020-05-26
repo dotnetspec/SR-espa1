@@ -313,9 +313,6 @@ handledWalletStateOpened msg model =
 
                 UsersReceived userList ->
                     let
-                        _ =
-                            Debug.log "users list " userList
-
                         userLAddedToAllLists =
                             { allLists | users = SR.ListOps.validatedUserList <| SR.ListOps.extractUsersFromWebData userList }
                     in
@@ -2753,8 +2750,11 @@ createNewUser originaluserlist newuserinfo =
             , userjoinrankings = []
             }
 
-        userListWithJsonObjAdded =
+        newUserAddedToList =
             newUser :: originaluserlist
+
+        ensuredListHasNoDuplicates =
+            SR.ListOps.removedDuplicateUserFromUserList newUserAddedToList
 
         _ =
             Debug.log "originaluserlist " originaluserlist
@@ -2767,7 +2767,7 @@ createNewUser originaluserlist newuserinfo =
     if List.isEmpty originaluserlist then
         Http.request
             { body =
-                Http.jsonBody <| jsonEncodeNewUsersList userListWithJsonObjAdded
+                Http.jsonBody <| jsonEncodeNewUsersList ensuredListHasNoDuplicates
             , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
             , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
             , method = "PUT"
@@ -2781,7 +2781,7 @@ createNewUser originaluserlist newuserinfo =
     else
         Http.request
             { body =
-                Http.jsonBody <| jsonEncodeNewUsersList userListWithJsonObjAdded
+                Http.jsonBody <| jsonEncodeNewUsersList ensuredListHasNoDuplicates
             , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
             , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
             , method = "PUT"
@@ -2794,7 +2794,7 @@ createNewUser originaluserlist newuserinfo =
 updateExistingUser : List SR.Types.User -> SR.Types.User -> Cmd Msg
 updateExistingUser originaluserlist updatedUserInfo =
     let
-        newUser =
+        updatedUser =
             { datestamp = 123456789
             , active = True
             , username = updatedUserInfo.username
@@ -2808,17 +2808,11 @@ updateExistingUser originaluserlist updatedUserInfo =
         newListWithCurrentUserRemoved =
             SR.ListOps.removeCurrentUserEntryFromUserList originaluserlist updatedUserInfo.ethaddress
 
-        userListWithJsonObjAdded =
-            newUser :: newListWithCurrentUserRemoved
+        updatedUserList =
+            updatedUser :: newListWithCurrentUserRemoved
 
-        _ =
-            Debug.log "originaluserlist " originaluserlist
-
-        _ =
-            Debug.log "newListWithCurrentUserRemoved " newListWithCurrentUserRemoved
-
-        _ =
-            Debug.log "userListWithJsonObjAdded " userListWithJsonObjAdded
+        ensuredListHasNoDuplicates =
+            SR.ListOps.removedDuplicateUserFromUserList updatedUserList
     in
     --SentUserInfoAndDecodedResponseToNewUser is the Msg handled by update whenever a request is made by button click
     --RemoteData is used throughout the module, including update
@@ -2828,7 +2822,7 @@ updateExistingUser originaluserlist updatedUserInfo =
     if List.isEmpty originaluserlist then
         Http.request
             { body =
-                Http.jsonBody <| jsonEncodeNewUsersList userListWithJsonObjAdded
+                Http.jsonBody <| jsonEncodeNewUsersList ensuredListHasNoDuplicates
             , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
             , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
             , method = "PUT"
@@ -2842,7 +2836,7 @@ updateExistingUser originaluserlist updatedUserInfo =
     else
         Http.request
             { body =
-                Http.jsonBody <| jsonEncodeNewUsersList userListWithJsonObjAdded
+                Http.jsonBody <| jsonEncodeNewUsersList ensuredListHasNoDuplicates
             , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
             , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
             , method = "PUT"
