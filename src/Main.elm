@@ -2074,12 +2074,12 @@ inputNewUser model =
             let
                 nameChgValidationErr =
                     if Utils.Validation.Validate.isUserNameValidated appInfo.user.username then
-                        Element.el [ Font.color SR.Types.colors.green, Font.alignLeft ] <| Element.text "Username OK!"
+                        Element.el (List.append [ Font.color SR.Types.colors.green, Font.alignLeft ] [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
 
                     else
-                        Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <|
-                            Element.text """Username must be unique
-and between 4-8 characters"""
+                        Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.moveLeft 0.0 ])
+                            (Element.text """Username must be unique
+and between 4-8 characters""")
 
                 isEmailValidated =
                     if Validate.isValidEmail appInfo.user.email then
@@ -2090,28 +2090,26 @@ and between 4-8 characters"""
 
                 emailValidationErr =
                     if isEmailValidated then
-                        Element.el [ Font.color SR.Types.colors.green, Font.alignLeft ] <| Element.text "Email OK!"
+                        Element.el
+                            (List.append
+                                [ Font.color SR.Types.colors.green, Font.alignLeft ]
+                                [ Element.moveLeft 1.0 ]
+                            )
+                            (Element.text "Email OK!")
 
                     else
-                        Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <|
-                            Element.text """ Email, if
- entered, must be valid"""
-
-                isMobileValidated =
-                    if String.length appInfo.user.mobile > 4 && String.length appInfo.user.mobile < 25 then
-                        True
-
-                    else
-                        False
+                        Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.moveLeft 7.0 ])
+                            (Element.text """ Email, if
+ entered, must be valid""")
 
                 mobileValidationErr =
-                    if isMobileValidated then
-                        Element.el (List.append [ Font.color SR.Types.colors.green, Font.alignLeft ] [ Element.htmlAttribute (Html.Attributes.id "userMobileValid") ]) <| Element.text "Mobile OK!"
+                    if isMobileValidated appInfo.user.mobile then
+                        Element.el (List.append [ Font.color SR.Types.colors.green, Font.alignLeft ] [ Element.htmlAttribute (Html.Attributes.id "userMobileValid") ]) (Element.text "Mobile OK!")
 
                     else
-                        Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.htmlAttribute (Html.Attributes.id "userMobileInvalid") ]) <|
-                            Element.text """ Mobile number, if
- entered, must be valid"""
+                        Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.htmlAttribute (Html.Attributes.id "userMobileInvalid") ] ++ [ Element.moveLeft 5.0 ])
+                            (Element.text """ Mobile number, if
+ entered, must be valid""")
             in
             Element.column Grid.section <|
                 [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
@@ -2153,6 +2151,22 @@ and between 4-8 characters"""
 
         _ ->
             Element.text "Fail on inputNewUser"
+
+
+isMobileValidated : String -> Bool
+isMobileValidated mobileNumber =
+    let
+        mobileNumberInt =
+            Maybe.withDefault 0 (String.toInt mobileNumber)
+    in
+    if
+        (String.length mobileNumber > 4 && String.length mobileNumber < 25)
+            && (Just mobileNumberInt /= Just 0)
+    then
+        True
+
+    else
+        False
 
 
 inputNewLadder : SR.Types.RankingInfo -> Element Msg
