@@ -129,6 +129,7 @@ type Msg
     | ClickedSelectedNeitherOwnerNorMember Internal.Types.RankingId String String
     | ClickedRegisterNewUser
     | ClickedUpdateExistingUser
+    | ClickedConfirmedUpdateExistingUser
     | ResetToShowGlobal
     | ResetToShowSelected
     | DeletedRanking String
@@ -143,6 +144,10 @@ type Msg
     | NewUserDescInputChg String
     | NewUserEmailInputChg String
     | NewUserMobileInputChg String
+    | ExistingUserNameInputChg String
+    | ExistingUserDescInputChg String
+    | ExistingUserEmailInputChg String
+    | ExistingUserMobileInputChg String
     | CreateNewUserRequested SR.Types.User
       -- App Only Ops
     | MissingWalletInstructions
@@ -716,23 +721,38 @@ handleWalletStateOperational msg model =
                     in
                     ( model, Cmd.none )
 
-                NewUserNameInputChg namefield ->
-                    ( handleNewUserInputs model (NewUserNameInputChg namefield), Cmd.none )
+                NewUserNameInputChg updateField ->
+                    ( handleNewUserInputs model (NewUserNameInputChg updateField), Cmd.none )
 
-                NewUserDescInputChg namefield ->
-                    ( handleNewUserInputs model (NewUserDescInputChg namefield), Cmd.none )
+                NewUserDescInputChg updateField ->
+                    ( handleNewUserInputs model (NewUserDescInputChg updateField), Cmd.none )
 
-                NewUserEmailInputChg namefield ->
-                    ( handleNewUserInputs model (NewUserEmailInputChg namefield), Cmd.none )
+                NewUserEmailInputChg updateField ->
+                    ( handleNewUserInputs model (NewUserEmailInputChg updateField), Cmd.none )
 
-                NewUserMobileInputChg namefield ->
-                    ( handleNewUserInputs model (NewUserMobileInputChg namefield), Cmd.none )
+                NewUserMobileInputChg updateField ->
+                    ( handleNewUserInputs model (NewUserMobileInputChg updateField), Cmd.none )
 
-                ClickedRegisterNewUser ->
-                    ( AppOps walletState allLists appInfo SR.Types.UIRegisterNewUser txRec, Cmd.none )
+                ExistingUserNameInputChg updateField ->
+                    ( handleExistingUserInputs model (ExistingUserNameInputChg updateField), Cmd.none )
+
+                ExistingUserDescInputChg updateField ->
+                    ( handleExistingUserInputs model (ExistingUserDescInputChg updateField), Cmd.none )
+
+                ExistingUserEmailInputChg updateField ->
+                    ( handleExistingUserInputs model (ExistingUserEmailInputChg updateField), Cmd.none )
+
+                ExistingUserMobileInputChg updateField ->
+                    ( handleExistingUserInputs model (ExistingUserMobileInputChg updateField), Cmd.none )
 
                 ClickedUpdateExistingUser ->
                     ( AppOps walletState allLists appInfo SR.Types.UIUpdateExistingUser txRec, Cmd.none )
+
+                ClickedConfirmedUpdateExistingUser ->
+                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings txRec, updateExistingUser allLists.users appInfo.user )
+
+                ClickedRegisterNewUser ->
+                    ( AppOps walletState allLists appInfo SR.Types.UIRegisterNewUser txRec, Cmd.none )
 
                 CreateNewUserRequested userInfo ->
                     let
@@ -1328,6 +1348,70 @@ handleNewUserInputs model msg =
 
         _ ->
             Failure "NewUserNameInputChg"
+
+
+handleExistingUserInputs : Model -> Msg -> Model
+handleExistingUserInputs model msg =
+    case model of
+        AppOps walletState allLists appInfo uiState txRec ->
+            case msg of
+                ExistingUserNameInputChg namefield ->
+                    let
+                        newUser =
+                            appInfo.user
+
+                        updatedNewUser =
+                            { newUser | username = namefield }
+
+                        newAppInfo =
+                            { appInfo | user = updatedNewUser }
+                    in
+                    AppOps walletState allLists newAppInfo SR.Types.UIUpdateExistingUser txRec
+
+                ExistingUserDescInputChg descfield ->
+                    let
+                        newUser =
+                            appInfo.user
+
+                        updatedNewUser =
+                            { newUser | description = descfield }
+
+                        newAppInfo =
+                            { appInfo | user = updatedNewUser }
+                    in
+                    AppOps walletState allLists newAppInfo SR.Types.UIUpdateExistingUser txRec
+
+                ExistingUserEmailInputChg emailfield ->
+                    let
+                        newUser =
+                            appInfo.user
+
+                        updatedNewUser =
+                            { newUser | email = emailfield }
+
+                        newAppInfo =
+                            { appInfo | user = updatedNewUser }
+                    in
+                    AppOps walletState allLists newAppInfo SR.Types.UIUpdateExistingUser txRec
+
+                ExistingUserMobileInputChg mobilefield ->
+                    let
+                        newUser =
+                            appInfo.user
+
+                        updatedNewUser =
+                            { newUser | mobile = mobilefield }
+
+                        newAppInfo =
+                            { appInfo | user = updatedNewUser }
+                    in
+                    AppOps walletState allLists newAppInfo SR.Types.UIUpdateExistingUser txRec
+
+                _ ->
+                    Failure "ExistingUserNameInputChg"
+
+        _ ->
+            Failure "ExistingUserNameInputChg"
 
 
 updatedForChallenge : Model -> List SR.Types.UserPlayer -> SR.Types.UserPlayer -> SR.Types.User -> Model
@@ -2050,8 +2134,27 @@ newuserConfirmPanel user =
                     , label = Element.text "Cancel"
                     }
                 , Input.button (Button.simple ++ enableButton (Utils.Validation.Validate.isUserNameValidated user.username)) <|
-                    { onPress = Just <| ClickedRegisterNewUser
+                    { onPress = Just <| CreateNewUserRequested user
                     , label = Element.text "Register"
+                    }
+                ]
+            ]
+        ]
+
+
+existingUserConfirmPanel : SR.Types.User -> Element Msg
+existingUserConfirmPanel user =
+    Element.column Grid.section <|
+        [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+        , Element.column (Card.simple ++ Grid.simple) <|
+            [ Element.wrappedRow Grid.simple <|
+                [ Input.button (Button.simple ++ Color.info) <|
+                    { onPress = Just <| ResetToShowGlobal
+                    , label = Element.text "Cancel"
+                    }
+                , Input.button (Button.simple ++ enableButton (Utils.Validation.Validate.isUserNameValidated user.username)) <|
+                    { onPress = Just <| ClickedConfirmedUpdateExistingUser
+                    , label = Element.text "Update"
                     }
                 ]
             ]
@@ -2147,6 +2250,93 @@ and between 4-8 characters""")
                     ]
                 , Element.text "* required"
                 , SR.Elements.justParasimpleUserInfoText
+                ]
+
+        _ ->
+            Element.text "Fail on inputNewUser"
+
+
+inputUpdateExistingUser : Model -> Element Msg
+inputUpdateExistingUser model =
+    case model of
+        AppOps walletState allLists appInfo uiState txRec ->
+            let
+                nameChgValidationErr =
+                    if Utils.Validation.Validate.isUserNameValidated appInfo.user.username then
+                        Element.el (List.append [ Font.color SR.Types.colors.green, Font.alignLeft ] [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
+
+                    else
+                        Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.moveLeft 0.0 ])
+                            (Element.text """Username must be unique
+and between 4-8 characters""")
+
+                isEmailValidated =
+                    if Validate.isValidEmail appInfo.user.email then
+                        True
+
+                    else
+                        False
+
+                emailValidationErr =
+                    if isEmailValidated then
+                        Element.el
+                            (List.append
+                                [ Font.color SR.Types.colors.green, Font.alignLeft ]
+                                [ Element.moveLeft 1.0 ]
+                            )
+                            (Element.text "Email OK!")
+
+                    else
+                        Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.moveLeft 7.0 ])
+                            (Element.text """ Email, if
+ entered, must be valid""")
+
+                mobileValidationErr =
+                    if isMobileValidated appInfo.user.mobile then
+                        Element.el (List.append [ Font.color SR.Types.colors.green, Font.alignLeft ] [ Element.htmlAttribute (Html.Attributes.id "userMobileValid") ]) (Element.text "Mobile OK!")
+
+                    else
+                        Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.htmlAttribute (Html.Attributes.id "userMobileInvalid") ] ++ [ Element.moveLeft 5.0 ])
+                            (Element.text """ Mobile number, if
+ entered, must be valid""")
+            in
+            Element.column Grid.section <|
+                [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                    [ Element.column
+                        Grid.simple
+                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                            { onChange = ExistingUserNameInputChg
+                            , text = appInfo.user.username
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+                            }
+                        , nameChgValidationErr
+                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+                            { onChange = ExistingUserDescInputChg
+                            , text = appInfo.user.description
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+                            }
+                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+                            { onChange = ExistingUserEmailInputChg
+                            , text = appInfo.user.email
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+                            }
+                        , emailValidationErr
+                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+                            { onChange = ExistingUserMobileInputChg
+                            , text = Utils.Validation.Validate.validatedMaxTextLength appInfo.user.mobile 25
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+                            }
+                        , mobileValidationErr
+                        ]
+                    ]
+                , Element.text "* required"
+
+                --, SR.Elements.justParasimpleUserInfoText
                 ]
 
         _ ->
@@ -2320,8 +2510,8 @@ updateExistingUserView model =
                 Element.column
                     Framework.container
                     [ Element.el Heading.h4 <| Element.text "Update User Profile"
-                    , inputNewUser model
-                    , newuserConfirmPanel appInfo.user
+                    , inputUpdateExistingUser model
+                    , existingUserConfirmPanel appInfo.user
                     ]
 
         _ ->
@@ -2573,18 +2763,93 @@ createNewUser originaluserlist newuserinfo =
     --RemoteData is used throughout the module, including update
     -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
     -- decoder relates to what comes back from server. Nothing to do with above.
-    Http.request
-        { body =
-            Http.jsonBody <| jsonEncodeNewUsersList userListWithJsonObjAdded
-        , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
-        , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
-        , method = "PUT"
-        , timeout = Nothing
-        , tracker = Nothing
+    -- we mustn't submit a new user if the original list is empty for some reason ...
+    if List.isEmpty originaluserlist then
+        Http.request
+            { body =
+                Http.jsonBody <| jsonEncodeNewUsersList userListWithJsonObjAdded
+            , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
+            , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
+            , method = "PUT"
+            , timeout = Nothing
+            , tracker = Nothing
 
-        --, url = SR.Constants.jsonbinUrlUpdateUserListAndRespond
-        , url = ""
-        }
+            -- this will fail the create new user:
+            , url = ""
+            }
+
+    else
+        Http.request
+            { body =
+                Http.jsonBody <| jsonEncodeNewUsersList userListWithJsonObjAdded
+            , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
+            , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
+            , method = "PUT"
+            , timeout = Nothing
+            , tracker = Nothing
+            , url = SR.Constants.jsonbinUrlUpdateUserListAndRespond
+            }
+
+
+updateExistingUser : List SR.Types.User -> SR.Types.User -> Cmd Msg
+updateExistingUser originaluserlist updatedUserInfo =
+    let
+        newUser =
+            { datestamp = 123456789
+            , active = True
+            , username = updatedUserInfo.username
+            , ethaddress = updatedUserInfo.ethaddress
+            , description = updatedUserInfo.description
+            , email = updatedUserInfo.email
+            , mobile = updatedUserInfo.mobile
+            , userjoinrankings = []
+            }
+
+        newListWithCurrentUserRemoved =
+            SR.ListOps.removeCurrentUserEntryFromUserList originaluserlist updatedUserInfo.ethaddress
+
+        userListWithJsonObjAdded =
+            newUser :: newListWithCurrentUserRemoved
+
+        _ =
+            Debug.log "originaluserlist " originaluserlist
+
+        _ =
+            Debug.log "newListWithCurrentUserRemoved " newListWithCurrentUserRemoved
+
+        _ =
+            Debug.log "userListWithJsonObjAdded " userListWithJsonObjAdded
+    in
+    --SentUserInfoAndDecodedResponseToNewUser is the Msg handled by update whenever a request is made by button click
+    --RemoteData is used throughout the module, including update
+    -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
+    -- decoder relates to what comes back from server. Nothing to do with above.
+    -- we mustn't submit a new user if the original list is empty for some reason ...
+    if List.isEmpty originaluserlist then
+        Http.request
+            { body =
+                Http.jsonBody <| jsonEncodeNewUsersList userListWithJsonObjAdded
+            , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
+            , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
+            , method = "PUT"
+            , timeout = Nothing
+            , tracker = Nothing
+
+            -- this will fail the create new user:
+            , url = ""
+            }
+
+    else
+        Http.request
+            { body =
+                Http.jsonBody <| jsonEncodeNewUsersList userListWithJsonObjAdded
+            , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
+            , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
+            , method = "PUT"
+            , timeout = Nothing
+            , tracker = Nothing
+            , url = SR.Constants.jsonbinUrlUpdateUserListAndRespond
+            }
 
 
 jsonEncodeNewUsersList : List SR.Types.User -> Json.Encode.Value

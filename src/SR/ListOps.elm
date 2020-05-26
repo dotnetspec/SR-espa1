@@ -33,14 +33,15 @@ module SR.ListOps exposing
     , isUserOwnerOfSelectedUserRanking
     , isUserSelectedOwnerOfRanking
     , ownerValidatedRankingList
+    ,  removeCurrentUserEntryFromUserList
+       -- to be privatized
+
     , setPlayerInPlayerListWithChallengeResult
     , setPlayerInPlayerListWithNewChallengerAddr
     , singleUserInListStrAddr
     , sortedPlayerListByRank
     , updatePlayerRankWithWonResult
-    ,  validatedUserList
-       -- to be privatized
-
+    , validatedUserList
     )
 
 import Eth.Utils
@@ -50,6 +51,11 @@ import RemoteData
 import SR.Defaults
 import SR.Types
 import Utils.MyUtils
+
+
+removeCurrentUserEntryFromUserList : List SR.Types.User -> String -> List SR.Types.User
+removeCurrentUserEntryFromUserList luser uaddr =
+    luser
 
 
 isRegistered : List SR.Types.User -> SR.Types.User -> Bool
