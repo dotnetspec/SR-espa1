@@ -104,7 +104,7 @@ validatedUserListTest =
                     Expect.pass
 
                 usersList ->
-                    Expect.true "true" <| List.all isValidEthAddress <| SR.ListOps.validatedUserList usersList
+                    Expect.true "Expect only valid ethaddresses" <| List.all isValidEthAddress <| SR.ListOps.validatedUserList usersList
 
 
 
@@ -120,5 +120,16 @@ isValidEthAddress user =
         False
 
 
-
---Expect.notEqual "" a.rankingowneraddr
+uniqueUserNameListTest : Test
+uniqueUserNameListTest =
+    --only <|
+    describe " a user list entry must have a unique user name"
+        [ test "isUniqueUserName - True" <|
+            \_ ->
+                SR.ListOps.isUniqueUserName "CTest1" Testdata.UserTestData.standardUserList
+                    |> Expect.true "Expected CTest1 to be unique"
+        , test "isUniqueUserName - False" <|
+            \_ ->
+                SR.ListOps.isUniqueUserName "Test 10" Testdata.UserTestData.standardUserList
+                    |> Expect.false "Expected Test 10 not to be unique"
+        ]

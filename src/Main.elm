@@ -1295,9 +1295,6 @@ handleNewUserInputs model msg =
 
                         newAppInfo =
                             { appInfo | user = updatedNewUser }
-
-                        _ =
-                            Debug.log "currentUformfield" .username
                     in
                     AppOps walletState allLists newAppInfo SR.Types.UIRegisterNewUser txRec
 
@@ -1353,17 +1350,7 @@ handleExistingUserInputs model msg =
         AppOps walletState allLists appInfo uiState txRec ->
             case msg of
                 ExistingUserNameInputChg namefield ->
-                    let
-                        newUser =
-                            appInfo.user
-
-                        updatedNewUser =
-                            { newUser | username = namefield }
-
-                        newAppInfo =
-                            { appInfo | user = updatedNewUser }
-                    in
-                    AppOps walletState allLists newAppInfo SR.Types.UIUpdateExistingUser txRec
+                    model
 
                 ExistingUserDescInputChg descfield ->
                     let
@@ -1442,7 +1429,7 @@ updateOnUserListReceived model userList =
         AppOps walletState allLists appInfo uiState txRec ->
             let
                 gotUserToUpdateAddr =
-                    SR.ListOps.singleUserInListStrAddr userList appInfo.user.ethaddress
+                    SR.ListOps.gotUserFromUserList userList appInfo.user.ethaddress
 
                 userWithUpdatedAddr =
                     { gotUserToUpdateAddr | ethaddress = appInfo.user.ethaddress }
@@ -2119,8 +2106,8 @@ acknoweldgeTxErrorbtn model =
             Element.text "Fail acknoweldgeTxErrorbtn"
 
 
-newuserConfirmPanel : SR.Types.User -> Element Msg
-newuserConfirmPanel user =
+newuserConfirmPanel : SR.Types.User -> List SR.Types.User -> Element Msg
+newuserConfirmPanel user luser =
     Element.column Grid.section <|
         [ SR.Elements.warningParagraph
         , Element.el Heading.h6 <| Element.text "Click to continue ..."
@@ -2130,7 +2117,7 @@ newuserConfirmPanel user =
                     { onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Cancel"
                     }
-                , Input.button (Button.simple ++ enableButton (Utils.Validation.Validate.isUserNameValidated user.username)) <|
+                , Input.button (Button.simple ++ enableButton (Utils.Validation.Validate.isUserNameValidated user.username luser)) <|
                     { onPress = Just <| CreateNewUserRequested user
                     , label = Element.text "Register"
                     }
@@ -2139,8 +2126,8 @@ newuserConfirmPanel user =
         ]
 
 
-existingUserConfirmPanel : SR.Types.User -> Element Msg
-existingUserConfirmPanel user =
+existingUserConfirmPanel : SR.Types.User -> List SR.Types.User -> Element Msg
+existingUserConfirmPanel user luser =
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
@@ -2149,7 +2136,7 @@ existingUserConfirmPanel user =
                     { onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Cancel"
                     }
-                , Input.button (Button.simple ++ enableButton (Utils.Validation.Validate.isUserNameValidated user.username)) <|
+                , Input.button (Button.simple ++ enableButton (Utils.Validation.Validate.isUserNameValidated user.username luser)) <|
                     { onPress = Just <| ClickedConfirmedUpdateExistingUser
                     , label = Element.text "Update"
                     }
@@ -2173,11 +2160,14 @@ inputNewUser model =
         AppOps walletState allLists appInfo uiState txRec ->
             let
                 nameChgValidationErr =
-                    if Utils.Validation.Validate.isUserNameValidated appInfo.user.username then
-                        Element.el (List.append [ Font.color SR.Types.colors.green, Font.alignLeft ] [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
+                    if Utils.Validation.Validate.isUserNameValidated appInfo.user.username allLists.users then
+                        Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
 
                     else
-                        Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.moveLeft 0.0 ])
+                        Element.el
+                            (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
+                                ++ [ Element.moveLeft 0.0 ]
+                            )
                             (Element.text """Username must be unique
 and between 4-8 characters""")
 
@@ -2245,7 +2235,7 @@ and between 4-8 characters""")
                         , mobileValidationErr
                         ]
                     ]
-                , Element.text "* required"
+                , Element.text "* required and CANNOT be changed under current ETH account"
                 , SR.Elements.justParasimpleUserInfoText
                 ]
 
@@ -2258,15 +2248,13 @@ inputUpdateExistingUser model =
     case model of
         AppOps walletState allLists appInfo uiState txRec ->
             let
-                nameChgValidationErr =
-                    if Utils.Validation.Validate.isUserNameValidated appInfo.user.username then
-                        Element.el (List.append [ Font.color SR.Types.colors.green, Font.alignLeft ] [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
-
-                    else
-                        Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.moveLeft 0.0 ])
-                            (Element.text """Username must be unique
-and between 4-8 characters""")
-
+                --                 nameChgValidationErr =
+                --                     if Utils.Validation.Validate.isUserNameValidated appInfo.user.username allLists.users then
+                --                         Element.el (List.append [ Font.color SR.Types.colors.green, Font.alignLeft ] [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
+                --                     else
+                --                         Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.moveLeft 0.0 ])
+                --                             (Element.text """Username must be unique
+                -- and between 4-8 characters""")
                 isEmailValidated =
                     if Validate.isValidEmail appInfo.user.email then
                         True
@@ -2302,13 +2290,12 @@ and between 4-8 characters""")
                 , Element.wrappedRow (Card.fill ++ Grid.simple)
                     [ Element.column
                         Grid.simple
-                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ Color.disabled)
                             { onChange = ExistingUserNameInputChg
                             , text = appInfo.user.username
                             , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
                             }
-                        , nameChgValidationErr
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
                             { onChange = ExistingUserDescInputChg
                             , text = appInfo.user.description
@@ -2331,9 +2318,8 @@ and between 4-8 characters""")
                         , mobileValidationErr
                         ]
                     ]
-                , Element.text "* required"
 
-                --, SR.Elements.justParasimpleUserInfoText
+                --, Element.text "* required"
                 ]
 
         _ ->
@@ -2492,7 +2478,7 @@ inputNewUserview model =
                     Framework.container
                     [ Element.el Heading.h4 <| Element.text "Create New User"
                     , inputNewUser model
-                    , newuserConfirmPanel appInfo.user
+                    , newuserConfirmPanel appInfo.user allLists.users
                     ]
 
         _ ->
@@ -2508,7 +2494,7 @@ updateExistingUserView model =
                     Framework.container
                     [ Element.el Heading.h4 <| Element.text "Update User Profile"
                     , inputUpdateExistingUser model
-                    , existingUserConfirmPanel appInfo.user
+                    , existingUserConfirmPanel appInfo.user allLists.users
                     ]
 
         _ ->

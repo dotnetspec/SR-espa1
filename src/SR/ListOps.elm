@@ -28,6 +28,7 @@ module SR.ListOps exposing
     , gotUserOwnedGlobalRankingList
     , gotUserPlayerFromPlayerListStrAddress
     , isRegistered
+    , isUniqueUserName
     , isUserInListStrAddr
     , isUserMemberOfSelectedRanking
     , isUserOwnerOfSelectedUserRanking
@@ -39,7 +40,6 @@ module SR.ListOps exposing
 
     , setPlayerInPlayerListWithChallengeResult
     , setPlayerInPlayerListWithNewChallengerAddr
-    , singleUserInListStrAddr
     , sortedPlayerListByRank
     , updatePlayerRankWithWonResult
     , validatedUserList
@@ -53,6 +53,20 @@ import RemoteData
 import SR.Defaults
 import SR.Types
 import Utils.MyUtils
+
+
+isUniqueUserName : String -> List SR.Types.User -> Bool
+isUniqueUserName str luser =
+    let
+        newList =
+            List.filter (\r -> (String.toLower <| r.username) == (String.toLower <| str))
+                (validatedUserList luser)
+    in
+    if List.isEmpty newList then
+        True
+
+    else
+        False
 
 
 removedDuplicateUserFromUserList : List SR.Types.User -> List SR.Types.User
@@ -322,11 +336,9 @@ gotUserRankingFromUserRankingList urankingList (Internal.Types.RankingId rnkid) 
 -- singleUserInList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
 -- singleUserInList userlist uaddr =
 --     gotUserFromUserList userlist uaddr
-
-
-singleUserInListStrAddr : List SR.Types.User -> String -> SR.Types.User
-singleUserInListStrAddr userlist uaddr =
-    gotUserFromUserList userlist uaddr
+-- singleUserInListStrAddr : List SR.Types.User -> String -> SR.Types.User
+-- singleUserInListStrAddr userlist uaddr =
+--     gotUserFromUserList userlist uaddr
 
 
 isUserSelectedOwnerOfRanking : SR.Types.RankingInfo -> List SR.Types.RankingInfo -> SR.Types.User -> Bool
@@ -943,7 +955,7 @@ isUserInListStrAddr : List SR.Types.User -> String -> Bool
 isUserInListStrAddr userlist uaddr =
     let
         gotSingleUserFromList =
-            singleUserInListStrAddr userlist uaddr
+            gotUserFromUserList userlist uaddr
     in
     if gotSingleUserFromList.ethaddress == "" then
         False

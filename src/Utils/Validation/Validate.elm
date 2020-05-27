@@ -1,5 +1,8 @@
 module Utils.Validation.Validate exposing (isUserNameValidated, validatedMaxTextLength)
 
+import SR.ListOps
+import SR.Types
+
 
 validatedMaxTextLength : String -> Int -> String
 validatedMaxTextLength str maxLength =
@@ -10,9 +13,9 @@ validatedMaxTextLength str maxLength =
         str
 
 
-isUserNameValidated : String -> Bool
-isUserNameValidated uname =
-    if String.length uname > 3 && String.length uname < 9 then
+isUserNameValidated : String -> List SR.Types.User -> Bool
+isUserNameValidated uname luser =
+    if String.length uname > 3 && String.length uname < 9 && SR.ListOps.isUniqueUserName uname luser then
         True
 
     else
