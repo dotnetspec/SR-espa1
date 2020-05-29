@@ -130,6 +130,9 @@ type Msg
     | ClickedRegisterNewUser
     | ClickedUpdateExistingUser
     | ClickedConfirmedUpdateExistingUser
+    | ClickedCreateNewLadder
+    | ClickedConfirmCreateNewLadder
+    | ClickedNewChallengeConfirm
     | ResetToShowGlobal
     | ResetToShowSelected
     | DeletedRanking String
@@ -137,8 +140,7 @@ type Msg
     | ClickedJoinSelected
     | LadderNameInputChg String
     | LadderDescInputChg String
-    | ClickedCreateNewLadder
-    | ClickedNewChallengeConfirm
+    
     | ChangedUIStateToEnterResult SR.Types.UserPlayer
     | NewUserNameInputChg String
     | NewUserDescInputChg String
@@ -562,7 +564,11 @@ handleWalletStateOperational msg model =
                     ( AppOps SR.Types.WalletOperational allLists appInfo uiType emptyTxRecord, Cmd.none )
 
                 --( model, Cmd.none )
+
                 ClickedCreateNewLadder ->
+                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
+
+                ClickedConfirmCreateNewLadder ->
                     if SR.ListOps.isRegistered allLists.users appInfo.user then
                         let
                             rankingInfoFromModel =
@@ -1682,7 +1688,7 @@ insertOwnedRankingList lrankinginfo user =
     if user.username == "" then
         [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ] ++ Button.simple ++ Color.info) <|
             { onPress = Just <| ClickedCreateNewLadder
-            , label = Element.text "Create New"
+            , label = Element.text "Create New Ladder"
             }
         ]
 
@@ -1951,19 +1957,21 @@ displayJoinBtnNewOrExistingUser user =
             }
 
 
-newrankinhomebutton : SR.Types.User -> SR.Types.RankingInfo -> Element Msg
-newrankinhomebutton user rnkInfo =
+newrankingconfirmbutton : SR.Types.User -> SR.Types.RankingInfo -> Element Msg
+newrankingconfirmbutton user rnkInfo =
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
-                [ Input.button (Button.simple ++ Color.simple) <|
+                [ 
+                 Input.button (Button.simple ++ Color.info) <|
+                    { onPress = Just <| ClickedConfirmCreateNewLadder
+                    , label = Element.text "Create New Ladder"
+                    }
+                ,
+                Input.button (Button.simple ++ Color.simple) <|
                     { onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Cancel"
-                    }
-                , Input.button (Button.simple ++ Color.info) <|
-                    { onPress = Just <| ClickedCreateNewLadder
-                    , label = Element.text "Create New"
                     }
                 ]
             ]
@@ -2345,7 +2353,7 @@ isMobileValidated mobileNumber =
 inputNewLadder : SR.Types.RankingInfo -> Element Msg
 inputNewLadder newladder =
     Element.column Grid.section <|
-        [ Element.el Heading.h2 <| Element.text "New Ladder Details"
+        [ Element.el Heading.h6 <| Element.text "New Ladder Details"
         , Element.wrappedRow (Card.fill ++ Grid.simple)
             [ Element.column Grid.simple
                 [ Input.text Input.simple
@@ -2358,12 +2366,12 @@ inputNewLadder newladder =
                     { onChange = LadderDescInputChg
                     , text = newladder.rankingdesc
                     , placeholder = Nothing
-                    , label = Input.labelLeft Input.label <| Element.text "Description:"
+                    , label = Input.labelLeft Input.label <| Element.text "Desc:"
                     , spellcheck = False
                     }
                 ]
             ]
-        , SR.Elements.footer
+       
         ]
 
 
@@ -2509,9 +2517,13 @@ inputNewLadderview model =
                 Element.column
                     Framework.container
                     [ Element.el Heading.h4 <| Element.text "Create New Ladder Ranking"
-                    , newrankinhomebutton appInfo.user appInfo.selectedRanking
+                    
                     , inputNewLadder appInfo.selectedRanking
+                    , newrankingconfirmbutton appInfo.user appInfo.selectedRanking
+                    , SR.Elements.footer
                     ]
+                    
+                     
 
         _ ->
             Html.text "Fail"
