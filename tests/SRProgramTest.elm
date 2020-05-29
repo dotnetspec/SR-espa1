@@ -75,4 +75,4 @@ unregisteredUserCreateNewLadderTest =
                 |> ProgramTest.update (Main.GlobalRankingsReceived Testdata.GlobalTestData.globalRankingsJson)
                 |> ProgramTest.update Main.ClickedCreateNewLadder
                 |> expectViewHas
-                    [ text "Create New User" ]
+                    [ text "Create New Ladder Ranking" ]
