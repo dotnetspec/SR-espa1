@@ -1604,7 +1604,24 @@ ownedrankingbuttons urankingList user =
     else
         Element.column Grid.section <|
             --Element.column (Card.simple ++ Grid.simple) <|
-            [ Element.el []
+            [ if List.isEmpty urankingList then 
+                -- the button will be in the "Your Created Rankings" section instead
+                Element.el [] <| Element.text ""
+            else 
+            Element.el []
+                (Input.button
+                    ([ Element.htmlAttribute (Html.Attributes.id "updateProfilebtn") ]
+                        ++ Button.fill
+                        ++ Button.simple
+                        ++ Color.info
+                    )
+                 <|
+                    { onPress = Just <| ClickedUpdateExistingUser
+                    , label = Element.text "    Update Profile    "
+                    }
+                )
+            , Element.el []
+                
                 (Input.button
                     ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
                         ++ Button.fill
@@ -1616,26 +1633,33 @@ ownedrankingbuttons urankingList user =
                     , label = Element.text "Create New Ladder"
                     }
                 )
-            , Element.el []
+            
+            , Element.el Heading.h5 <| Element.text "Your Created Rankings:"
+            , Element.column (Card.simple ++ Grid.simple) <|
+                --insertOwnedRankingList newRankingList user
+                determineOwnedRankingButtonsDisplay newRankingList user
+            ]
+
+
+
+determineOwnedRankingButtonsDisplay : List SR.Types.RankingInfo -> SR.Types.User -> List (Element Msg)
+determineOwnedRankingButtonsDisplay lranking user =
+    if List.isEmpty lranking then 
+        List.singleton <| Element.el []
                 (Input.button
-                    ([ Element.htmlAttribute (Html.Attributes.id "updateProfilebtn") ]
+                    ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
                         ++ Button.fill
                         ++ Button.simple
                         ++ Color.info
                     )
                  <|
-                    { onPress = Just <| ClickedUpdateExistingUser
-                    , label = Element.text "Update Profile"
+                    { onPress = Just <| ClickedCreateNewLadder
+                    , label = Element.text "Create New Ladder"
                     }
                 )
-            , Element.el Heading.h5 <| Element.text "Your Created Rankings:"
-            , Element.column (Card.simple ++ Grid.simple) <|
-                insertOwnedRankingList newRankingList user
-            ]
+    else 
+        insertOwnedRankingList lranking user
 
-
-
---determineOwnedRankingButtonsDisplay :
 
 
 memberrankingbuttons : List SR.Types.UserRanking -> SR.Types.User -> Element Msg
@@ -1715,7 +1739,7 @@ insertMemberRankingList lrankinginfo =
                 lrankinginfo
     in
     if List.isEmpty lrankinginfo then
-        [ Element.text "Please Click On A Ranking Below To Join" ]
+        [ Element.text "Please Click On A \nRanking Below To View or Join:" ]
 
     else
         mapOutRankingList
@@ -1964,23 +1988,20 @@ newrankingconfirmbutton user rnkInfo =
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
                 [ 
-                 Input.button (Button.simple ++ Color.info) <|
-                    { onPress = Just <| ClickedConfirmCreateNewLadder
-                    , label = Element.text "Create New Ladder"
-                    }
-                ,
-                Input.button (Button.simple ++ Color.simple) <|
+                    Input.button (Button.simple ++ Color.simple) <|
                     { onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Cancel"
                     }
+                    ,
+                 Input.button (Button.simple ++ Color.info) <|
+                    { onPress = Just <| ClickedConfirmCreateNewLadder
+                    , label = Element.text "Confirm"
+                    }
+                
                 ]
             ]
-        , Element.paragraph (Card.fill ++ Color.warning) <|
-            [ Element.el [ Font.bold ] <| Element.text "Please note: "
-            , Element.paragraph [] <|
-                List.singleton <|
-                    Element.text "Clicking 'Create New' interacts with your Ethereum wallet"
-            ]
+        , 
+            SR.Elements.warningParagraph
         ]
 
 
@@ -2146,7 +2167,7 @@ existingUserConfirmPanel user luser =
                     }
                 , Input.button (Button.simple ++ enableButton (Utils.Validation.Validate.isUserNameValidated user.username luser)) <|
                     { onPress = Just <| ClickedConfirmedUpdateExistingUser
-                    , label = Element.text "Update"
+                    , label = Element.text "Confirm"
                     }
                 ]
             ]
@@ -2391,8 +2412,9 @@ globalResponsiveview lowneduranking lmemberusranking lotheruranking user =
         Element.column
             Framework.container
             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-                Element.text ("SportRank - " ++ userName)
-            , displayRegisterBtnIfNewUser
+                Element.text ("SportRank - " ++ userName )
+                ,(displayUpdateProfileBtnIfExistingUser user.username  ClickedUpdateExistingUser)
+                , displayRegisterBtnIfNewUser
                 user.username
                 ClickedRegisterNewUser
             , Element.text "\n"
@@ -2400,6 +2422,25 @@ globalResponsiveview lowneduranking lmemberusranking lotheruranking user =
             , memberrankingbuttons lmemberusranking user
             , otherrankingbuttons lotheruranking user
             ]
+                
+
+displayUpdateProfileBtnIfExistingUser : String -> Msg -> Element Msg
+displayUpdateProfileBtnIfExistingUser uname msg =
+    if uname /= "" then
+        Element.text ""
+
+    else
+       (Input.button
+                    ([ Element.htmlAttribute (Html.Attributes.id "updateProfilebtn") ]
+                        ++ Button.fill
+                        ++ Button.simple
+                        ++ Color.info
+                    )
+                 <|
+                    { onPress = Just <| msg
+                    , label = Element.text "Update Profile"
+                    }
+                )
 
 
 displayRegisterBtnIfNewUser : String -> Msg -> Element Msg
@@ -2409,7 +2450,7 @@ displayRegisterBtnIfNewUser uname msg =
 
     else
         Input.button
-            ([ Element.htmlAttribute (Html.Attributes.id "registerbtn") ] ++ Button.simple ++ Color.info)
+            ([ Element.htmlAttribute (Html.Attributes.id "registerbtn") ] ++ Button.simple ++ Color.info ++ Button.fill)
         <|
             { onPress = Just <| msg
             , label = Element.text "Register"
