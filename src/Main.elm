@@ -2107,6 +2107,66 @@ acknoweldgeTxErrorbtn model =
             Element.text "Fail acknoweldgeTxErrorbtn"
 
 
+descValidationErr : SR.Types.User -> Element Msg 
+descValidationErr user = 
+                    if isDescValidated user then 
+                        Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "descValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "")
+
+                    else
+                        Element.el
+                            (List.append [ Element.htmlAttribute (Html.Attributes.id "descValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
+                                ++ [ Element.moveLeft 0.0 ]
+                            )
+                            (Element.text "200 characters max")
+
+isDescValidated : SR.Types.User -> Bool 
+isDescValidated user = 
+    if 
+        String.length user.description <= 200
+        then True else False 
+
+isEmailValidated : SR.Types.User -> Bool 
+isEmailValidated user = 
+                    if String.length user.email == 0 then 
+                    True else 
+                    if Validate.isValidEmail user.email then
+                        True
+
+                    else
+                        False
+
+emailValidationErr : SR.Types.User -> Element Msg
+emailValidationErr user =
+                    if isEmailValidated user then
+                        Element.el
+                            (List.append
+                                [ Font.color SR.Types.colors.green, Font.alignLeft ]
+                                [ Element.moveLeft 1.0 ]
+                            )
+                            (Element.text "Email OK!")
+
+                    else 
+                        if String.length user.email > 0 then  
+                        Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.moveLeft 7.0 ])
+                            (Element.text """ Email, if
+ entered, must be valid""")
+                        else 
+                            Element.el [] <| Element.text ""
+
+mobileValidationErr : SR.Types.User -> Element Msg
+mobileValidationErr user =
+                    if isMobileValidated user then
+                        Element.el (List.append [ Font.color SR.Types.colors.green, Font.alignLeft ] [ Element.htmlAttribute (Html.Attributes.id "userMobileValid") ]) (Element.text "Mobile OK!")
+
+                    else
+                        if String.length user.mobile > 0 then
+                        Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.htmlAttribute (Html.Attributes.id "userMobileInvalid") ] ++ [ Element.moveLeft 5.0 ])
+                            (Element.text """ Mobile number, if
+ entered, must be valid""")
+                        else 
+                            Element.el [] <| Element.text ""
+
+
 newuserConfirmPanel : SR.Types.User -> List SR.Types.User -> Element Msg
 newuserConfirmPanel user luser =
     Element.column Grid.section <|
@@ -2119,7 +2179,7 @@ newuserConfirmPanel user luser =
                     , label = Element.text "Cancel"
                     }
                 , 
-                Input.button (Button.simple ++ enableButton (Utils.Validation.Validate.isUserNameValidated user.username luser)) <|
+                Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput user luser False)) <|
                     
                     { onPress = Just <| CreateNewUserRequested user
                     , label = Element.text "Register"
@@ -2139,13 +2199,45 @@ existingUserConfirmPanel user luser =
                     { onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Cancel"
                     }
-                , Input.button (Button.simple ++ enableButton (Utils.Validation.Validate.isUserNameValidated user.username luser)) <|
+                --, Input.button (Button.simple ++ enableButton (Utils.Validation.Validate.isUserNameValidated user.username luser)) <|
+                , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput user luser True)) <|
                     { onPress = Just <| ClickedConfirmedUpdateExistingUser
                     , label = Element.text "Confirm"
                     }
                 ]
             ]
         ]
+
+isValidatedForAllUserDetailsInput : SR.Types.User -> List SR.Types.User -> Bool -> Bool
+isValidatedForAllUserDetailsInput user luser isExistingUser = 
+    let 
+
+            _ = 
+                Debug.log "name " <| Utils.Validation.Validate.isUserNameValidated user luser
+    
+            _ = 
+                Debug.log "desc " <| isDescValidated user
+
+            _ = 
+                Debug.log "email " <|  isEmailValidated user
+
+            _ = 
+                Debug.log "mobile "  <|  isMobileValidated user
+            
+    in 
+    if isExistingUser 
+    && isDescValidated user
+    && isEmailValidated user
+    && isMobileValidated user
+    then True 
+    else if
+    
+    Utils.Validation.Validate.isUserNameValidated user luser 
+    && isDescValidated user
+    && isEmailValidated user
+    && isMobileValidated user
+    then True 
+    else False 
 
 
 enableButton : Bool -> List (Element.Attribute msg)
@@ -2162,8 +2254,8 @@ inputNewUser model =
     case model of
         AppOps walletState allLists appInfo uiState txRec ->
             let
-                nameChgValidationErr =
-                    if Utils.Validation.Validate.isUserNameValidated appInfo.user.username allLists.users then
+                nameValidationErr =
+                    if Utils.Validation.Validate.isUserNameValidated appInfo.user allLists.users then
                         Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
 
                     else
@@ -2174,35 +2266,6 @@ inputNewUser model =
                             (Element.text """Username must be unique
 and between 4-8 characters""")
 
-                isEmailValidated =
-                    if Validate.isValidEmail appInfo.user.email then
-                        True
-
-                    else
-                        False
-
-                emailValidationErr =
-                    if isEmailValidated then
-                        Element.el
-                            (List.append
-                                [ Font.color SR.Types.colors.green, Font.alignLeft ]
-                                [ Element.moveLeft 1.0 ]
-                            )
-                            (Element.text "Email OK!")
-
-                    else
-                        Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.moveLeft 7.0 ])
-                            (Element.text """ Email, if
- entered, must be valid""")
-
-                mobileValidationErr =
-                    if isMobileValidated appInfo.user.mobile then
-                        Element.el (List.append [ Font.color SR.Types.colors.green, Font.alignLeft ] [ Element.htmlAttribute (Html.Attributes.id "userMobileValid") ]) (Element.text "Mobile OK!")
-
-                    else
-                        Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.htmlAttribute (Html.Attributes.id "userMobileInvalid") ] ++ [ Element.moveLeft 5.0 ])
-                            (Element.text """ Mobile number, if
- entered, must be valid""")
             in
             Element.column Grid.section <|
                 [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
@@ -2215,27 +2278,28 @@ and between 4-8 characters""")
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
                             }
-                        , nameChgValidationErr
+                        , nameValidationErr
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
                             { onChange = NewUserDescInputChg
                             , text = appInfo.user.description
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
                             }
+                        , descValidationErr appInfo.user
                         , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
                             { onChange = NewUserEmailInputChg
                             , text = appInfo.user.email
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
                             }
-                        , emailValidationErr
+                        , emailValidationErr appInfo.user
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
                             { onChange = NewUserMobileInputChg
                             , text = Utils.Validation.Validate.validatedMaxTextLength appInfo.user.mobile 25
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
                             }
-                        , mobileValidationErr
+                        , mobileValidationErr appInfo.user
                         ]
                     ]
                 , Element.text "* required and CANNOT be changed \nunder current ETH account"
@@ -2250,44 +2314,7 @@ inputUpdateExistingUser : Model -> Element Msg
 inputUpdateExistingUser model =
     case model of
         AppOps walletState allLists appInfo uiState txRec ->
-            let
-                --                 nameChgValidationErr =
-                --                     if Utils.Validation.Validate.isUserNameValidated appInfo.user.username allLists.users then
-                --                         Element.el (List.append [ Font.color SR.Types.colors.green, Font.alignLeft ] [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
-                --                     else
-                --                         Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.moveLeft 0.0 ])
-                --                             (Element.text """Username must be unique
-                -- and between 4-8 characters""")
-                isEmailValidated =
-                    if Validate.isValidEmail appInfo.user.email then
-                        True
 
-                    else
-                        False
-
-                emailValidationErr =
-                    if isEmailValidated then
-                        Element.el
-                            (List.append
-                                [ Font.color SR.Types.colors.green, Font.alignLeft ]
-                                [ Element.moveLeft 1.0 ]
-                            )
-                            (Element.text "Email OK!")
-
-                    else
-                        Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.moveLeft 7.0 ])
-                            (Element.text """ Email, if
- entered, must be valid""")
-
-                mobileValidationErr =
-                    if isMobileValidated appInfo.user.mobile then
-                        Element.el (List.append [ Font.color SR.Types.colors.green, Font.alignLeft ] [ Element.htmlAttribute (Html.Attributes.id "userMobileValid") ]) (Element.text "Mobile OK!")
-
-                    else
-                        Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.htmlAttribute (Html.Attributes.id "userMobileInvalid") ] ++ [ Element.moveLeft 5.0 ])
-                            (Element.text """ Mobile number, if
- entered, must be valid""")
-            in
             Element.column Grid.section <|
                 [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
                 , Element.wrappedRow (Card.fill ++ Grid.simple)
@@ -2305,20 +2332,21 @@ inputUpdateExistingUser model =
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
                             }
+                        , descValidationErr appInfo.user
                         , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
                             { onChange = ExistingUserEmailInputChg
                             , text = appInfo.user.email
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
                             }
-                        , emailValidationErr
+                        , emailValidationErr appInfo.user
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
                             { onChange = ExistingUserMobileInputChg
                             , text = Utils.Validation.Validate.validatedMaxTextLength appInfo.user.mobile 25
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
                             }
-                        , mobileValidationErr
+                        , mobileValidationErr appInfo.user
                         ]
                     ]
 
@@ -2329,14 +2357,16 @@ inputUpdateExistingUser model =
             Element.text "Fail on inputNewUser"
 
 
-isMobileValidated : String -> Bool
-isMobileValidated mobileNumber =
+isMobileValidated : SR.Types.User -> Bool
+isMobileValidated user =
     let
         mobileNumberInt =
-            Maybe.withDefault 0 (String.toInt mobileNumber)
+            Maybe.withDefault 0 (String.toInt user.mobile)
     in
+    if String.length user.mobile == 0 then 
+    True else 
     if
-        (String.length mobileNumber > 4 && String.length mobileNumber < 25)
+        (String.length user.mobile > 4 && String.length user.mobile < 25)
             && (Just mobileNumberInt /= Just 0)
     then
         True

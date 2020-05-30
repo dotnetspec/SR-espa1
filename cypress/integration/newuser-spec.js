@@ -16,15 +16,15 @@ describe('New User Home Page', () => {
         })
 
         it('successfully loads create new user page', () => {
-            cy.get('#registerbtn').click()
+            cy.get('#registerbtn').should('be.visible').click()
             cy.contains('Create New User')
             cy.contains('Please Enter Your User Details And Click \'Register\' below:')
         })
 
         it('successfully moves to a ranking, selects Join button and displays Create New User', () => {
-            cy.contains('SportRank')
+            cy.contains('SportRank').should('be.visible')
             cy.wait(200)
-            cy.get('#otherrankingbtn').click()
+            cy.get('#otherrankingbtn').should('be.visible').click()
             cy.contains('SportRank')
             cy.contains('Join?')
             cy.contains('Selected Ranking')
@@ -35,7 +35,7 @@ describe('New User Home Page', () => {
         it('successfully validates username', () => {
             //cy.get('#registerbtn').click({ force: true, multiple: true })
             cy.wait(200)
-            cy.get('#registerbtn').click()
+            cy.get('#registerbtn').should('be.visible').click()
             //cy.get('[data-top="41"]').click()
             cy.get('#userName')
                 .type('jonnahb').should('have.value', 'jonnahb')
@@ -64,7 +64,7 @@ describe('New User Home Page', () => {
 
         it('successfully validates description', () => {
             cy.wait(200)
-            cy.get('#registerbtn').click()
+            cy.get('#registerbtn').should('be.visible').click()
             cy.get('#userDescription')
                 .type('jonnahb').should('have.value', 'jonnahb')
 
@@ -85,7 +85,7 @@ describe('New User Home Page', () => {
 
         it('successfully validates email', () => {
             cy.wait(200)
-            cy.get('#registerbtn').click()
+            cy.get('#registerbtn').should('be.visible').click()
             cy.get('#userEmail')
 
                 .type('fake@email.com').should('have.value', 'fake@email.com')
@@ -107,7 +107,7 @@ describe('New User Home Page', () => {
 
         it('successfully validates mobile number', () => {
             cy.wait(200)
-            cy.get('#registerbtn').click()
+            cy.get('#registerbtn').should('be.visible').click()
             cy.get('#userMobile')
                 .clear()
                 .type('1234567890').should('have.value', '1234567890')
