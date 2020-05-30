@@ -2210,21 +2210,7 @@ existingUserConfirmPanel user luser =
 
 isValidatedForAllUserDetailsInput : SR.Types.User -> List SR.Types.User -> Bool -> Bool
 isValidatedForAllUserDetailsInput user luser isExistingUser = 
-    let 
-
-            _ = 
-                Debug.log "name " <| Utils.Validation.Validate.isUserNameValidated user luser
-    
-            _ = 
-                Debug.log "desc " <| isDescValidated user
-
-            _ = 
-                Debug.log "email " <|  isEmailValidated user
-
-            _ = 
-                Debug.log "mobile "  <|  isMobileValidated user
-            
-    in 
+  
     if isExistingUser 
     && isDescValidated user
     && isEmailValidated user
@@ -2418,6 +2404,8 @@ globalResponsiveview lowneduranking lmemberusranking lotheruranking user =
             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
                 Element.text ("SportRank - " ++ userName )
                 ,(displayUpdateProfileBtnIfExistingUser user.username  ClickedUpdateExistingUser)
+                , Element.text "\n"
+                , (displayCreateNewLadderBtnIfExistingUser user.username ClickedCreateNewLadder)
                 , displayRegisterBtnIfNewUser
                 user.username
                 ClickedRegisterNewUser
@@ -2434,9 +2422,10 @@ displayUpdateProfileBtnIfExistingUser uname msg =
         Element.text ""
 
     else
+    
        (Input.button
                     ([ Element.htmlAttribute (Html.Attributes.id "updateProfilebtn") ]
-                        --++ Button.fill
+                        ++ Button.fill
                         ++ Button.simple
                         ++ Color.info
                     )
@@ -2447,13 +2436,34 @@ displayUpdateProfileBtnIfExistingUser uname msg =
                 )
 
 
+displayCreateNewLadderBtnIfExistingUser : String -> Msg -> Element Msg
+displayCreateNewLadderBtnIfExistingUser uname msg =
+    if uname == "" then
+        Element.text ""
+
+    else
+    
+    (Input.button
+                    ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
+                        ++ Button.fill
+                        ++ Button.simple
+                        ++ Color.info
+                    )
+                 <|
+                    { onPress = Just <| msg
+                    , label = Element.text "Create New Ladder"
+                    }
+                )
+                
+
+
 displayRegisterBtnIfNewUser : String -> Msg -> Element Msg
 displayRegisterBtnIfNewUser uname msg =
     if uname /= "" then
         Element.text ""
     else
         Input.button
-            (Button.simple ++ Color.info ++ [ Element.htmlAttribute (Html.Attributes.id "registerbtn") ])
+            (Button.simple ++ Button.fill ++ Color.info ++  [ Element.htmlAttribute (Html.Attributes.id "registerbtn") ])
         <|
             { onPress = Just <| msg
             , label = Element.text "Register"
