@@ -1599,6 +1599,7 @@ ownedrankingbuttons urankingList user =
             SR.ListOps.extractRankingList urankingList
     in
     if user.username == "" then
+    --if List.isEmpty newRankingList then
         Element.text ""
 
     else
@@ -1620,19 +1621,19 @@ ownedrankingbuttons urankingList user =
                     , label = Element.text "    Update Profile    "
                     }
                 )
-            , Element.el []
+            -- , Element.el []
                 
-                (Input.button
-                    ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
-                        ++ Button.fill
-                        ++ Button.simple
-                        ++ Color.info
-                    )
-                 <|
-                    { onPress = Just <| ClickedCreateNewLadder
-                    , label = Element.text "Create New Ladder"
-                    }
-                )
+            --     (Input.button
+            --         ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
+            --             ++ Button.fill
+            --             ++ Button.simple
+            --             ++ Color.info
+            --         )
+            --      <|
+            --         { onPress = Just <| ClickedCreateNewLadder
+            --         , label = Element.text "Create New Ladder"
+            --         }
+            --     )
             
             , Element.el Heading.h5 <| Element.text "Your Created Rankings:"
             , Element.column (Card.simple ++ Grid.simple) <|
@@ -2426,13 +2427,13 @@ globalResponsiveview lowneduranking lmemberusranking lotheruranking user =
 
 displayUpdateProfileBtnIfExistingUser : String -> Msg -> Element Msg
 displayUpdateProfileBtnIfExistingUser uname msg =
-    if uname /= "" then
+    if uname == "" then
         Element.text ""
 
     else
        (Input.button
                     ([ Element.htmlAttribute (Html.Attributes.id "updateProfilebtn") ]
-                        ++ Button.fill
+                        --++ Button.fill
                         ++ Button.simple
                         ++ Color.info
                     )

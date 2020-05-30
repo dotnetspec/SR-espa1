@@ -18,6 +18,13 @@ describe('New User Home Page', () => {
             //cy.contains('Please Enter Your User Details And Click \'Register\' below:')
         })
 
+        //cy.get(':nth-child(1) > .cptr').click()
+        // cy.contains('SportRank - New User - Join?')
+        // cy.contains('Join')
+        //cy.contains('Selected Ranking')
+        //cy.get('#newUserJoinbtn').click()
+        // cy.contains('Create New User')
+
         it('successfully validates username', () => {
             cy.get('#userName')
                 .type('jonnahb').should('have.value', 'jonnahb')
