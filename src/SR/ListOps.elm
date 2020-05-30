@@ -29,6 +29,7 @@ module SR.ListOps exposing
     , gotUserPlayerFromPlayerListStrAddress
     , isRegistered
     , isUniqueUserName
+    , isUniqueRankingName
     , isUserInListStrAddr
     , isUserMemberOfSelectedRanking
     , isUserOwnerOfSelectedUserRanking
@@ -61,6 +62,21 @@ isUniqueUserName str luser =
         newList =
             List.filter (\r -> (String.toLower <| r.username) == (String.toLower <| str))
                 (validatedUserList luser)
+    in
+    if List.isEmpty newList then
+        True
+
+    else
+        False
+
+isUniqueRankingName : String -> List SR.Types.UserRanking -> Bool
+isUniqueRankingName str luranking =
+    let
+
+        lranking = gotRankingListFromUserRankingList luranking
+        newList =
+            List.filter (\r -> (String.toLower <| r.rankingname) == (String.toLower <| str))
+                ( lranking)
     in
     if List.isEmpty newList then
         True

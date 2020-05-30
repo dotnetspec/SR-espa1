@@ -54,7 +54,7 @@ main =
 -- update called whenever there is a Msg or Cmd Msg (e.g. from a sub)
 -- it will go from 1 state to another
 -- functions like view will just reflect
--- current state of model
+-- existing state of model
 
 
 type Model
@@ -140,7 +140,6 @@ type Msg
     | ClickedJoinSelected
     | LadderNameInputChg String
     | LadderDescInputChg String
-    
     | ChangedUIStateToEnterResult SR.Types.UserPlayer
     | NewUserNameInputChg String
     | NewUserDescInputChg String
@@ -1953,8 +1952,8 @@ displayJoinBtnNewOrExistingUser user =
             }
 
 
-newrankingconfirmbutton : SR.Types.User -> SR.Types.RankingInfo -> Element Msg
-newrankingconfirmbutton user rnkInfo =
+newrankingconfirmbutton : SR.Types.AppInfo -> SR.Types.AllLists -> Element Msg
+newrankingconfirmbutton  appInfo allLists =
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
@@ -1965,11 +1964,11 @@ newrankingconfirmbutton user rnkInfo =
                     , label = Element.text "Cancel"
                     }
                     ,
-                 Input.button (Button.simple ++ Color.info) <|
+                    Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput appInfo.selectedRanking allLists.userRankings)) <|
+                 --Input.button (Button.simple ++ Color.info) <|
                     { onPress = Just <| ClickedConfirmCreateNewLadder
                     , label = Element.text "Confirm"
                     }
-                
                 ]
             ]
         , 
@@ -2107,9 +2106,9 @@ acknoweldgeTxErrorbtn model =
             Element.text "Fail acknoweldgeTxErrorbtn"
 
 
-descValidationErr : SR.Types.User -> Element Msg 
-descValidationErr user = 
-                    if isDescValidated user then 
+userDescValidationErr : SR.Types.User -> Element Msg 
+userDescValidationErr user = 
+                    if isUserDescValidated user then 
                         Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "descValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "")
 
                     else
@@ -2119,10 +2118,28 @@ descValidationErr user =
                             )
                             (Element.text "200 characters max")
 
-isDescValidated : SR.Types.User -> Bool 
-isDescValidated user = 
+ladderDescValidationErr : SR.Types.RankingInfo -> Element Msg 
+ladderDescValidationErr rankingInfo = 
+                    if isLadderDescValidated rankingInfo then 
+                        Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "descValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "")
+
+                    else
+                        Element.el
+                            (List.append [ Element.htmlAttribute (Html.Attributes.id "descValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
+                                ++ [ Element.moveLeft 0.0 ]
+                            )
+                            (Element.text "200 characters max")
+
+isUserDescValidated : SR.Types.User -> Bool 
+isUserDescValidated user = 
     if 
         String.length user.description <= 200
+        then True else False 
+
+isLadderDescValidated : SR.Types.RankingInfo -> Bool 
+isLadderDescValidated rankingInfo = 
+    if 
+        String.length rankingInfo.rankingdesc <= 200
         then True else False 
 
 isEmailValidated : SR.Types.User -> Bool 
@@ -2199,7 +2216,7 @@ existingUserConfirmPanel user luser =
                     { onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Cancel"
                     }
-                --, Input.button (Button.simple ++ enableButton (Utils.Validation.Validate.isUserNameValidated user.username luser)) <|
+          
                 , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput user luser True)) <|
                     { onPress = Just <| ClickedConfirmedUpdateExistingUser
                     , label = Element.text "Confirm"
@@ -2212,18 +2229,26 @@ isValidatedForAllUserDetailsInput : SR.Types.User -> List SR.Types.User -> Bool 
 isValidatedForAllUserDetailsInput user luser isExistingUser = 
   
     if isExistingUser 
-    && isDescValidated user
+    && isUserDescValidated user
     && isEmailValidated user
     && isMobileValidated user
     then True 
     else if
     
     Utils.Validation.Validate.isUserNameValidated user luser 
-    && isDescValidated user
+    && isUserDescValidated user
     && isEmailValidated user
     && isMobileValidated user
     then True 
     else False 
+
+isValidatedForAllLadderDetailsInput : SR.Types.RankingInfo -> List SR.Types.UserRanking -> Bool
+isValidatedForAllLadderDetailsInput rnkInfo luranking = 
+    if
+    Utils.Validation.Validate.isRankingNameValidated rnkInfo luranking 
+    && isLadderDescValidated rnkInfo
+    then True 
+    else False
 
 
 enableButton : Bool -> List (Element.Attribute msg)
@@ -2239,20 +2264,10 @@ inputNewUser : Model -> Element Msg
 inputNewUser model =
     case model of
         AppOps walletState allLists appInfo uiState txRec ->
-            let
-                nameValidationErr =
-                    if Utils.Validation.Validate.isUserNameValidated appInfo.user allLists.users then
-                        Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
+            --let
+                
 
-                    else
-                        Element.el
-                            (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
-                                ++ [ Element.moveLeft 0.0 ]
-                            )
-                            (Element.text """Username must be unique
-and between 4-8 characters""")
-
-            in
+            --in
             Element.column Grid.section <|
                 [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
                 , Element.wrappedRow (Card.fill ++ Grid.simple)
@@ -2264,14 +2279,14 @@ and between 4-8 characters""")
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
                             }
-                        , nameValidationErr
+                        , nameValidationErr appInfo allLists
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
                             { onChange = NewUserDescInputChg
                             , text = appInfo.user.description
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
                             }
-                        , descValidationErr appInfo.user
+                        , userDescValidationErr appInfo.user
                         , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
                             { onChange = NewUserEmailInputChg
                             , text = appInfo.user.email
@@ -2318,7 +2333,7 @@ inputUpdateExistingUser model =
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
                             }
-                        , descValidationErr appInfo.user
+                        , userDescValidationErr appInfo.user
                         , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
                             { onChange = ExistingUserEmailInputChg
                             , text = appInfo.user.email
@@ -2343,6 +2358,33 @@ inputUpdateExistingUser model =
             Element.text "Fail on inputNewUser"
 
 
+nameValidationErr : SR.Types.AppInfo -> SR.Types.AllLists -> Element Msg 
+nameValidationErr appInfo allLists =
+                    if Utils.Validation.Validate.isUserNameValidated appInfo.user allLists.users then
+                        Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
+
+                    else
+                        Element.el
+                            (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
+                                ++ [ Element.moveLeft 0.0 ]
+                            )
+                            (Element.text """Username must be unique
+and between 4-8 characters""")
+
+ladderNameValidationErr : SR.Types.AppInfo -> SR.Types.AllLists -> Element Msg 
+ladderNameValidationErr appInfo allLists =
+                    if Utils.Validation.Validate.isRankingNameValidated appInfo.selectedRanking allLists.userRankings then
+                        Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
+
+                    else
+                        Element.el
+                            (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
+                                ++ [ Element.moveLeft 0.0 ]
+                            )
+                            (Element.text """Username must be unique
+and between 4-8 characters""")
+
+
 isMobileValidated : SR.Types.User -> Bool
 isMobileValidated user =
     let
@@ -2361,25 +2403,29 @@ isMobileValidated user =
         False
 
 
-inputNewLadder : SR.Types.RankingInfo -> Element Msg
-inputNewLadder newladder =
+-- inputNewLadder : SR.Types.RankingInfo -> Element Msg
+-- inputNewLadder newladder =
+inputNewLadder : SR.Types.AppInfo -> SR.Types.AllLists -> Element Msg
+inputNewLadder appInfo allLists =
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "New Ladder Details"
         , Element.wrappedRow (Card.fill ++ Grid.simple)
             [ Element.column Grid.simple
                 [ Input.text Input.simple
                     { onChange = LadderNameInputChg
-                    , text = newladder.rankingname
+                    , text = appInfo.selectedRanking.rankingname
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Name:"
                     }
+                , ladderNameValidationErr appInfo allLists
                 , Input.multiline Input.simple
                     { onChange = LadderDescInputChg
-                    , text = newladder.rankingdesc
+                    , text = appInfo.selectedRanking.rankingdesc
                     , placeholder = Nothing
                     , label = Input.labelLeft Input.label <| Element.text "Desc:"
                     , spellcheck = False
                     }
+                    , ladderDescValidationErr appInfo.selectedRanking
                 ]
             ]
        
@@ -2568,8 +2614,8 @@ inputNewLadderview model =
                     Framework.container
                     [ Element.el Heading.h4 <| Element.text "Create New Ladder Ranking"
                     
-                    , inputNewLadder appInfo.selectedRanking
-                    , newrankingconfirmbutton appInfo.user appInfo.selectedRanking
+                    , inputNewLadder appInfo allLists
+                    , newrankingconfirmbutton appInfo allLists
                     , SR.Elements.footer
                     ]
                     

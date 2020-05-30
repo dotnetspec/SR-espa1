@@ -1,6 +1,6 @@
 module Utils.Validation.Validate exposing (
 
-    isUserNameValidated, validatedMaxTextLength)
+    isRankingNameValidated, isUserNameValidated, validatedMaxTextLength)
 
 import SR.ListOps
 import SR.Types
@@ -21,6 +21,14 @@ validatedMaxTextLength str maxLength =
 isUserNameValidated : SR.Types.User -> List SR.Types.User -> Bool
 isUserNameValidated user luser =
     if String.length user.username > 3 && String.length user.username < 9 && SR.ListOps.isUniqueUserName user.username luser then
+        True
+
+    else
+        False
+
+isRankingNameValidated : SR.Types.RankingInfo -> List SR.Types.UserRanking -> Bool
+isRankingNameValidated rankingInfo luranking =
+    if String.length rankingInfo.rankingname > 3 && String.length rankingInfo.rankingname < 9 && SR.ListOps.isUniqueRankingName rankingInfo.rankingname luranking then
         True
 
     else
