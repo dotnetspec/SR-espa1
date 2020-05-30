@@ -1599,45 +1599,16 @@ ownedrankingbuttons urankingList user =
             SR.ListOps.extractRankingList urankingList
     in
     if user.username == "" then
-    --if List.isEmpty newRankingList then
         Element.text ""
 
     else
         Element.column Grid.section <|
-            --Element.column (Card.simple ++ Grid.simple) <|
             [ if List.isEmpty urankingList then 
                 -- the button will be in the "Your Created Rankings" section instead
                 Element.el [] <| Element.text ""
             else 
-            Element.el []
-                (Input.button
-                    ([ Element.htmlAttribute (Html.Attributes.id "updateProfilebtn") ]
-                        ++ Button.fill
-                        ++ Button.simple
-                        ++ Color.info
-                    )
-                 <|
-                    { onPress = Just <| ClickedUpdateExistingUser
-                    , label = Element.text "    Update Profile    "
-                    }
-                )
-            -- , Element.el []
-                
-            --     (Input.button
-            --         ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
-            --             ++ Button.fill
-            --             ++ Button.simple
-            --             ++ Color.info
-            --         )
-            --      <|
-            --         { onPress = Just <| ClickedCreateNewLadder
-            --         , label = Element.text "Create New Ladder"
-            --         }
-            --     )
-            
-            , Element.el Heading.h5 <| Element.text "Your Created Rankings:"
+             Element.el Heading.h5 <| Element.text "Your Created Rankings:"
             , Element.column (Card.simple ++ Grid.simple) <|
-                --insertOwnedRankingList newRankingList user
                 determineOwnedRankingButtonsDisplay newRankingList user
             ]
 
@@ -1770,7 +1741,7 @@ insertNeitherOwnerNorMemberRankingList rnkgInfoList =
 neitherOwnerNorMemberRankingInfoBtn : SR.Types.RankingInfo -> Element Msg
 neitherOwnerNorMemberRankingInfoBtn rankingobj =
     Element.column Grid.simple <|
-        [ Input.button (Button.fill ++ Color.primary) <|
+        [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "otherrankingbtn") ] ++ Button.fill ++ Color.primary) <|
             { onPress = Just (ClickedSelectedNeitherOwnerNorMember (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr rankingobj.rankingname)
             , label = Element.text rankingobj.rankingname
             }

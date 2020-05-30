@@ -16,31 +16,17 @@ describe('Registered User', () => {
         it('successfully confirms global page header and rankings listings', () => {
             cy.contains('SportRank')
             cy.contains('Create New')
-            cy.contains('Your Created Rankings:')
+            //cy.contains('Your Created Rankings:')
             cy.contains('Your Member Rankings:')
             cy.contains('Other Rankings:')
-
-            //cy.get(':nth-child(1) > .cptr').click()
-            // cy.contains('SportRank - New User - Join?')
-            // cy.contains('Join')
-            //cy.contains('Selected Ranking')
-            //cy.get('#newUserJoinbtn').click()
-            // cy.contains('Create New User')
         })
 
         it('successfully moves to a ranking, selects Join button and displays Create New User', () => {
             cy.contains('SportRank')
-            // cy.contains('Create New')
-            // cy.contains('Your Created Rankings:')
-            // cy.contains('Your Member Rankings:')
-            // cy.contains('Other Rankings:')
-
-            // cy.get(':nth-child(1) > .cptr').click()
-            // cy.contains('SportRank')
-            // cy.contains('Join?')
-            // cy.contains('Selected Ranking')
-            // cy.get('#newUserJoinbtn').click()
-            // cy.contains('Create New User')
+            cy.get('#otherrankingbtn').click()
+            cy.contains('SportRank')
+            cy.contains('Join?')
+            cy.contains('Selected Ranking')
         })
 
 
