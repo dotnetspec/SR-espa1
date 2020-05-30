@@ -6,29 +6,37 @@ describe('New User Home Page', () => {
         beforeEach(() => {
             //currently have problems if reload for each test
             //best to carry on with the loaded user regist page
+            cy.server().route('https://api.jsonbin.io/b/5e66ec74a030db370e1b23fc/latest').as("getUsers");
+            cy.server().route('https://api.jsonbin.io/b/5e4cf5f54d073155b0dca915/latest').as("getGlobalRankings");
+            cy.visit('/')
+            cy.get("@getUsers.2")
+            cy.get("@getGlobalRankings.1")
+            cy.wait("@getUsers");
+            cy.wait("@getGlobalRankings");
         })
 
         it('successfully loads create new user page', () => {
-
-            cy.visit('/')
             cy.get('#registerbtn').click()
-            //don't know why currently, below causes problems
-            //and is best left to the next test ...
-            //cy.contains('Create New User')
-            //cy.contains('Please Enter Your User Details And Click \'Register\' below:')
+            cy.contains('Create New User')
+            cy.contains('Please Enter Your User Details And Click \'Register\' below:')
         })
 
-        it.only('successfully moves to a ranking, selects Join button and displays Create New User', () => {
+        it('successfully moves to a ranking, selects Join button and displays Create New User', () => {
             cy.contains('SportRank')
+            cy.wait(200)
             cy.get('#otherrankingbtn').click()
             cy.contains('SportRank')
             cy.contains('Join?')
             cy.contains('Selected Ranking')
-            cy.get('#newUserJoinbtn').click()
+            cy.get('#newUserJoinbtn').wait(200).click()
             cy.contains('Create New User')
         })
 
         it('successfully validates username', () => {
+            //cy.get('#registerbtn').click({ force: true, multiple: true })
+            cy.wait(200)
+            cy.get('#registerbtn').click()
+            //cy.get('[data-top="41"]').click()
             cy.get('#userName')
                 .type('jonnahb').should('have.value', 'jonnahb')
 
@@ -55,7 +63,8 @@ describe('New User Home Page', () => {
         })
 
         it('successfully validates description', () => {
-
+            cy.wait(200)
+            cy.get('#registerbtn').click()
             cy.get('#userDescription')
                 .type('jonnahb').should('have.value', 'jonnahb')
 
@@ -75,7 +84,8 @@ describe('New User Home Page', () => {
         })
 
         it('successfully validates email', () => {
-
+            cy.wait(200)
+            cy.get('#registerbtn').click()
             cy.get('#userEmail')
 
                 .type('fake@email.com').should('have.value', 'fake@email.com')
@@ -96,7 +106,8 @@ describe('New User Home Page', () => {
         })
 
         it('successfully validates mobile number', () => {
-
+            cy.wait(200)
+            cy.get('#registerbtn').click()
             cy.get('#userMobile')
                 .clear()
                 .type('1234567890').should('have.value', '1234567890')
@@ -116,10 +127,5 @@ describe('New User Home Page', () => {
                 .should('have.value', '1234567890')
         })
 
-        it('successfully confirms page header', () => {
-
-            cy.contains('Create New User')
-            cy.contains('Please Enter Your User Details And Click \'Register\' below:')
-        })
     })
 })

@@ -2118,7 +2118,9 @@ newuserConfirmPanel user luser =
                     { onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Cancel"
                     }
-                , Input.button (Button.simple ++ enableButton (Utils.Validation.Validate.isUserNameValidated user.username luser)) <|
+                , 
+                Input.button (Button.simple ++ enableButton (Utils.Validation.Validate.isUserNameValidated user.username luser)) <|
+                    
                     { onPress = Just <| CreateNewUserRequested user
                     , label = Element.text "Register"
                     }
@@ -2236,7 +2238,7 @@ and between 4-8 characters""")
                         , mobileValidationErr
                         ]
                     ]
-                , Element.text "* required and CANNOT be changed under current ETH account"
+                , Element.text "* required and CANNOT be changed \nunder current ETH account"
                 , SR.Elements.justParasimpleUserInfoText
                 ]
 
@@ -2419,18 +2421,13 @@ displayRegisterBtnIfNewUser : String -> Msg -> Element Msg
 displayRegisterBtnIfNewUser uname msg =
     if uname /= "" then
         Element.text ""
-
     else
         Input.button
-            ([ Element.htmlAttribute (Html.Attributes.id "registerbtn") ] ++ Button.simple ++ Color.info ++ Button.fill)
+            (Button.simple ++ Color.info ++ [ Element.htmlAttribute (Html.Attributes.id "registerbtn") ])
         <|
             { onPress = Just <| msg
             , label = Element.text "Register"
             }
-
-
-
---)
 
 
 selectedUserIsOwnerView : Model -> Html Msg
