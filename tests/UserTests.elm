@@ -133,3 +133,14 @@ uniqueUserNameListTest =
                 SR.ListOps.isUniqueUserName "Test 10" Testdata.UserTestData.standardUserList
                     |> Expect.false "Expected Test 10 not to be unique"
         ]
+
+
+removeDuplicateUserListTest : Test
+removeDuplicateUserListTest =
+    --only <|
+    describe " each entry in the user list must be unique"
+        [ test "removedDuplicateUserFromUserList" <|
+            \_ ->
+                SR.ListOps.removedDuplicateUserFromUserList Testdata.UserTestData.duplicateUsers
+                    |> Expect.equal Testdata.UserTestData.duplicateUsersRemoved
+        ]
