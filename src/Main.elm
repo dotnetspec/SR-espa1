@@ -562,9 +562,18 @@ handleWalletStateOperational msg model =
                     in
                     ( AppOps SR.Types.WalletOperational allLists appInfo uiType emptyTxRecord, Cmd.none )
 
-                --( model, Cmd.none )
                 ClickedCreateNewLadder ->
-                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
+                    let
+                        newSelectedRanking =
+                            appInfo.selectedRanking
+
+                        clearedNameFieldInSelectedRanking =
+                            { newSelectedRanking | rankingname = "" }
+
+                        clearedNameFieldAppInfo =
+                            { appInfo | selectedRanking = clearedNameFieldInSelectedRanking }
+                    in
+                    ( AppOps SR.Types.WalletOperational allLists clearedNameFieldAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
 
                 ClickedConfirmCreateNewLadder ->
                     if SR.ListOps.isRegistered allLists.users appInfo.user then
@@ -2931,7 +2940,7 @@ updateExistingUser originaluserlist updatedUserInfo =
             , timeout = Nothing
             , tracker = Nothing
 
-            -- this will fail the create new user:
+            -- this will fail the create new user, but won't upload an empty list at least
             , url = ""
             }
 
