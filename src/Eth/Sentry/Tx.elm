@@ -128,18 +128,30 @@ type alias Send a =
 {-| -}
 listen : TxSentry msg -> Sub msg
 listen (TxSentry sentry) =
+    let 
+        _ =
+                    Debug.log "listening" "sentry"
+    in
     Sub.map sentry.tagger (sentry.inPort decodeTxData)
 
 
 {-| -}
 send : (Result String Tx -> msg) -> TxSentry msg -> Send a -> ( TxSentry msg, Cmd msg )
 send onBroadcast sentry txParams =
+    let 
+        _ =
+                    Debug.log "send" "just did"
+    in
     send_ sentry { onSign = Nothing, onBroadcast = Just onBroadcast, onMined = Nothing } txParams
 
 
 {-| -}
 sendWithReceipt : (Result String Tx -> msg) -> (Result String TxReceipt -> msg) -> TxSentry msg -> Send a -> ( TxSentry msg, Cmd msg )
 sendWithReceipt onBroadcast onMined sentry txParams =
+    let 
+        _ =
+                    Debug.log "sendWithReceipt" "just did"
+    in
     send_ sentry { onSign = Nothing, onBroadcast = Just onBroadcast, onMined = Just ( onMined, Nothing ) } txParams
 
 
@@ -241,6 +253,11 @@ type alias TxParams =
 send_ : TxSentry msg -> CustomSend msg -> Send a -> ( TxSentry msg, Cmd msg )
 send_ (TxSentry sentry) customSendParams callParams =
     let
+
+        
+        _ =
+                    Debug.log "send_" "just did"
+    
         txParamsVal =
             Eth.encodeCall callParams
 
@@ -300,8 +317,9 @@ update msg (TxSentry sentry) =
             case Dict.get ref sentry.txs of
                 Just txState ->
                     let
-                        -- _ =
-                        --     debugHelp sentry.debug log.signed (toString txHashResult)
+                        _ =
+                            --debugHelp sentry.debug log.signed (toString txHashResult)
+                            Debug.log "txState" "txState"
                         txSignedCmd =
                             case txState.onSignedTagger of
                                 Just txHashToMsg ->
@@ -329,6 +347,10 @@ update msg (TxSentry sentry) =
                         Ok txHash ->
                             let
                                 -- If user cares about the tx being broadcast or mined, talk to the node accordingly, else nothing.
+
+                                _ =
+                            
+                                    Debug.log "txHashResult" "txHashResult"
                                 txBroadcastCmd =
                                     if Maybe.isJust txState.onBroadcastTagger || Maybe.isJust txState.onMinedTagger then
                                         Task.attempt (TxSent ref) (pollTxBroadcast sentry.nodePath txHash)
@@ -355,6 +377,11 @@ update msg (TxSentry sentry) =
 
                 -- This shouldn't occur. A ref should always be associated with some TxState.
                 Nothing ->
+                    let
+                                _ =
+                            
+                                    Debug.log "Nothing" "Nothing"
+                    in
                     ( TxSentry sentry
                     , Cmd.none
                     )
@@ -363,10 +390,11 @@ update msg (TxSentry sentry) =
             -- When Tx has been sucessfully broadcast and verifiably sits within the networks Tx Queue,
             -- AND an "onBroadcastTagger" and/or "onMinedTagger" was provided by the user,
             -- Msg User Land accordingly.
-            -- let
-            --     _ =
-            --         debugHelp sentry.debug log.broadcast (toString txResult)
-            -- in
+            let
+                _ =
+                    --debugHelp sentry.debug log.broadcast (toString txResult)
+                    Debug.log "txResult" "txResult"
+            in
             case Dict.get ref sentry.txs of
                 Just txState ->
                     case txResult of
@@ -422,10 +450,13 @@ update msg (TxSentry sentry) =
 
         TxMined ref txReceiptResult ->
             -- When Tx is mined because a TxReceipt was returned by the network...
-            -- let
-            --     _ =
-            --         debugHelp sentry.debug log.mined (toString txReceiptResult)
-            -- in
+            let
+                -- _ =
+                --     debugHelp sentry.debug log.mined (toString txReceiptResult)
+                _ =
+                    
+                    Debug.log "TxMined" "TxMined"
+            in
             case Dict.get ref sentry.txs of
                 Just txState ->
                     case txReceiptResult of
@@ -494,6 +525,9 @@ update msg (TxSentry sentry) =
 
         TrackTx ref txTracker (Ok newBlockNum) ->
             let
+                _ = 
+                        Debug.log "TrackTx" "TrackTx"
+                
                 newTxTracker =
                     { txTracker
                         | lastCheckedBlock = newBlockNum
@@ -504,10 +538,13 @@ update msg (TxSentry sentry) =
                 -- If block depth is reached, send DeepEnough msg
                 case getTxTrackerToMsg sentry.txs ref of
                     Just blockDepthToMsg ->
-                        -- let
-                        --     _ =
-                        --         debugHelp sentry.debug log.trackTx { newTxTracker | doneWatching = True }
-                        -- in
+                        let
+                            -- _ =
+                            --     debugHelp sentry.debug log.trackTx { newTxTracker | doneWatching = True }
+                                _ =
+                    
+                                    Debug.log "getTxTrackerToMsg" "getTxTrackerToMsg"
+                        in
                         ( TxSentry sentry
                         , Task.perform blockDepthToMsg
                             (Eth.getTxReceipt sentry.nodePath txTracker.txHash
@@ -538,10 +575,16 @@ update msg (TxSentry sentry) =
                 -- let the user know a new block depth has been reached.
                 case getTxTrackerToMsg sentry.txs ref of
                     Just blockDepthToMsg ->
-                        -- let
-                        --     _ =
-                        --         debugHelp sentry.debug log.trackTx newTxTracker
-                        -- in
+                        let
+                            -- _ =
+                            --     debugHelp sentry.debug log.trackTx newTxTracker
+
+                            _ =
+                    
+                                    Debug.log "Just blockDepthToMsg " "Just blockDepthToMsg "
+
+                                
+                        in
                         ( TxSentry sentry
                         , Cmd.batch
                             [ Task.attempt (TrackTx ref newTxTracker)
@@ -554,20 +597,36 @@ update msg (TxSentry sentry) =
                         )
 
                     Nothing ->
+                     let
+                            
+                            _ =
+                    
+                                    Debug.log "Nothing " "Nothing "
+
+                                
+                        in
                         ( TxSentry sentry, Cmd.none )
 
         TrackTx ref _ (Err error) ->
-            -- let
-            --     _ =
-            --         debugHelp sentry.debug log.trackTx ("Error getting latest block. Info: " ++ toString error)
-            -- in
+            let
+                -- _ =
+                --     debugHelp sentry.debug log.trackTx ("Error getting latest block. Info: " ++ toString error)
+                _ =
+                    
+                                    Debug.log "TrackTx ref " "TrackTx ref "
+            in
             ( TxSentry sentry, Cmd.none )
 
         ErrorDecoding error ->
-            -- let
-            --     _ =
-            --         debugHelp sentry.debug log.decodeError error
-            -- in
+            let
+                -- _ =
+                --     debugHelp sentry.debug log.decodeError error
+
+                _ =
+                    
+                                    Debug.log "ErrorDecoding " "ErrorDecoding "
+                    
+            in
             ( TxSentry sentry, Cmd.none )
 
 

@@ -64,7 +64,8 @@ init networkId =
       , errors = []
       , incomingData = ""
       }
-    , Task.attempt PollBlock (Eth.getBlockNumber node.http)
+    , --Task.attempt PollBlock (Eth.getBlockNumber node.http)
+    Cmd.none
     )
 
 
@@ -107,7 +108,7 @@ ethNode networkId =
 type Msg
     = TxSentryMsg TxSentry.Msg
     | WalletStatus WalletSentry
-    | PollBlock (Result Http.Error Int)
+    --| PollBlock (Result Http.Error Int)
     | InitTx
     | WatchTxHash (Result String TxHash)
     | WatchTx (Result String Tx)
@@ -123,12 +124,20 @@ update msg model =
     case msg of
         TxSentryMsg subMsg ->
             let
+            
+                _ =
+                    Debug.log "TxSentryMsg subMsg " subMsg
+            
                 ( subModel, subCmd ) =
                     TxSentry.update subMsg model.txSentry
             in
             ( { model | txSentry = subModel }, subCmd )
 
         WalletStatus walletSentry_ ->
+            let 
+                _ =
+                        Debug.log "walletSentry_ in ports.update" walletSentry_
+            in
             ( { model
                 | account = walletSentry_.account
                 , node = ethNode walletSentry_.networkId
@@ -136,14 +145,14 @@ update msg model =
             , Cmd.none
             )
 
-        PollBlock (Ok blockNumber) ->
-            ( { model | blockNumber = Just blockNumber }
-            , Task.attempt PollBlock <|
-                Task.andThen (\_ -> Eth.getBlockNumber model.node.http) (Process.sleep 1000)
-            )
+        -- PollBlock (Ok blockNumber) ->
+        --     ( { model | blockNumber = Just blockNumber }
+        --     , Task.attempt PollBlock <|
+        --         Task.andThen (\_ -> Eth.getBlockNumber model.node.http) (Process.sleep 1000)
+        --     )
 
-        PollBlock (Err error) ->
-            ( model, Cmd.none )
+        -- PollBlock (Err error) ->
+        --     ( model, Cmd.none )
 
         InitTx ->
             let
