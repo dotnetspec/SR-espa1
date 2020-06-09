@@ -636,6 +636,8 @@ handleWalletStateOperational msg model =
 
                 AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
                     let
+
+                        
                         extractedList =
                             SR.ListOps.ownerValidatedRankingList <| SR.ListOps.extractRankingsFromWebData updatedListAfterNewEntryAddedToGlobalList
 
@@ -644,10 +646,10 @@ handleWalletStateOperational msg model =
 
                         addedRankingListToAllLists =
                             { allLists
-                                | userRankings = allGlobal
+                                | userRankings = allGlobal , lownedUserRanking = SR.ListOps.gotUserOwnedGlobalRankingList allGlobal appInfo.user
                             }
 
-                        _ = Debug.log "in AddedNewRankingToGlobalList" "yes"
+                        
                     in
                     ( AppOps SR.Types.WalletOperational addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
@@ -3048,7 +3050,7 @@ addCurrentUserToPlayerList intrankingId luPlayer userRec =
         sortedSelectedRankingListWithNewPlayerJsonObjAdded =
             SR.ListOps.sortedPlayerListByRank selectedRankingListWithNewPlayerJsonObjAdded
     in
-    --AddedNewRankingToGlobalList is the Msg handled by update whenever a request is made
+    --ReturnFromPlayerListUpdate is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
     -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
     -- the Decoder decodes what comes back in the response

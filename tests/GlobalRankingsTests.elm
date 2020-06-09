@@ -14,6 +14,9 @@ import SR.ListOps
 import SR.Types
 import Shrink
 import Test exposing (..)
+import Testdata.GlobalTestData
+import Testdata.UserTestData
+import Testdata.UserRankingTestData
 
 
 rankingInfoFuzzer : Fuzzer SR.Types.RankingInfo
@@ -68,3 +71,43 @@ isValidOwnerAddress rankInfo =
 
 
 --Expect.notEqual "" a.rankingowneraddr
+
+
+
+
+createAllUserAsOwnerGlobalRankingListTest : Test
+createAllUserAsOwnerGlobalRankingListTest =
+    let
+                rankingInfo =
+                    { id = "5edf2249655d87580c46a830"
+                    , active = True
+                    , rankingname = "Test 10"
+                    , rankingdesc = "t10"
+                    , rankingowneraddr = "0xce987a7e670655f30e582fbde1573b5be8ffb9a8"
+                    }
+                userOwner =
+                    { datestamp = 1569839363942
+                    , active = True
+                    , username = "Test 10"
+                    , ethaddress = "0xce987a7e670655f30e582fbde1573b5be8ffb9a8"
+                    , description = "t10"
+                    , email = "t10@t.com"
+                    , mobile = "10101000"
+                    , userjoinrankings = []
+                    }
+
+                output =
+                        [
+                            { rankingInfo = rankingInfo
+                            , userInfo = userOwner
+                            }
+                        ]
+    in
+    --only <|
+    --skip <|
+    describe "correctly assign an owned ranking to the Your Created Rankings list"
+        [ test "createAllUserAsOwnerGlobalRankingList" <|
+            \_ ->
+                SR.ListOps.gotUserOwnedGlobalRankingList Testdata.UserRankingTestData.userRankingList Testdata.UserTestData.singleUser
+                    |> Expect.equal output
+        ]

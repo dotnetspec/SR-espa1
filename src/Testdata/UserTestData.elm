@@ -4,6 +4,31 @@ import RemoteData
 import SR.Types
 
 
+singleUser =
+     { datestamp = 1569839363942
+      , active = True
+      , username = "Test 10"
+      , ethaddress = "0xce987a7e670655f30e582fbde1573b5be8ffb9a8"
+      , description = "t10"
+      , email = "t10@t.com"
+      , mobile = "10101000"
+      , userjoinrankings = []
+      }
+    
+
+singleUserList =
+    [ { datestamp = 1569839363942
+      , active = True
+      , username = "Test 10"
+      , ethaddress = "0xce987a7e670655f30e582fbde1573b5be8ffb9a8"
+      , description = "t10"
+      , email = "t10@t.com"
+      , mobile = "10101000"
+      , userjoinrankings = []
+      }
+    ]
+
+
 standardUserList =
     [ { datestamp = 1569839363942
       , active = True
