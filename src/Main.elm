@@ -560,7 +560,7 @@ handleWalletStateOperational msg model =
                 -- it's already created the new ranking with current player as the first entry
                 -- the result now is the ranking id only at this point which was pulled out by the decoder
                 SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
-                    ( AppOps SR.Types.WalletWaitingForTransactionReceipt allLists appInfo SR.Types.UICreateNewLadder emptyTxRecord
+                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UICreateNewLadder emptyTxRecord
                     , globalAddRequested idValueFromDecoder
                         allLists.userRankings
                         appInfo.selectedRanking
@@ -622,12 +622,12 @@ handleWalletStateOperational msg model =
                                     }
                                     txParams
 
-                            --     newAppInfo =
-                            --         { appInfo | selectedRanking = newLadderRnkInfo }
+                            newAppInfo =
+                                    { appInfo | appState = SR.Types.CreateNewLadder }
                             -- in
                             -- ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UICreateNewLadder { txRec | txSentry = newSentry }, sentryCmd )
                         in
-                        ( AppOps SR.Types.WalletWaitingForTransactionReceipt allLists appInfo SR.Types.UIRenderAllRankings { txRec | txSentry = newSentry }
+                        ( AppOps SR.Types.WalletWaitingForTransactionReceipt allLists newAppInfo SR.Types.UIRenderAllRankings { txRec | txSentry = newSentry }
                         --Cmd.batch [ sentryCmd, addedUserAsFirstPlayerInNewList appInfo.user ] )
                         ,sentryCmd)
 
@@ -646,6 +646,8 @@ handleWalletStateOperational msg model =
                             { allLists
                                 | userRankings = allGlobal
                             }
+
+                        _ = Debug.log "in AddedNewRankingToGlobalList" "yes"
                     in
                     ( AppOps SR.Types.WalletOperational addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
@@ -922,7 +924,15 @@ handleWalletWaitingForUserInput msg walletState allLists appInfo txRec =
                     Eth.Sentry.Tx.update subMsg txRec.txSentry
             in
             if handleTxSubMsg subMsg then
-                ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }, subCmd )
+                case appInfo.appState of
+                    SR.Types.CreateNewLadder -> 
+                        let 
+                            _ =
+                                Debug.log "in CreateNewLadder" "yes"
+                        in
+                        ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }, Cmd.batch [subCmd, addedUserAsFirstPlayerInNewList appInfo.user] )
+                    _ -> 
+                       ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }, subCmd ) 
 
             else
                 ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
@@ -966,6 +976,10 @@ handleWalletWaitingForUserInput msg walletState allLists appInfo txRec =
             ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
 
         _ ->
+            let
+                _ =
+                    Debug.log "wallet state " walletState
+            in
             ( Failure "handleWalletStateUnknown"
             , Cmd.none
             )
