@@ -1648,8 +1648,9 @@ determineOwnedRankingButtonsDisplay lranking user =
             Element.el []
                 (Input.button
                     ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
-                        ++ Button.fill
+                        
                         ++ Button.simple
+                        ++ Button.fill
                         ++ Color.info
                     )
                  <|
@@ -1683,7 +1684,6 @@ otherrankingbuttons : List SR.Types.UserRanking -> SR.Types.User -> Element Msg
 otherrankingbuttons urankingList user =
     let
         newRankingList =
-            --SR.ListOps.gotRankingListFromUserRankingList urankingList
             SR.ListOps.extractRankingList urankingList
     in
     if user.username == "" then
@@ -2070,16 +2070,16 @@ confirmResultbutton model =
                 , Element.el Heading.h6 <| Element.text <| "Please confirm your result: "
                 , Element.column (Card.simple ++ Grid.simple) <|
                     [ Element.column Grid.simple <|
-                        [ Input.button (Button.simple ++ Color.primary) <|
-                            { --onPress = Just <| ProcessResult SR.Types.Won
+                        [ Input.button (Button.simple  ++ Button.fill ++ Color.primary) <|
+                            { 
                               onPress = Just <| SentResultToWallet SR.Types.Won
                             , label = Element.text "Won"
                             }
-                        , Input.button (Button.simple ++ Color.primary) <|
+                        , Input.button (Button.simple  ++ Button.fill ++ Color.primary) <|
                             { onPress = Just <| ProcessResult SR.Types.Lost
                             , label = Element.text "Lost"
                             }
-                        , Input.button (Button.simple ++ Color.primary) <|
+                        , Input.button (Button.simple  ++ Button.fill ++ Color.primary) <|
                             { onPress = Just <| ProcessResult SR.Types.Undecided
                             , label = Element.text "Undecided"
                             }
