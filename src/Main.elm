@@ -127,7 +127,8 @@ type Msg
     | ClickedSelectedOwnedRanking Internal.Types.RankingId String String
     | ClickedSelectedMemberRanking Internal.Types.RankingId String String
     | ClickedSelectedNeitherOwnerNorMember Internal.Types.RankingId String String
-    | ClickedRegisterNewUser
+    | ClickedRegister
+    | ClickedConfirmedRegisterNewUser
     | ClickedUpdateExistingUser
     | ClickedConfirmedUpdateExistingUser
     | ClickedCreateNewLadder
@@ -203,10 +204,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     handleWalletStateOperational msgOfTransitonThatAlreadyHappened currentmodel
 
                 SR.Types.WalletWaitingForTransactionReceipt ->
-                    let
-                        _ =
-                                Debug.log "about to go to " "handleWalletWaitingForUserInput"
-                    in
+                    
                     handleWalletWaitingForUserInput msgOfTransitonThatAlreadyHappened walletState allLists appInfo txRec
 
                 _ ->
@@ -569,6 +567,10 @@ handleWalletStateOperational msg model =
                     )
 
                 SentUserInfoAndDecodedResponseToNewUser serverResponse ->
+                    -- let 
+                    --     newAllLists = 
+                    --         {allLists | users = }
+                    -- in
                     ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                 ResetToShowGlobal ->
@@ -624,8 +626,8 @@ handleWalletStateOperational msg model =
 
                             newAppInfo =
                                     { appInfo | appState = SR.Types.CreateNewLadder }
-                            -- in
-                            -- ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UICreateNewLadder { txRec | txSentry = newSentry }, sentryCmd )
+                            
+                            
                         in
                         ( AppOps SR.Types.WalletWaitingForTransactionReceipt allLists newAppInfo SR.Types.UIRenderAllRankings { txRec | txSentry = newSentry }
                         --Cmd.batch [ sentryCmd, addedUserAsFirstPlayerInNewList appInfo.user ] )
@@ -636,8 +638,6 @@ handleWalletStateOperational msg model =
 
                 AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
                     let
-
-                        
                         extractedList =
                             SR.ListOps.ownerValidatedRankingList <| SR.ListOps.extractRankingsFromWebData updatedListAfterNewEntryAddedToGlobalList
 
@@ -648,8 +648,6 @@ handleWalletStateOperational msg model =
                             { allLists
                                 | userRankings = allGlobal , lownedUserRanking = SR.ListOps.gotUserOwnedGlobalRankingList allGlobal appInfo.user
                             }
-
-                        
                     in
                     ( AppOps SR.Types.WalletOperational addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
@@ -783,8 +781,15 @@ handleWalletStateOperational msg model =
                 ClickedConfirmedUpdateExistingUser ->
                     ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings txRec, updateExistingUser allLists.users appInfo.user )
 
-                ClickedRegisterNewUser ->
-                    ( AppOps walletState allLists appInfo SR.Types.UIRegisterNewUser txRec, Cmd.none )
+                ClickedRegister ->
+                     ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRegisterNewUser txRec, Cmd.none )
+                
+                ClickedConfirmedRegisterNewUser ->
+                    -- let 
+                    --     newAppInfo =
+                    --                 { appInfo | appState = SR.Types.CreateNewUser }
+                    -- in
+                    ( AppOps SR.Types.WalletWaitingForTransactionReceipt allLists appInfo SR.Types.UIWaitingForTxReceipt txRec, Cmd.none )
 
                 CreateNewUserRequested userInfo ->
                     let
@@ -813,9 +818,11 @@ handleWalletStateOperational msg model =
                             { userInfo | ethaddress = userInfo.ethaddress }
 
                         newAppInfo =
-                            { appInfo | user = userWithUpdatedAddr }
+                            { appInfo | user = userWithUpdatedAddr, appState = SR.Types.CreateNewUser }
                     in
-                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UIRenderAllRankings { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, createNewUser allLists.users userWithUpdatedAddr ] )
+                    ( AppOps SR.Types.WalletWaitingForTransactionReceipt allLists newAppInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
+                    --, Cmd.batch [ sentryCmd, createNewUser allLists.users userWithUpdatedAddr ] )
+                    , sentryCmd)
 
                 Fail str ->
                     ( Failure str, Cmd.none )
@@ -932,7 +939,18 @@ handleWalletWaitingForUserInput msg walletState allLists appInfo txRec =
                             _ =
                                 Debug.log "in CreateNewLadder" "yes"
                         in
-                        ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }, Cmd.batch [subCmd, addedUserAsFirstPlayerInNewList appInfo.user] )
+                        ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }
+                        , Cmd.batch [subCmd, addedUserAsFirstPlayerInNewList appInfo.user] )
+                    
+                    SR.Types.CreateNewUser -> 
+                        let 
+                            _ =
+                                Debug.log "in CreateNewUser" "yes"
+                        in
+                        ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }
+                        , Cmd.batch [subCmd,  createNewUser allLists.users appInfo.user] )
+                    
+                    
                     _ -> 
                        ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }, subCmd ) 
 
@@ -1988,7 +2006,7 @@ displayJoinBtnNewOrExistingUser : SR.Types.User -> Element Msg
 displayJoinBtnNewOrExistingUser user =
     if user.username == "" then
         Input.button ([ Element.htmlAttribute (Html.Attributes.id "newUserJoinbtn") ] ++ Button.simple ++ Color.info) <|
-            { onPress = Just ClickedRegisterNewUser
+            { onPress = Just ClickedConfirmedRegisterNewUser
             , label = Element.text "Join"
             }
 
@@ -2512,7 +2530,7 @@ globalResponsiveview lowneduranking lmemberusranking lotheruranking user =
             , displayCreateNewLadderBtnIfExistingUser user.username lowneduranking ClickedCreateNewLadder
             , displayRegisterBtnIfNewUser
                 user.username
-                ClickedRegisterNewUser
+                ClickedRegister
             , ownedrankingbuttons lowneduranking user
             , memberrankingbuttons lmemberusranking user
             , otherrankingbuttons lotheruranking user
