@@ -560,7 +560,7 @@ handleWalletStateOperational msg model =
                 -- it's already created the new ranking with current player as the first entry
                 -- the result now is the ranking id only at this point which was pulled out by the decoder
                 SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
-                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UICreateNewLadder emptyTxRecord
+                    ( AppOps SR.Types.WalletWaitingForTransactionReceipt allLists appInfo SR.Types.UICreateNewLadder emptyTxRecord
                     , globalAddRequested idValueFromDecoder
                         allLists.userRankings
                         appInfo.selectedRanking
@@ -627,7 +627,9 @@ handleWalletStateOperational msg model =
                             -- in
                             -- ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UICreateNewLadder { txRec | txSentry = newSentry }, sentryCmd )
                         in
-                        ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings { txRec | txSentry = newSentry }, Cmd.batch [ sentryCmd, addedUserAsFirstPlayerInNewList appInfo.user ] )
+                        ( AppOps SR.Types.WalletWaitingForTransactionReceipt allLists appInfo SR.Types.UIRenderAllRankings { txRec | txSentry = newSentry }
+                        --Cmd.batch [ sentryCmd, addedUserAsFirstPlayerInNewList appInfo.user ] )
+                        ,sentryCmd)
 
                     else
                         ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRegisterNewUser emptyTxRecord, Cmd.none )
