@@ -925,7 +925,7 @@ handleWalletWaitingForUserInput msg walletState allLists appInfo txRec =
                 ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }, subCmd )
 
             else
-                ( AppOps walletState SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
+                ( AppOps SR.Types.WalletOperational SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
 
         WatchTxHash (Ok txHash) ->
             let
