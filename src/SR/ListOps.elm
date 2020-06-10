@@ -40,8 +40,8 @@ module SR.ListOps exposing
        -- to be privatized
 
     , setPlayerInPlayerListWithChallengeResult
-    , setPlayerInPlayerListWithNewChallengerAddr
-    , sortedPlayerListByRank
+    , assignChallengerAddr
+    , sortedRank
     , updatePlayerRankWithWonResult
     , validatedUserList
     )
@@ -135,7 +135,7 @@ extractAndSortPlayerList rdlPlayer luser =
                 lplayer
                 luser
     in
-    sortedPlayerListByRank <| convertedPlayerListToUserPlayerList
+    sortedRank <| convertedPlayerListToUserPlayerList
 
 
 convertMaybeUserRankingListToList : Maybe (List SR.Types.UserRanking) -> List SR.Types.UserRanking
@@ -713,13 +713,13 @@ setPlayerInPlayerListWithChallengeResult luPlayer uplayer rank =
             newUserPlayer :: filteredPlayerList
 
         newPlayerListSorted =
-            sortedPlayerListByRank newPlayerList
+            sortedRank newPlayerList
     in
     newPlayerListSorted
 
 
-setPlayerInPlayerListWithNewChallengerAddr : List SR.Types.UserPlayer -> SR.Types.UserPlayer -> String -> List SR.Types.UserPlayer
-setPlayerInPlayerListWithNewChallengerAddr lPlayer uplayer challengeraddress =
+assignChallengerAddr : List SR.Types.UserPlayer -> SR.Types.UserPlayer -> String -> List SR.Types.UserPlayer
+assignChallengerAddr lPlayer uplayer challengeraddress =
     let
         filteredPlayerList =
             filterPlayerOutOfPlayerList uplayer.player.address lPlayer
@@ -765,8 +765,8 @@ updatePlayerRankWithWonResult luPlayer uplayer =
     newPlayerList
 
 
-sortedPlayerListByRank : List SR.Types.UserPlayer -> List SR.Types.UserPlayer
-sortedPlayerListByRank luplayer =
+sortedRank : List SR.Types.UserPlayer -> List SR.Types.UserPlayer
+sortedRank luplayer =
     let
         validatedMaybePlayerLst =
             List.map Utils.MyUtils.splitPlayerFieldsToCreateMaybePlayer luplayer

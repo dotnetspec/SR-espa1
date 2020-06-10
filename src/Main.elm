@@ -1368,10 +1368,10 @@ createNewPlayerListWithNewResultAndUpdateJsonBin model =
                     SR.ListOps.gotUserPlayerFromPlayerListStrAddress allLists.userPlayers appInfo.challenger.player.address
 
                 newplayerListWithPlayerAndChallengerUpdated =
-                    SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.player.address
+                    SR.ListOps.assignChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.player.address
 
                 sortedByRankingnewplayerListWithPlayerAndChallengerUpdated =
-                    SR.ListOps.sortedPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
+                    SR.ListOps.sortedRank newplayerListWithPlayerAndChallengerUpdated
 
                 newAllLists =
                     { allLists | userPlayers = sortedByRankingnewplayerListWithPlayerAndChallengerUpdated }
@@ -1388,20 +1388,22 @@ createNewPlayerListWithNewChallengeAndUpdateJsonBin model =
         AppOps walletState allLists appInfo uiState txRec ->
             let
                 -- add respective challenger addresses to player and challenger (who is also a player type)
-                newplayerListWithPlayerUpdated =
-                    SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr allLists.userPlayers appInfo.player appInfo.challenger.player.address
+                lassignedChallengerAddress =
+                    SR.ListOps.assignChallengerAddr 
+                    allLists.userPlayers appInfo.player appInfo.challenger.player.address
 
                 challengerAsPlayer =
                     SR.ListOps.gotUserPlayerFromPlayerListStrAddress allLists.userPlayers appInfo.challenger.player.address
 
-                newplayerListWithPlayerAndChallengerUpdated =
-                    SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr newplayerListWithPlayerUpdated challengerAsPlayer appInfo.player.player.address
+                assignedChallengerAddrsForChallenger =
+                    SR.ListOps.assignChallengerAddr 
+                    lassignedChallengerAddress challengerAsPlayer appInfo.player.player.address
 
-                sortedByRankingnewplayerListWithPlayerAndChallengerUpdated =
-                    SR.ListOps.sortedPlayerListByRank newplayerListWithPlayerAndChallengerUpdated
+                playerAndChallengerSortedAndUpdated =
+                    SR.ListOps.sortedRank assignedChallengerAddrsForChallenger
 
                 newAllLists =
-                    { allLists | userPlayers = sortedByRankingnewplayerListWithPlayerAndChallengerUpdated }
+                    { allLists | userPlayers = playerAndChallengerSortedAndUpdated }
             in
             ( AppOps walletState newAllLists appInfo uiState txRec, updatePlayerList appInfo.selectedRanking.id newAllLists.userPlayers )
 
@@ -3126,7 +3128,7 @@ addCurrentUserToPlayerList intrankingId luPlayer userRec =
             newUserPlayer :: luPlayer
 
         sortedSelectedRankingListWithNewPlayerJsonObjAdded =
-            SR.ListOps.sortedPlayerListByRank selectedRankingListWithNewPlayerJsonObjAdded
+            SR.ListOps.sortedRank selectedRankingListWithNewPlayerJsonObjAdded
     in
     --ReturnFromPlayerListUpdate is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
