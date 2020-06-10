@@ -136,6 +136,7 @@ type Msg
     | ClickedNewChallengeConfirm
     | ResetToShowGlobal
     | ResetToShowSelected
+    | ResetRejectedNewUserToShowGlobal
     | DeletedRanking String
     | ChallengeOpponentClicked SR.Types.UserPlayer
     | ClickedJoinSelected
@@ -576,6 +577,12 @@ handleWalletStateOperational msg model =
                 ResetToShowGlobal ->
                     ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
+                ResetRejectedNewUserToShowGlobal ->
+                    let 
+                        newAppInfo = {appInfo | user = SR.Defaults.emptyUser}
+                    in 
+                    ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+
                 ResetToShowSelected ->
                     let
                         uiType =
@@ -625,7 +632,7 @@ handleWalletStateOperational msg model =
                                     txParams
 
                             newAppInfo =
-                                    { appInfo | appState = SR.Types.CreateNewLadder }
+                                    { appInfo | appState = SR.Types.AppStateCreateNewLadder }
                             
                             
                         in
@@ -792,6 +799,7 @@ handleWalletStateOperational msg model =
                     ( AppOps SR.Types.WalletWaitingForTransactionReceipt allLists appInfo SR.Types.UIWaitingForTxReceipt txRec, Cmd.none )
 
                 CreateNewUserRequested userInfo ->
+                
                     let
                         txParams =
                             { to = txRec.account
@@ -818,7 +826,7 @@ handleWalletStateOperational msg model =
                             { userInfo | ethaddress = userInfo.ethaddress }
 
                         newAppInfo =
-                            { appInfo | user = userWithUpdatedAddr, appState = SR.Types.CreateNewUser }
+                            { appInfo | user = userWithUpdatedAddr, appState = SR.Types.AppStateCreateNewUser }
                     in
                     ( AppOps SR.Types.WalletWaitingForTransactionReceipt allLists newAppInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
                     --, Cmd.batch [ sentryCmd, createNewUser allLists.users userWithUpdatedAddr ] )
@@ -934,7 +942,7 @@ handleWalletWaitingForUserInput msg walletState allLists appInfo txRec =
             in
             if handleTxSubMsg subMsg then
                 case appInfo.appState of
-                    SR.Types.CreateNewLadder -> 
+                    SR.Types.AppStateCreateNewLadder -> 
                         let 
                             _ =
                                 Debug.log "in CreateNewLadder" "yes"
@@ -942,7 +950,7 @@ handleWalletWaitingForUserInput msg walletState allLists appInfo txRec =
                         ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }
                         , Cmd.batch [subCmd, addedUserAsFirstPlayerInNewList appInfo.user] )
                     
-                    SR.Types.CreateNewUser -> 
+                    SR.Types.AppStateCreateNewUser -> 
                         let 
                             _ =
                                 Debug.log "in CreateNewUser" "yes"
@@ -2156,7 +2164,7 @@ acknoweldgeTxErrorbtn model =
                 , Element.column (Card.simple ++ Grid.simple) <|
                     [ Element.column Grid.simple <|
                         [ Input.button (Button.simple ++ Color.primary) <|
-                            { onPress = Just <| ResetToShowGlobal
+                            { onPress = Just <| ResetRejectedNewUserToShowGlobal
                             , label = Element.text "Continue ..."
                             }
                         ]

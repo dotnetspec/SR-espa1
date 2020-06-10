@@ -174,12 +174,12 @@ type OpponentRelativeRank
     | OpponentRankLower
 
 type AppState
-    = General
-    | CreateNewUser 
-    | CreateNewLadder 
-    | EnterWon 
-    | EnterLost 
-    | EnterUndecided 
+    = AppStateGeneral
+    | AppStateCreateNewUser 
+    | AppStateCreateNewLadder 
+    | AppStateEnterWon 
+    | AppStateEnterLost 
+    | AppStateEnterUndecided 
 
 
 {--}

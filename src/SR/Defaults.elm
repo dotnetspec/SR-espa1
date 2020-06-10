@@ -97,7 +97,7 @@ emptyAppInfo =
     , player = emptyUserPlayer
     , user = emptyUser
     , challenger = emptyUserPlayer
-    , appState = General
+    , appState = AppStateGeneral
     }
 
 
