@@ -198,10 +198,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
                     handledWalletStateOpened msgOfTransitonThatAlreadyHappened currentmodel
 
                 SR.Types.WalletOperational ->
-                    let
-                        _ =
-                                Debug.log "still in operational " "?"
-                    in
+                    
                     handleWalletStateOperational msgOfTransitonThatAlreadyHappened currentmodel
 
                 SR.Types.WalletWaitingForTransactionReceipt ->
@@ -347,11 +344,7 @@ handledWalletStateOpened msg model =
 
 handleWalletStateOperational : Msg -> Model -> ( Model, Cmd Msg )
 handleWalletStateOperational msg model =
-    let
-        _ =
-            Debug.log "msg in handleWalletStateOperational" msg
-                    
-    in
+    
     
     case model of
         AppOps walletState allLists appInfo uiState txRec ->
@@ -446,12 +439,17 @@ handleWalletStateOperational msg model =
                                 newModel =
                                     handleWon model
                             in
-                            case newModel of
-                                AppOps thewalletState allTheLists theAppInfo theUIState thetxRec ->
-                                    ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.userPlayers )
+                            --case newModel of
+                                -- AppOps thewalletState allTheLists theAppInfo theUIState thetxRec ->
+                                --     ( newModel, updatePlayerList theAppInfo.selectedRanking.id allTheLists.userPlayers )
+                                    --AppOps thewalletState allTheLists theAppInfo theUIState thetxRec ->
+                                    --( newModel, updatePlayerList newModel )
+                                    (
+                                         
+                                    createNewPlayerListWithNewResultAndUpdateJsonBin newModel)
 
-                                _ ->
-                                    ( Failure "result won", Cmd.none )
+                                -- _ ->
+                                --     ( Failure "result won", Cmd.none )
 
                         SR.Types.Lost ->
                             let
@@ -503,10 +501,35 @@ handleWalletStateOperational msg model =
 
                         _ =
                             Debug.log "about to switch to " "SR.Types.WalletWaitingForTransactionReceipt"
+                        
+
                     in
-                    ( AppOps SR.Types.WalletWaitingForTransactionReceipt allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
-                    , sentryCmd
-                    )
+
+                    case result of
+                        SR.Types.Won ->
+                             let 
+                                newAppInfo = {appInfo | appState = SR.Types.AppStateEnterWon }
+                            in
+                                ( AppOps SR.Types.WalletWaitingForTransactionReceipt allLists newAppInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
+                                , sentryCmd
+                                )
+                        SR.Types.Lost ->                                     
+                            let
+                                    newAppInfo = {appInfo | appState = SR.Types.AppStateEnterLost }
+                            in
+                                ( AppOps SR.Types.WalletWaitingForTransactionReceipt allLists newAppInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
+                                , sentryCmd
+                                )
+                        SR.Types.Undecided -> 
+                            let
+                                    newAppInfo = {appInfo | appState = SR.Types.AppStateEnterUndecided }
+                            in
+                                ( AppOps SR.Types.WalletOperational allLists newAppInfo SR.Types.UIEnterResultTxProblem emptyTxRecord
+                                    , sentryCmd
+                                    )
+                    
+
+
 
                 SentResultToJsonbin a ->
                     ( AppOps SR.Types.WalletOperational
@@ -957,8 +980,36 @@ handleWalletWaitingForUserInput msg walletState allLists appInfo txRec =
                         in
                         ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }
                         , Cmd.batch [subCmd,  createNewUser allLists.users appInfo.user] )
-                    
-                    
+
+                    SR.Types.AppStateEnterWon -> 
+                        let 
+                            _ =
+                                Debug.log "in AppStateEnterWon" "yes"
+                        in
+                        --( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }
+                        --, Cmd.batch [subCmd,  ProcessResult SR.Types.Won] )
+                            (AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Won)
+                            --, subCmd
+                            )
+
+                    SR.Types.AppStateEnterLost -> 
+                        let 
+                            _ =
+                                Debug.log "in AppStateEnterLost" "yes"
+                        in
+                        ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Lost)
+                        --, Cmd.batch [subCmd,  ProcessResult SR.Types.Lost]
+                        )
+
+                    SR.Types.AppStateEnterUndecided -> 
+                        let 
+                            _ =
+                                Debug.log "in AppStateEnterUndecided" "yes"
+                        in
+                        ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Undecided)
+                        --, Cmd.batch [subCmd,  ProcessResult SR.Types.Undecided] 
+                        )
+
                     _ -> 
                        ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }, subCmd ) 
 
@@ -980,7 +1031,8 @@ handleWalletWaitingForUserInput msg walletState allLists appInfo txRec =
                 _ =
                     Debug.log "handleWalletWaitingForUserInput" "tx ok"
             in
-            AppOps walletState allLists appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx } |> update (ProcessResult SR.Types.Won)
+            --AppOps walletState allLists appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx } |> update (ProcessResult )
+            (AppOps walletState allLists appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx }, Cmd.none )
 
         WatchTx (Err err) ->
             let
@@ -3101,9 +3153,9 @@ jsonEncodeNewSelectedRankingPlayerList luplayers =
         encodePlayerObj : SR.Types.Player -> Json.Encode.Value
         encodePlayerObj player =
             Json.Encode.object
-                [ ( "address", Json.Encode.string (String.toLower player.address) )
+                [ ( "address", Json.Encode.string (String.toLower player.address |> Debug.log "player.address: ") )
                 , ( "rank", Json.Encode.int player.rank )
-                , ( "challengeraddress", Json.Encode.string player.challengeraddress )
+                , ( "challengeraddress", Json.Encode.string (player.challengeraddress |> Debug.log "challenger.address: "))
                 ]
 
         encodedList =
@@ -3275,16 +3327,22 @@ deleteSelectedRankingFromGlobalList rankingId lrankingInfo luser rankingowneradd
 
 updatePlayerList : String -> List SR.Types.UserPlayer -> Cmd Msg
 updatePlayerList intrankingId luPlayer =
-    Http.request
-        { body =
-            Http.jsonBody <| jsonEncodeNewSelectedRankingPlayerList luPlayer
-        , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromPlayerListUpdate) SR.Decode.decodeNewPlayerListServerResponse
-        , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
-        , method = "PUT"
-        , timeout = Nothing
-        , tracker = Nothing
-        , url = SR.Constants.jsonbinUrlStubForUpdateExistingBinAndRespond ++ intrankingId
-        }
+
+    let 
+        _ = Debug.log "updateplayer list : " luPlayer
+    in 
+            Http.request
+                { body =
+                    Http.jsonBody <| jsonEncodeNewSelectedRankingPlayerList luPlayer
+                , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromPlayerListUpdate) SR.Decode.decodeNewPlayerListServerResponse
+                , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
+                , method = "PUT"
+                , timeout = Nothing
+                , tracker = Nothing
+                , url = SR.Constants.jsonbinUrlStubForUpdateExistingBinAndRespond ++ intrankingId
+                
+                }
+    
 
 
 updateUsersJoinRankings : String -> SR.Types.User -> List SR.Types.User -> Cmd Msg

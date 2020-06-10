@@ -1,6 +1,8 @@
 module SR.Defaults exposing
     ( emptyPlayer
-    , emptyActiveUser, emptyAllLists, emptyAppInfo, emptyFormValidations, emptyOwnedRanking, emptyRankingInfo, emptyUser, emptyUserPlayer, emptyUserRanking, globalBinName, globalContainerId, secretKey, selectedBinName, selectedContainerId, userBinName, userContainerId
+    , emptyActiveUser, emptyAllLists, emptyAppInfo, emptyFormValidations, emptyOwnedRanking
+    , emptyRankingInfo, emptyUser, emptyUserPlayer, emptyUserRanking, globalBinName
+    , globalContainerId, secretKey, selectedBinName, selectedContainerId, userBinName, userContainerId
     )
 
 {-| Default values.

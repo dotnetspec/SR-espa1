@@ -728,7 +728,8 @@ setPlayerInPlayerListWithNewChallengerAddr lPlayer uplayer challengeraddress =
             uplayer.player
 
         updatedPlayer =
-            { newUserPlayerPlayerField | challengeraddress = uplayer.player.challengeraddress }
+            --{ newUserPlayerPlayerField | challengeraddress = uplayer.player.challengeraddress }
+            { newUserPlayerPlayerField | challengeraddress = challengeraddress }
 
         newUserPlayer =
             { uplayer | player = updatedPlayer }

@@ -22,6 +22,7 @@ import SR.ListOps
 import SR.Types
 import Shrink
 import Test exposing (..)
+import Testdata.UserPlayerTestData
 
 
 start : ProgramTest Main.Model Main.Msg (Cmd Main.Msg)
@@ -177,6 +178,72 @@ sortPlayerListTest1 =
 
                 a :: _ ->
                     Expect.equal 1 a.player.rank
+
+
+-- userPlayerSetPlayerInPlayerListWithNewChallengerAddrTest : Test
+-- userPlayerSetPlayerInPlayerListWithNewChallengerAddrTest =
+--     let
+--         singleUser1 =
+--             {
+--                 active = True,
+--                 datestamp = 1569839363942,
+--                 description = "t5",
+--                 email = "t5@t.com",
+--                 ethaddress = "0xf5003cea9657a15123b1cc83c305f87555d190cf",
+--                 mobile = "55555555",
+--                 userjoinrankings = ["5e96c74b5fa47104cea0c7c6", "5e8e879d8e85c8437012e2a7"],
+--                 username = "Test 5"
+--             }
+
+--         singleUser2 =
+--             {
+--                 active = True,
+--                 datestamp = 1569839363942,
+--                 description = "t4",
+--                 email = "t4@t.com",
+--                 ethaddress = "0x3bb244dec13253d39e22606850f4704b469a4b93",
+--                 mobile = "123456",
+--                 userjoinrankings = ["5e96c74b5fa47104cea0c7c6", "5e96c9ed2940c704e1d8685e"],
+--                 username = "Test 4"
+--             }
+
+--         outputplayer =
+--             { address = "0xf5003cea9657a15123b1cc83c305f87555d190cf"
+--             , rank = 2
+--             , challengeraddress = "0x3bb244dec13253d39e22606850f4704b469a4b93"
+--             }
+
+--         outputchallenger =
+--             { address = "0x3bb244dec13253d39e22606850f4704b469a4b93"
+--             , rank = 1
+--             , challengeraddress = "0xf5003cea9657a15123b1cc83c305f87555d190cf"
+--             }
+
+--         output =
+--             [ { player = outputplayer
+--               , user = singleUser1
+--               }
+--             , { player = outputchallenger
+--               , user = singleUser2
+--               }
+--             ]
+--     in
+--     describe "setPlayerInPlayerListWithNewChallengerAddr test"
+--         [
+--             -- test "Sub func - Challenge successfully updates player's challenger address in list " <|
+--             --     \() ->
+--             --         SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr Testdata.UserPlayerTestData.userPlayerList 
+--             --         Testdata.UserPlayerTestData.singleUserPlayer1 Testdata.UserPlayerTestData.singleUserPlayer2.player.address
+--             --             |> Expect.equal output
+            
+--             -- ,
+--             only <|
+--             test "Whole func - Challenge successfully updates player's challenger address in list " <|
+--                 \() ->
+--                     SR.ListOps.setPlayerInPlayerListWithNewChallengerAddr Testdata.UserPlayerTestData.userPlayerList 
+--                     Testdata.UserPlayerTestData.singleUserPlayer1 Testdata.UserPlayerTestData.singleUserPlayer2.player.address
+--                         |> Expect.equal output
+--         ]
 
 
 
