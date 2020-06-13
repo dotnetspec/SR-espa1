@@ -8,6 +8,7 @@
         "direct": {
             "Chadtech/elm-bool-extra": "2.4.0",
             "Chadtech/unique-list": "2.1.4",
+            "Gizra/elm-all-set": "1.0.1",
             "NoRedInk/elm-json-decode-pipeline": "1.0.0",
             "Orasund/elm-ui-framework": "1.6.1",
             "PaackEng/elm-ui-dialog": "1.0.0",
@@ -43,7 +44,8 @@
             "elm/bytes": "1.0.8",
             "elm/file": "1.0.5",
             "elm/virtual-dom": "1.0.2",
-            "owanturist/elm-union-find": "1.0.0"
+            "owanturist/elm-union-find": "1.0.0",
+            "pzp1997/assoc-list": "1.0.0"
         }
     },
     "test-dependencies": {

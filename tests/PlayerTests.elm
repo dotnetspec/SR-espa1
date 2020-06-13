@@ -6,7 +6,7 @@ module PlayerTests exposing (..)
 import Element exposing (..)
 import Eth.Types
 import Expect exposing (Expectation)
-import Fuzz exposing (Fuzzer, int, list, string)
+import Fuzz exposing (Fuzzer, int, list, string, intRange)
 import Html
 import Internal.Types
 import Json.Encode
@@ -47,7 +47,8 @@ playerFuzzer =
     Fuzz.map3
         SR.Types.Player
         Fuzz.string
-        Fuzz.int
+        --Fuzz.int
+        (Fuzz.intRange 1 100)
         Fuzz.string
 
 
@@ -255,15 +256,21 @@ assignChallengerAddrTest =
 
 
 
--- setPlayerInPlayerListWithChallengeResultTest : Test
--- setPlayerInPlayerListWithChallengeResultTest =
---     fuzz (Fuzz.list playerFuzzer) "a challenge result should be reflected in a new player list" <|
---         \list ->
---             case SR.ListOps.sortedRank list of
---                 [] ->
---                     Expect.pass
---                 a :: _ ->
---                     Expect.equal a.rank 1
+changedRankTest : Test
+changedRankTest =
+    only <|
+    fuzz3  (Fuzz.list userPlayerFuzzer) userPlayerFuzzer (Fuzz.intRange 1 100) "rank should change" <|
+        \luplayerF uplayerF newRankF ->
+            case SR.ListOps.changedRank luplayerF uplayerF newRankF  of
+                [] ->
+                    Expect.pass
+                a :: _ ->
+                    -- let 
+                    --     _ = Debug.log "a rank " a.player.rank 
+
+                    --     _ = Debug.log "uPlayer rank " newRankF
+                    -- in
+                    Expect.equal a.player.rank newRankF
 
 
 extractRankFromPlayer : Maybe SR.Types.Player -> Int

@@ -3,7 +3,8 @@ module SR.Types exposing
     , Player, Opponent, OpponentRelativeRank(..), Options, ResultOfMatch(..), WalletState(..)
     , UIState(..)
     , AllLists, AppInfo, Colors, CreateNewLadderFormFields, FormValidations, LadderState(..), ModalState(..), NewRankingListServerResponse, RankingInfo, ResultRadioOptions(..), User, UserListState(..), UserPlayer, UserRanking, colors
-    ,  AppState(..))
+    ,  AppState(..)
+    )
 
 {-| Types
 
@@ -52,7 +53,6 @@ type Error
 
 
 -- Simple
-
 
 type ModalState
     = Open
@@ -116,6 +116,7 @@ type UIState
     | UIWaitingForTxReceipt
 
 
+
 type UserListState
     = Success (List User)
     | Loading
@@ -123,33 +124,6 @@ type UserListState
     | Failure String
 
 
-type alias Colors =
-    { coral : Element.Color
-    , white : Element.Color
-    , lightblue : Element.Color
-    , blue : Element.Color
-    , green : Element.Color
-    , purple : Element.Color
-    , black : Element.Color
-    , red : Element.Color
-    , darkBlue : Element.Color
-    , grey : Element.Color
-    }
-
-
-colors : Colors
-colors =
-    { coral = rgb255 204 75 75
-    , white = rgb255 255 255 255
-    , lightblue = rgb255 0 128 255
-    , blue = rgb255 2 7 239
-    , green = rgb255 0 153 0
-    , purple = rgb255 102 0 102
-    , black = rgb255 0 0 0
-    , red = rgb 0.8 0 0
-    , darkBlue = rgb 0 0 0.9
-    , grey = rgb 0.9 0.9 0.9
-    }
 
 
 type alias CreateNewLadderFormFields =
@@ -264,4 +238,33 @@ type alias NewRankingListServerResponse =
             }
     , version : Int
     , parentId : String
+    }
+
+
+type alias Colors =
+    { coral : Element.Color
+    , white : Element.Color
+    , lightblue : Element.Color
+    , blue : Element.Color
+    , green : Element.Color
+    , purple : Element.Color
+    , black : Element.Color
+    , red : Element.Color
+    , darkBlue : Element.Color
+    , grey : Element.Color
+    }
+
+
+colors : Colors
+colors =
+    { coral = rgb255 204 75 75
+    , white = rgb255 255 255 255
+    , lightblue = rgb255 0 128 255
+    , blue = rgb255 2 7 239
+    , green = rgb255 0 153 0
+    , purple = rgb255 102 0 102
+    , black = rgb255 0 0 0
+    , red = rgb 0.8 0 0
+    , darkBlue = rgb 0 0 0.9
+    , grey = rgb 0.9 0.9 0.9
     }

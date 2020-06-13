@@ -39,7 +39,7 @@ module SR.ListOps exposing
     ,  removedDuplicateUserFromUserList
        -- to be privatized
 
-    , setPlayerInPlayerListWithChallengeResult
+    , changedRank
     , assignChallengerAddr
     , sortedRank
     , updatePlayerRankWithWonResult
@@ -694,17 +694,17 @@ gotAllRankindIds userRanking =
 -- external
 
 
-setPlayerInPlayerListWithChallengeResult : List SR.Types.UserPlayer -> SR.Types.UserPlayer -> Int -> List SR.Types.UserPlayer
-setPlayerInPlayerListWithChallengeResult luPlayer uplayer rank =
+changedRank : List SR.Types.UserPlayer -> SR.Types.UserPlayer -> Int -> List SR.Types.UserPlayer
+changedRank luPlayer uplayer rank =
     let
-        playerToUserPlayer =
+        userPlayerToPlayer =
             uplayer.player
 
         filteredPlayerList =
-            filterPlayerOutOfPlayerList playerToUserPlayer.address luPlayer
+            filterPlayerOutOfPlayerList userPlayerToPlayer.address luPlayer
 
         updatedPlayer =
-            { playerToUserPlayer | challengeraddress = "", rank = rank }
+            { userPlayerToPlayer | challengeraddress = "", rank = rank }
 
         newUserPlayer =
             { uplayer | player = updatedPlayer }
@@ -715,7 +715,11 @@ setPlayerInPlayerListWithChallengeResult luPlayer uplayer rank =
         newPlayerListSorted =
             sortedRank newPlayerList
     in
-    newPlayerListSorted
+        if List.isEmpty luPlayer || uplayer.player.address == "" then 
+            []
+        else
+         
+            newPlayerListSorted
 
 
 assignChallengerAddr : List SR.Types.UserPlayer -> SR.Types.UserPlayer -> String -> List SR.Types.UserPlayer
