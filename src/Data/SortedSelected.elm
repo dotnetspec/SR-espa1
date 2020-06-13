@@ -1,46 +1,48 @@
-module Data.SortedRank exposing (SortedRank, addUserPlayer, removeUserPlayer, asList, changeRank)
+module Data.SortedSelected exposing (SortedSelected, addUserPlayer, removeUserPlayer, asList, changeRank, descendingRanking)
 
 
 import SR.Types
 import EverySet exposing (EverySet)
 
 
-type SortedRank = SortedRank (EverySet SR.Types.UserPlayer)
+type SortedSelected = SortedSelected (EverySet SR.Types.UserPlayer)
 
-descendingRanking : EverySet SR.Types.UserPlayer -> SortedRank 
+descendingRanking : EverySet SR.Types.UserPlayer -> SortedSelected 
 descendingRanking esUserPlayer = 
-    SortedRank esUserPlayer
+    SortedSelected esUserPlayer
 
-addUserPlayer : SR.Types.UserPlayer -> SortedRank -> SortedRank
+addUserPlayer : SR.Types.UserPlayer -> SortedSelected -> SortedSelected
 addUserPlayer uplayer srank = 
     case srank of 
-        SortedRank rankedUserPlayers ->
+        SortedSelected rankedUserPlayers ->
            descendingRanking <| (EverySet.insert uplayer rankedUserPlayers)
 
-removeUserPlayer : SR.Types.UserPlayer -> SortedRank -> SortedRank
+removeUserPlayer : SR.Types.UserPlayer -> SortedSelected -> SortedSelected
 removeUserPlayer uplayer srank = 
     case srank of 
-        SortedRank rankedUserPlayers ->
+        SortedSelected rankedUserPlayers ->
            descendingRanking <| (EverySet.remove uplayer rankedUserPlayers)
 
-changeRank : SR.Types.UserPlayer -> Int -> SortedRank -> SortedRank
+changeRank : SR.Types.UserPlayer -> Int -> SortedSelected -> SortedSelected
 changeRank uplayer newRank srank = 
     let 
         newPlayer = uplayer.player
-        updatedPlayer = { newPlayer | rank = newRank}
+        updatedPlayer = { newPlayer | rank = newRank, challengeraddress = ""}
         updatedUserPlayer = { uplayer | player = updatedPlayer}
     in
     
     case srank of 
-        SortedRank rankedUserPlayers ->
+        SortedSelected rankedUserPlayers ->
             descendingRanking rankedUserPlayers
             |> removeUserPlayer uplayer  
             |> addUserPlayer updatedUserPlayer
 
-asList : SortedRank -> List SR.Types.UserPlayer 
+
+
+asList : SortedSelected -> List SR.Types.UserPlayer 
 asList srank = 
     case srank of 
-        SortedRank rankedUserPlayers ->
+        SortedSelected rankedUserPlayers ->
             rankedUserPlayers
            |> EverySet.toList
            |> List.sortBy extractRank

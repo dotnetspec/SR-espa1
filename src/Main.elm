@@ -37,7 +37,8 @@ import Time exposing (Posix)
 import Utils.MyUtils
 import Utils.Validation.Validate
 import Validate
-import Data.SortedRank
+import Data.SortedSelected
+import EverySet exposing (EverySet)
 
 
 main =
@@ -1139,12 +1140,18 @@ handleWon model =
             case whoHigher of
                 SR.Types.OpponentRankHigher ->
                     let
-                        -- update the player list for both players challenger to emptyPlayer and change rankings
-                        lupdatedPlayer =
-                            SR.ListOps.changedRank allLists.userPlayers appInfo.player appInfo.challenger.player.rank
+                        
+                        lupdatedPlayer =  
+                            Data.SortedSelected.descendingRanking (EverySet.fromList allLists.userPlayers)
+                            |> Data.SortedSelected.changeRank appInfo.player appInfo.challenger.player.rank
+                            |> Data.SortedSelected.asList
+
+                        
 
                         lupdatedPlayerAndChallenger =
-                            SR.ListOps.changedRank lupdatedPlayer appInfo.challenger (appInfo.challenger.player.rank + 1)
+                            Data.SortedSelected.descendingRanking (EverySet.fromList lupdatedPlayer)
+                            |> Data.SortedSelected.changeRank appInfo.challenger (appInfo.challenger.player.rank + 1)
+                            |> Data.SortedSelected.asList
 
                         _ = Debug.log "lupdatedPlayerAndChallenger" lupdatedPlayerAndChallenger
 
@@ -1154,6 +1161,8 @@ handleWon model =
 
                         newPlayerUpdated =
                             { newUserPlayerPlayer | address = "" }
+
+                            
 
                         currentUserPlayer =
                             appInfo.player
@@ -1173,6 +1182,7 @@ handleWon model =
                     AppOps walletState
                         newAllLists
                         newAppInfo
+                        --appInfo
                         SR.Types.UISelectedRankingUserIsPlayer
                         txRec
 

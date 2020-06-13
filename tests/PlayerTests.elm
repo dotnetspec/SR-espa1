@@ -256,21 +256,21 @@ assignChallengerAddrTest =
 
 
 
-changedRankTest : Test
-changedRankTest =
-    only <|
-    fuzz3  (Fuzz.list userPlayerFuzzer) userPlayerFuzzer (Fuzz.intRange 1 100) "rank should change" <|
-        \luplayerF uplayerF newRankF ->
-            case SR.ListOps.changedRank luplayerF uplayerF newRankF  of
-                [] ->
-                    Expect.pass
-                a :: _ ->
-                    -- let 
-                    --     _ = Debug.log "a rank " a.player.rank 
+-- changedRankTest : Test
+-- changedRankTest =
+--     only <|
+--     fuzz3  (Fuzz.list userPlayerFuzzer) userPlayerFuzzer (Fuzz.intRange 1 100) "rank should change" <|
+--         \luplayerF uplayerF newRankF ->
+--             case SR.ListOps.changedRank luplayerF uplayerF newRankF  of
+--                 [] ->
+--                     Expect.pass
+--                 a :: _ ->
+--                     -- let 
+--                     --     _ = Debug.log "a rank " a.player.rank 
 
-                    --     _ = Debug.log "uPlayer rank " newRankF
-                    -- in
-                    Expect.equal a.player.rank newRankF
+--                     --     _ = Debug.log "uPlayer rank " newRankF
+--                     -- in
+--                     Expect.equal a.player.rank newRankF
 
 
 extractRankFromPlayer : Maybe SR.Types.Player -> Int
