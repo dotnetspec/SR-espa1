@@ -797,8 +797,11 @@ handleWalletStateOperational msg model =
                             SR.ListOps.convertPlayersToUserPlayers
                                 lplayer
                                 allLists.users
+
+                        
                     in
                     ( updateSelectedRankingPlayerList model convertedToUserPlayers, Cmd.none )
+                    
 
                 ReturnFromUserListUpdate response ->
                     ( updateUserList model (SR.ListOps.extractUsersFromWebData response), Cmd.none )
@@ -1191,29 +1194,12 @@ handleWon model =
 
                         _ = Debug.log "lupdatedPlayerAndChallenger" lupdatedPlayerAndChallenger
 
-                        --update current player now
-                        -- newUserPlayerPlayer =
-                        --     appInfo.player.player
-
-                        -- newPlayerUpdated =
-                        --     { newUserPlayerPlayer | address = "" }
-
-                            
-
-                        -- currentUserPlayer =
-                        --     appInfo.player
-
-                        -- newUserPlayerUpdated =
-                        --     { currentUserPlayer | player = newPlayerUpdated, user = appInfo.user }
-
-                        --updatedAppState = Data.AppState.releasePlayersForUI Data.AppState
-
                         -- handling with AppState then handing back to AppInfo for now ...
                         updatedUserPlayer = Data.AppState.releasePlayerForUI (Data.AppState.updateAppState appInfo.user 
                             appInfo.player appInfo.challenger (Utils.MyUtils.stringToRankingId appInfo.selectedRanking.id))
 
                         newAppInfo =
-                            --{ appInfo | player = newUserPlayerUpdated, challenger = SR.Defaults.emptyUserPlayer }
+                           
                             { appInfo | player = updatedUserPlayer, challenger = SR.Defaults.emptyUserPlayer }
                             
 
@@ -1226,8 +1212,8 @@ handleWon model =
                     AppOps walletState
                         newAllLists
                         newAppInfo
-                        --appInfo
-                        SR.Types.UISelectedRankingUserIsPlayer
+                        -- prefer UISelectedRankingUserIsPlayer, but currently have to render all
+                        SR.Types.UIRenderAllRankings
                         txRec
 
                 SR.Types.OpponentRankLower ->
@@ -1394,14 +1380,11 @@ handleUndecided model =
 
 ensuredCorrectSelectedUI : SR.Types.AppInfo -> SR.Types.AllLists -> SR.Types.UIState
 ensuredCorrectSelectedUI appInfo allLists =
-    let
-        _ =
-            Debug.log "member?" SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user
-    in
-    if SR.ListOps.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking allLists.lownedUserRanking appInfo.user then
+    
+    if Data.SortedSelected.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking allLists.lownedUserRanking appInfo.user then
         SR.Types.UISelectedRankingUserIsOwner
 
-    else if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
+    else if Data.SortedSelected.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
         SR.Types.UISelectedRankingUserIsPlayer
 
     else
@@ -1430,10 +1413,13 @@ assignChallengerAddrsForBOTHPlayers model =
 
                 newAllLists =
                     { allLists | userPlayers = playerAndChallengerSortedAndUpdated }
+                
+                -- UIRenderAllRankings not ideal here - UISelectedRankingUserIsPlayer not updating effectively currently
+                updatedModel = AppOps walletState newAllLists appInfo SR.Types.UIRenderAllRankings txRec
 
             in
-            ( AppOps walletState newAllLists appInfo SR.Types.UISelectedRankingUserIsPlayer txRec,
-            httpPlayerList (AppOps walletState newAllLists appInfo SR.Types.UISelectedRankingUserIsPlayer txRec))
+            ( updatedModel,
+            httpPlayerList (updatedModel))
 
         _ ->
             ( Failure "assignChallengerAddrsForBOTHPlayers", Cmd.none )
@@ -1615,10 +1601,11 @@ updateSelectedRankingPlayerList model luplayers =
                 resetSelectedRankingPlayerList =
                     { allLists | userPlayers = luplayers }
 
-                -- uiState =
-                --     ensuredCorrectSelectedUI appInfo allLists
+
+                newUiState =
+                    ensuredCorrectSelectedUI appInfo allLists
             in
-            AppOps walletState resetSelectedRankingPlayerList appInfo uiState txRec
+            AppOps walletState resetSelectedRankingPlayerList appInfo newUiState txRec
 
         _ ->
             Failure <| "updateSelectedRankingPlayerList : "
@@ -1980,7 +1967,8 @@ configureThenAddPlayerRankingBtns model uplayer =
 
                 
             in
-            if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
+            --if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
+            if Data.SortedSelected.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
                 let
                     _ = Debug.log "player is in selected ranking" "current user not yet determined"
                 in

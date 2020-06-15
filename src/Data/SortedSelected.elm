@@ -1,4 +1,4 @@
-module Data.SortedSelected exposing (SortedSelected, addUserPlayer, removeUserPlayer, asList, changeRank, descendingRanking, isCurrentUserLowerRanked)
+module Data.SortedSelected exposing (SortedSelected, isUserOwnerOfSelectedUserRanking, addUserPlayer, removeUserPlayer, asList, changeRank, descendingRanking, isCurrentUserLowerRanked, isUserMemberOfSelectedRanking)
 
 
 import SR.Types
@@ -43,7 +43,84 @@ isCurrentUserLowerRanked uplayer challenger =
     --n.b. for ranks lower int is higher rank!
     if uplayer.player.rank > challenger.player.rank then
         True 
-        else False 
+        else False
+
+isUserMemberOfSelectedRanking : List SR.Types.UserPlayer -> SR.Types.User -> Bool
+isUserMemberOfSelectedRanking luplayer user =
+    let
+        filteredList =
+            findPlayerInList user luplayer
+
+        filteredRec =
+            List.head filteredList
+    in
+    case filteredRec of
+        Nothing ->
+            False
+
+        Just a ->
+            if (String.toLower a.player.address) == (String.toLower user.ethaddress) then
+                True
+
+            else
+                False
+
+
+isUserOwnerOfSelectedUserRanking : SR.Types.RankingInfo -> List SR.Types.UserRanking -> SR.Types.User -> Bool
+isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
+    let
+        filteredRec =
+            extractSelectedUserRankingFromGlobalList lurnkInfo rnkInfo.id
+
+        _ =
+            Debug.log "filteredRec" filteredRec
+
+        -- filteredRec =
+        --     List.head filteredList
+    in
+    case filteredRec of
+        Nothing ->
+            False
+
+        Just a ->
+            if a.rankingInfo.rankingowneraddr == user.ethaddress then
+                True
+
+            else
+                False
+
+extractSelectedUserRankingFromGlobalList : List SR.Types.UserRanking -> String -> Maybe SR.Types.UserRanking
+extractSelectedUserRankingFromGlobalList luranking rankingid =
+    List.filterMap
+        (isUserRankingIdInList
+            rankingid
+        )
+        luranking
+        |> List.head
+
+isUserRankingIdInList : String -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
+isUserRankingIdInList rankingid urnk =
+    if urnk.rankingInfo.id == rankingid then
+        Just urnk
+
+    else
+        Nothing
+
+findPlayerInList : SR.Types.User -> List SR.Types.UserPlayer -> List SR.Types.UserPlayer
+findPlayerInList user luPlayer =
+    List.filterMap
+        (isThisPlayerAddr
+            (String.toLower user.ethaddress)
+        )
+        luPlayer
+
+isThisPlayerAddr : String -> SR.Types.UserPlayer -> Maybe SR.Types.UserPlayer
+isThisPlayerAddr playerAddr uplayer =
+    if (String.toLower uplayer.player.address) == (String.toLower playerAddr) then
+        Just uplayer
+
+    else
+        Nothing
 
 asList : SortedSelected -> List SR.Types.UserPlayer 
 asList srank = 

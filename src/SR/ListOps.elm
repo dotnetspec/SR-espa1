@@ -31,9 +31,9 @@ module SR.ListOps exposing
     , isUniqueUserName
     , isUniqueRankingName
     , isUserInListStrAddr
-    , isUserMemberOfSelectedRanking
-    , isUserOwnerOfSelectedUserRanking
-    , isUserSelectedOwnerOfRanking
+    --, isUserMemberOfSelectedRanking
+    --, isUserOwnerOfSelectedUserRanking
+    --, isUserSelectedOwnerOfRanking
     , ownerValidatedRankingList
     , removeCurrentUserEntryFromUserList
     ,  removedDuplicateUserFromUserList
@@ -282,25 +282,25 @@ addedNewJoinedRankingIdToUser rankingId user lUser =
     newUserList
 
 
-isUserMemberOfSelectedRanking : List SR.Types.UserPlayer -> SR.Types.User -> Bool
-isUserMemberOfSelectedRanking luplayer user =
-    let
-        filteredList =
-            findPlayerInList user luplayer
+-- isUserMemberOfSelectedRanking : List SR.Types.UserPlayer -> SR.Types.User -> Bool
+-- isUserMemberOfSelectedRanking luplayer user =
+--     let
+--         filteredList =
+--             findPlayerInList user luplayer
 
-        filteredRec =
-            List.head filteredList
-    in
-    case filteredRec of
-        Nothing ->
-            False
+--         filteredRec =
+--             List.head filteredList
+--     in
+--     case filteredRec of
+--         Nothing ->
+--             False
 
-        Just a ->
-            if (String.toLower a.player.address) == (String.toLower user.ethaddress) then
-                True
+--         Just a ->
+--             if (String.toLower a.player.address) == (String.toLower user.ethaddress) then
+--                 True
 
-            else
-                False
+--             else
+--                 False
 
 
 gotUserFromUserList : List SR.Types.User -> String -> SR.Types.User
@@ -378,28 +378,28 @@ isUserSelectedOwnerOfRanking rnkInfo lrnkInfo user =
                 False
 
 
-isUserOwnerOfSelectedUserRanking : SR.Types.RankingInfo -> List SR.Types.UserRanking -> SR.Types.User -> Bool
-isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
-    let
-        filteredRec =
-            extractSelectedUserRankingFromGlobalList lurnkInfo rnkInfo.id
+-- isUserOwnerOfSelectedUserRanking : SR.Types.RankingInfo -> List SR.Types.UserRanking -> SR.Types.User -> Bool
+-- isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
+--     let
+--         filteredRec =
+--             extractSelectedUserRankingFromGlobalList lurnkInfo rnkInfo.id
 
-        _ =
-            Debug.log "filteredRec" filteredRec
+--         _ =
+--             Debug.log "filteredRec" filteredRec
 
-        -- filteredRec =
-        --     List.head filteredList
-    in
-    case filteredRec of
-        Nothing ->
-            False
+--         -- filteredRec =
+--         --     List.head filteredList
+--     in
+--     case filteredRec of
+--         Nothing ->
+--             False
 
-        Just a ->
-            if a.rankingInfo.rankingowneraddr == user.ethaddress then
-                True
+--         Just a ->
+--             if a.rankingInfo.rankingowneraddr == user.ethaddress then
+--                 True
 
-            else
-                False
+--             else
+--                 False
 
 
 filterSelectedRankingOutOfGlobalList : String -> List SR.Types.RankingInfo -> List SR.Types.RankingInfo
@@ -433,23 +433,23 @@ findSelectedRankingInGlobalList lrankinginfo rankingid =
         lrankinginfo
 
 
-extractSelectedUserRankingFromGlobalList : List SR.Types.UserRanking -> String -> Maybe SR.Types.UserRanking
-extractSelectedUserRankingFromGlobalList luranking rankingid =
-    List.filterMap
-        (isUserRankingIdInList
-            rankingid
-        )
-        luranking
-        |> List.head
+-- extractSelectedUserRankingFromGlobalList : List SR.Types.UserRanking -> String -> Maybe SR.Types.UserRanking
+-- extractSelectedUserRankingFromGlobalList luranking rankingid =
+--     List.filterMap
+--         (isUserRankingIdInList
+--             rankingid
+--         )
+--         luranking
+--         |> List.head
 
 
-isUserRankingIdInList : String -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
-isUserRankingIdInList rankingid urnk =
-    if urnk.rankingInfo.id == rankingid then
-        Just urnk
+-- isUserRankingIdInList : String -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
+-- isUserRankingIdInList rankingid urnk =
+--     if urnk.rankingInfo.id == rankingid then
+--         Just urnk
 
-    else
-        Nothing
+--     else
+--         Nothing
 
 
 isRankingIdInList : String -> SR.Types.RankingInfo -> Maybe SR.Types.RankingInfo
