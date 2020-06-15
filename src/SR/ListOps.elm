@@ -296,7 +296,7 @@ isUserMemberOfSelectedRanking luplayer user =
             False
 
         Just a ->
-            if a.player.address == user.ethaddress then
+            if (String.toLower a.player.address) == (String.toLower user.ethaddress) then
                 True
 
             else
@@ -917,14 +917,14 @@ findPlayerInList : SR.Types.User -> List SR.Types.UserPlayer -> List SR.Types.Us
 findPlayerInList user luPlayer =
     List.filterMap
         (isThisPlayerAddr
-            user.ethaddress
+            (String.toLower user.ethaddress)
         )
         luPlayer
 
 
 isThisPlayerAddr : String -> SR.Types.UserPlayer -> Maybe SR.Types.UserPlayer
 isThisPlayerAddr playerAddr uplayer =
-    if uplayer.player.address == playerAddr then
+    if (String.toLower uplayer.player.address) == (String.toLower playerAddr) then
         Just uplayer
 
     else

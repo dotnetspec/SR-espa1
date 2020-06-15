@@ -200,6 +200,12 @@ type alias User =
     , userjoinrankings : List String
     }
 
+type alias Player =
+    { address : String
+    , rank : Int
+    , challengeraddress : String
+    }
+
 
 type alias FormValidations =
     { username : String
@@ -211,11 +217,7 @@ type alias FormValidations =
     }
 
 
-type alias Player =
-    { address : String
-    , rank : Int
-    , challengeraddress : String
-    }
+
 
 
 type alias RankingInfo =
