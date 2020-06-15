@@ -1,4 +1,4 @@
-module Data.SortedSelected exposing (SortedSelected, addUserPlayer, removeUserPlayer, asList, changeRank, descendingRanking)
+module Data.SortedSelected exposing (SortedSelected, addUserPlayer, removeUserPlayer, asList, changeRank, descendingRanking, isCurrentUserLowerRanked)
 
 
 import SR.Types
@@ -38,6 +38,12 @@ changeRank uplayer newRank srank =
             |> addUserPlayer updatedUserPlayer
 
 
+isCurrentUserLowerRanked : SR.Types.UserPlayer -> SR.Types.UserPlayer -> Bool 
+isCurrentUserLowerRanked uplayer challenger = 
+    --n.b. for ranks lower int is higher rank!
+    if uplayer.player.rank > challenger.player.rank then
+        True 
+        else False 
 
 asList : SortedSelected -> List SR.Types.UserPlayer 
 asList srank = 

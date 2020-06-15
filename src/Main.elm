@@ -1430,10 +1430,10 @@ assignChallengerAddrsForBOTHPlayers model =
 
                 newAllLists =
                     { allLists | userPlayers = playerAndChallengerSortedAndUpdated }
+
             in
-            ( AppOps walletState newAllLists appInfo SR.Types.UISelectedRankingUserIsPlayer txRec, 
-            --httpPlayerList appInfo.selectedRanking.id newAllLists.userPlayers )
-            httpPlayerList model)
+            ( AppOps walletState newAllLists appInfo SR.Types.UISelectedRankingUserIsPlayer txRec,
+            httpPlayerList (AppOps walletState newAllLists appInfo SR.Types.UISelectedRankingUserIsPlayer txRec))
 
         _ ->
             ( Failure "assignChallengerAddrsForBOTHPlayers", Cmd.none )
@@ -2033,17 +2033,26 @@ configureThenAddPlayerRankingBtns model uplayer =
                 else
                 -- this uplayer isn't the current user and isn't challenged by anyone
                 let 
-                        _ = Debug.log "player is not current user, and is ready to be challenged" uplayer
-                    in
-                    Element.column Grid.simple <|
-                        [ Input.button (Button.fill ++ Color.light) <|
-                            { onPress = Just <| ChallengeOpponentClicked uplayer
-                            , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
-                            }
-                        ]
-                -- the user isn't a member of this ranking so disable everything
+                        _ = Debug.log "player is not current user, and is ready to be challenged if higher ranked" uplayer
+                in
+                    if Data.SortedSelected.isCurrentUserLowerRanked uplayer appInfo.challenger then 
+                        Element.column Grid.simple <|
+                            [ Input.button (Button.fill ++ Color.light) <|
+                                { onPress = Just <| ChallengeOpponentClicked uplayer
+                                , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
+                                }
+                            ]
+                    else 
+                             Element.column Grid.simple <|
+                            [ Input.button (Button.fill ++ Color.disabled) <|
+                                { onPress = Nothing
+                                , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
+                                }
+                            ]
+                
 
             else
+                -- the user isn't a member of this ranking so disable everything
                 Element.column Grid.simple <|
                     [ Input.button (Button.fill ++ Color.disabled) <|
                         { onPress = Nothing
