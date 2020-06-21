@@ -15,11 +15,7 @@ import Shrink
 import Test exposing (..)
 import Testdata.UserTestData
 import Data.Users
-
-
-
-
-
+import EverySet exposing (EverySet)
 
 
 --userFuzzer : Fuzzer SR.Types.User -> Fuzzer (a -> b) -> Fuzzer b
@@ -41,21 +37,30 @@ userFuzzer =
 
 -- Data.Users tests
 
--- validSetTest : Test
--- validSetTest =
---     fuzz (Fuzz.list userFuzzer) "a user set must contain unique and valid values" <|
---         \list ->
---             case Data.Users.asUsers (EverySet list) of
---                 [] ->
---                     Expect.pass
-
---                 usersSet ->
---                     Expect.equalSets "Expect only unique and valid users" 
---                     <| usersSet
---                     <| 
-
-                    -- <| List.all isValidEthAddress 
-                    -- <| SR.ListOps.validatedUserList usersList
+validSetTest : Test
+validSetTest =
+    --only <|
+     describe "Data.Users tests"
+        [ fuzz (Fuzz.list userFuzzer) """a user set must contain unique values 
+        and will therefore be shorter than lists with duplicate values""" <|
+            \list ->
+            case Data.Users.asUsers (EverySet.fromList list) of
+              usersSet ->
+                List.length list
+                  |> Expect.atLeast (List.length (Data.Users.asList usersSet))
+        
+        ,fuzz (Fuzz.list userFuzzer) """a user set must contain an extra entry if a new user is added""" <|
+            \list ->
+            case Data.Users.asUsers (EverySet.fromList list) of
+              usersSet ->
+                let 
+                    newUserSet = Data.Users.addUser Testdata.UserTestData.singleUser usersSet
+                in
+                
+                Expect.equal (List.length (Data.Users.asList usersSet) + 1) (List.length (Data.Users.asList newUserSet))
+        ]
+    
+                    
 
 
 
