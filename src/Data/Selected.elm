@@ -1,29 +1,66 @@
-module Data.SortedSelected exposing (SortedSelected, isUserOwnerOfSelectedUserRanking, addUserPlayer, removeUserPlayer, asList, changeRank, descendingRanking, isCurrentUserLowerRanked, isUserMemberOfSelectedRanking)
+module Data.Selected exposing (Selected, isUserOwnerOfSelectedUserRanking, addUserPlayer, removeUserPlayer, asList, changeRank, descendingRanking, isCurrentUserPlayerLowerRanked, isUserPlayerMemberOfSelectedRanking)
 
 
 import SR.Types
 import EverySet exposing (EverySet)
+import Internal.Types
+import Utils.MyUtils
 
 
-type SortedSelected = SortedSelected (EverySet SR.Types.UserPlayer)
+type Selected = Selected (EverySet SR.Types.UserPlayer) Internal.Types.RankingId
 
-descendingRanking : EverySet SR.Types.UserPlayer -> SortedSelected 
-descendingRanking esUserPlayer = 
-    SortedSelected esUserPlayer
+descendingRanking : EverySet SR.Types.UserPlayer -> Internal.Types.RankingId -> Selected 
+descendingRanking esUserPlayer rnkId = 
+    Selected esUserPlayer rnkId
 
-addUserPlayer : SR.Types.UserPlayer -> SortedSelected -> SortedSelected
+addUserPlayer : SR.Types.UserPlayer -> Selected -> Selected
 addUserPlayer uplayer srank = 
     case srank of 
-        SortedSelected rankedUserPlayers ->
-           descendingRanking <| (EverySet.insert uplayer rankedUserPlayers)
+        Selected rankedUserPlayers rnkId ->
+                rnkId 
+                |> descendingRanking (EverySet.insert (addNewUserPlayerJoinRanking uplayer rnkId) rankedUserPlayers) 
 
-removeUserPlayer : SR.Types.UserPlayer -> SortedSelected -> SortedSelected
+
+addNewUserPlayerJoinRanking : SR.Types.UserPlayer -> Internal.Types.RankingId -> SR.Types.UserPlayer
+addNewUserPlayerJoinRanking uplayer rnkId = 
+    let 
+        newUser = uplayer.user 
+        updatedUserJoinRankings = {newUser | userjoinrankings = Utils.MyUtils.stringFromRankingId rnkId :: uplayer.user.userjoinrankings}
+        newUserPlayer =  { uplayer | player = uplayer.player, user = updatedUserJoinRankings }
+        _ = Debug.log "newUserPlayer" newUserPlayer
+    in 
+        newUserPlayer
+
+
+
+-- addedNewJoinedRankingIdToUser : String -> SR.Types.User -> List SR.Types.User -> List SR.Types.User
+-- addedNewJoinedRankingIdToUser rankingId user lUser =
+--     let
+--         currentUser =
+--             gotUserFromUserList lUser user.username
+
+--         userJoinRankings =
+--             currentUser.userjoinrankings
+
+--         newUserJoinRankings =
+--             rankingId :: userJoinRankings
+
+--         newUser =
+--             { user | userjoinrankings = newUserJoinRankings }
+
+--         newUserList =
+--             newUser :: lUser
+--     in
+--     newUserList
+
+removeUserPlayer : SR.Types.UserPlayer -> Selected -> Selected
 removeUserPlayer uplayer srank = 
     case srank of 
-        SortedSelected rankedUserPlayers ->
-           descendingRanking <| (EverySet.remove uplayer rankedUserPlayers)
+        Selected rankedUserPlayers rnkId->
+           rnkId 
+           |> descendingRanking (EverySet.remove uplayer rankedUserPlayers) 
 
-changeRank : SR.Types.UserPlayer -> Int -> SortedSelected -> SortedSelected
+changeRank : SR.Types.UserPlayer -> Int -> Selected -> Selected
 changeRank uplayer newRank srank = 
     let 
         newPlayer = uplayer.player
@@ -32,21 +69,22 @@ changeRank uplayer newRank srank =
     in
     
     case srank of 
-        SortedSelected rankedUserPlayers ->
-            descendingRanking rankedUserPlayers
+        Selected rankedUserPlayers rnkId ->
+            rnkId
+            |> descendingRanking rankedUserPlayers
             |> removeUserPlayer uplayer  
             |> addUserPlayer updatedUserPlayer
 
 
-isCurrentUserLowerRanked : SR.Types.UserPlayer -> SR.Types.UserPlayer -> Bool 
-isCurrentUserLowerRanked uplayer challenger = 
+isCurrentUserPlayerLowerRanked : SR.Types.UserPlayer -> SR.Types.UserPlayer -> Bool 
+isCurrentUserPlayerLowerRanked uplayer challenger = 
     --n.b. for ranks lower int is higher rank!
     if uplayer.player.rank > challenger.player.rank then
         True 
         else False
 
-isUserMemberOfSelectedRanking : List SR.Types.UserPlayer -> SR.Types.User -> Bool
-isUserMemberOfSelectedRanking luplayer user =
+isUserPlayerMemberOfSelectedRanking : List SR.Types.UserPlayer -> SR.Types.User -> Bool
+isUserPlayerMemberOfSelectedRanking luplayer user =
     let
         filteredList =
             findPlayerInList user luplayer
@@ -122,10 +160,10 @@ isThisPlayerAddr playerAddr uplayer =
     else
         Nothing
 
-asList : SortedSelected -> List SR.Types.UserPlayer 
+asList : Selected -> List SR.Types.UserPlayer 
 asList srank = 
     case srank of 
-        SortedSelected rankedUserPlayers ->
+        Selected rankedUserPlayers rnkId ->
             rankedUserPlayers
            |> EverySet.toList
            |> List.sortBy extractRank

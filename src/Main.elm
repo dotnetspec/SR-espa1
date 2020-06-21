@@ -37,7 +37,7 @@ import Time exposing (Posix)
 import Utils.MyUtils
 import Utils.Validation.Validate
 import Validate
-import Data.SortedSelected
+import Data.Selected
 import Data.AppState
 import EverySet exposing (EverySet)
 
@@ -783,7 +783,30 @@ handleWalletStateOperational msg model =
 
                 ClickedJoinSelected ->
                     if SR.ListOps.isRegistered allLists.users appInfo.user then
-                        ( model, Cmd.batch [ addCurrentUserToPlayerList appInfo.selectedRanking.id allLists.userPlayers appInfo.user, updateUsersJoinRankings appInfo.selectedRanking.id appInfo.user allLists.users ] )
+                        --( model, Cmd.batch [ addCurrentUserToPlayerList appInfo.selectedRanking.id allLists.userPlayers appInfo.user])
+                        --, updateUsersJoinRankings appInfo.selectedRanking.id appInfo.user allLists.users ] )
+                        let 
+                            newUserPlayer =
+                                { player =
+                                    { address = appInfo.user.ethaddress
+                                    , rank = List.length allLists.userPlayers + 1
+                                    , challengeraddress = ""
+                                    }
+                                , user = appInfo.user
+                                }
+
+                            userAdded =
+                                Utils.MyUtils.stringToRankingId appInfo.selectedRanking.id
+                                |> Data.Selected.descendingRanking (EverySet.fromList allLists.userPlayers)
+                                |> Data.Selected.addUserPlayer newUserPlayer
+                                |> Data.Selected.asList
+                       -- in
+                        --(model, Data.Selected.asList userAdded )
+                            newAllLists = {allLists | userPlayers = userAdded}
+                            updatedModel = AppOps walletState newAllLists appInfo SR.Types.UIRenderAllRankings txRec
+
+                        in
+                        ( updatedModel, httpPlayerList (updatedModel))
 
                     else
                         ( AppOps walletState allLists appInfo SR.Types.UIRegisterNewUser txRec, Cmd.none )
@@ -1181,16 +1204,18 @@ handleWon model =
                     let
                         
                         lupdatedPlayer =  
-                            Data.SortedSelected.descendingRanking (EverySet.fromList allLists.userPlayers)
-                            |> Data.SortedSelected.changeRank appInfo.player appInfo.challenger.player.rank
-                            |> Data.SortedSelected.asList
+                            Utils.MyUtils.stringToRankingId appInfo.selectedRanking.id
+                            |> Data.Selected.descendingRanking (EverySet.fromList allLists.userPlayers)
+                            |> Data.Selected.changeRank appInfo.player appInfo.challenger.player.rank
+                            |> Data.Selected.asList
 
                         
 
                         lupdatedPlayerAndChallenger =
-                            Data.SortedSelected.descendingRanking (EverySet.fromList lupdatedPlayer)
-                            |> Data.SortedSelected.changeRank appInfo.challenger (appInfo.challenger.player.rank + 1)
-                            |> Data.SortedSelected.asList
+                            Utils.MyUtils.stringToRankingId appInfo.selectedRanking.id
+                            |> Data.Selected.descendingRanking (EverySet.fromList lupdatedPlayer)
+                            |> Data.Selected.changeRank appInfo.challenger (appInfo.challenger.player.rank + 1)
+                            |> Data.Selected.asList
 
                         _ = Debug.log "lupdatedPlayerAndChallenger" lupdatedPlayerAndChallenger
 
@@ -1381,10 +1406,10 @@ handleUndecided model =
 ensuredCorrectSelectedUI : SR.Types.AppInfo -> SR.Types.AllLists -> SR.Types.UIState
 ensuredCorrectSelectedUI appInfo allLists =
     
-    if Data.SortedSelected.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking allLists.lownedUserRanking appInfo.user then
+    if Data.Selected.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking allLists.lownedUserRanking appInfo.user then
         SR.Types.UISelectedRankingUserIsOwner
 
-    else if Data.SortedSelected.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
+    else if Data.Selected.isUserPlayerMemberOfSelectedRanking allLists.userPlayers appInfo.user then
         SR.Types.UISelectedRankingUserIsPlayer
 
     else
@@ -1914,9 +1939,9 @@ configureThenAddPlayerRankingBtns model uplayer =
 
                 
 
-                _ = Debug.log "allLists.userPlayers in configureThenAddPlayerRankingBtns" allLists.userPlayers
+                -- _ = Debug.log "allLists.userPlayers in configureThenAddPlayerRankingBtns" allLists.userPlayers
 
-                _ = Debug.log "appInfo.user" appInfo.user
+                -- _ = Debug.log "appInfo.user" appInfo.user
 
                 playerAsUser =
                     SR.ListOps.gotUserFromUserList allLists.users uplayer.player.address
@@ -1967,8 +1992,8 @@ configureThenAddPlayerRankingBtns model uplayer =
 
                 
             in
-            --if SR.ListOps.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
-            if Data.SortedSelected.isUserMemberOfSelectedRanking allLists.userPlayers appInfo.user then
+            --if SR.ListOps.isUserPlayerMemberOfSelectedRanking allLists.userPlayers appInfo.user then
+            if Data.Selected.isUserPlayerMemberOfSelectedRanking allLists.userPlayers appInfo.user then
                 let
                     _ = Debug.log "player is in selected ranking" "current user not yet determined"
                 in
@@ -1982,7 +2007,7 @@ configureThenAddPlayerRankingBtns model uplayer =
                         in
                         Element.column Grid.simple <|
                             [ Input.button (Button.fill ++ Color.success) <|
-                                { onPress = Just <| ChangedUIStateToEnterResult uplayer
+                                { onPress = Just <| ChangedUIStateToEnterResult appInfo.player
                                 , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
                                 }
                             ]
@@ -2023,7 +2048,7 @@ configureThenAddPlayerRankingBtns model uplayer =
                 let 
                         _ = Debug.log "player is not current user, and is ready to be challenged if higher ranked" uplayer
                 in
-                    if Data.SortedSelected.isCurrentUserLowerRanked uplayer appInfo.challenger then 
+                    if Data.Selected.isCurrentUserPlayerLowerRanked uplayer appInfo.challenger then 
                         Element.column Grid.simple <|
                             [ Input.button (Button.fill ++ Color.light) <|
                                 { onPress = Just <| ChallengeOpponentClicked uplayer
@@ -2229,7 +2254,7 @@ confirmResultbutton model =
                             , label = Element.text "Won"
                             }
                         , Input.button (Button.simple  ++ Button.fill ++ Color.primary) <|
-                            { onPress = Just <| ProcessResult SR.Types.Lost
+                            { onPress = Just <| SentResultToWallet SR.Types.Lost
                             , label = Element.text "Lost"
                             }
                         , Input.button (Button.simple  ++ Button.fill ++ Color.primary) <|
@@ -3165,7 +3190,7 @@ jsonEncodeNewUsersList luserInfo =
 
 
 addCurrentUserToPlayerList : String -> List SR.Types.UserPlayer -> SR.Types.User -> Cmd Msg
-addCurrentUserToPlayerList intrankingId luPlayer userRec =
+addCurrentUserToPlayerList strrankingId luPlayer userRec =
     let
         newUserPlayer =
             { player =
@@ -3176,11 +3201,17 @@ addCurrentUserToPlayerList intrankingId luPlayer userRec =
             , user = userRec
             }
 
-        selectedRankingListWithNewPlayerJsonObjAdded =
-            newUserPlayer :: luPlayer
+        -- selectedRankingListWithNewPlayerJsonObjAdded =
+        --     newUserPlayer :: luPlayer
 
-        sortedSelectedRankingListWithNewPlayerJsonObjAdded =
-            SR.ListOps.sortedRank selectedRankingListWithNewPlayerJsonObjAdded
+        -- SelectedRankingListWithNewPlayerJsonObjAdded =
+        --     SR.ListOps.sortedRank selectedRankingListWithNewPlayerJsonObjAdded
+
+        userAdded =
+            Utils.MyUtils.stringToRankingId strrankingId
+            |> Data.Selected.descendingRanking (EverySet.fromList luPlayer)
+            |> Data.Selected.addUserPlayer newUserPlayer
+            |> Data.Selected.asList
     in
     --ReturnFromPlayerListUpdate is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
@@ -3188,13 +3219,14 @@ addCurrentUserToPlayerList intrankingId luPlayer userRec =
     -- the Decoder decodes what comes back in the response
     Http.request
         { body =
-            Http.jsonBody <| jsonEncodeNewSelectedRankingPlayerList sortedSelectedRankingListWithNewPlayerJsonObjAdded
+            Http.jsonBody <| jsonEncodeNewSelectedRankingPlayerList userAdded
         , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromPlayerListUpdate) SR.Decode.decodeNewPlayerListServerResponse
         , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
         , method = "PUT"
         , timeout = Nothing
         , tracker = Nothing
-        , url = SR.Constants.jsonbinUrlStubForUpdateExistingBinAndRespond ++ intrankingId
+        , url = SR.Constants.jsonbinUrlStubForUpdateExistingBinAndRespond ++ strrankingId
+        
         }
 
 

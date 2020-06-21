@@ -20928,7 +20928,7 @@ var $author$project$SR$ListOps$findPlayerInList = F2(
 			$author$project$SR$ListOps$isThisPlayerAddr(user.ethaddress),
 			luPlayer);
 	});
-var $author$project$SR$ListOps$isUserMemberOfSelectedRanking = F2(
+var $author$project$SR$ListOps$isUserPlayerMemberOfSelectedRanking = F2(
 	function (luplayer, user) {
 		var filteredList = A2($author$project$SR$ListOps$findPlayerInList, user, luplayer);
 		var filteredRec = $elm$core$List$head(filteredList);
@@ -20959,7 +20959,7 @@ var $author$project$Main$configureThenAddPlayerRankingBtns = F2(
 			var challengerAsUser = A2($author$project$SR$ListOps$gotUserFromUserList, allLists.users, uplayer.player.challengeraddress);
 			var isChallenged = (challengerAsUser.username !== '') ? true : false;
 			var printChallengerNameOrAvailable = isChallenged ? challengerAsUser.username : 'Available';
-			return A2($author$project$SR$ListOps$isUserMemberOfSelectedRanking, allLists.userPlayers, appInfo.user) ? (isPlayerCurrentUser ? (isCurrentUserInAChallenge ? A2(
+			return A2($author$project$SR$ListOps$isUserPlayerMemberOfSelectedRanking, allLists.userPlayers, appInfo.user) ? (isPlayerCurrentUser ? (isCurrentUserInAChallenge ? A2(
 				$mdgriffith$elm_ui$Element$column,
 				$Orasund$elm_ui_framework$Framework$Grid$simple,
 				_List_fromArray(

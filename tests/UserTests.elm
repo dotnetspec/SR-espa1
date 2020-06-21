@@ -14,6 +14,11 @@ import SR.Types
 import Shrink
 import Test exposing (..)
 import Testdata.UserTestData
+import Data.Users
+
+
+
+
 
 
 
@@ -34,6 +39,27 @@ userFuzzer =
         |> Fuzz.andMap (Fuzz.list Fuzz.string)
 
 
+-- Data.Users tests
+
+-- validSetTest : Test
+-- validSetTest =
+--     fuzz (Fuzz.list userFuzzer) "a user set must contain unique and valid values" <|
+--         \list ->
+--             case Data.Users.asUsers (EverySet list) of
+--                 [] ->
+--                     Expect.pass
+
+--                 usersSet ->
+--                     Expect.equalSets "Expect only unique and valid users" 
+--                     <| usersSet
+--                     <| 
+
+                    -- <| List.all isValidEthAddress 
+                    -- <| SR.ListOps.validatedUserList usersList
+
+
+
+-- ListOp tests
 gotUserFromUserListTest : Test
 gotUserFromUserListTest =
     let

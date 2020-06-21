@@ -16,13 +16,30 @@ import Random
 import Random.Char
 import Random.Extra
 import Random.String
-import SR.Decode
 import SR.Defaults
 import SR.ListOps
 import SR.Types
 import Shrink
 import Test exposing (..)
 import Testdata.UserPlayerTestData
+import Json.Decode as Decode exposing (decodeValue)
+import SR.Decode
+import Json.Encode as Encode
+
+-- decoderTest : Test
+-- decoderTest =
+--     only <| 
+--      fuzz3 string int string "challengeraddress defaults to ('')" <|
+--      \address rank challengeraddress ->
+--          --\_ ->
+--              [ ( "address", Encode.string address )
+--              , ( "rank", Encode.int rank )
+--              , ( "challengeraddress", Encode.string challengeraddress)
+--              ]
+--                  |> Encode.object
+--                  |> decodeValue SR.Decode.playerDecoder
+--                  |> Result.map .challengeraddress
+--                  |> Expect.equal (Ok "")
 
 
 start : ProgramTest Main.Model Main.Msg (Cmd Main.Msg)

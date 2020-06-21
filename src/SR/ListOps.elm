@@ -31,9 +31,6 @@ module SR.ListOps exposing
     , isUniqueUserName
     , isUniqueRankingName
     , isUserInListStrAddr
-    --, isUserMemberOfSelectedRanking
-    --, isUserOwnerOfSelectedUserRanking
-    --, isUserSelectedOwnerOfRanking
     , ownerValidatedRankingList
     , removeCurrentUserEntryFromUserList
     ,  removedDuplicateUserFromUserList
@@ -282,25 +279,6 @@ addedNewJoinedRankingIdToUser rankingId user lUser =
     newUserList
 
 
--- isUserMemberOfSelectedRanking : List SR.Types.UserPlayer -> SR.Types.User -> Bool
--- isUserMemberOfSelectedRanking luplayer user =
---     let
---         filteredList =
---             findPlayerInList user luplayer
-
---         filteredRec =
---             List.head filteredList
---     in
---     case filteredRec of
---         Nothing ->
---             False
-
---         Just a ->
---             if (String.toLower a.player.address) == (String.toLower user.ethaddress) then
---                 True
-
---             else
---                 False
 
 
 gotUserFromUserList : List SR.Types.User -> String -> SR.Types.User
@@ -334,72 +312,6 @@ gotUserRankingFromUserRankingList urankingList (Internal.Types.RankingId rnkid) 
         Just a ->
             a
 
-
-
--- gotUserFromUserList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
--- gotUserFromUserList userList uaddr =
---     let
---         existingUser =
---             List.head <|
---                 List.filter (\r -> r.ethaddress == (String.toLower <| Eth.Utils.addressToString <| uaddr))
---                     userList
---     in
---     case existingUser of
---         Nothing ->
---             SR.Defaults.emptyUser
---         Just a ->
---             a
--- singleUserInList : List SR.Types.User -> Eth.Types.Address -> SR.Types.User
--- singleUserInList userlist uaddr =
---     gotUserFromUserList userlist uaddr
--- singleUserInListStrAddr : List SR.Types.User -> String -> SR.Types.User
--- singleUserInListStrAddr userlist uaddr =
---     gotUserFromUserList userlist uaddr
-
-
-isUserSelectedOwnerOfRanking : SR.Types.RankingInfo -> List SR.Types.RankingInfo -> SR.Types.User -> Bool
-isUserSelectedOwnerOfRanking rnkInfo lrnkInfo user =
-    let
-        filteredList =
-            findSelectedRankingInGlobalList lrnkInfo rnkInfo.id
-
-        filteredRec =
-            List.head filteredList
-    in
-    case filteredRec of
-        Nothing ->
-            False
-
-        Just a ->
-            if a.rankingowneraddr == user.ethaddress then
-                True
-
-            else
-                False
-
-
--- isUserOwnerOfSelectedUserRanking : SR.Types.RankingInfo -> List SR.Types.UserRanking -> SR.Types.User -> Bool
--- isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
---     let
---         filteredRec =
---             extractSelectedUserRankingFromGlobalList lurnkInfo rnkInfo.id
-
---         _ =
---             Debug.log "filteredRec" filteredRec
-
---         -- filteredRec =
---         --     List.head filteredList
---     in
---     case filteredRec of
---         Nothing ->
---             False
-
---         Just a ->
---             if a.rankingInfo.rankingowneraddr == user.ethaddress then
---                 True
-
---             else
---                 False
 
 
 filterSelectedRankingOutOfGlobalList : String -> List SR.Types.RankingInfo -> List SR.Types.RankingInfo

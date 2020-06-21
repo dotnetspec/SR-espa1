@@ -12,6 +12,7 @@ module SR.Decode exposing
 import Json.Decode exposing (..)
 import Json.Decode.Pipeline exposing (custom, optional, required)
 import SR.Types
+import Eth.Utils
 
 
 ladderOfPlayersDecoder : Json.Decode.Decoder (List SR.Types.Player)
@@ -25,6 +26,20 @@ playerDecoder =
         |> Json.Decode.Pipeline.required "address" Json.Decode.string
         |> Json.Decode.Pipeline.required "rank" Json.Decode.int
         |> Json.Decode.Pipeline.required "challengeraddress" Json.Decode.string
+
+-- addrDecoder : Json.Decode.Decoder String 
+-- addrDecoder = 
+
+--     case field "challengeraddress" string of 
+--         Ok addr ->
+--             if Eth.Utils.isAddress addr then
+--                  addr 
+--             else 
+--                  ""
+
+--         Err str ->
+--             ""
+
 
 
 rankingsDecoder : Json.Decode.Decoder (List SR.Types.RankingInfo)
