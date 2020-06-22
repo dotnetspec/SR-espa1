@@ -1,10 +1,13 @@
-module Data.Users exposing (Users, addUser, removeUser, asList, asUsers, getUser)
+module Data.Users exposing (Users, addUser, removeUser, asList, asUsers, getUser, gotUser, userSetLength)
 
 
 import SR.Types
 import EverySet exposing (EverySet)
 import Internal.Types
 import Utils.MyUtils
+import SR.Defaults
+--import SR.ListOps
+
 
 
 type Users = Users (EverySet SR.Types.User) 
@@ -17,9 +20,28 @@ addUser : SR.Types.User -> Users -> Users
 addUser user susers = 
     case susers of 
         Users setOfUsers  ->
-               -- EverySet.insert user setOfUsers
-                --insert : a -> EverySet a -> EverySet a
-                asUsers (EverySet.insert user setOfUsers) 
+                asUsers (EverySet.insert user setOfUsers)
+
+userSetLength : Users -> Int 
+userSetLength (Users susers) = 
+    EverySet.size susers
+
+
+gotUser : Users  -> String -> SR.Types.User
+gotUser (Users susers) uaddr =
+    let
+        existingUser =
+            List.head <|
+                 EverySet.toList (EverySet.filter (\r -> (String.toLower <| r.ethaddress) == (String.toLower <| uaddr))
+                    susers)
+    in
+    
+    case existingUser of
+        Nothing ->
+            SR.Defaults.emptyUser
+
+        Just a ->
+            a
 
 
 -- probably should return a set, not a list:

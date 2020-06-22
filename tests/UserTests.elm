@@ -41,28 +41,41 @@ validSetTest : Test
 validSetTest =
     --only <|
      describe "Data.Users tests"
-        [ fuzz (Fuzz.list userFuzzer) """a user set must contain unique values 
-        and will therefore be shorter than lists with duplicate values""" <|
+        [ fuzz (Fuzz.list userFuzzer) """a (fuzzy) user set must contain unique values 
+        and will therefore always be shorter than or equal to lists with potential duplicate values""" <|
             \list ->
             case Data.Users.asUsers (EverySet.fromList list) of
               usersSet ->
                 List.length list
                   |> Expect.atLeast (List.length (Data.Users.asList usersSet))
         
-        ,fuzz (Fuzz.list userFuzzer) """a user set must contain an extra entry if a new user is added""" <|
+        ,fuzz (Fuzz.list userFuzzer) """a (fuzzy) user set must contain only 1 extra entry if a new user is added""" <|
             \list ->
             case Data.Users.asUsers (EverySet.fromList list) of
               usersSet ->
                 let 
                     newUserSet = Data.Users.addUser Testdata.UserTestData.singleUser usersSet
                 in
-                
-                Expect.equal (List.length (Data.Users.asList usersSet) + 1) (List.length (Data.Users.asList newUserSet))
+                (List.length (Data.Users.asList newUserSet))
+                |> Expect.all
+                    [ Expect.lessThan (List.length (Data.Users.asList usersSet) + 2) 
+                    , Expect.greaterThan (List.length (Data.Users.asList usersSet))
+                    , Expect.notEqual 0
+                    , Expect.lessThan 500000
+                    ]
+        , 
+            fuzz (Fuzz.list userFuzzer) """gotUser must retrieve the correct user from the (fuzzy) set""" <|
+            \list ->
+            case Data.Users.asUsers (EverySet.fromList list) of
+              usersSet ->
+                let 
+                    addedExtraUser = Data.Users.addUser Testdata.UserTestData.singleUser usersSet
+                    newUser = Data.Users.gotUser addedExtraUser "0xce987a7e670655f30e582fbde1573b5be8ffb9a8"
+                in
+                    Expect.equal Testdata.UserTestData.singleUser.ethaddress newUser.ethaddress
         ]
     
                     
-
-
 
 -- ListOp tests
 gotUserFromUserListTest : Test
