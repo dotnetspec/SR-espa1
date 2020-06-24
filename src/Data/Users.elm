@@ -1,4 +1,4 @@
-module Data.Users exposing (Users, addUser, removeUser, asList, asUsers, getUser, gotUser, userSetLength)
+module Data.Users exposing (Users, emptyUsers, updateAddr, addUser, removeUser, asList, asUsers, getUser, gotUser, userSetLength)
 
 
 import SR.Types
@@ -10,7 +10,11 @@ import SR.Defaults
 
 
 
-type Users = Users (EverySet SR.Types.User) 
+type Users = Users (EverySet SR.Types.User)
+
+emptyUsers : Users 
+emptyUsers = 
+    Users (EverySet.empty)
 
 asUsers : EverySet SR.Types.User -> Users 
 asUsers esUser  = 
@@ -21,6 +25,8 @@ addUser user susers =
     case susers of 
         Users setOfUsers  ->
                 asUsers (EverySet.insert user setOfUsers)
+
+
 
 userSetLength : Users -> Int 
 userSetLength (Users susers) = 
@@ -114,8 +120,17 @@ asList susers =
         Users setOfUsers ->
             setOfUsers
            |> EverySet.toList
-           --|> List.sortBy extractRank
 
--- extractRank : SR.Types.User -> Int
--- extractRank uplayer =
---     uplayer.player.rank
+
+updateAddr : Users -> String -> Users
+updateAddr susers addr =
+            let 
+                user = gotUser susers addr
+                userRemoved = removeUser user susers
+                updatedUserAddr =
+                        { user | ethaddress = addr }
+            in 
+                addUser updatedUserAddr userRemoved
+
+
+

@@ -40,6 +40,10 @@ import Validate
 import Data.Selected
 import Data.AppState
 import EverySet exposing (EverySet)
+import Data.Users
+import Data.Global
+
+
 
 
 main =
@@ -61,13 +65,34 @@ main =
 
 
 type Model
-    = AppOps SR.Types.WalletState SR.Types.AllLists SR.Types.AppInfo SR.Types.UIState TxRecord
+    = AppOps SR.Types.WalletState AllLists SR.Types.AppInfo SR.Types.UIState TxRecord
     | Failure String
+
+type alias AllLists =
+    { users : Data.Users.Users
+    , userRankings : Data.Global.Global
+    -- following will eventually be defined by Global and not exist here:
+    -- , lownedUserRanking : List SR.Types.UserRanking
+    -- , lmemberUserRanking : List SR.Types.UserRanking
+    -- , lotherUserRanking : List SR.Types.UserRanking
+    , userPlayers : List SR.Types.UserPlayer
+    }
+
+emptyAllLists =
+    { userRankings = Data.Global.emptyGlobal
+    
+    , users = Data.Users.emptyUsers
+    , userPlayers = []
+    -- , lownedUserRanking = []
+    -- , lmemberUserRanking = []
+    -- , lotherUserRanking = []
+    }
+
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( AppOps SR.Types.WalletStateUnknown SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UILoading emptyTxRecord
+    ( AppOps SR.Types.WalletStateUnknown emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UILoading emptyTxRecord
     , Cmd.batch
         [ gotUserList
         , gotRankingList
@@ -215,6 +240,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
             ( Failure <| "Model failure in AppOps: " ++ str, Cmd.none )
 
 
+
 handleWalletStateUnknown : Msg -> Model -> ( Model, Cmd Msg )
 handleWalletStateUnknown msg model =
     case msg of
@@ -223,7 +249,7 @@ handleWalletStateUnknown msg model =
                 Rinkeby ->
                     case walletSentry_.account of
                         Nothing ->
-                            ( AppOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
+                            ( AppOps SR.Types.WalletStateLocked emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
                             , Cmd.none
                             )
 
@@ -251,7 +277,7 @@ handleWalletStateLocked msg model =
                         _ =
                             Debug.log "ws in locked" walletSentry_
                     in
-                    ( AppOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
+                    ( AppOps SR.Types.WalletStateLocked emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
 
                 UsersReceived userList ->
                     ( model, Cmd.none )
@@ -288,7 +314,7 @@ handleWalletStateAwaitOpening msg model =
                         Rinkeby ->
                             case walletSentry_.account of
                                 Nothing ->
-                                    ( AppOps SR.Types.WalletStateLocked SR.Defaults.emptyAllLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
+                                    ( AppOps SR.Types.WalletStateLocked allLists SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
                                     , Cmd.none
                                     )
 
@@ -319,15 +345,38 @@ handledWalletStateOpened msg model =
                 WalletStatus walletSentry_ ->
                     ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
+                -- there are 2 instances of this operation - necessary?
                 UsersReceived userList ->
                     let
-                        userLAddedToAllLists =
-                            { allLists | users = SR.ListOps.validatedUserList <| SR.ListOps.extractUsersFromWebData userList }
+                        users = (Data.Users.asUsers (EverySet.fromList (SR.ListOps.validatedUserList <| SR.ListOps.extractUsersFromWebData userList)))
+                        newAllListsSets =
+                            { allLists | users = users }
+                         
+                        userInAppInfo =
+                            { appInfo | user = Data.Users.gotUser users appInfo.user.ethaddress }
                     in
-                    updateOnUserListReceived model userLAddedToAllLists.users
+                    ( AppOps SR.Types.WalletOperational newAllListsSets userInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotRankingList )
+
 
                 GlobalRankingsReceived rmtrnkingdata ->
-                    handleGlobalRankingsReceived rmtrnkingdata model
+                    --handleGlobalRankingsReceived rmtrnkingdata model
+                    let 
+                        extractedList =
+                            Data.Global.ownerValidatedRankingList <| Data.Global.extractRankingsFromWebData rmtrnkingdata
+
+                        allUserAsOwnerGlobal =
+                            SR.ListOps.createAllUserAsOwnerGlobalRankingList extractedList (Data.Users.asList allLists.users)
+
+                        currentUserAsPlayer =
+                            SR.ListOps.gotUserIsPlayerNonUserRankingList appInfo.user extractedList
+
+                        addedRankingListToAllLists =
+                            { allLists
+                                --| userRankings = allUserAsOwnerGlobal
+                                | userRankings = Data.Global.ownedUserRanking (Data.Global.asGlobal (EverySet.fromList allUserAsOwnerGlobal)) appInfo.user
+                            }
+                    in 
+                        ( AppOps SR.Types.WalletOperational addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                 NoOp ->
                     ( model, Cmd.none )
@@ -433,10 +482,17 @@ handleWalletStateOperational msg model =
 
                 UsersReceived userList ->
                     let
-                        userLAddedToAllLists =
-                            { allLists | users = SR.ListOps.validatedUserList <| SR.ListOps.extractUsersFromWebData userList }
+                        users = (Data.Users.asUsers (EverySet.fromList (SR.ListOps.validatedUserList <| SR.ListOps.extractUsersFromWebData userList)))
+                        newAllListsSets =
+                            { allLists | users = users }
+                         
+                        userInAppInfo =
+                            { appInfo | user = Data.Users.gotUser users appInfo.user.ethaddress }
+
+
                     in
-                    updateOnUserListReceived model userLAddedToAllLists.users
+                    --updateOnUserListReceived model (Data.Users.asList userLAddedToAllLists.users)
+                    ( AppOps SR.Types.WalletOperational newAllListsSets userInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotRankingList )
 
                 ProcessResult result ->
                     let
@@ -554,7 +610,24 @@ handleWalletStateOperational msg model =
                     )
 
                 GlobalRankingsReceived rmtrnkingdata ->
-                    handleGlobalRankingsReceived rmtrnkingdata model
+                    --handleGlobalRankingsReceived rmtrnkingdata model
+                    let 
+                        extractedList =
+                            Data.Global.ownerValidatedRankingList <| Data.Global.extractRankingsFromWebData rmtrnkingdata
+
+                        allUserAsOwnerGlobal =
+                            SR.ListOps.createAllUserAsOwnerGlobalRankingList extractedList (Data.Users.asList allLists.users)
+
+                        currentUserAsPlayer =
+                            SR.ListOps.gotUserIsPlayerNonUserRankingList appInfo.user extractedList
+
+                        addedRankingListToAllLists =
+                            { allLists
+                                --| userRankings = allUserAsOwnerGlobal
+                                | userRankings = Data.Global.ownedUserRanking (Data.Global.asGlobal (EverySet.fromList allUserAsOwnerGlobal)) appInfo.user
+                            }
+                    in 
+                        ( AppOps SR.Types.WalletOperational addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                 
                 ClickedSelectedOwnedRanking rnkidstr rnkownerstr rnknamestr ->
@@ -612,10 +685,10 @@ handleWalletStateOperational msg model =
                 SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
                     ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UICreateNewLadder emptyTxRecord
                     , globalAddRequested idValueFromDecoder
-                        allLists.userRankings
+                        (Data.Global.asList allLists.userRankings)
                         appInfo.selectedRanking
                         appInfo.user.ethaddress
-                        allLists.users
+                        (Data.Users.asList allLists.users)
                     )
 
                 SentUserInfoAndDecodedResponseToNewUser serverResponse ->
@@ -655,7 +728,7 @@ handleWalletStateOperational msg model =
                     ( AppOps SR.Types.WalletOperational allLists clearedNameFieldAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
 
                 ClickedConfirmCreateNewLadder ->
-                    if SR.ListOps.isRegistered allLists.users appInfo.user then
+                    if SR.ListOps.isRegistered (Data.Users.asList allLists.users) appInfo.user then
                         let
                             -- rankingInfoFromModel =
                             --     appInfo.selectedRanking
@@ -697,14 +770,16 @@ handleWalletStateOperational msg model =
                 AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
                     let
                         extractedList =
-                            SR.ListOps.ownerValidatedRankingList <| SR.ListOps.extractRankingsFromWebData updatedListAfterNewEntryAddedToGlobalList
+                            Data.Global.ownerValidatedRankingList <| Data.Global.extractRankingsFromWebData updatedListAfterNewEntryAddedToGlobalList
 
                         allGlobal =
-                            SR.ListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
+                            SR.ListOps.createAllUserAsOwnerGlobalRankingList extractedList (Data.Users.asList allLists.users)
 
                         addedRankingListToAllLists =
                             { allLists
-                                | userRankings = allGlobal , lownedUserRanking = SR.ListOps.gotUserOwnedGlobalRankingList allGlobal appInfo.user
+                                | userRankings = (Data.Global.asGlobal (EverySet.fromList allGlobal)) 
+                                --, lownedUserRanking = SR.ListOps.gotUserOwnedGlobalRankingList allGlobal appInfo.user
+                                --, lownedUserRanking = Data.Global.ownedUserRanking (Data.Global.asGlobal (EverySet.fromList allGlobal)) appInfo.user
                             }
                     in
                     ( AppOps SR.Types.WalletOperational addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
@@ -739,7 +814,7 @@ handleWalletStateOperational msg model =
                     assignChallengerAddrsForBOTHPlayers model
 
                 PlayersReceived lplayer ->
-                    ( updatedSelectedRankingOnPlayersReceived model (SR.ListOps.extractAndSortPlayerList lplayer allLists.users), Cmd.none )
+                    ( updatedSelectedRankingOnPlayersReceived model (SR.ListOps.extractAndSortPlayerList lplayer (Data.Users.asList allLists.users)), Cmd.none )
 
                 ChangedUIStateToEnterResult player ->
                     ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIEnterResult emptyTxRecord, Cmd.none )
@@ -759,8 +834,9 @@ handleWalletStateOperational msg model =
                         appInfo
                         uiState
                         txRec
-                    , deleteSelectedRankingFromGlobalList appInfo.selectedRanking.id (SR.ListOps.extractRankingList allLists.userRankings) allLists.users appInfo.user.ethaddress
+                    , deleteSelectedRankingFromGlobalList appInfo.selectedRanking.id (SR.ListOps.extractRankingList (Data.Global.asList allLists.userRankings)) (Data.Users.asList allLists.users) appInfo.user.ethaddress
                     )
+
 
                 ChallengeOpponentClicked opponentAsPlayer ->
                     
@@ -769,20 +845,22 @@ handleWalletStateOperational msg model =
                 DeletedRankingFromGlobalList updatedListAfterRankingDeletedFromGlobalList ->
                     let
                         extractedList =
-                            SR.ListOps.ownerValidatedRankingList <| SR.ListOps.extractRankingsFromWebData updatedListAfterRankingDeletedFromGlobalList
+                            Data.Global.ownerValidatedRankingList <| Data.Global.extractRankingsFromWebData updatedListAfterRankingDeletedFromGlobalList
 
                         allGlobal =
-                            SR.ListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
+                            SR.ListOps.createAllUserAsOwnerGlobalRankingList extractedList (Data.Users.asList allLists.users)
 
                         addedRankingListToAllLists =
                             { allLists
-                                | userRankings = allGlobal
+                                | userRankings = (Data.Global.asGlobal (EverySet.fromList allGlobal))
+
                             }
+
                     in
                     ( AppOps SR.Types.WalletOperational addedRankingListToAllLists appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                 ClickedJoinSelected ->
-                    if SR.ListOps.isRegistered allLists.users appInfo.user then
+                    if SR.ListOps.isRegistered (Data.Users.asList allLists.users) appInfo.user then
                         --( model, Cmd.batch [ addCurrentUserToPlayerList appInfo.selectedRanking.id allLists.userPlayers appInfo.user])
                         --, updateUsersJoinRankings appInfo.selectedRanking.id appInfo.user allLists.users ] )
                         let 
@@ -819,7 +897,7 @@ handleWalletStateOperational msg model =
                         convertedToUserPlayers =
                             SR.ListOps.convertPlayersToUserPlayers
                                 lplayer
-                                allLists.users
+                                (Data.Users.asList allLists.users)
 
                         
                     in
@@ -864,7 +942,7 @@ handleWalletStateOperational msg model =
                     ( AppOps walletState allLists appInfo SR.Types.UIUpdateExistingUser txRec, Cmd.none )
 
                 ClickedConfirmedUpdateExistingUser ->
-                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings txRec, updateExistingUser allLists.users appInfo.user )
+                    ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRenderAllRankings txRec, updateExistingUser (Data.Users.asList allLists.users) appInfo.user )
 
                 ClickedRegister ->
                      ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIRegisterNewUser txRec, Cmd.none )
@@ -938,62 +1016,64 @@ updateAppInfoOnRankingSelected appInfo rnkid rnkownerstr rnknamestr =
     newAppInfo
 
 
-handleGlobalRankingsReceived : RemoteData.WebData (List SR.Types.RankingInfo) -> Model -> ( Model, Cmd Msg )
-handleGlobalRankingsReceived rmtrnkingdata model =
-    case model of
-        AppOps walletState allLists appInfo uiState txRec ->
-            let
-                extractedList =
-                    SR.ListOps.ownerValidatedRankingList <| SR.ListOps.extractRankingsFromWebData rmtrnkingdata
+-- handleGlobalRankingsReceived : RemoteData.WebData (List SR.Types.RankingInfo) -> Model -> ( Model, Cmd Msg )
+-- handleGlobalRankingsReceived rmtrnkingdata model =
+--     case model of
+--         AppOps walletState allLists appInfo uiState txRec ->
+--             let
+--                 extractedList =
+--                     Data.Global.ownerValidatedRankingList <| Data.Global.extractRankingsFromWebData rmtrnkingdata
 
-                allUserAsOwnerGlobal =
-                    SR.ListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
+--                 allUserAsOwnerGlobal =
+--                     SR.ListOps.createAllUserAsOwnerGlobalRankingList extractedList allLists.users
 
-                currentUserAsPlayer =
-                    SR.ListOps.gotUserIsPlayerNonUserRankingList appInfo.user extractedList
+--                 currentUserAsPlayer =
+--                     SR.ListOps.gotUserIsPlayerNonUserRankingList appInfo.user extractedList
 
-                addedRankingListToAllLists =
-                    { allLists
-                        | userRankings = allUserAsOwnerGlobal
-                    }
+--                 addedRankingListToAllLists =
+--                     { allLists
+--                         --| userRankings = allUserAsOwnerGlobal
+--                         | userRankings = Data.Global.ownedUserRanking (EverySet.fromList allUserAsOwnerGlobal) appInfo.user
+--                     }
 
-                luserRankingOwner =
-                    SR.ListOps.gotUserOwnedGlobalRankingList allUserAsOwnerGlobal appInfo.user
+--                 luserRankingOwner =
+--                     SR.ListOps.gotUserOwnedGlobalRankingList allUserAsOwnerGlobal appInfo.user
 
-                addedlUserRankingOwnerListToAllLists =
-                    { addedRankingListToAllLists
-                        | lownedUserRanking = luserRankingOwner
-                    }
+--                 addedlUserRankingOwnerListToAllLists = 
+--                     -- { addedRankingListToAllLists
+--                     --     | lownedUserRanking = luserRankingOwner
+--                     -- }
 
-                luserRankingPlayer =
-                    SR.ListOps.createduserRankingPlayerList currentUserAsPlayer allLists.users
+--                 luserRankingPlayer =
+--                     SR.ListOps.createduserRankingPlayerList currentUserAsPlayer allLists.users
 
-                addedUserRankingMemberListToAllLists =
-                    { addedlUserRankingOwnerListToAllLists
-                        | lmemberUserRanking = luserRankingPlayer
-                    }
+--                 addedUserRankingMemberListToAllLists =
+--                     { addedlUserRankingOwnerListToAllLists
+--                         | lmemberUserRanking = luserRankingPlayer
+--                     }
 
-                ownerPlayerCombinedList =
-                    luserRankingOwner ++ luserRankingPlayer
+--                 ownerPlayerCombinedList =
+--                     luserRankingOwner ++ luserRankingPlayer
 
-                luserRankingOther =
-                    SR.ListOps.gotOthersGlobalRankingList ownerPlayerCombinedList allUserAsOwnerGlobal
+--                 luserRankingOther =
+--                     SR.ListOps.gotOthersGlobalRankingList ownerPlayerCombinedList allUserAsOwnerGlobal
 
-                addedUserRankingOtherListToAllLists =
-                    { addedUserRankingMemberListToAllLists
-                        | lotherUserRanking = luserRankingOther
-                    }
+--                 addedUserRankingOtherListToAllLists =
+--                     { addedUserRankingMemberListToAllLists
+--                         | lotherUserRanking = luserRankingOther
+--                     }
 
-                allListsUpdated =
-                    addedUserRankingOtherListToAllLists
-            in
-            ( AppOps SR.Types.WalletOperational allListsUpdated appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+--                 allListsUpdated =
+--                     addedUserRankingOtherListToAllLists
+--             in
+--             ( AppOps SR.Types.WalletOperational allListsUpdated appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
-        Failure str ->
-            ( Failure str, Cmd.none )
+--         Failure str ->
+--             ( Failure str, Cmd.none )
 
 
-handleWalletWaitingForUserInput : Msg -> SR.Types.WalletState -> SR.Types.AllLists -> SR.Types.AppInfo -> TxRecord -> ( Model, Cmd Msg )
+
+handleWalletWaitingForUserInput : Msg -> SR.Types.WalletState -> AllLists -> SR.Types.AppInfo -> TxRecord -> ( Model, Cmd Msg )
 handleWalletWaitingForUserInput msg walletState allLists appInfo txRec =
     let
         _ =
@@ -1034,7 +1114,12 @@ handleWalletWaitingForUserInput msg walletState allLists appInfo txRec =
                                 Debug.log "in CreateNewUser" "yes"
                         in
                         ( AppOps SR.Types.WalletOperational allLists appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }
-                        , Cmd.batch [subCmd,  createNewUser allLists.users appInfo.user] )
+                        , Cmd.batch [subCmd,  createNewUser ( Data.Users.asList allLists.users) appInfo.user] )
+
+
+
+
+
 
                     SR.Types.AppStateEnterWon -> 
                         let 
@@ -1403,10 +1488,11 @@ handleUndecided model =
             Failure "Fail in handleUndecided"
 
 
-ensuredCorrectSelectedUI : SR.Types.AppInfo -> SR.Types.AllLists -> SR.Types.UIState
+ensuredCorrectSelectedUI : SR.Types.AppInfo -> AllLists -> SR.Types.UIState
 ensuredCorrectSelectedUI appInfo allLists =
     
-    if Data.Selected.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking allLists.lownedUserRanking appInfo.user then
+    --if Data.Selected.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking allLists.lownedUserRanking appInfo.user then
+    if Data.Selected.isUserOwnerOfSelectedUserRanking appInfo.selectedRanking (Data.Global.asList (Data.Global.ownedUserRanking allLists.userRankings appInfo.user)) appInfo.user then
         SR.Types.UISelectedRankingUserIsOwner
 
     else if Data.Selected.isUserPlayerMemberOfSelectedRanking allLists.userPlayers appInfo.user then
@@ -1590,32 +1676,35 @@ updatedForChallenge model luplayer opponentAsPlayer user =
             Failure <| "updatedForChallenge : "
 
 
-updateSelectedRankingOnChallenge : SR.Types.AllLists -> SR.Types.AppInfo -> SR.Types.AllLists
+updateSelectedRankingOnChallenge : AllLists -> SR.Types.AppInfo -> AllLists
 updateSelectedRankingOnChallenge allLists appInfo =
     allLists
 
 
-updateOnUserListReceived : Model -> List SR.Types.User -> ( Model, Cmd Msg )
-updateOnUserListReceived model userList =
-    case model of
-        AppOps walletState allLists appInfo uiState txRec ->
-            let
-                gotUserToUpdateAddr =
-                    SR.ListOps.gotUserFromUserList userList appInfo.user.ethaddress
+-- updateOnUserListReceived : Model -> List SR.Types.User -> ( Model, Cmd Msg )
+-- updateOnUserListReceived model userList =
+--     case model of
+--         AppOps walletState allLists appInfo uiState txRec ->
+--             let
+--                 gotUserToUpdateAddr =
+--                     --SR.ListOps.gotUserFromUserList userList appInfo.user.ethaddress
+--                     --Data.Users.getUser (Data.Users.asUsers (EverySet.fromList userList)) appInfo.user.ethaddress
+--                     Data.Users.gotUser allLists.users appInfo.user.ethaddress
 
-                userWithUpdatedAddr =
-                    { gotUserToUpdateAddr | ethaddress = appInfo.user.ethaddress }
 
-                userUpdatedInAppInfo =
-                    { appInfo | user = userWithUpdatedAddr }
+--                 userWithUpdatedAddr =
+--                     { gotUserToUpdateAddr | ethaddress = appInfo.user.ethaddress }
 
-                newAllLists =
-                    { allLists | users = userList }
-            in
-            ( AppOps SR.Types.WalletOperational newAllLists userUpdatedInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotRankingList )
+--                 userUpdatedInAppInfo =
+--                     { appInfo | user = userWithUpdatedAddr }
 
-        _ ->
-            ( Failure "should be in AppOps", Cmd.none )
+--                 newAllLists =
+--                     { allLists | users = EverySet.fromList userList }
+--             in
+--             ( AppOps SR.Types.WalletOperational newAllLists userUpdatedInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotRankingList )
+
+--         _ ->
+--             ( Failure "should be in AppOps", Cmd.none )
 
 
 updateSelectedRankingPlayerList : Model -> List SR.Types.UserPlayer -> Model
@@ -1642,7 +1731,7 @@ updateUserList model lusers =
         AppOps walletState allLists appInfo uiState txRec ->
             let
                 resetUserList =
-                    { allLists | users = lusers }
+                    { allLists | users = (Data.Users.asUsers (EverySet.fromList lusers)) }
 
                 -- uiState =
                 --     ensuredCorrectSelectedUI appInfo allLists
@@ -1665,7 +1754,7 @@ updatedSelectedRankingOnPlayersReceived model luplayer =
                     { newAppPlayer | challenger = SR.ListOps.gotUserPlayerFromPlayerListStrAddress luplayer newAppPlayer.player.player.challengeraddress }
 
                 userPlayerOwner =
-                    SR.ListOps.gotRankingOwnerAsUserPlayer appInfo.selectedRanking allLists.userRankings luplayer
+                    SR.ListOps.gotRankingOwnerAsUserPlayer appInfo.selectedRanking (Data.Global.asList allLists.userRankings) luplayer
 
                 allListsPlayersAdded =
                     { allLists | userPlayers = luplayer }
@@ -1701,7 +1790,7 @@ view model =
                     selectedUserIsNeitherOwnerNorPlayerView model
 
                 SR.Types.UIRenderAllRankings ->
-                    globalResponsiveview allLists.lownedUserRanking allLists.lmemberUserRanking allLists.lotherUserRanking appInfo.user
+                    globalResponsiveview (allLists.userRankings) appInfo.user
 
                 SR.Types.UIEnterResult ->
                     displayResultBeforeConfirmView model
@@ -1944,10 +2033,10 @@ configureThenAddPlayerRankingBtns model uplayer =
                 -- _ = Debug.log "appInfo.user" appInfo.user
 
                 playerAsUser =
-                    SR.ListOps.gotUserFromUserList allLists.users uplayer.player.address
+                    SR.ListOps.gotUserFromUserList (Data.Users.asList allLists.users) uplayer.player.address
 
                 challengerAsUser =
-                    SR.ListOps.gotUserFromUserList allLists.users uplayer.player.challengeraddress
+                    SR.ListOps.gotUserFromUserList (Data.Users.asList allLists.users) uplayer.player.challengeraddress
 
                 isChallenged =
                     if challengerAsUser.username /= "" then
@@ -2165,7 +2254,7 @@ displayJoinBtnNewOrExistingUser user =
             }
 
 
-newrankingconfirmbutton : SR.Types.AppInfo -> SR.Types.AllLists -> Element Msg
+newrankingconfirmbutton : SR.Types.AppInfo -> AllLists -> Element Msg
 newrankingconfirmbutton appInfo allLists =
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
@@ -2175,7 +2264,7 @@ newrankingconfirmbutton appInfo allLists =
                     { onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Cancel"
                     }
-                , Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput appInfo.selectedRanking allLists.userRankings)) <|
+                , Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput appInfo.selectedRanking (Data.Global.asList allLists.userRankings))) <|
                     --Input.button (Button.simple ++ Color.info) <|
                     { onPress = Just <| ClickedConfirmCreateNewLadder
                     , label = Element.text "Confirm"
@@ -2228,10 +2317,10 @@ confirmResultbutton model =
         AppOps walletState allLists appInfo uiState txRec ->
             let
                 playerAsUser =
-                    SR.ListOps.gotUserFromUserList allLists.users appInfo.player.player.address
+                    SR.ListOps.gotUserFromUserList (Data.Users.asList allLists.users) appInfo.player.player.address
 
                 challengerAsUser =
-                    SR.ListOps.gotUserFromUserList allLists.users appInfo.challenger.player.address
+                    SR.ListOps.gotUserFromUserList (Data.Users.asList allLists.users) appInfo.challenger.player.address
             in
             Element.column Grid.section <|
                 [ Element.column (Card.simple ++ Grid.simple) <|
@@ -2576,9 +2665,9 @@ inputUpdateExistingUser model =
             Element.text "Fail on inputNewUser"
 
 
-nameValidationErr : SR.Types.AppInfo -> SR.Types.AllLists -> Element Msg
+nameValidationErr : SR.Types.AppInfo -> AllLists -> Element Msg
 nameValidationErr appInfo allLists =
-    if Utils.Validation.Validate.isUserNameValidated appInfo.user allLists.users then
+    if Utils.Validation.Validate.isUserNameValidated appInfo.user (Data.Users.asList allLists.users) then
         Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
 
     else
@@ -2590,9 +2679,9 @@ nameValidationErr appInfo allLists =
 and between 4-8 characters""")
 
 
-ladderNameValidationErr : SR.Types.AppInfo -> SR.Types.AllLists -> Element Msg
+ladderNameValidationErr : SR.Types.AppInfo -> AllLists -> Element Msg
 ladderNameValidationErr appInfo allLists =
-    if Utils.Validation.Validate.isRankingNameValidated appInfo.selectedRanking allLists.userRankings then
+    if Utils.Validation.Validate.isRankingNameValidated appInfo.selectedRanking (Data.Global.asList allLists.userRankings) then
         Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "laddernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Ladder name OK!")
 
     else
@@ -2623,7 +2712,7 @@ isMobileValidated user =
         False
 
 
-inputNewLadder : SR.Types.AppInfo -> SR.Types.AllLists -> Element Msg
+inputNewLadder : SR.Types.AppInfo -> AllLists -> Element Msg
 inputNewLadder appInfo allLists =
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "New Ladder Details"
@@ -2650,8 +2739,11 @@ inputNewLadder appInfo allLists =
         ]
 
 
-globalResponsiveview : List SR.Types.UserRanking -> List SR.Types.UserRanking -> List SR.Types.UserRanking -> SR.Types.User -> Html Msg
-globalResponsiveview lowneduranking lmemberusranking lotheruranking user =
+-- globalResponsiveview : List SR.Types.UserRanking -> List SR.Types.UserRanking -> List SR.Types.UserRanking -> SR.Types.User -> Html Msg
+-- globalResponsiveview lowneduranking lmemberusranking lotheruranking user =
+globalResponsiveview : Data.Global.Global -> SR.Types.User -> Html Msg
+globalResponsiveview sGlobal user =
+
     let
         userName =
             if user.username /= "" then
@@ -2669,13 +2761,15 @@ globalResponsiveview lowneduranking lmemberusranking lotheruranking user =
                 Element.text ("SportRank - " ++ userName)
             ,displayUpdateProfileBtnIfExistingUser user.username ClickedUpdateExistingUser
             --, Element.text "\n"
-            , displayCreateNewLadderBtnIfExistingUser user.username lowneduranking ClickedCreateNewLadder
+            --, displayCreateNewLadderBtnIfExistingUser user.username lowneduranking ClickedCreateNewLadder
+            , displayCreateNewLadderBtnIfExistingUser user.username (Data.Global.asList (Data.Global.ownedUserRanking sGlobal user)) ClickedCreateNewLadder
             , displayRegisterBtnIfNewUser
                 user.username
                 ClickedRegister
-            , ownedrankingbuttons lowneduranking user
-            , memberrankingbuttons lmemberusranking user
-            , otherrankingbuttons lotheruranking user
+            --, ownedrankingbuttons lowneduranking user
+            , ownedrankingbuttons (Data.Global.asList (Data.Global.ownedUserRanking sGlobal user)) user
+            , memberrankingbuttons (Data.Global.asList (Data.Global.memberUserRanking sGlobal user)) user
+            , otherrankingbuttons (Data.Global.asList (Data.Global.othersUserRanking sGlobal user)) user
             ]
 
 
@@ -2801,7 +2895,7 @@ inputNewUserview model =
                     Framework.container
                     [ Element.el Heading.h4 <| Element.text "Create New User"
                     , inputNewUser model
-                    , newuserConfirmPanel appInfo.user allLists.users
+                    , newuserConfirmPanel appInfo.user (Data.Users.asList allLists.users)
                     ]
 
         _ ->
@@ -2817,7 +2911,7 @@ updateExistingUserView model =
                     Framework.container
                     [ Element.el Heading.h4 <| Element.text "Update User Profile"
                     , inputUpdateExistingUser model
-                    , existingUserConfirmPanel appInfo.user allLists.users
+                    , existingUserConfirmPanel appInfo.user (Data.Users.asList allLists.users)
                     ]
 
         _ ->
@@ -2863,7 +2957,7 @@ displayResultBeforeConfirmView model =
         AppOps walletState allLists appInfo uiState txRec ->
             let
                 playerAsUser =
-                    SR.ListOps.gotUserFromUserList allLists.users appInfo.player.player.address
+                    SR.ListOps.gotUserFromUserList (Data.Users.asList allLists.users) appInfo.player.player.address
             in
             Framework.responsiveLayout [] <|
                 Element.column
@@ -2882,7 +2976,9 @@ txErrorView model =
         AppOps walletState allLists appInfo uiState txRec ->
             let
                 playerAsUser =
-                    SR.ListOps.gotUserFromUserList allLists.users appInfo.player.player.address
+                    --SR.ListOps.gotUserFromUserList (EverySet.fromList allLists) appInfo.player.player.address
+                    Data.Users.gotUser allLists.users appInfo.player.player.address
+
             in
             Framework.responsiveLayout [] <|
                 Element.column

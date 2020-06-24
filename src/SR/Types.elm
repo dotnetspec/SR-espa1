@@ -2,7 +2,8 @@ module SR.Types exposing
     ( PlayerId, RankingId(..)
     , Player, Opponent, OpponentRelativeRank(..), Options, ResultOfMatch(..), WalletState(..)
     , UIState(..)
-    , AllLists, AppInfo, Colors, CreateNewLadderFormFields, FormValidations, LadderState(..), ModalState(..), NewRankingListServerResponse, RankingInfo, ResultRadioOptions(..), User, UserListState(..), UserPlayer, UserRanking, colors
+    --, AllLists
+    , AppInfo, Colors, CreateNewLadderFormFields, FormValidations, LadderState(..), ModalState(..), NewRankingListServerResponse, RankingInfo, ResultRadioOptions(..), User, UserListState(..), UserPlayer, UserRanking, colors
     ,  AppState(..)
     )
 
@@ -32,6 +33,8 @@ import Http
 import Internal.Types as Internal
 import Ports
 import RemoteData
+import EverySet exposing (EverySet)
+--import Data.Users
 
 
 
@@ -157,14 +160,14 @@ type AppState
 
 
 {--}
-type alias AllLists =
-    { users : List User
-    , userRankings : List UserRanking
-    , lownedUserRanking : List UserRanking
-    , lmemberUserRanking : List UserRanking
-    , lotherUserRanking : List UserRanking
-    , userPlayers : List UserPlayer
-    }
+-- type alias AllLists =
+--     { users : EverySet Users
+--     , userRankings : List UserRanking
+--     , lownedUserRanking : List UserRanking
+--     , lmemberUserRanking : List UserRanking
+--     , lotherUserRanking : List UserRanking
+--     , userPlayers : List UserPlayer
+--     }
 --}
 
 

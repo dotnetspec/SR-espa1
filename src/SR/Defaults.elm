@@ -1,9 +1,11 @@
 module SR.Defaults exposing
     ( emptyPlayer
-    , emptyActiveUser, emptyAllLists, emptyAppInfo, emptyFormValidations, emptyOwnedRanking
+    , emptyActiveUser,
+    emptyAppInfo, emptyFormValidations, emptyOwnedRanking
     , emptyRankingInfo, emptyUser, emptyUserPlayer, emptyUserRanking, globalBinName
     , globalContainerId, secretKey, selectedBinName, selectedContainerId, userBinName, userContainerId
     )
+
 
 {-| Default values.
 For those withDefault shenanigans.
@@ -16,6 +18,8 @@ import Eth.Types exposing (..)
 import Http
 import Internal.Types as Internal
 import SR.Types exposing (..)
+import EverySet exposing (EverySet)
+
 
 
 emptyPlayer : SR.Types.Player
@@ -84,14 +88,14 @@ emptyRankingInfo =
     }
 
 
-emptyAllLists =
-    { userRankings = []
-    , userPlayers = []
-    , users = []
-    , lownedUserRanking = []
-    , lmemberUserRanking = []
-    , lotherUserRanking = []
-    }
+-- emptyAllLists =
+--     { userRankings = Data.Global.emptyGlobal
+--     , users = Data.Users.emptyUsers
+--     , userPlayers = []
+--     -- , lownedUserRanking = []
+--     -- , lmemberUserRanking = []
+--     -- , lotherUserRanking = []
+--     }
 
 
 emptyAppInfo =

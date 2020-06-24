@@ -11,7 +11,7 @@ module SR.ListOps exposing
     , extractPlayersFromWebData
     , extractRankingInfoListFromMaybeList
     , extractRankingList
-    , extractRankingsFromWebData
+    --, extractRankingsFromWebData
     , extractUsersFromWebData
     , filterSelectedRankingOutOfGlobalList
     , findPlayerInList
@@ -31,7 +31,7 @@ module SR.ListOps exposing
     , isUniqueUserName
     , isUniqueRankingName
     , isUserInListStrAddr
-    , ownerValidatedRankingList
+    --, ownerValidatedRankingList
     , removeCurrentUserEntryFromUserList
     ,  removedDuplicateUserFromUserList
        -- to be privatized
@@ -161,20 +161,20 @@ extractPlayersFromWebData remData =
             []
 
 
-extractRankingsFromWebData : RemoteData.WebData (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
-extractRankingsFromWebData remData =
-    case remData of
-        RemoteData.NotAsked ->
-            []
+-- extractRankingsFromWebData : RemoteData.WebData (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
+-- extractRankingsFromWebData remData =
+--     case remData of
+--         RemoteData.NotAsked ->
+--             []
 
-        RemoteData.Loading ->
-            []
+--         RemoteData.Loading ->
+--             []
 
-        RemoteData.Success rankings ->
-            rankings
+--         RemoteData.Success rankings ->
+--             rankings
 
-        RemoteData.Failure httpError ->
-            []
+--         RemoteData.Failure httpError ->
+--             []
 
 
 extractUsersFromWebData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
@@ -441,18 +441,8 @@ extractRanking uranking =
     uranking.rankingInfo
 
 
-ownerValidatedRankingList : List SR.Types.RankingInfo -> List SR.Types.RankingInfo
-ownerValidatedRankingList lrankinginfo =
-    List.filter isValidOwnerAddress lrankinginfo
 
 
-isValidOwnerAddress : SR.Types.RankingInfo -> Bool
-isValidOwnerAddress rankInfo =
-    if Eth.Utils.isAddress rankInfo.rankingowneraddr then
-        True
-
-    else
-        False
 
 
 gotUserIsPlayerNonUserRankingList : SR.Types.User -> List SR.Types.RankingInfo -> List SR.Types.RankingInfo
