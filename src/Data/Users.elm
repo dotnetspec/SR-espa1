@@ -1,4 +1,5 @@
-module Data.Users exposing (Users, emptyUsers, updateAddr, addUser, removeUser, asList, asUsers, getUser, gotUser, userSetLength)
+-- Users will be mainly used to communicate externally to the jsonbin server
+module Data.Users exposing (Users, isNameValidationErr, extractUsersFromWebData, gotUserFromUserList, emptyUsers, updateAddr, addUser, removeUser, asList, asUsers, getUser, gotUser, userSetLength)
 
 
 import SR.Types
@@ -6,11 +7,12 @@ import EverySet exposing (EverySet)
 import Internal.Types
 import Utils.MyUtils
 import SR.Defaults
---import SR.ListOps
-
+import Eth.Utils
+import RemoteData
 
 
 type Users = Users (EverySet SR.Types.User)
+type UserNames = UserNames (EverySet String)
 
 emptyUsers : Users 
 emptyUsers = 
@@ -26,7 +28,13 @@ addUser user susers =
         Users setOfUsers  ->
                 asUsers (EverySet.insert user setOfUsers)
 
+gotUserNames : Users -> EverySet String 
+gotUserNames (Users users) = 
+    EverySet.map gotName users
 
+gotName : SR.Types.User -> String 
+gotName user = 
+    user.username
 
 userSetLength : Users -> Int 
 userSetLength (Users susers) = 
@@ -79,7 +87,7 @@ removeUser user susers =
         --    |> 
            asUsers (EverySet.remove user setOfUsers) 
 
-
+--todo: remove
 getUser : List SR.Types.UserRanking -> String -> Maybe SR.Types.UserRanking
 getUser luranking rankingid =
     List.filterMap
@@ -133,4 +141,120 @@ updateAddr susers addr =
                 addUser updatedUserAddr userRemoved
 
 
+-- todo: remove?
+gotUserFromUserList : List SR.Types.User -> String -> SR.Types.User
+gotUserFromUserList userList uaddr =
+    let
+        existingUser =
+            List.head <|
+                List.filter (\r -> (String.toLower <| r.ethaddress) == (String.toLower <| uaddr))
+                    (validatedUserList userList)
+    in
+    case existingUser of
+        Nothing ->
+            SR.Defaults.emptyUser
 
+        Just a ->
+            a
+
+validatedUserList : List SR.Types.User -> List SR.Types.User
+validatedUserList luser =
+    List.filterMap
+        isValidUserAddrInList
+        luser
+
+
+isValidUserAddrInList : SR.Types.User -> Maybe SR.Types.User
+isValidUserAddrInList user =
+    if Eth.Utils.isAddress user.ethaddress then
+        Just user
+
+    else
+        Nothing
+
+
+extractUsersFromWebData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
+extractUsersFromWebData remData =
+    case remData of
+        RemoteData.NotAsked ->
+            let
+                _ =
+                    Debug.log "http err" "not asked"
+            in
+            []
+
+        RemoteData.Loading ->
+            let
+                _ =
+                    Debug.log "http err" "loading"
+            in
+            []
+
+        RemoteData.Success users ->
+            users
+
+        RemoteData.Failure httpError ->
+            let
+                _ =
+                    Debug.log "http err" Utils.MyUtils.gotHttpErr <| httpError
+            in
+            []
+
+isNameValidationErr : String -> Users -> Bool 
+isNameValidationErr newName sUsers = 
+--a -> EverySet a -> Bool
+    let 
+        userNameSet = gotUserNames sUsers
+        -- uNames = 
+        --     case userNameSet of 
+        --         UserNames unames -> 
+        --             unames 
+    in
+    if EverySet.member newName userNameSet then
+        True 
+    else 
+        False
+
+
+-- updatedUserList : Model -> List SR.Types.User -> Model
+-- updatedUserList model lusers =
+--     case model of
+--         AppOps walletState allLists appInfo uiState txRec ->
+--             let
+--                 resetUserList =
+--                     { allLists | users = (Data.Users.asUsers (EverySet.fromList lusers)) }
+
+--                 -- uiState =
+--                 --     ensuredCorrectSelectedUI appInfo allLists
+--             in
+--             AppOps walletState resetUserList appInfo uiState txRec
+
+--         _ ->
+--             Failure <| "updateSelectedRankingPlayerList : "
+
+
+--nb. not sure if this will be used:
+-- updateOnUserListReceived : Model -> List SR.Types.User -> ( Model, Cmd Msg )
+-- updateOnUserListReceived model userList =
+--     case model of
+--         AppOps walletState allLists appInfo uiState txRec ->
+--             let
+--                 gotUserToUpdateAddr =
+--                     --SR.ListOps.gotUserFromUserList userList appInfo.user.ethaddress
+--                     --Data.Users.getUser (Data.Users.asUsers (EverySet.fromList userList)) appInfo.user.ethaddress
+--                     Data.Users.gotUser allLists.users appInfo.user.ethaddress
+
+
+--                 userWithUpdatedAddr =
+--                     { gotUserToUpdateAddr | ethaddress = appInfo.user.ethaddress }
+
+--                 userUpdatedInAppInfo =
+--                     { appInfo | user = userWithUpdatedAddr }
+
+--                 newAllLists =
+--                     { allLists | users = EverySet.fromList userList }
+--             in
+--             ( AppOps SR.Types.WalletOperational newAllLists userUpdatedInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotRankingList )
+
+--         _ ->
+--             ( Failure "should be in AppOps", Cmd.none )

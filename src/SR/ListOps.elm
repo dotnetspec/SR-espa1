@@ -2,31 +2,31 @@ module SR.ListOps exposing
     ( addedNewJoinedRankingIdToUser
     , convertListOfMaybeToList
     , convertMaybeUserRankingListToList
-    , convertPlayersToUserPlayers
-    , convertUserPlayersToPlayers
-    , createAllUserAsOwnerGlobalRankingList
+    --, convertPlayersToUserPlayers
+    --, convertUserPlayersToPlayers
+    --, createAllUserAsOwnerGlobalRankingList
     , createduserRankingPlayerList
     , doesCurrentRankingIdNOTMatchId
-    , extractAndSortPlayerList
-    , extractPlayersFromWebData
+    --, extractAndSortPlayerList
+    --, extractPlayersFromWebData
     , extractRankingInfoListFromMaybeList
     , extractRankingList
     --, extractRankingsFromWebData
     , extractUsersFromWebData
     , filterSelectedRankingOutOfGlobalList
-    , findPlayerInList
+    --, findPlayerInList
     , findSelectedRankingInGlobalList
-    , gotCurrentUserAsPlayerFromPlayerList
+    --, gotCurrentUserAsPlayerFromPlayerList
     , gotOthersGlobalRankingList
     , gotRankingFromRankingList
     , gotRankingListFromUserRankingList
-    , gotRankingOwnerAsUserPlayer
+    --, gotRankingOwnerAsUserPlayer
     , gotUserFromUserList
     , gotUserIsPlayerGlobalRankingList
     , gotUserIsPlayerNonUserRankingList
     , gotUserListFromRemData
     , gotUserOwnedGlobalRankingList
-    , gotUserPlayerFromPlayerListStrAddress
+    --, gotUserPlayerFromPlayerListStrAddress
     , isRegistered
     , isUniqueUserName
     , isUniqueRankingName
@@ -36,10 +36,10 @@ module SR.ListOps exposing
     ,  removedDuplicateUserFromUserList
        -- to be privatized
 
-    , changedRank
-    , assignChallengerAddr
-    , sortedRank
-    , updatePlayerRankWithWonResult
+    --, changedRank
+    
+    --, sortedRank
+    --, updatePlayerRankWithWonResult
     , validatedUserList
     )
 
@@ -51,6 +51,7 @@ import RemoteData
 import SR.Defaults
 import SR.Types
 import Utils.MyUtils
+
 
 
 isUniqueUserName : String -> List SR.Types.User -> Bool
@@ -121,18 +122,18 @@ isRegistered luser user =
         True
 
 
-extractAndSortPlayerList : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.User -> List SR.Types.UserPlayer
-extractAndSortPlayerList rdlPlayer luser =
-    let
-        lplayer =
-            extractPlayersFromWebData rdlPlayer
+-- extractAndSortPlayerList : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.User -> List SR.Types.UserPlayer
+-- extractAndSortPlayerList rdlPlayer luser =
+--     let
+--         lplayer =
+--             extractPlayersFromWebData rdlPlayer
 
-        convertedPlayerListToUserPlayerList =
-            convertPlayersToUserPlayers
-                lplayer
-                luser
-    in
-    sortedRank <| convertedPlayerListToUserPlayerList
+--         convertedPlayerListToUserPlayerList =
+--             convertPlayersToUserPlayers
+--                 lplayer
+--                 luser
+--     in
+--     sortedRank <| convertedPlayerListToUserPlayerList
 
 
 convertMaybeUserRankingListToList : Maybe (List SR.Types.UserRanking) -> List SR.Types.UserRanking
@@ -145,20 +146,20 @@ convertMaybeUserRankingListToList luRanking =
             a
 
 
-extractPlayersFromWebData : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
-extractPlayersFromWebData remData =
-    case remData of
-        RemoteData.NotAsked ->
-            []
+-- extractPlayersFromWebData : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
+-- extractPlayersFromWebData remData =
+--     case remData of
+--         RemoteData.NotAsked ->
+--             []
 
-        RemoteData.Loading ->
-            []
+--         RemoteData.Loading ->
+--             []
 
-        RemoteData.Success players ->
-            players
+--         RemoteData.Success players ->
+--             players
 
-        RemoteData.Failure httpError ->
-            []
+--         RemoteData.Failure httpError ->
+--             []
 
 
 -- extractRankingsFromWebData : RemoteData.WebData (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
@@ -205,19 +206,21 @@ extractUsersFromWebData remData =
             []
 
 
-convertUserPlayersToPlayers : List SR.Types.UserPlayer -> List SR.Types.Player
-convertUserPlayersToPlayers luplayers =
-    List.map Utils.MyUtils.refEachPlayer luplayers
+-- convertUserPlayersToPlayers : List SR.Types.UserPlayer -> List SR.Types.Player
+-- convertUserPlayersToPlayers luplayers =
+--     List.map Utils.MyUtils.refEachPlayer luplayers
 
 
-convertPlayersToUserPlayers : List SR.Types.Player -> List SR.Types.User -> List SR.Types.UserPlayer
-convertPlayersToUserPlayers lplayer luser =
-    List.map (convertEachPlayerToUserPlayer luser) lplayer
+-- convertPlayersToUserPlayers : List SR.Types.Player -> List SR.Types.User -> List SR.Types.UserPlayer
+-- convertPlayersToUserPlayers lplayer luser =
+--     List.map (convertEachPlayerToUserPlayer luser) lplayer
 
 
 extractRankingInfoListFromMaybeList : Maybe (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
 extractRankingInfoListFromMaybeList lranking =
     case lranking of
+
+
         Just a ->
             a
 
@@ -234,28 +237,28 @@ convertListOfMaybeToList hasAnything =
     onlyHasRealValues
 
 
-convertEachPlayerToUserPlayer : List SR.Types.User -> SR.Types.Player -> SR.Types.UserPlayer
-convertEachPlayerToUserPlayer luser player =
-    { player = player, user = gotUserFromUserList luser player.address }
+-- convertEachPlayerToUserPlayer : List SR.Types.User -> SR.Types.Player -> SR.Types.UserPlayer
+-- convertEachPlayerToUserPlayer luser player =
+--     { player = player, user = gotUserFromUserList luser player.address }
 
 
-gotRankingOwnerAsUserPlayer : SR.Types.RankingInfo -> List SR.Types.UserRanking -> List SR.Types.UserPlayer -> SR.Types.UserPlayer
-gotRankingOwnerAsUserPlayer selectedRanking luranking luplayer =
-    let
-        rankingOwnerAsUser =
-            (gotUserRankingFromUserRankingList luranking (Internal.Types.RankingId selectedRanking.id)).userInfo
+-- gotRankingOwnerAsUserPlayer : SR.Types.RankingInfo -> List SR.Types.UserRanking -> List SR.Types.UserPlayer -> SR.Types.UserPlayer
+-- gotRankingOwnerAsUserPlayer selectedRanking luranking luplayer =
+--     let
+--         rankingOwnerAsUser =
+--             (gotUserRankingFromUserRankingList luranking (Internal.Types.RankingId selectedRanking.id)).userInfo
 
-        rankingOwnerAsPlayer =
-            gotRankingOwnerAPlayer rankingOwnerAsUser.ethaddress luplayer
-    in
-    { player = rankingOwnerAsPlayer
-    , user = rankingOwnerAsUser
-    }
+--         rankingOwnerAsPlayer =
+--             gotRankingOwnerAPlayer rankingOwnerAsUser.ethaddress luplayer
+--     in
+--     { player = rankingOwnerAsPlayer
+--     , user = rankingOwnerAsUser
+--     }
 
 
-gotRankingOwnerAPlayer : String -> List SR.Types.UserPlayer -> SR.Types.Player
-gotRankingOwnerAPlayer selectedRanking luplayer =
-    (gotUserPlayerFromPlayerListStrAddress luplayer selectedRanking).player
+-- gotRankingOwnerAPlayer : String -> List SR.Types.UserPlayer -> SR.Types.Player
+-- gotRankingOwnerAPlayer selectedRanking luplayer =
+--     (gotUserPlayerFromPlayerListStrAddress luplayer selectedRanking).player
 
 
 addedNewJoinedRankingIdToUser : String -> SR.Types.User -> List SR.Types.User -> List SR.Types.User
@@ -297,20 +300,20 @@ gotUserFromUserList userList uaddr =
             a
 
 
-gotUserRankingFromUserRankingList : List SR.Types.UserRanking -> Internal.Types.RankingId -> SR.Types.UserRanking
-gotUserRankingFromUserRankingList urankingList (Internal.Types.RankingId rnkid) =
-    let
-        existingRanking =
-            List.head <|
-                List.filter (\r -> r.rankingInfo.id == String.toLower rnkid)
-                    urankingList
-    in
-    case existingRanking of
-        Nothing ->
-            SR.Defaults.emptyUserRanking
+-- gotUserRankingFromUserRankingList : List SR.Types.UserRanking -> Internal.Types.RankingId -> SR.Types.UserRanking
+-- gotUserRankingFromUserRankingList urankingList (Internal.Types.RankingId rnkid) =
+--     let
+--         existingRanking =
+--             List.head <|
+--                 List.filter (\r -> r.rankingInfo.id == String.toLower rnkid)
+--                     urankingList
+--     in
+--     case existingRanking of
+--         Nothing ->
+--             SR.Defaults.emptyUserRanking
 
-        Just a ->
-            a
+--         Just a ->
+--             a
 
 
 
@@ -514,23 +517,23 @@ isGlobalRankingOwnedByUser user ownedrnk =
         Nothing
 
 
-createAllUserAsOwnerGlobalRankingList : List SR.Types.RankingInfo -> List SR.Types.User -> List SR.Types.UserRanking
-createAllUserAsOwnerGlobalRankingList lrankinfo luser =
-    List.map (createNewOwnedRanking luser) lrankinfo
+-- createAllUserAsOwnerGlobalRankingList : List SR.Types.RankingInfo -> List SR.Types.User -> List SR.Types.UserRanking
+-- createAllUserAsOwnerGlobalRankingList lrankinfo luser =
+--     List.map (createNewOwnedRanking luser) lrankinfo
 
 
-createNewOwnedRanking : List SR.Types.User -> SR.Types.RankingInfo -> SR.Types.UserRanking
-createNewOwnedRanking luser rankingInfo =
-    let
-        userOwner =
-            gotUserFromUserList luser rankingInfo.rankingowneraddr
+-- createNewOwnedRanking : List SR.Types.User -> SR.Types.RankingInfo -> SR.Types.UserRanking
+-- createNewOwnedRanking luser rankingInfo =
+--     let
+--         userOwner =
+--             gotUserFromUserList luser rankingInfo.rankingowneraddr
 
-        newOwnedRanking =
-            { rankingInfo = rankingInfo
-            , userInfo = userOwner
-            }
-    in
-    newOwnedRanking
+--         newOwnedRanking =
+--             { rankingInfo = rankingInfo
+--             , userInfo = userOwner
+--             }
+--     in
+--     newOwnedRanking
 
 
 gotUserIsPlayerGlobalRankingList : List SR.Types.UserRanking -> SR.Types.User -> List SR.Types.UserRanking
@@ -596,241 +599,241 @@ gotAllRankindIds userRanking =
 -- external
 
 
-changedRank : List SR.Types.UserPlayer -> SR.Types.UserPlayer -> Int -> List SR.Types.UserPlayer
-changedRank luPlayer uplayer rank =
-    let
-        userPlayerToPlayer =
-            uplayer.player
+-- changedRank : List SR.Types.UserPlayer -> SR.Types.UserPlayer -> Int -> List SR.Types.UserPlayer
+-- changedRank luPlayer uplayer rank =
+--     let
+--         userPlayerToPlayer =
+--             uplayer.player
 
-        filteredPlayerList =
-            filterPlayerOutOfPlayerList userPlayerToPlayer.address luPlayer
+--         filteredPlayerList =
+--             filterPlayerOutOfPlayerList userPlayerToPlayer.address luPlayer
 
-        updatedPlayer =
-            { userPlayerToPlayer | challengeraddress = "", rank = rank }
+--         updatedPlayer =
+--             { userPlayerToPlayer | challengeraddress = "", rank = rank }
 
-        newUserPlayer =
-            { uplayer | player = updatedPlayer }
+--         newUserPlayer =
+--             { uplayer | player = updatedPlayer }
 
-        newPlayerList =
-            newUserPlayer :: filteredPlayerList
+--         newPlayerList =
+--             newUserPlayer :: filteredPlayerList
 
-        newPlayerListSorted =
-            sortedRank newPlayerList
-    in
-        if List.isEmpty luPlayer || uplayer.player.address == "" then 
-            []
-        else
+--         newPlayerListSorted =
+--             sortedRank newPlayerList
+--     in
+--         if List.isEmpty luPlayer || uplayer.player.address == "" then 
+--             []
+--         else
          
-            newPlayerListSorted
+--             newPlayerListSorted
 
 
-assignChallengerAddr : List SR.Types.UserPlayer -> SR.Types.UserPlayer -> String -> List SR.Types.UserPlayer
-assignChallengerAddr lPlayer uplayer challengeraddress =
-    let
-        filteredPlayerList =
-            filterPlayerOutOfPlayerList uplayer.player.address lPlayer
+-- assignChallengerAddr : List SR.Types.UserPlayer -> SR.Types.UserPlayer -> String -> List SR.Types.UserPlayer
+-- assignChallengerAddr lPlayer uplayer challengeraddress =
+--     let
+--         filteredPlayerList =
+--             filterPlayerOutOfPlayerList uplayer.player.address lPlayer
 
-        newUserPlayerPlayerField =
-            uplayer.player
+--         newUserPlayerPlayerField =
+--             uplayer.player
 
-        updatedPlayer =
-            --{ newUserPlayerPlayerField | challengeraddress = uplayer.player.challengeraddress }
-            { newUserPlayerPlayerField | challengeraddress = challengeraddress }
+--         updatedPlayer =
+--             --{ newUserPlayerPlayerField | challengeraddress = uplayer.player.challengeraddress }
+--             { newUserPlayerPlayerField | challengeraddress = challengeraddress }
 
-        newUserPlayer =
-            { uplayer | player = updatedPlayer }
+--         newUserPlayer =
+--             { uplayer | player = updatedPlayer }
 
-        newPlayerList =
-            newUserPlayer :: filteredPlayerList
-    in
-    newPlayerList
-
-
-updatePlayerRankWithWonResult : List SR.Types.UserPlayer -> SR.Types.UserPlayer -> List SR.Types.UserPlayer
-updatePlayerRankWithWonResult luPlayer uplayer =
-    let
-        filteredPlayerList =
-            filterPlayerOutOfPlayerList uplayer.player.address luPlayer
-
-        opponentAsPlayer =
-            gotUserPlayerFromPlayerListStrAddress luPlayer uplayer.player.challengeraddress
-
-        -- this needs more ?:
-        newUserPlayerPlayerField =
-            uplayer.player
-
-        updatedPlayer =
-            { newUserPlayerPlayerField | rank = opponentAsPlayer.player.rank }
-
-        newUserPlayer =
-            { uplayer | player = updatedPlayer }
-
-        newPlayerList =
-            newUserPlayer :: filteredPlayerList
-    in
-    newPlayerList
+--         newPlayerList =
+--             newUserPlayer :: filteredPlayerList
+--     in
+--     newPlayerList
 
 
-sortedRank : List SR.Types.UserPlayer -> List SR.Types.UserPlayer
-sortedRank luplayer =
-    let
-        validatedMaybePlayerLst =
-            List.map Utils.MyUtils.splitPlayerFieldsToCreateMaybePlayer luplayer
+-- updatePlayerRankWithWonResult : List SR.Types.UserPlayer -> SR.Types.UserPlayer -> List SR.Types.UserPlayer
+-- updatePlayerRankWithWonResult luPlayer uplayer =
+--     let
+--         filteredPlayerList =
+--             filterPlayerOutOfPlayerList uplayer.player.address luPlayer
 
-        filteredValidatedMaybePlayerLst =
-            List.filter canPlayerBeInList validatedMaybePlayerLst
+--         opponentAsPlayer =
+--             gotUserPlayerFromPlayerListStrAddress luPlayer uplayer.player.challengeraddress
 
-        convertedValidatedPlayerList =
-            List.map Utils.MyUtils.convertMaybePlayerToPlayer filteredValidatedMaybePlayerLst
+--         -- this needs more ?:
+--         newUserPlayerPlayerField =
+--             uplayer.player
 
-        reorderedConvertedValidatedPlayerList =
-            reorderPlayerListToStartAtOne
-                convertedValidatedPlayerList
-    in
-    List.sortBy extractRank reorderedConvertedValidatedPlayerList
+--         updatedPlayer =
+--             { newUserPlayerPlayerField | rank = opponentAsPlayer.player.rank }
 
+--         newUserPlayer =
+--             { uplayer | player = updatedPlayer }
 
-extractRank : SR.Types.UserPlayer -> Int
-extractRank uplayer =
-    uplayer.player.rank
-
-
-reorderPlayerListToStartAtOne : List SR.Types.UserPlayer -> List SR.Types.UserPlayer
-reorderPlayerListToStartAtOne luplayer =
-    let
-        newPlayerListAllRankIsOne =
-            List.map resetPlayerRankToOne luplayer
-
-        newListLength =
-            List.length luplayer
-
-        newAscendingList =
-            List.range 1 newListLength
-
-        listscombined =
-            List.map2 resetPlayerRankingList newAscendingList newPlayerListAllRankIsOne
-    in
-    listscombined
+--         newPlayerList =
+--             newUserPlayer :: filteredPlayerList
+--     in
+--     newPlayerList
 
 
-resetPlayerRankingList : Int -> SR.Types.UserPlayer -> SR.Types.UserPlayer
-resetPlayerRankingList newRank uplayer =
-    let
-        newuserplayerplayer =
-            uplayer.player
+-- sortedRank : List SR.Types.UserPlayer -> List SR.Types.UserPlayer
+-- sortedRank luplayer =
+--     let
+--         validatedMaybePlayerLst =
+--             List.map Utils.MyUtils.splitPlayerFieldsToCreateMaybePlayer luplayer
 
-        newPlayer =
-            { newuserplayerplayer
-                | address = uplayer.player.address
-                , rank = newRank
-                , challengeraddress = uplayer.player.challengeraddress
-            }
+--         filteredValidatedMaybePlayerLst =
+--             List.filter canPlayerBeInList validatedMaybePlayerLst
 
-        newUserPlayer =
-            { uplayer | player = newPlayer }
-    in
-    newUserPlayer
+--         convertedValidatedPlayerList =
+--             List.map Utils.MyUtils.convertMaybePlayerToPlayer filteredValidatedMaybePlayerLst
 
-
-resetPlayerRankToOne : SR.Types.UserPlayer -> SR.Types.UserPlayer
-resetPlayerRankToOne uplayer =
-    let
-        newuserplayerplayer =
-            uplayer.player
-
-        newPlayer =
-            { newuserplayerplayer
-                | address = uplayer.player.address
-                , rank = 1
-                , challengeraddress = uplayer.player.challengeraddress
-            }
-
-        newUserPlayer =
-            { uplayer | player = newPlayer }
-    in
-    newUserPlayer
+--         reorderedConvertedValidatedPlayerList =
+--             reorderPlayerListToStartAtOne
+--                 convertedValidatedPlayerList
+--     in
+--     List.sortBy extractRank reorderedConvertedValidatedPlayerList
 
 
-canPlayerBeInList : Maybe SR.Types.UserPlayer -> Bool
-canPlayerBeInList uplayer =
-    case uplayer of
-        Nothing ->
-            False
-
-        Just a ->
-            True
+-- extractRank : SR.Types.UserPlayer -> Int
+-- extractRank uplayer =
+--     uplayer.player.rank
 
 
-gotCurrentUserAsPlayerFromPlayerList : List SR.Types.UserPlayer -> SR.Types.User -> SR.Types.UserPlayer
-gotCurrentUserAsPlayerFromPlayerList luPlayer userRec =
-    let
-        existingPlayer =
-            List.head <|
-                List.filter (\r -> r.player.address == (String.toLower <| userRec.ethaddress))
-                    luPlayer
-    in
-    case existingPlayer of
-        Nothing ->
-            SR.Defaults.emptyUserPlayer
+-- reorderPlayerListToStartAtOne : List SR.Types.UserPlayer -> List SR.Types.UserPlayer
+-- reorderPlayerListToStartAtOne luplayer =
+--     let
+--         newPlayerListAllRankIsOne =
+--             List.map resetPlayerRankToOne luplayer
 
-        Just a ->
-            a
+--         newListLength =
+--             List.length luplayer
 
+--         newAscendingList =
+--             List.range 1 newListLength
 
-gotUserPlayerFromPlayerListStrAddress : List SR.Types.UserPlayer -> String -> SR.Types.UserPlayer
-gotUserPlayerFromPlayerListStrAddress luplayer addr =
-    let
-        existingUser =
-            List.head <|
-                List.filter (\r -> r.player.address == (String.toLower <| addr))
-                    luplayer
-    in
-    case existingUser of
-        Nothing ->
-            SR.Defaults.emptyUserPlayer
-
-        Just a ->
-            a
+--         listscombined =
+--             List.map2 resetPlayerRankingList newAscendingList newPlayerListAllRankIsOne
+--     in
+--     listscombined
 
 
-filterPlayerOutOfPlayerList : String -> List SR.Types.UserPlayer -> List SR.Types.UserPlayer
-filterPlayerOutOfPlayerList addr lplayer =
-    List.filterMap
-        (doesPlayerAddrNOTMatchAddr
-            addr
-        )
-        lplayer
+-- resetPlayerRankingList : Int -> SR.Types.UserPlayer -> SR.Types.UserPlayer
+-- resetPlayerRankingList newRank uplayer =
+--     let
+--         newuserplayerplayer =
+--             uplayer.player
+
+--         newPlayer =
+--             { newuserplayerplayer
+--                 | address = uplayer.player.address
+--                 , rank = newRank
+--                 , challengeraddress = uplayer.player.challengeraddress
+--             }
+
+--         newUserPlayer =
+--             { uplayer | player = newPlayer }
+--     in
+--     newUserPlayer
+
+
+-- resetPlayerRankToOne : SR.Types.UserPlayer -> SR.Types.UserPlayer
+-- resetPlayerRankToOne uplayer =
+--     let
+--         newuserplayerplayer =
+--             uplayer.player
+
+--         newPlayer =
+--             { newuserplayerplayer
+--                 | address = uplayer.player.address
+--                 , rank = 1
+--                 , challengeraddress = uplayer.player.challengeraddress
+--             }
+
+--         newUserPlayer =
+--             { uplayer | player = newPlayer }
+--     in
+--     newUserPlayer
+
+
+-- canPlayerBeInList : Maybe SR.Types.UserPlayer -> Bool
+-- canPlayerBeInList uplayer =
+--     case uplayer of
+--         Nothing ->
+--             False
+
+--         Just a ->
+--             True
+
+
+-- gotCurrentUserAsPlayerFromPlayerList : List SR.Types.UserPlayer -> SR.Types.User -> SR.Types.UserPlayer
+-- gotCurrentUserAsPlayerFromPlayerList luPlayer userRec =
+--     let
+--         existingPlayer =
+--             List.head <|
+--                 List.filter (\r -> r.player.address == (String.toLower <| userRec.ethaddress))
+--                     luPlayer
+--     in
+--     case existingPlayer of
+--         Nothing ->
+--             SR.Defaults.emptyUserPlayer
+
+--         Just a ->
+--             a
+
+
+-- gotUserPlayerFromPlayerListStrAddress : List SR.Types.UserPlayer -> String -> SR.Types.UserPlayer
+-- gotUserPlayerFromPlayerListStrAddress luplayer addr =
+--     let
+--         existingUser =
+--             List.head <|
+--                 List.filter (\r -> r.player.address == (String.toLower <| addr))
+--                     luplayer
+--     in
+--     case existingUser of
+--         Nothing ->
+--             SR.Defaults.emptyUserPlayer
+
+--         Just a ->
+--             a
+
+
+-- filterPlayerOutOfPlayerList : String -> List SR.Types.UserPlayer -> List SR.Types.UserPlayer
+-- filterPlayerOutOfPlayerList addr lplayer =
+--     List.filterMap
+--         (doesPlayerAddrNOTMatchAddr
+--             addr
+--         )
+--         lplayer
 
 
 
 --internal
 
 
-doesPlayerAddrNOTMatchAddr : String -> SR.Types.UserPlayer -> Maybe SR.Types.UserPlayer
-doesPlayerAddrNOTMatchAddr addr player =
-    if player.player.address /= addr then
-        Just player
+-- doesPlayerAddrNOTMatchAddr : String -> SR.Types.UserPlayer -> Maybe SR.Types.UserPlayer
+-- doesPlayerAddrNOTMatchAddr addr player =
+--     if player.player.address /= addr then
+--         Just player
 
-    else
-        Nothing
-
-
-findPlayerInList : SR.Types.User -> List SR.Types.UserPlayer -> List SR.Types.UserPlayer
-findPlayerInList user luPlayer =
-    List.filterMap
-        (isThisPlayerAddr
-            (String.toLower user.ethaddress)
-        )
-        luPlayer
+--     else
+--         Nothing
 
 
-isThisPlayerAddr : String -> SR.Types.UserPlayer -> Maybe SR.Types.UserPlayer
-isThisPlayerAddr playerAddr uplayer =
-    if (String.toLower uplayer.player.address) == (String.toLower playerAddr) then
-        Just uplayer
+-- findPlayerInList : SR.Types.User -> List SR.Types.UserPlayer -> List SR.Types.UserPlayer
+-- findPlayerInList user luPlayer =
+--     List.filterMap
+--         (isThisPlayerAddr
+--             (String.toLower user.ethaddress)
+--         )
+--         luPlayer
 
-    else
-        Nothing
+
+-- isThisPlayerAddr : String -> SR.Types.UserPlayer -> Maybe SR.Types.UserPlayer
+-- isThisPlayerAddr playerAddr uplayer =
+--     if (String.toLower uplayer.player.address) == (String.toLower playerAddr) then
+--         Just uplayer
+
+--     else
+--         Nothing
 
 
 gotRankingListFromRemData : RemoteData.WebData (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo

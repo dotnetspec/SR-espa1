@@ -156,19 +156,7 @@ type AppState
     | AppStateCreateNewLadder 
     | AppStateEnterWon 
     | AppStateEnterLost 
-    | AppStateEnterUndecided 
-
-
-{--}
--- type alias AllLists =
---     { users : EverySet Users
---     , userRankings : List UserRanking
---     , lownedUserRanking : List UserRanking
---     , lmemberUserRanking : List UserRanking
---     , lotherUserRanking : List UserRanking
---     , userPlayers : List UserPlayer
---     }
---}
+    | AppStateEnterUndecided
 
 
 type alias UserPlayer =
