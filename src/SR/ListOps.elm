@@ -11,14 +11,13 @@ module SR.ListOps exposing
     , findSelectedRankingInGlobalList
     , gotOthersGlobalRankingList
     , gotRankingFromRankingList
-    , gotRankingListFromUserRankingList
+    --, gotRankingListFromUserRankingList
     , gotUserFromUserList
     , gotUserIsPlayerGlobalRankingList
     , gotUserIsPlayerNonUserRankingList
     , gotUserOwnedGlobalRankingList
     , isRegistered
-    , isUniqueUserName
-    , isUniqueRankingName
+    --, isUniqueRankingName
     , isUserInListStrAddr
     , removeCurrentUserEntryFromUserList
     ,  removedDuplicateUserFromUserList
@@ -37,33 +36,9 @@ import Utils.MyUtils
 
 
 
-isUniqueUserName : String -> List SR.Types.User -> Bool
-isUniqueUserName str luser =
-    let
-        newList =
-            List.filter (\r -> (String.toLower <| r.username) == (String.toLower <| str))
-                (validatedUserList luser)
-    in
-    if List.isEmpty newList then
-        True
 
-    else
-        False
 
-isUniqueRankingName : String -> List SR.Types.UserRanking -> Bool
-isUniqueRankingName str luranking =
-    let
 
-        lranking = gotRankingListFromUserRankingList luranking
-        newList =
-            List.filter (\r -> (String.toLower <| r.rankingname) == (String.toLower <| str))
-                ( lranking)
-    in
-    if List.isEmpty newList then
-        True
-
-    else
-        False
 
 
 removedDuplicateUserFromUserList : List SR.Types.User -> List SR.Types.User
@@ -303,14 +278,10 @@ isRnkIdMatch rankingid rnk =
         False
 
 
-gotRankingListFromUserRankingList : List SR.Types.UserRanking -> List SR.Types.RankingInfo
-gotRankingListFromUserRankingList luranking =
-    List.map gotRankingInfo luranking
 
 
-gotRankingInfo : SR.Types.UserRanking -> SR.Types.RankingInfo
-gotRankingInfo uranking =
-    uranking.rankingInfo
+
+
 
 
 gotRankingFromRankingList : List SR.Types.RankingInfo -> Internal.Types.RankingId -> SR.Types.RankingInfo

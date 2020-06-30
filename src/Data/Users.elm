@@ -1,5 +1,5 @@
 -- Users will be mainly used to communicate externally to the jsonbin server
-module Data.Users exposing (Users, gotUserListFromRemData, isNameValidationErr, extractUsersFromWebData, gotUserFromUserList, emptyUsers, updateAddr, addUser, removeUser, asList, asUsers, getUser, gotUser, userSetLength)
+module Data.Users exposing (Users, isUniqueUserName, gotUserListFromRemData, isNameValidationErr, extractUsersFromWebData, gotUserFromUserList, emptyUsers, updateAddr, addUser, removeUser, asList, asUsers, getUser, gotUser, userSetLength)
 
 
 import SR.Types
@@ -22,6 +22,19 @@ emptyUsers =
 asUsers : EverySet SR.Types.User -> Users 
 asUsers esUser  = 
     Users esUser 
+
+isUniqueUserName : String -> List SR.Types.User -> Bool
+isUniqueUserName str luser =
+    let
+        newList =
+            List.filter (\r -> (String.toLower <| r.username) == (String.toLower <| str))
+                (validatedUserList luser)
+    in
+    if List.isEmpty newList then
+        True
+
+    else
+        False
 
 addUser : SR.Types.User -> Users -> Users
 addUser user susers = 

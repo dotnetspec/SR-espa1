@@ -1,5 +1,5 @@
 -- Global will be mainly used to handle internal data of the global rankings listing as it relates to the current user
-module Data.Global exposing (Global, gotRankingOwnerAsUserPlayer, rankingsAsList, jsonEncodeNewGlobalRankingList, createdUserRankings, gotUserRanking, emptyGlobal, asGlobal, othersUserRanking, memberUserRanking, addUserRanking, removeUserRanking, asList, asSelected, isUserRankingMemberOfGlobalRanking, ownedUserRanking)
+module Data.Global exposing (Global, isUniqueRankingName, gotRankingOwnerAsUserPlayer, rankingsAsList, jsonEncodeNewGlobalRankingList, createdUserRankings, gotUserRanking, emptyGlobal, asGlobal, othersUserRanking, memberUserRanking, addUserRanking, removeUserRanking, asList, asSelected, isUserRankingMemberOfGlobalRanking, ownedUserRanking)
 
 
 import SR.Types
@@ -375,17 +375,21 @@ gotUserPlayerFromPlayerListStrAddress luplayer addr =
         Just a ->
             a
 
--- gotUserRankingFromUserRankingList : List SR.Types.UserRanking -> Internal.Types.RankingId -> SR.Types.UserRanking
--- gotUserRankingFromUserRankingList urankingList (Internal.Types.RankingId rnkid) =
---     let
---         existingRanking =
---             List.head <|
---                 List.filter (\r -> r.rankingInfo.id == String.toLower rnkid)
---                     urankingList
---     in
---     case existingRanking of
---         Nothing ->
---             SR.Defaults.emptyUserRanking
+isUniqueRankingName : String -> List SR.Types.UserRanking -> Bool
+isUniqueRankingName str luranking =
+    let
 
---         Just a ->
---             a
+        lranking = gotRankingListFromUserRankingList luranking
+        newList =
+            List.filter (\r -> (String.toLower <| r.rankingname) == (String.toLower <| str))
+                ( lranking)
+    in
+    if List.isEmpty newList then
+        True
+
+    else
+        False
+
+gotRankingListFromUserRankingList : List SR.Types.UserRanking -> List SR.Types.RankingInfo
+gotRankingListFromUserRankingList luranking =
+    List.map Data.Rankings.gotRankingInfo luranking

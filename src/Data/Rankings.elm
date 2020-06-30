@@ -1,6 +1,6 @@
 -- Rankings will be mainly used to communicate externally to the jsonbin server
 
-module Data.Rankings exposing (Rankings, extractRankingsFromWebData, emptyRankings, updateAddr, addRanking, removeRanking, asList, asRankings, getRanking, gotRanking, rankingsetLength)
+module Data.Rankings exposing (Rankings, gotRankingInfo, extractRankingsFromWebData, emptyRankings, updateAddr, addRanking, removeRanking, asList, asRankings, getRanking, gotRanking, rankingsetLength)
 
 
 import SR.Types
@@ -134,3 +134,6 @@ extractRankingsFromWebData remData =
         RemoteData.Failure httpError ->
             []
 
+gotRankingInfo : SR.Types.UserRanking -> SR.Types.RankingInfo
+gotRankingInfo uranking =
+    uranking.rankingInfo
