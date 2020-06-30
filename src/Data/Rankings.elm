@@ -1,6 +1,6 @@
 -- Rankings will be mainly used to communicate externally to the jsonbin server
 
-module Data.Rankings exposing (Rankings, gotRankingInfo, extractRankingsFromWebData, emptyRankings, updateAddr, addRanking, removeRanking, asList, asRankings, getRanking, gotRanking, rankingsetLength)
+module Data.Rankings exposing (Rankings, isUniqueRankingName, gotRankingInfo, extractRankingsFromWebData, emptyRankings, updateAddr, addRanking, removeRanking, asList, asRankings, getRanking, gotRanking, rankingsetLength)
 
 
 import SR.Types
@@ -137,3 +137,23 @@ extractRankingsFromWebData remData =
 gotRankingInfo : SR.Types.UserRanking -> SR.Types.RankingInfo
 gotRankingInfo uranking =
     uranking.rankingInfo
+
+
+isUniqueRankingName : String -> List SR.Types.UserRanking -> Bool
+isUniqueRankingName str luranking =
+    let
+
+        lranking = gotRankingListFromUserRankingList luranking
+        newList =
+            List.filter (\r -> (String.toLower <| r.rankingname) == (String.toLower <| str))
+                ( lranking)
+    in
+    if List.isEmpty newList then
+        True
+
+    else
+        False
+
+gotRankingListFromUserRankingList : List SR.Types.UserRanking -> List SR.Types.RankingInfo
+gotRankingListFromUserRankingList luranking =
+    List.map gotRankingInfo luranking

@@ -1,6 +1,6 @@
 module SR.ListOps exposing
-    ( addedNewJoinedRankingIdToUser
-    , convertListOfMaybeToList
+    ( 
+     convertListOfMaybeToList
     , convertMaybeUserRankingListToList
     , createduserRankingPlayerList
     , doesCurrentRankingIdNOTMatchId
@@ -11,16 +11,9 @@ module SR.ListOps exposing
     , findSelectedRankingInGlobalList
     , gotOthersGlobalRankingList
     , gotRankingFromRankingList
-    --, gotRankingListFromUserRankingList
-    , gotUserFromUserList
     , gotUserIsPlayerGlobalRankingList
     , gotUserIsPlayerNonUserRankingList
     , gotUserOwnedGlobalRankingList
-    , isRegistered
-    --, isUniqueRankingName
-    , isUserInListStrAddr
-    , removeCurrentUserEntryFromUserList
-    ,  removedDuplicateUserFromUserList
        -- to be privatized
     , validatedUserList
     )
@@ -39,45 +32,6 @@ import Utils.MyUtils
 
 
 
-
-
-removedDuplicateUserFromUserList : List SR.Types.User -> List SR.Types.User
-removedDuplicateUserFromUserList userList =
-    let
-        laddresses =
-            List.map gotAddressesFromUserList userList
-
-        lremovedDuplicateAddresses =
-            List.Unique.filterDuplicates laddresses
-
-        lusersWithDuplicatesRemoved =
-            List.map (gotUserFromUserList userList) lremovedDuplicateAddresses
-    in
-    lusersWithDuplicatesRemoved
-
-
-gotAddressesFromUserList : SR.Types.User -> String
-gotAddressesFromUserList user =
-    user.ethaddress
-
-
-removeCurrentUserEntryFromUserList : List SR.Types.User -> String -> List SR.Types.User
-removeCurrentUserEntryFromUserList userList uaddr =
-    List.filter (\r -> (String.toLower <| r.ethaddress) /= (String.toLower <| uaddr))
-        (validatedUserList userList)
-
-
-isRegistered : List SR.Types.User -> SR.Types.User -> Bool
-isRegistered luser user =
-    let
-        newUser =
-            gotUserFromUserList luser user.ethaddress
-    in
-    if newUser.username == "" then
-        False
-
-    else
-        True
 
 
 convertMaybeUserRankingListToList : Maybe (List SR.Types.UserRanking) -> List SR.Types.UserRanking
@@ -139,25 +93,7 @@ convertListOfMaybeToList hasAnything =
     onlyHasRealValues
 
 
-addedNewJoinedRankingIdToUser : String -> SR.Types.User -> List SR.Types.User -> List SR.Types.User
-addedNewJoinedRankingIdToUser rankingId user lUser =
-    let
-        currentUser =
-            gotUserFromUserList lUser user.username
 
-        userJoinRankings =
-            currentUser.userjoinrankings
-
-        newUserJoinRankings =
-            rankingId :: userJoinRankings
-
-        newUser =
-            { user | userjoinrankings = newUserJoinRankings }
-
-        newUserList =
-            newUser :: lUser
-    in
-    newUserList
 
 
 
@@ -677,19 +613,3 @@ gotRankingListFromRemData globalList =
                     [ SR.Defaults.emptyRankingInfo
                     ]
 
-
-
--- private
-
-
-isUserInListStrAddr : List SR.Types.User -> String -> Bool
-isUserInListStrAddr userlist uaddr =
-    let
-        gotSingleUserFromList =
-            gotUserFromUserList userlist uaddr
-    in
-    if gotSingleUserFromList.ethaddress == "" then
-        False
-
-    else
-        True

@@ -746,14 +746,8 @@ handleWalletStateOperational msg model =
                     case allSets of 
                         GlobalFetched sGlobal sUsers ->
 
-                            if SR.ListOps.isRegistered (Data.Users.asList sUsers) appInfo.user then
+                            if Data.Users.isRegistered (Data.Users.asList sUsers) appInfo.user then
                                 let
-                                    -- rankingInfoFromModel =
-                                    --     appInfo.selectedRanking
-                                    -- rankingWithFieldsCleared =
-                                    --     { rankingInfoFromModel | rankingname = "", rankingdesc = "" }
-                                    -- newAppInfo =
-                                    --     { appInfo | selectedRanking = rankingWithFieldsCleared }
                                     txParams =
                                         { to = txRec.account
                                         , from = txRec.account
@@ -930,7 +924,7 @@ handleWalletStateOperational msg model =
                 ClickedJoinSelected ->
                     case allSets of 
                         Selected sSelected sUsers rnkId ->
-                            if SR.ListOps.isRegistered (Data.Users.asList sUsers) appInfo.user then
+                            if Data.Users.isRegistered (Data.Users.asList sUsers) appInfo.user then
                                 let
                                     newLUPlayer = Data.Selected.userAdded sUsers appInfo.selectedRanking.id (Data.Selected.asList sSelected) appInfo.user
                                     newSelected = Data.Selected.asSelected (EverySet.fromList newLUPlayer) sUsers rnkId
@@ -2937,7 +2931,7 @@ createNewUser originaluserlist newuserinfo =
             newUser :: originaluserlist
 
         ensuredListHasNoDuplicates =
-            SR.ListOps.removedDuplicateUserFromUserList newUserAddedToList
+            Data.Users.removedDuplicateUserFromUserList newUserAddedToList
 
         _ =
             Debug.log "originaluserlist " originaluserlist
@@ -2989,13 +2983,13 @@ updateExistingUser originaluserlist updatedUserInfo =
             }
 
         newListWithCurrentUserRemoved =
-            SR.ListOps.removeCurrentUserEntryFromUserList originaluserlist updatedUserInfo.ethaddress
+            Data.Users.removeCurrentUserEntryFromUserList originaluserlist updatedUserInfo.ethaddress
 
         updatedUserList =
             updatedUser :: newListWithCurrentUserRemoved
 
         ensuredListHasNoDuplicates =
-            SR.ListOps.removedDuplicateUserFromUserList updatedUserList
+            Data.Users.removedDuplicateUserFromUserList updatedUserList
     in
     --SentUserInfoAndDecodedResponseToNewUser is the Msg handled by update whenever a request is made by buttuser clicked
     --RemoteData is used throughout the module, including update
@@ -3209,7 +3203,7 @@ updateUsersJoinRankings : String -> SR.Types.User -> List SR.Types.User -> Cmd M
 updateUsersJoinRankings rankingId user lUser =
     Http.request
         { body =
-            Http.jsonBody <| SR.Encode.encodeUserList <| SR.ListOps.addedNewJoinedRankingIdToUser rankingId user lUser
+            Http.jsonBody <| SR.Encode.encodeUserList <| Data.Users.addedNewJoinedRankingIdToUser rankingId user lUser
         , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromUserListUpdate) SR.Decode.decodeNewUserListServerResponse
         , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
         , method = "PUT"

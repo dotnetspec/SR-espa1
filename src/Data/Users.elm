@@ -1,5 +1,5 @@
 -- Users will be mainly used to communicate externally to the jsonbin server
-module Data.Users exposing (Users, isUniqueUserName, gotUserListFromRemData, isNameValidationErr, extractUsersFromWebData, gotUserFromUserList, emptyUsers, updateAddr, addUser, removeUser, asList, asUsers, getUser, gotUser, userSetLength)
+module Data.Users exposing (Users, addedNewJoinedRankingIdToUser, removeCurrentUserEntryFromUserList, removedDuplicateUserFromUserList, isRegistered, isUniqueUserName, gotUserListFromRemData, isNameValidationErr, extractUsersFromWebData, gotUserFromUserList, emptyUsers, updateAddr, addUser, removeUser, asList, asUsers, getUser, gotUser, userSetLength)
 
 
 import SR.Types
@@ -10,6 +10,7 @@ import SR.Defaults
 import Eth.Utils
 import RemoteData
 import Http
+import List.Unique
 
 
 type Users = Users (EverySet SR.Types.User)
@@ -21,7 +22,19 @@ emptyUsers =
 
 asUsers : EverySet SR.Types.User -> Users 
 asUsers esUser  = 
-    Users esUser 
+    Users esUser
+
+isRegistered : List SR.Types.User -> SR.Types.User -> Bool
+isRegistered luser user =
+    let
+        newUser =
+            gotUserFromUserList luser user.ethaddress
+    in
+    if newUser.username == "" then
+        False
+
+    else
+        True
 
 isUniqueUserName : String -> List SR.Types.User -> Bool
 isUniqueUserName str luser =
@@ -241,3 +254,41 @@ gotUserListFromRemData userList =
                 Http.BadBody s ->
                     [ SR.Defaults.emptyUser
                     ]
+
+removedDuplicateUserFromUserList : List SR.Types.User -> List SR.Types.User
+removedDuplicateUserFromUserList userList =
+    let
+        laddresses =
+            List.map gotAddressesFromUserList userList
+
+        lremovedDuplicateAddresses =
+            List.Unique.filterDuplicates laddresses
+
+        lusersWithDuplicatesRemoved =
+            List.map (gotUserFromUserList userList) lremovedDuplicateAddresses
+    in
+    lusersWithDuplicatesRemoved
+
+
+gotAddressesFromUserList : SR.Types.User -> String
+gotAddressesFromUserList user =
+    user.ethaddress
+
+removeCurrentUserEntryFromUserList : List SR.Types.User -> String -> List SR.Types.User
+removeCurrentUserEntryFromUserList userList uaddr =
+    List.filter (\r -> (String.toLower <| r.ethaddress) /= (String.toLower <| uaddr))
+        (validatedUserList userList)
+
+--private
+
+isUserInListStrAddr : List SR.Types.User -> String -> Bool
+isUserInListStrAddr userlist uaddr =
+    let
+        gotSingleUserFromList =
+            gotUserFromUserList userlist uaddr
+    in
+    if gotSingleUserFromList.ethaddress == "" then
+        False
+
+    else
+        True

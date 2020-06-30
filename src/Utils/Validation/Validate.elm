@@ -6,9 +6,7 @@ import SR.ListOps
 import SR.Types
 import Data.Users
 import Data.Global
-
-
-
+import Data.Rankings
 
 
 validatedMaxTextLength : String -> Int -> String
@@ -30,7 +28,7 @@ isUserNameValidated user luser =
 
 isRankingNameValidated : SR.Types.RankingInfo -> List SR.Types.UserRanking -> Bool
 isRankingNameValidated rankingInfo luranking =
-    if String.length rankingInfo.rankingname > 3 && String.length rankingInfo.rankingname < 9 && Data.Global.isUniqueRankingName rankingInfo.rankingname luranking then
+    if String.length rankingInfo.rankingname > 3 && String.length rankingInfo.rankingname < 9 && Data.Rankings.isUniqueRankingName rankingInfo.rankingname luranking then
         True
 
     else
