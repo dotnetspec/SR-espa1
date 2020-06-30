@@ -96,7 +96,7 @@ isUserPlayerMemberOfSelectedRanking luplayer user =
                 False
 
 
-isUserOwnerOfSelectedUserRanking : SR.Types.RankingInfo -> List SR.Types.UserRanking -> SR.Types.User -> Bool
+isUserOwnerOfSelectedUserRanking : SR.Types.Ranking -> List SR.Types.UserRanking -> SR.Types.User -> Bool
 isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
     let
         filteredRec =
@@ -641,7 +641,7 @@ assignChallengerAddrsForBOTHPlayers sSelected appInfo =
 --     { player = player, user = gotUserFromUserList luser player.address }
 
 
--- gotRankingOwnerAsUserPlayer : SR.Types.RankingInfo -> List SR.Types.UserRanking -> List SR.Types.UserPlayer -> SR.Types.UserPlayer
+-- gotRankingOwnerAsUserPlayer : SR.Types.Ranking -> List SR.Types.UserRanking -> List SR.Types.UserPlayer -> SR.Types.UserPlayer
 -- gotRankingOwnerAsUserPlayer selectedRanking luranking luplayer =
 --     let
 --         rankingOwnerAsUser =

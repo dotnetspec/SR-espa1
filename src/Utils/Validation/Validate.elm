@@ -27,7 +27,7 @@ isUserNameValidated user luser =
     else
         False
 
-isRankingNameValidated : SR.Types.RankingInfo -> List SR.Types.UserRanking -> Bool
+isRankingNameValidated : SR.Types.Ranking -> List SR.Types.UserRanking -> Bool
 isRankingNameValidated rankingInfo luranking =
     if String.length rankingInfo.rankingname > 3 && String.length rankingInfo.rankingname < 9 && Data.Rankings.isUniqueRankingName rankingInfo.rankingname luranking then
         True

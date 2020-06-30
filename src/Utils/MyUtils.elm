@@ -34,7 +34,7 @@ extractUserRankinigFromMaybe valtoextract =
             SR.Defaults.emptyUserRanking
 
 
-extractRankinigInfoFromMaybe : Maybe SR.Types.RankingInfo -> SR.Types.RankingInfo
+extractRankinigInfoFromMaybe : Maybe SR.Types.Ranking -> SR.Types.Ranking
 extractRankinigInfoFromMaybe valtoextract =
     case valtoextract of
         Just a ->

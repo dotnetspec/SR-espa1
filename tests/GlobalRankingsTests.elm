@@ -19,10 +19,10 @@ import Testdata.UserTestData
 import Testdata.UserRankingTestData
 
 
-rankingInfoFuzzer : Fuzzer SR.Types.RankingInfo
+rankingInfoFuzzer : Fuzzer SR.Types.Ranking
 rankingInfoFuzzer =
     Fuzz.map5
-        SR.Types.RankingInfo
+        SR.Types.Ranking
         Fuzz.string
         Fuzz.bool
         Fuzz.string
@@ -56,7 +56,7 @@ ownerValidatedRankingListTest =
 -- this is used here to keep the original private
 
 
-isValidOwnerAddress : SR.Types.RankingInfo -> Bool
+isValidOwnerAddress : SR.Types.Ranking -> Bool
 isValidOwnerAddress rankInfo =
     let
         _ =

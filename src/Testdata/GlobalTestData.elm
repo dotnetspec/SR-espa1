@@ -4,7 +4,7 @@ import RemoteData
 import SR.Types
 
 
-globalRankingsJson : RemoteData.WebData (List SR.Types.RankingInfo)
+globalRankingsJson : RemoteData.WebData (List SR.Types.Ranking)
 globalRankingsJson =
     RemoteData.Success
         [ { id = "5e9d8a00435f5604bb44c3bf"
@@ -53,7 +53,7 @@ globalRankingsJson =
         
         ]
 
-nonRemoteGlobalRankingsJson : List SR.Types.RankingInfo
+nonRemoteGlobalRankingsJson : List SR.Types.Ranking
 nonRemoteGlobalRankingsJson =
     
         [ { id = "5e9d8a00435f5604bb44c3bf"

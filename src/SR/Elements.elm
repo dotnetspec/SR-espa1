@@ -47,7 +47,7 @@ globalHeading user =
         ]
 
 
-selectedRankingHeaderEl : SR.Types.RankingInfo -> Element msg
+selectedRankingHeaderEl : SR.Types.Ranking -> Element msg
 selectedRankingHeaderEl rnkInfo =
     Element.el Heading.h5 <| Element.text <| "Selected Ranking " ++ "-" ++ rnkInfo.rankingname
 
@@ -76,7 +76,7 @@ legalUserInfoText =
         ]
 
 
-selectedHeading : SR.Types.User -> SR.Types.RankingInfo -> Element msg
+selectedHeading : SR.Types.User -> SR.Types.Ranking -> Element msg
 selectedHeading user rnkInfo =
     let
         _ =

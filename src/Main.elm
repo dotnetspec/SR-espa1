@@ -202,15 +202,15 @@ type Msg
     | SentResultToJsonbin (Result Http.Error ())
     | SentUserInfoAndDecodedResponseToNewUser (RemoteData.WebData (List SR.Types.User))
     | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
-    | GlobalRankingsReceived (RemoteData.WebData (List SR.Types.RankingInfo))
+    | GlobalRankingsReceived (RemoteData.WebData (List SR.Types.Ranking))
     | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
     | UsersReceived (RemoteData.WebData (List SR.Types.User))
     | ReturnFromPlayerListUpdate (RemoteData.WebData (List SR.Types.Player))
     | ReturnFromUserListUpdate (RemoteData.WebData (List SR.Types.User))
-    | DeletedRankingFromGlobalList (RemoteData.WebData (List SR.Types.RankingInfo))
-    | DeletedSingleRankingFromJsonBin (RemoteData.WebData (List SR.Types.RankingInfo))
+    | DeletedRankingFromGlobalList (RemoteData.WebData (List SR.Types.Ranking))
+    | DeletedSingleRankingFromJsonBin (RemoteData.WebData (List SR.Types.Ranking))
     | SentResultToWallet SR.Types.ResultOfMatch
-    | AddedNewRankingToGlobalList (RemoteData.WebData (List SR.Types.RankingInfo))
+    | AddedNewRankingToGlobalList (RemoteData.WebData (List SR.Types.Ranking))
     | TimeUpdated Posix
     | ProcessResult SR.Types.ResultOfMatch
       --Wallet Ops
@@ -1631,7 +1631,7 @@ ownedrankingbuttons urankingList user =
             ]
 
 
-determineOwnedRankingButtonsDisplay : List SR.Types.RankingInfo -> SR.Types.User -> List (Element Msg)
+determineOwnedRankingButtonsDisplay : List SR.Types.Ranking -> SR.Types.User -> List (Element Msg)
 determineOwnedRankingButtonsDisplay lranking user =
     if List.isEmpty lranking then
         List.singleton <|
@@ -1691,7 +1691,7 @@ otherrankingbuttons urankingList user =
             ]
 
 
-insertOwnedRankingList : List SR.Types.RankingInfo -> SR.Types.User -> List (Element Msg)
+insertOwnedRankingList : List SR.Types.Ranking -> SR.Types.User -> List (Element Msg)
 insertOwnedRankingList lrankinginfo user =
     let
         mapOutRankingList =
@@ -1710,7 +1710,7 @@ insertOwnedRankingList lrankinginfo user =
         mapOutRankingList
 
 
-ownedRankingInfoBtn : SR.Types.RankingInfo -> Element Msg
+ownedRankingInfoBtn : SR.Types.Ranking -> Element Msg
 ownedRankingInfoBtn rankingobj =
     Element.column Grid.simple <|
         [ Input.button (Button.fill ++ Color.primary) <|
@@ -1720,7 +1720,7 @@ ownedRankingInfoBtn rankingobj =
         ]
 
 
-insertMemberRankingList : List SR.Types.RankingInfo -> List (Element Msg)
+insertMemberRankingList : List SR.Types.Ranking -> List (Element Msg)
 insertMemberRankingList lrankinginfo =
     let
         mapOutRankingList =
@@ -1735,7 +1735,7 @@ insertMemberRankingList lrankinginfo =
         mapOutRankingList
 
 
-memberRankingInfoBtn : SR.Types.RankingInfo -> Element Msg
+memberRankingInfoBtn : SR.Types.Ranking -> Element Msg
 memberRankingInfoBtn rankingobj =
     Element.column Grid.simple <|
         [ Input.button (Button.fill ++ Color.primary) <|
@@ -1745,7 +1745,7 @@ memberRankingInfoBtn rankingobj =
         ]
 
 
-insertNeitherOwnerNorMemberRankingList : List SR.Types.RankingInfo -> List (Element Msg)
+insertNeitherOwnerNorMemberRankingList : List SR.Types.Ranking -> List (Element Msg)
 insertNeitherOwnerNorMemberRankingList rnkgInfoList =
     let
         mapOutRankingList =
@@ -1756,7 +1756,7 @@ insertNeitherOwnerNorMemberRankingList rnkgInfoList =
     mapOutRankingList
 
 
-neitherOwnerNorMemberRankingInfoBtn : SR.Types.RankingInfo -> Element Msg
+neitherOwnerNorMemberRankingInfoBtn : SR.Types.Ranking -> Element Msg
 neitherOwnerNorMemberRankingInfoBtn rankingobj =
     Element.column Grid.simple <|
         [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "otherrankingbtn") ] ++ Button.fill ++ Color.primary) <|
@@ -2147,7 +2147,7 @@ userDescValidationErr user =
             (Element.text "45 characters max")
 
 
-ladderDescValidationErr : SR.Types.RankingInfo -> Element Msg
+ladderDescValidationErr : SR.Types.Ranking -> Element Msg
 ladderDescValidationErr rankingInfo =
     if isLadderDescValidated rankingInfo then
         Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "ladderdescValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "")
@@ -2169,7 +2169,7 @@ isUserDescValidated user =
         False
 
 
-isLadderDescValidated : SR.Types.RankingInfo -> Bool
+isLadderDescValidated : SR.Types.Ranking -> Bool
 isLadderDescValidated rankingInfo =
     if String.length rankingInfo.rankingdesc <= 45 then
         True
@@ -2284,7 +2284,7 @@ isValidatedForAllUserDetailsInput user luser isExistingUser =
         False
 
 
-isValidatedForAllLadderDetailsInput : SR.Types.RankingInfo -> List SR.Types.UserRanking -> Bool
+isValidatedForAllLadderDetailsInput : SR.Types.Ranking -> List SR.Types.UserRanking -> Bool
 isValidatedForAllLadderDetailsInput rnkInfo luranking =
     if
         Utils.Validation.Validate.isRankingNameValidated rnkInfo luranking
@@ -3075,7 +3075,7 @@ httpAddCurrentUserToPlayerList setState userRec =
 
 
 
-httpPutRequestForAddGlobal : Json.Encode.Value -> List SR.Types.RankingInfo -> Cmd Msg
+httpPutRequestForAddGlobal : Json.Encode.Value -> List SR.Types.Ranking -> Cmd Msg
 httpPutRequestForAddGlobal jsonEncodeNewGlobalRankingList globalListWithJsonObjAdded =
     --AddedNewRankingToGlobalList is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
@@ -3094,7 +3094,7 @@ httpPutRequestForAddGlobal jsonEncodeNewGlobalRankingList globalListWithJsonObjA
         --, url = ""
         }
 
-httpDeleteSelectedRankingFromGlobalList : Json.Encode.Value -> List SR.Types.RankingInfo -> Cmd Msg
+httpDeleteSelectedRankingFromGlobalList : Json.Encode.Value -> List SR.Types.Ranking -> Cmd Msg
 httpDeleteSelectedRankingFromGlobalList jsonEncodeNewGlobalRankingList globalListWithRankingDeleted =
     Http.request
             { body =
@@ -3148,7 +3148,7 @@ postResultToJsonbin (Internal.Types.RankingId rankingId) =
 
 
 
--- deleteSelectedRankingFromGlobalList : String -> List SR.Types.RankingInfo -> List SR.Types.User -> String -> Cmd Msg
+-- deleteSelectedRankingFromGlobalList : String -> List SR.Types.Ranking -> List SR.Types.User -> String -> Cmd Msg
 -- deleteSelectedRankingFromGlobalList rankingId lrankingInfo luser rankingowneraddress =
 --     let
 --         globalListWithDeletedRankingInfoRemoved =

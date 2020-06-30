@@ -42,14 +42,14 @@ playerDecoder =
 
 
 
-rankingsDecoder : Json.Decode.Decoder (List SR.Types.RankingInfo)
+rankingsDecoder : Json.Decode.Decoder (List SR.Types.Ranking)
 rankingsDecoder =
     Json.Decode.list rankingDecoder
 
 
-rankingDecoder : Json.Decode.Decoder SR.Types.RankingInfo
+rankingDecoder : Json.Decode.Decoder SR.Types.Ranking
 rankingDecoder =
-    Json.Decode.succeed SR.Types.RankingInfo
+    Json.Decode.succeed SR.Types.Ranking
         |> Json.Decode.Pipeline.required "id" Json.Decode.string
         |> Json.Decode.Pipeline.required "active" Json.Decode.bool
         |> Json.Decode.Pipeline.required "rankingname" Json.Decode.string
@@ -57,7 +57,7 @@ rankingDecoder =
         |> Json.Decode.Pipeline.required "rankingowneraddr" Json.Decode.string
 
 
-decodeNewRankingListServerResponse : Decoder (List SR.Types.RankingInfo)
+decodeNewRankingListServerResponse : Decoder (List SR.Types.Ranking)
 decodeNewRankingListServerResponse =
     Json.Decode.field "data" (Json.Decode.list rankingDecoder)
 

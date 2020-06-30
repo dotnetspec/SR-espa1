@@ -6391,7 +6391,7 @@ var $elm$http$Http$header = $elm$http$Http$Header;
 var $author$project$SR$Defaults$globalContainerId = A2($elm$http$Http$header, 'collection-id', '5d7deab3371673119fab12a6');
 var $author$project$SR$Constants$globalJsonbinRankingReadLink = 'https://api.jsonbin.io/b/5e66ec74a030db370e1b23fc/latest';
 var $elm$json$Json$Decode$list = _Json_decodeList;
-var $author$project$SR$Types$RankingInfo = F5(
+var $author$project$SR$Types$Ranking = F5(
 	function (id, active, rankingname, rankingdesc, rankingowneraddr) {
 		return {active: active, id: id, rankingdesc: rankingdesc, rankingname: rankingname, rankingowneraddr: rankingowneraddr};
 	});
@@ -6426,7 +6426,7 @@ var $author$project$SR$Decode$rankingDecoder = A3(
 					$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 					'id',
 					$elm$json$Json$Decode$string,
-					$elm$json$Json$Decode$succeed($author$project$SR$Types$RankingInfo))))));
+					$elm$json$Json$Decode$succeed($author$project$SR$Types$Ranking))))));
 var $author$project$SR$Decode$rankingsDecoder = $elm$json$Json$Decode$list($author$project$SR$Decode$rankingDecoder);
 var $elm$http$Http$Request = function (a) {
 	return {$: 'Request', a: a};

@@ -13,17 +13,17 @@ import Http
 
 
 
-type Rankings = Rankings (EverySet SR.Types.RankingInfo)
+type Rankings = Rankings (EverySet SR.Types.Ranking)
 
 emptyRankings : Rankings 
 emptyRankings = 
     Rankings (EverySet.empty)
 
-asRankings : EverySet SR.Types.RankingInfo -> Rankings 
+asRankings : EverySet SR.Types.Ranking -> Rankings 
 asRankings esRanking  = 
     Rankings esRanking 
 
-addRanking : SR.Types.RankingInfo -> Rankings -> Rankings
+addRanking : SR.Types.Ranking -> Rankings -> Rankings
 addRanking ranking sRankings = 
     case sRankings of 
         Rankings setOfRankings  ->
@@ -31,16 +31,16 @@ addRanking ranking sRankings =
 
 
 
-extractRankingList : List SR.Types.UserRanking -> List SR.Types.RankingInfo
+extractRankingList : List SR.Types.UserRanking -> List SR.Types.Ranking
 extractRankingList luserranking =
     List.map extractRanking luserranking
 
 
-extractRanking : SR.Types.UserRanking -> SR.Types.RankingInfo
+extractRanking : SR.Types.UserRanking -> SR.Types.Ranking
 extractRanking uranking =
     uranking.rankingInfo
 
-gotRankingFromRankingList : List SR.Types.RankingInfo -> Internal.Types.RankingId -> SR.Types.RankingInfo
+gotRankingFromRankingList : List SR.Types.Ranking -> Internal.Types.RankingId -> SR.Types.Ranking
 gotRankingFromRankingList rankingList (Internal.Types.RankingId rnkid) =
     let
         existingRanking =
@@ -62,7 +62,7 @@ rankingsetLength (Rankings sRankings) =
     EverySet.size sRankings
 
 
-gotRanking : Rankings  -> String -> SR.Types.RankingInfo
+gotRanking : Rankings  -> String -> SR.Types.Ranking
 gotRanking (Rankings sRankings) uaddr =
     let
         existingRanking =
@@ -80,7 +80,7 @@ gotRanking (Rankings sRankings) uaddr =
 
 
 -- probably should return a set, not a list:
--- addedNewJoinedRankingIdToRanking : String -> SR.Types.RankingInfo -> List SR.Types.RankingInfo -> List SR.Types.RankingInfo
+-- addedNewJoinedRankingIdToRanking : String -> SR.Types.Ranking -> List SR.Types.Ranking -> List SR.Types.Ranking
 -- addedNewJoinedRankingIdToRanking rankingId Ranking lRanking =
 --     let
 --         currentRanking =
@@ -100,7 +100,7 @@ gotRanking (Rankings sRankings) uaddr =
 --     in
 --     newRankingList
 
-removeRanking : SR.Types.RankingInfo -> Rankings -> Rankings
+removeRanking : SR.Types.Ranking -> Rankings -> Rankings
 removeRanking ranking sRankings = 
     case sRankings of 
         Rankings setOfRankings->
@@ -109,7 +109,7 @@ removeRanking ranking sRankings =
            asRankings (EverySet.remove ranking setOfRankings) 
 
 
-getRanking : List SR.Types.RankingInfo -> String -> Maybe SR.Types.RankingInfo
+getRanking : List SR.Types.Ranking -> String -> Maybe SR.Types.Ranking
 getRanking luranking rankingid =
     List.filterMap
         (isRankingRankingIdInList
@@ -118,7 +118,7 @@ getRanking luranking rankingid =
         luranking
         |> List.head
 
-isRankingRankingIdInList : String -> SR.Types.RankingInfo -> Maybe SR.Types.RankingInfo
+isRankingRankingIdInList : String -> SR.Types.Ranking -> Maybe SR.Types.Ranking
 isRankingRankingIdInList rankingid urnk =
     if urnk.id == rankingid then
         Just urnk
@@ -126,7 +126,7 @@ isRankingRankingIdInList rankingid urnk =
     else
         Nothing
 
-asList : Rankings -> List SR.Types.RankingInfo
+asList : Rankings -> List SR.Types.Ranking
 asList sRankings = 
     case sRankings of 
         Rankings setOfRankings ->
@@ -146,7 +146,7 @@ updateAddr sRankings addr =
                 addRanking updatedRankingAddr rankingRemoved
 
 
-extractRankingsFromWebData : RemoteData.WebData (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
+extractRankingsFromWebData : RemoteData.WebData (List SR.Types.Ranking) -> List SR.Types.Ranking
 extractRankingsFromWebData remData =
     case remData of
         RemoteData.NotAsked ->
@@ -161,7 +161,7 @@ extractRankingsFromWebData remData =
         RemoteData.Failure httpError ->
             []
 
-gotRankingListFromRemData : RemoteData.WebData (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
+gotRankingListFromRemData : RemoteData.WebData (List SR.Types.Ranking) -> List SR.Types.Ranking
 gotRankingListFromRemData globalList =
     case globalList of
         RemoteData.Success a ->
@@ -197,7 +197,7 @@ gotRankingListFromRemData globalList =
                     [ SR.Defaults.emptyRankingInfo
                     ]
 
-gotRankingInfo : SR.Types.UserRanking -> SR.Types.RankingInfo
+gotRankingInfo : SR.Types.UserRanking -> SR.Types.Ranking
 gotRankingInfo uranking =
     uranking.rankingInfo
 
@@ -217,13 +217,13 @@ isUniqueRankingName str luranking =
     else
         False
 
-gotRankingListFromUserRankingList : List SR.Types.UserRanking -> List SR.Types.RankingInfo
+gotRankingListFromUserRankingList : List SR.Types.UserRanking -> List SR.Types.Ranking
 gotRankingListFromUserRankingList luranking =
     List.map gotRankingInfo luranking
 
 
 
-extractRankingInfoListFromMaybeList : Maybe (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
+extractRankingInfoListFromMaybeList : Maybe (List SR.Types.Ranking) -> List SR.Types.Ranking
 extractRankingInfoListFromMaybeList lranking =
     case lranking of
 
