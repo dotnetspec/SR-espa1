@@ -1,5 +1,5 @@
 -- Global will be mainly used to handle internal data of the global rankings listing as it relates to the current user
-module Data.Global exposing (Global, gotRankingOwnerAsUserPlayer, rankingsAsList, jsonEncodeNewGlobalRankingList, createdUserRankings, gotUserRanking, emptyGlobal, asGlobal, othersUserRanking, memberUserRanking, addUserRanking, removeUserRanking, asList, asSelected, isUserRankingMemberOfGlobalRanking, ownedUserRanking)
+module Data.Global exposing (Global, createduserRankingPlayerList, gotRankingOwnerAsUserPlayer, rankingsAsList, jsonEncodeNewGlobalRankingList, createdUserRankings, gotUserRanking, emptyGlobal, asGlobal, othersUserRanking, memberUserRanking, addUserRanking, removeUserRanking, asList, asSelected, isUserRankingMemberOfGlobalRanking, ownedUserRanking)
 
 
 import SR.Types
@@ -375,3 +375,19 @@ gotUserPlayerFromPlayerListStrAddress luplayer addr =
         Just a ->
             a
 
+createduserRankingPlayerList : List SR.Types.RankingInfo -> List SR.Types.User -> List SR.Types.UserRanking
+createduserRankingPlayerList lrankinfo luser =
+    List.map (createdUserRankingPlayerRanking luser) lrankinfo
+
+createdUserRankingPlayerRanking : List SR.Types.User -> SR.Types.RankingInfo -> SR.Types.UserRanking
+createdUserRankingPlayerRanking luser rankingInfo =
+    let
+        userOwner =
+            Data.Users.gotUserFromUserList luser rankingInfo.rankingowneraddr
+
+        newOwnedRanking =
+            { rankingInfo = rankingInfo
+            , userInfo = userOwner
+            }
+    in
+    newOwnedRanking

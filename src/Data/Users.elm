@@ -1,5 +1,5 @@
 -- Users will be mainly used to communicate externally to the jsonbin server
-module Data.Users exposing (Users, addedNewJoinedRankingIdToUser, removeCurrentUserEntryFromUserList, removedDuplicateUserFromUserList, isRegistered, isUniqueUserName, gotUserListFromRemData, isNameValidationErr, extractUsersFromWebData, gotUserFromUserList, emptyUsers, updateAddr, addUser, removeUser, asList, asUsers, getUser, gotUser, userSetLength)
+module Data.Users exposing (Users, validatedUserList, addedNewJoinedRankingIdToUser, removeCurrentUserEntryFromUserList, removedDuplicateUserFromUserList, isRegistered, isUniqueUserName, gotUserListFromRemData, isNameValidationErr, extractUsersFromWebData, gotUserFromUserList, emptyUsers, updateAddr, addUser, removeUser, asList, asUsers, getUser, gotUser, userSetLength)
 
 
 import SR.Types

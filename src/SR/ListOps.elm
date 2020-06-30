@@ -2,11 +2,9 @@ module SR.ListOps exposing
     ( 
      convertListOfMaybeToList
     , convertMaybeUserRankingListToList
-    , createduserRankingPlayerList
     , doesCurrentRankingIdNOTMatchId
     , extractRankingInfoListFromMaybeList
     , extractRankingList
-    , extractUsersFromWebData
     , filterSelectedRankingOutOfGlobalList
     , findSelectedRankingInGlobalList
     , gotOthersGlobalRankingList
@@ -15,7 +13,7 @@ module SR.ListOps exposing
     , gotUserIsPlayerNonUserRankingList
     , gotUserOwnedGlobalRankingList
        -- to be privatized
-    , validatedUserList
+    
     )
 
 import Eth.Utils
@@ -29,11 +27,6 @@ import Utils.MyUtils
 
 
 
-
-
-
-
-
 convertMaybeUserRankingListToList : Maybe (List SR.Types.UserRanking) -> List SR.Types.UserRanking
 convertMaybeUserRankingListToList luRanking =
     case luRanking of
@@ -42,34 +35,6 @@ convertMaybeUserRankingListToList luRanking =
 
         Just a ->
             a
-
-
-extractUsersFromWebData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
-extractUsersFromWebData remData =
-    case remData of
-        RemoteData.NotAsked ->
-            let
-                _ =
-                    Debug.log "http err" "not asked"
-            in
-            []
-
-        RemoteData.Loading ->
-            let
-                _ =
-                    Debug.log "http err" "loading"
-            in
-            []
-
-        RemoteData.Success users ->
-            users
-
-        RemoteData.Failure httpError ->
-            let
-                _ =
-                    Debug.log "http err" Utils.MyUtils.gotHttpErr <| httpError
-            in
-            []
 
 
 extractRankingInfoListFromMaybeList : Maybe (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
@@ -91,28 +56,6 @@ convertListOfMaybeToList hasAnything =
             List.filterMap (\x -> x) hasAnything
     in
     onlyHasRealValues
-
-
-
-
-
-
-
-gotUserFromUserList : List SR.Types.User -> String -> SR.Types.User
-gotUserFromUserList userList uaddr =
-    let
-        existingUser =
-            List.head <|
-                List.filter (\r -> (String.toLower <| r.ethaddress) == (String.toLower <| uaddr))
-                    (validatedUserList userList)
-    in
-    case existingUser of
-        Nothing ->
-            SR.Defaults.emptyUser
-
-        Just a ->
-            a
-
 
 
 filterSelectedRankingOutOfGlobalList : String -> List SR.Types.RankingInfo -> List SR.Types.RankingInfo
@@ -158,20 +101,6 @@ isRankingIdInList rankingid rnk =
 
 
 
-validatedUserList : List SR.Types.User -> List SR.Types.User
-validatedUserList luser =
-    List.filterMap
-        isValidUserAddrInList
-        luser
-
-
-isValidUserAddrInList : SR.Types.User -> Maybe SR.Types.User
-isValidUserAddrInList user =
-    if Eth.Utils.isAddress user.ethaddress then
-        Just user
-
-    else
-        Nothing
 
 
 
@@ -293,27 +222,6 @@ isUserPlayerInGlobalRankings user ownedrnk =
 
     else
         Nothing
-
-
-createduserRankingPlayerList : List SR.Types.RankingInfo -> List SR.Types.User -> List SR.Types.UserRanking
-createduserRankingPlayerList lrankinfo luser =
-    List.map (createdUserRankingPlayerRanking luser) lrankinfo
-
-
-createdUserRankingPlayerRanking : List SR.Types.User -> SR.Types.RankingInfo -> SR.Types.UserRanking
-createdUserRankingPlayerRanking luser rankingInfo =
-    let
-        userOwner =
-            gotUserFromUserList luser rankingInfo.rankingowneraddr
-
-        newOwnedRanking =
-            { rankingInfo = rankingInfo
-            , userInfo = userOwner
-            }
-    in
-    newOwnedRanking
-
-
 
 -- current
 

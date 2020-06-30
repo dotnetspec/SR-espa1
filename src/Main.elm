@@ -362,7 +362,7 @@ handledWalletStateOpened msg model =
                 -- there are 2 instances of this operation - necessary?
                 UsersReceived userList ->
                     let
-                        users = (Data.Users.asUsers (EverySet.fromList (SR.ListOps.validatedUserList <| Data.Users.extractUsersFromWebData userList)))
+                        users = (Data.Users.asUsers (EverySet.fromList (Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList)))
                         
                         userInAppInfo = { appInfo | user = Data.Users.gotUser users appInfo.user.ethaddress }
                     in
@@ -486,19 +486,15 @@ handleWalletStateOperational msg model =
 
                 UsersReceived userList ->
                     let
-                        --users = (Data.Users.asUsers (EverySet.fromList (SR.ListOps.validatedUserList <| SR.ListOps.extractUsersFromWebData userList)))
+                        
                         users = (Data.Users.asUsers (EverySet.fromList (Data.Users.extractUsersFromWebData userList)))
-                        -- newAllListsSets =
-                        --     { allSets | users = users }
 
                         newSetState = UsersFetched users
                          
                         userInAppInfo =
                             { appInfo | user = Data.Users.gotUser users appInfo.user.ethaddress }
 
-
                     in
-                    --updateOnUserListReceived model (Data.Users.asList userLAddedToAllLists.users)
                     ( AppOps SR.Types.WalletOperational newSetState userInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotRankingList )
 
                 ProcessResult result ->

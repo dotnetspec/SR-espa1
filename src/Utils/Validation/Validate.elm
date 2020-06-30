@@ -1,12 +1,13 @@
 module Utils.Validation.Validate exposing (
 
-    isRankingNameValidated, isUserNameValidated, validatedMaxTextLength)
+    validatedUserList, isRankingNameValidated, isUserNameValidated, validatedMaxTextLength)
 
 import SR.ListOps
 import SR.Types
 import Data.Users
 import Data.Global
 import Data.Rankings
+import Eth.Utils
 
 
 validatedMaxTextLength : String -> Int -> String
@@ -33,3 +34,19 @@ isRankingNameValidated rankingInfo luranking =
 
     else
         False
+
+
+validatedUserList : List SR.Types.User -> List SR.Types.User
+validatedUserList luser =
+    List.filterMap
+        isValidUserAddrInList
+        luser
+
+
+isValidUserAddrInList : SR.Types.User -> Maybe SR.Types.User
+isValidUserAddrInList user =
+    if Eth.Utils.isAddress user.ethaddress then
+        Just user
+
+    else
+        Nothing
