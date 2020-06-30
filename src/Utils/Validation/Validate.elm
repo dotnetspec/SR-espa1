@@ -2,7 +2,7 @@ module Utils.Validation.Validate exposing (
 
     validatedUserList, isRankingNameValidated, isUserNameValidated, validatedMaxTextLength)
 
-import SR.ListOps
+
 import SR.Types
 import Data.Users
 import Data.Global

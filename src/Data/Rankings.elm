@@ -1,6 +1,6 @@
 -- Rankings will be mainly used to communicate externally to the jsonbin server
 
-module Data.Rankings exposing (Rankings, isUniqueRankingName, gotRankingInfo, extractRankingsFromWebData, emptyRankings, updateAddr, addRanking, removeRanking, asList, asRankings, getRanking, gotRanking, rankingsetLength)
+module Data.Rankings exposing (Rankings, gotRankingListFromRemData, extractRankingList, gotRankingFromRankingList, isUniqueRankingName, gotRankingInfo, extractRankingsFromWebData, emptyRankings, updateAddr, addRanking, removeRanking, asList, asRankings, getRanking, gotRanking, rankingsetLength)
 
 
 import SR.Types
@@ -9,6 +9,7 @@ import Internal.Types
 import Utils.MyUtils
 import SR.Defaults
 import RemoteData
+import Http
 
 
 
@@ -27,6 +28,32 @@ addRanking ranking sRankings =
     case sRankings of 
         Rankings setOfRankings  ->
                 asRankings (EverySet.insert ranking setOfRankings)
+
+
+
+extractRankingList : List SR.Types.UserRanking -> List SR.Types.RankingInfo
+extractRankingList luserranking =
+    List.map extractRanking luserranking
+
+
+extractRanking : SR.Types.UserRanking -> SR.Types.RankingInfo
+extractRanking uranking =
+    uranking.rankingInfo
+
+gotRankingFromRankingList : List SR.Types.RankingInfo -> Internal.Types.RankingId -> SR.Types.RankingInfo
+gotRankingFromRankingList rankingList (Internal.Types.RankingId rnkid) =
+    let
+        existingRanking =
+            List.head <|
+                List.filter (\r -> r.id == String.toLower rnkid)
+                    rankingList
+    in
+    case existingRanking of
+        Nothing ->
+            SR.Defaults.emptyRankingInfo
+
+        Just a ->
+            a
 
 
 
@@ -134,6 +161,42 @@ extractRankingsFromWebData remData =
         RemoteData.Failure httpError ->
             []
 
+gotRankingListFromRemData : RemoteData.WebData (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
+gotRankingListFromRemData globalList =
+    case globalList of
+        RemoteData.Success a ->
+            a
+
+        RemoteData.NotAsked ->
+            [ SR.Defaults.emptyRankingInfo
+            ]
+
+        RemoteData.Loading ->
+            [ SR.Defaults.emptyRankingInfo
+            ]
+
+        RemoteData.Failure err ->
+            case err of
+                Http.BadUrl s ->
+                    [ SR.Defaults.emptyRankingInfo
+                    ]
+
+                Http.Timeout ->
+                    [ SR.Defaults.emptyRankingInfo
+                    ]
+
+                Http.NetworkError ->
+                    [ SR.Defaults.emptyRankingInfo
+                    ]
+
+                Http.BadStatus statuscode ->
+                    [ SR.Defaults.emptyRankingInfo
+                    ]
+
+                Http.BadBody s ->
+                    [ SR.Defaults.emptyRankingInfo
+                    ]
+
 gotRankingInfo : SR.Types.UserRanking -> SR.Types.RankingInfo
 gotRankingInfo uranking =
     uranking.rankingInfo
@@ -157,3 +220,16 @@ isUniqueRankingName str luranking =
 gotRankingListFromUserRankingList : List SR.Types.UserRanking -> List SR.Types.RankingInfo
 gotRankingListFromUserRankingList luranking =
     List.map gotRankingInfo luranking
+
+
+
+extractRankingInfoListFromMaybeList : Maybe (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
+extractRankingInfoListFromMaybeList lranking =
+    case lranking of
+
+
+        Just a ->
+            a
+
+        Nothing ->
+            []

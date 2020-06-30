@@ -17,7 +17,7 @@ import Random.Char
 import Random.Extra
 import Random.String
 import SR.Defaults
-import SR.ListOps
+
 import SR.Types
 import Shrink
 import Test exposing (..)

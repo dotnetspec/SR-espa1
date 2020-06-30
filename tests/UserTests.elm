@@ -9,7 +9,7 @@ import Fuzz exposing (Fuzzer, int, list, string)
 import Internal.Types
 import Json.Encode
 import SR.Decode
-import SR.ListOps
+
 import SR.Types
 import Shrink
 import Test exposing (..)

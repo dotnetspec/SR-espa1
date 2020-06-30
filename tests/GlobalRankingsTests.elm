@@ -10,7 +10,7 @@ import Internal.Types
 import Json.Encode
 import SR.Decode
 import SR.Defaults
-import SR.ListOps
+
 import SR.Types
 import Shrink
 import Test exposing (..)

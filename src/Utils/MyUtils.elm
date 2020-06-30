@@ -1,6 +1,7 @@
 module Utils.MyUtils exposing
     ( addressFromStringResult
     , addressToString
+    , convertListOfMaybeToList
     , convertMaybePlayerToPlayer
     , createdMaybePlayerFromPlayer
     , extractRankinigInfoFromMaybe
@@ -41,6 +42,14 @@ extractRankinigInfoFromMaybe valtoextract =
 
         Nothing ->
             SR.Defaults.emptyRankingInfo
+
+convertListOfMaybeToList : List (Maybe a) -> List a
+convertListOfMaybeToList hasAnything =
+    let
+        onlyHasRealValues =
+            List.filterMap (\x -> x) hasAnything
+    in
+    onlyHasRealValues
 
 
 stringToRankingId : String -> Internal.Types.RankingId

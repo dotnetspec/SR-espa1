@@ -30,7 +30,7 @@ import SR.Decode
 import SR.Defaults
 import SR.Elements
 import SR.Encode
-import SR.ListOps
+
 import SR.Types
 import Task
 import Time exposing (Posix)
@@ -1613,7 +1613,7 @@ ownedrankingbuttons : List SR.Types.UserRanking -> SR.Types.User -> Element Msg
 ownedrankingbuttons urankingList user =
     let
         newRankingList =
-            SR.ListOps.extractRankingList urankingList
+            Data.Rankings.extractRankingList urankingList
     in
     if user.username == "" then
         Element.text ""
@@ -1657,7 +1657,7 @@ memberrankingbuttons : List SR.Types.UserRanking -> SR.Types.User -> Element Msg
 memberrankingbuttons urankingList user =
     let
         newRankingList =
-            SR.ListOps.extractRankingList urankingList
+            Data.Rankings.extractRankingList urankingList
     in
     if user.username == "" then
         Element.text ""
@@ -1674,7 +1674,7 @@ otherrankingbuttons : List SR.Types.UserRanking -> SR.Types.User -> Element Msg
 otherrankingbuttons urankingList user =
     let
         newRankingList =
-            SR.ListOps.extractRankingList urankingList
+            Data.Rankings.extractRankingList urankingList
     in
     if user.username == "" then
         Element.column Grid.section <|
