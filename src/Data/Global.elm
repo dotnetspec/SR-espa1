@@ -48,14 +48,11 @@ gotUserRanking sGlobal rnkId =
 -- these following 3 are not currently distinguishing the rankings:
 ownedUserRanking : Global -> SR.Types.User -> Global 
 ownedUserRanking global user = 
-     --gotUserOwnedGlobalRankingList (asList global) user
-     --gotUserOwnedGlobalRankingList lownedrankings user =
     asGlobal (
         EverySet.fromList (List.filterMap
         (isOwned
             user
         )
-        --lownedrankings
         (asList global)))
         
 
@@ -155,6 +152,7 @@ isUserRankingMemberOfGlobalRanking luplayer user =
 --         )
 --         luranking
 --         |> List.head
+
 
 isUserRankingIdInList : String -> SR.Types.UserRanking -> Bool
 isUserRankingIdInList rankingid urnk =
@@ -376,3 +374,18 @@ gotUserPlayerFromPlayerListStrAddress luplayer addr =
 
         Just a ->
             a
+
+-- gotUserRankingFromUserRankingList : List SR.Types.UserRanking -> Internal.Types.RankingId -> SR.Types.UserRanking
+-- gotUserRankingFromUserRankingList urankingList (Internal.Types.RankingId rnkid) =
+--     let
+--         existingRanking =
+--             List.head <|
+--                 List.filter (\r -> r.rankingInfo.id == String.toLower rnkid)
+--                     urankingList
+--     in
+--     case existingRanking of
+--         Nothing ->
+--             SR.Defaults.emptyUserRanking
+
+--         Just a ->
+--             a

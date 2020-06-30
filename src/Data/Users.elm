@@ -1,5 +1,5 @@
 -- Users will be mainly used to communicate externally to the jsonbin server
-module Data.Users exposing (Users, isNameValidationErr, extractUsersFromWebData, gotUserFromUserList, emptyUsers, updateAddr, addUser, removeUser, asList, asUsers, getUser, gotUser, userSetLength)
+module Data.Users exposing (Users, gotUserListFromRemData, isNameValidationErr, extractUsersFromWebData, gotUserFromUserList, emptyUsers, updateAddr, addUser, removeUser, asList, asUsers, getUser, gotUser, userSetLength)
 
 
 import SR.Types
@@ -9,6 +9,7 @@ import Utils.MyUtils
 import SR.Defaults
 import Eth.Utils
 import RemoteData
+import Http
 
 
 type Users = Users (EverySet SR.Types.User)
@@ -59,32 +60,30 @@ gotUser (Users susers) uaddr =
 
 
 -- probably should return a set, not a list:
--- addedNewJoinedRankingIdToUser : String -> SR.Types.User -> List SR.Types.User -> List SR.Types.User
--- addedNewJoinedRankingIdToUser rankingId user lUser =
---     let
---         currentUser =
---             gotUserFromUserList lUser user.username
+addedNewJoinedRankingIdToUser : String -> SR.Types.User -> List SR.Types.User -> List SR.Types.User
+addedNewJoinedRankingIdToUser rankingId user lUser =
+    let
+        currentUser =
+            gotUserFromUserList lUser user.username
 
---         userJoinRankings =
---             currentUser.userjoinrankings
+        userJoinRankings =
+            currentUser.userjoinrankings
 
---         newUserJoinRankings =
---             rankingId :: userJoinRankings
+        newUserJoinRankings =
+            rankingId :: userJoinRankings
 
---         newUser =
---             { user | userjoinrankings = newUserJoinRankings }
+        newUser =
+            { user | userjoinrankings = newUserJoinRankings }
 
---         newUserList =
---             newUser :: lUser
---     in
---     newUserList
+        newUserList =
+            newUser :: lUser
+    in
+    newUserList
 
 removeUser : SR.Types.User -> Users -> Users
 removeUser user susers = 
     case susers of 
         Users setOfUsers->
-        --    rnkId 
-        --    |> 
            asUsers (EverySet.remove user setOfUsers) 
 
 --todo: remove
@@ -105,22 +104,6 @@ isUserRankingIdInList rankingid urnk =
     else
         Nothing
 
--- or should we just use:
--- findPlayerInList : SR.Types.User -> List SR.Types.User -> List SR.Types.User
--- findPlayerInList user luPlayer =
---     List.filterMap
---         (isThisPlayerAddr
---             (String.toLower user.ethaddress)
---         )
---         luPlayer
-
--- isThisPlayerAddr : String -> SR.Types.User -> Maybe SR.Types.User
--- isThisPlayerAddr playerAddr uplayer =
---     if (String.toLower uplayer.player.address) == (String.toLower playerAddr) then
---         Just uplayer
-
---     else
---         Nothing
 
 asList : Users -> List SR.Types.User 
 asList susers = 
@@ -201,60 +184,47 @@ extractUsersFromWebData remData =
             []
 
 isNameValidationErr : String -> Users -> Bool 
-isNameValidationErr newName sUsers = 
---a -> EverySet a -> Bool
+isNameValidationErr newName sUsers =
     let 
-        userNameSet = gotUserNames sUsers
-        -- uNames = 
-        --     case userNameSet of 
-        --         UserNames unames -> 
-        --             unames 
+        userNameSet = gotUserNames sUsers 
     in
     if EverySet.member newName userNameSet then
         True 
     else 
         False
 
+gotUserListFromRemData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
+gotUserListFromRemData userList =
+    case userList of
+        RemoteData.Success a ->
+            a
 
--- updatedUserList : Model -> List SR.Types.User -> Model
--- updatedUserList model lusers =
---     case model of
---         AppOps walletState allLists appInfo uiState txRec ->
---             let
---                 resetUserList =
---                     { allLists | users = (Data.Users.asUsers (EverySet.fromList lusers)) }
+        RemoteData.NotAsked ->
+            [ SR.Defaults.emptyUser
+            ]
 
---                 -- uiState =
---                 --     ensuredCorrectSelectedUI appInfo allLists
---             in
---             AppOps walletState resetUserList appInfo uiState txRec
+        RemoteData.Loading ->
+            [ SR.Defaults.emptyUser
+            ]
 
---         _ ->
---             Failure <| "updateSelectedRankingPlayerList : "
+        RemoteData.Failure err ->
+            case err of
+                Http.BadUrl s ->
+                    [ SR.Defaults.emptyUser
+                    ]
 
+                Http.Timeout ->
+                    [ SR.Defaults.emptyUser
+                    ]
 
---nb. not sure if this will be used:
--- updateOnUserListReceived : Model -> List SR.Types.User -> ( Model, Cmd Msg )
--- updateOnUserListReceived model userList =
---     case model of
---         AppOps walletState allLists appInfo uiState txRec ->
---             let
---                 gotUserToUpdateAddr =
---                     --SR.ListOps.gotUserFromUserList userList appInfo.user.ethaddress
---                     --Data.Users.getUser (Data.Users.asUsers (EverySet.fromList userList)) appInfo.user.ethaddress
---                     Data.Users.gotUser allLists.users appInfo.user.ethaddress
+                Http.NetworkError ->
+                    [ SR.Defaults.emptyUser
+                    ]
 
+                Http.BadStatus statuscode ->
+                    [ SR.Defaults.emptyUser
+                    ]
 
---                 userWithUpdatedAddr =
---                     { gotUserToUpdateAddr | ethaddress = appInfo.user.ethaddress }
-
---                 userUpdatedInAppInfo =
---                     { appInfo | user = userWithUpdatedAddr }
-
---                 newAllLists =
---                     { allLists | users = EverySet.fromList userList }
---             in
---             ( AppOps SR.Types.WalletOperational newAllLists userUpdatedInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotRankingList )
-
---         _ ->
---             ( Failure "should be in AppOps", Cmd.none )
+                Http.BadBody s ->
+                    [ SR.Defaults.emptyUser
+                    ]

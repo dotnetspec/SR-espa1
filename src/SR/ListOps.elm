@@ -2,44 +2,27 @@ module SR.ListOps exposing
     ( addedNewJoinedRankingIdToUser
     , convertListOfMaybeToList
     , convertMaybeUserRankingListToList
-    --, convertPlayersToUserPlayers
-    --, convertUserPlayersToPlayers
-    --, createAllUserAsOwnerGlobalRankingList
     , createduserRankingPlayerList
     , doesCurrentRankingIdNOTMatchId
-    --, extractAndSortPlayerList
-    --, extractPlayersFromWebData
     , extractRankingInfoListFromMaybeList
     , extractRankingList
-    --, extractRankingsFromWebData
     , extractUsersFromWebData
     , filterSelectedRankingOutOfGlobalList
-    --, findPlayerInList
     , findSelectedRankingInGlobalList
-    --, gotCurrentUserAsPlayerFromPlayerList
     , gotOthersGlobalRankingList
     , gotRankingFromRankingList
     , gotRankingListFromUserRankingList
-    --, gotRankingOwnerAsUserPlayer
     , gotUserFromUserList
     , gotUserIsPlayerGlobalRankingList
     , gotUserIsPlayerNonUserRankingList
-    , gotUserListFromRemData
     , gotUserOwnedGlobalRankingList
-    --, gotUserPlayerFromPlayerListStrAddress
     , isRegistered
     , isUniqueUserName
     , isUniqueRankingName
     , isUserInListStrAddr
-    --, ownerValidatedRankingList
     , removeCurrentUserEntryFromUserList
     ,  removedDuplicateUserFromUserList
        -- to be privatized
-
-    --, changedRank
-    
-    --, sortedRank
-    --, updatePlayerRankWithWonResult
     , validatedUserList
     )
 
@@ -122,20 +105,6 @@ isRegistered luser user =
         True
 
 
--- extractAndSortPlayerList : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.User -> List SR.Types.UserPlayer
--- extractAndSortPlayerList rdlPlayer luser =
---     let
---         lplayer =
---             extractPlayersFromWebData rdlPlayer
-
---         convertedPlayerListToUserPlayerList =
---             convertPlayersToUserPlayers
---                 lplayer
---                 luser
---     in
---     sortedRank <| convertedPlayerListToUserPlayerList
-
-
 convertMaybeUserRankingListToList : Maybe (List SR.Types.UserRanking) -> List SR.Types.UserRanking
 convertMaybeUserRankingListToList luRanking =
     case luRanking of
@@ -144,38 +113,6 @@ convertMaybeUserRankingListToList luRanking =
 
         Just a ->
             a
-
-
--- extractPlayersFromWebData : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
--- extractPlayersFromWebData remData =
---     case remData of
---         RemoteData.NotAsked ->
---             []
-
---         RemoteData.Loading ->
---             []
-
---         RemoteData.Success players ->
---             players
-
---         RemoteData.Failure httpError ->
---             []
-
-
--- extractRankingsFromWebData : RemoteData.WebData (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
--- extractRankingsFromWebData remData =
---     case remData of
---         RemoteData.NotAsked ->
---             []
-
---         RemoteData.Loading ->
---             []
-
---         RemoteData.Success rankings ->
---             rankings
-
---         RemoteData.Failure httpError ->
---             []
 
 
 extractUsersFromWebData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
@@ -206,16 +143,6 @@ extractUsersFromWebData remData =
             []
 
 
--- convertUserPlayersToPlayers : List SR.Types.UserPlayer -> List SR.Types.Player
--- convertUserPlayersToPlayers luplayers =
---     List.map Utils.MyUtils.refEachPlayer luplayers
-
-
--- convertPlayersToUserPlayers : List SR.Types.Player -> List SR.Types.User -> List SR.Types.UserPlayer
--- convertPlayersToUserPlayers lplayer luser =
---     List.map (convertEachPlayerToUserPlayer luser) lplayer
-
-
 extractRankingInfoListFromMaybeList : Maybe (List SR.Types.RankingInfo) -> List SR.Types.RankingInfo
 extractRankingInfoListFromMaybeList lranking =
     case lranking of
@@ -235,30 +162,6 @@ convertListOfMaybeToList hasAnything =
             List.filterMap (\x -> x) hasAnything
     in
     onlyHasRealValues
-
-
--- convertEachPlayerToUserPlayer : List SR.Types.User -> SR.Types.Player -> SR.Types.UserPlayer
--- convertEachPlayerToUserPlayer luser player =
---     { player = player, user = gotUserFromUserList luser player.address }
-
-
--- gotRankingOwnerAsUserPlayer : SR.Types.RankingInfo -> List SR.Types.UserRanking -> List SR.Types.UserPlayer -> SR.Types.UserPlayer
--- gotRankingOwnerAsUserPlayer selectedRanking luranking luplayer =
---     let
---         rankingOwnerAsUser =
---             (gotUserRankingFromUserRankingList luranking (Internal.Types.RankingId selectedRanking.id)).userInfo
-
---         rankingOwnerAsPlayer =
---             gotRankingOwnerAPlayer rankingOwnerAsUser.ethaddress luplayer
---     in
---     { player = rankingOwnerAsPlayer
---     , user = rankingOwnerAsUser
---     }
-
-
--- gotRankingOwnerAPlayer : String -> List SR.Types.UserPlayer -> SR.Types.Player
--- gotRankingOwnerAPlayer selectedRanking luplayer =
---     (gotUserPlayerFromPlayerListStrAddress luplayer selectedRanking).player
 
 
 addedNewJoinedRankingIdToUser : String -> SR.Types.User -> List SR.Types.User -> List SR.Types.User
@@ -300,22 +203,6 @@ gotUserFromUserList userList uaddr =
             a
 
 
--- gotUserRankingFromUserRankingList : List SR.Types.UserRanking -> Internal.Types.RankingId -> SR.Types.UserRanking
--- gotUserRankingFromUserRankingList urankingList (Internal.Types.RankingId rnkid) =
---     let
---         existingRanking =
---             List.head <|
---                 List.filter (\r -> r.rankingInfo.id == String.toLower rnkid)
---                     urankingList
---     in
---     case existingRanking of
---         Nothing ->
---             SR.Defaults.emptyUserRanking
-
---         Just a ->
---             a
-
-
 
 filterSelectedRankingOutOfGlobalList : String -> List SR.Types.RankingInfo -> List SR.Types.RankingInfo
 filterSelectedRankingOutOfGlobalList rankingid lrankinginfo =
@@ -348,25 +235,6 @@ findSelectedRankingInGlobalList lrankinginfo rankingid =
         lrankinginfo
 
 
--- extractSelectedUserRankingFromGlobalList : List SR.Types.UserRanking -> String -> Maybe SR.Types.UserRanking
--- extractSelectedUserRankingFromGlobalList luranking rankingid =
---     List.filterMap
---         (isUserRankingIdInList
---             rankingid
---         )
---         luranking
---         |> List.head
-
-
--- isUserRankingIdInList : String -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
--- isUserRankingIdInList rankingid urnk =
---     if urnk.rankingInfo.id == rankingid then
---         Just urnk
-
---     else
---         Nothing
-
-
 isRankingIdInList : String -> SR.Types.RankingInfo -> Maybe SR.Types.RankingInfo
 isRankingIdInList rankingid rnk =
     if rnk.id == rankingid then
@@ -376,41 +244,7 @@ isRankingIdInList rankingid rnk =
         Nothing
 
 
-gotUserListFromRemData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
-gotUserListFromRemData userList =
-    case userList of
-        RemoteData.Success a ->
-            a
 
-        RemoteData.NotAsked ->
-            [ SR.Defaults.emptyUser
-            ]
-
-        RemoteData.Loading ->
-            [ SR.Defaults.emptyUser
-            ]
-
-        RemoteData.Failure err ->
-            case err of
-                Http.BadUrl s ->
-                    [ SR.Defaults.emptyUser
-                    ]
-
-                Http.Timeout ->
-                    [ SR.Defaults.emptyUser
-                    ]
-
-                Http.NetworkError ->
-                    [ SR.Defaults.emptyUser
-                    ]
-
-                Http.BadStatus statuscode ->
-                    [ SR.Defaults.emptyUser
-                    ]
-
-                Http.BadBody s ->
-                    [ SR.Defaults.emptyUser
-                    ]
 
 
 validatedUserList : List SR.Types.User -> List SR.Types.User

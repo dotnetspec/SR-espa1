@@ -8,7 +8,6 @@ import EverySet exposing (EverySet)
 import Internal.Types
 import Utils.MyUtils
 import SR.Defaults
---import SR.ListOps
 import RemoteData
 
 
@@ -99,23 +98,6 @@ isRankingRankingIdInList rankingid urnk =
 
     else
         Nothing
-
--- or should we just use:
--- findPlayerInList : SR.Types.Ranking -> List SR.Types.Ranking -> List SR.Types.Ranking
--- findPlayerInList Ranking luPlayer =
---     List.filterMap
---         (isThisPlayerAddr
---             (String.toLower Ranking.ethaddress)
---         )
---         luPlayer
-
--- isThisPlayerAddr : String -> SR.Types.Ranking -> Maybe SR.Types.Ranking
--- isThisPlayerAddr playerAddr uplayer =
---     if (String.toLower uplayer.player.address) == (String.toLower playerAddr) then
---         Just uplayer
-
---     else
---         Nothing
 
 asList : Rankings -> List SR.Types.RankingInfo
 asList sRankings = 

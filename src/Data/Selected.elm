@@ -14,12 +14,7 @@ import Data.AppState
 import Json.Encode
 
 
-
 type Selected = Selected (EverySet SR.Types.UserPlayer) Data.Users.Users Internal.Types.RankingId
-
--- asSelected : EverySet SR.Types.UserPlayer -> Data.Users.Users -> Internal.Types.RankingId -> Selected 
--- asSelected esUserPlayer susers rnkId = 
---     Selected esUserPlayer susers rnkId
 
 asSelected : EverySet SR.Types.UserPlayer -> Data.Users.Users -> Internal.Types.RankingId -> Selected 
 asSelected esUserPlayer susers rnkId = 
@@ -49,28 +44,6 @@ addNewUserPlayerJoinRanking uplayer rnkId =
         _ = Debug.log "newUserPlayer" newUserPlayer
     in 
         newUserPlayer
-
-
-
--- addedNewJoinedRankingIdToUser : String -> SR.Types.User -> List SR.Types.User -> List SR.Types.User
--- addedNewJoinedRankingIdToUser rankingId user lUser =
---     let
---         currentUser =
---             gotUserFromUserList lUser user.username
-
---         userJoinRankings =
---             currentUser.userjoinrankings
-
---         newUserJoinRankings =
---             rankingId :: userJoinRankings
-
---         newUser =
---             { user | userjoinrankings = newUserJoinRankings }
-
---         newUserList =
---             newUser :: lUser
---     in
---     newUserList
 
 removeUserPlayer : SR.Types.UserPlayer -> Selected -> Selected
 removeUserPlayer uplayer srank = 
@@ -128,12 +101,6 @@ isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
     let
         filteredRec =
             extractSelectedUserRankingFromGlobalList lurnkInfo rnkInfo.id
-
-        _ =
-            Debug.log "filteredRec" filteredRec
-
-        -- filteredRec =
-        --     List.head filteredList
     in
     case filteredRec of
         Nothing ->
@@ -291,10 +258,6 @@ sortedRank luplayer =
     List.sortBy extractRank reorderedConvertedValidatedPlayerList
 
 
--- extractRank : SR.Types.UserPlayer -> Int
--- extractRank uplayer =
---     uplayer.player.rank
-
 
 reorderPlayerListToStartAtOne : List SR.Types.UserPlayer -> List SR.Types.UserPlayer
 reorderPlayerListToStartAtOne luplayer =
@@ -390,32 +353,6 @@ extractAndSortPlayerList rdlPlayer luser =
     in
     sortedRank <| convertedPlayerListToUserPlayerList
 
--- changedRank : List SR.Types.UserPlayer -> SR.Types.UserPlayer -> Int -> List SR.Types.UserPlayer
--- changedRank luPlayer uplayer rank =
---     let
---         userPlayerToPlayer =
---             uplayer.player
-
---         filteredPlayerList =
---             filterPlayerOutOfPlayerList userPlayerToPlayer.address luPlayer
-
---         updatedPlayer =
---             { userPlayerToPlayer | challengeraddress = "", rank = rank }
-
---         newUserPlayer =
---             { uplayer | player = updatedPlayer }
-
---         newPlayerList =
---             newUserPlayer :: filteredPlayerList
-
---         newPlayerListSorted =
---             sortedRank newPlayerList
---     in
---         if List.isEmpty luPlayer || uplayer.player.address == "" then 
---             []
---         else
-         
---             newPlayerListSorted
 
 gotRankingOwnerAsPlayer : String -> List SR.Types.UserPlayer -> SR.Types.Player
 gotRankingOwnerAsPlayer selectedRanking luplayer =
@@ -481,7 +418,6 @@ convertPlayersToUserPlayers lplayer luser =
 
 convertEachPlayerToUserPlayer : List SR.Types.User -> SR.Types.Player -> SR.Types.UserPlayer
 convertEachPlayerToUserPlayer luser player =
-    --{ player = player, user = gotUserFromUserList luser player.address }
     { player = player, user = Data.Users.gotUser (Data.Users.asUsers (EverySet.fromList luser)) player.address }
 
 
@@ -556,11 +492,6 @@ handleLost (Selected esUPlayer sUsers rnkId) appInfo =
             case whoHigher of
                 SR.Types.OpponentRankHigher ->
                     let
-                        -- updatedPlayerListForPlayer =
-                        --     changedRank allLists.userPlayers appInfo.player appInfo.player.player.rank
-
-                        -- updatedPlayerListForPlayerAndChallenger =
-                        --     changedRank updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.player.rank
 
                         supdatedPlayer =
                             changedRank appInfo.player appInfo.player.player.rank (asSelected esUPlayer sUsers rnkId)
@@ -584,8 +515,6 @@ handleLost (Selected esUPlayer sUsers rnkId) appInfo =
                         newAppInfo =
                             { appInfo | player = newUserPlayerUpdated, challenger = SR.Defaults.emptyUserPlayer }
 
-                        -- newAllLists =
-                        --     { allLists | userPlayers = updatedPlayerListForPlayerAndChallenger }
                     in
                     --nb. higher rank is a lower number and vice versa!
                     (supdatedPlayerAndChallenger, newAppInfo)
@@ -618,8 +547,6 @@ handleLost (Selected esUPlayer sUsers rnkId) appInfo =
                         newAppInfo =
                             { appInfo | player = newUserPlayerUpdated, challenger = SR.Defaults.emptyUserPlayer }
 
-                        -- newAllLists =
-                        --     { allLists | userPlayers = updatedPlayerListForPlayerAndChallenger }
                     in
                     (supdatedPlayerAndChallenger, newAppInfo)
 
@@ -627,16 +554,9 @@ handleLost (Selected esUPlayer sUsers rnkId) appInfo =
 handleUndecided : Selected -> SR.Types.AppInfo -> (Selected, SR.Types.AppInfo)
 handleUndecided (Selected esUPlayer sUsers rnkId) appInfo =
             let
-                -- updatedPlayerListForPlayer =
-                --     changedRank allLists.userPlayers appInfo.player appInfo.player.player.rank
-
-                -- updatedPlayerListForPlayerAndChallenger =
-                --     changedRank updatedPlayerListForPlayer appInfo.challenger appInfo.challenger.player.rank
-
                 supdatedPlayer =  
                             changedRank appInfo.player appInfo.player.player.rank (asSelected esUPlayer sUsers rnkId)
                            
-
                 supdatedPlayerAndChallenger =
                     supdatedPlayer
                     |> changedRank appInfo.challenger (appInfo.challenger.player.rank)
@@ -695,13 +615,8 @@ updateSelectedRankingOnChallenge : Selected -> SR.Types.AppInfo -> Selected
 updateSelectedRankingOnChallenge allSets appInfo =
     allSets
 
--- assignChallengerAddrsForBOTHPlayers : Model -> ( Model, Cmd Msg )
--- assignChallengerAddrsForBOTHPlayers model =
 assignChallengerAddrsForBOTHPlayers : Selected -> SR.Types.AppInfo -> Selected
 assignChallengerAddrsForBOTHPlayers sSelected appInfo =
-    -- case model of
-    --     AppOps walletState allSets appInfo uiState txRec ->
-            --let
                 case sSelected of 
                     Selected sselected sUsers rnkId ->
                         let
@@ -709,4 +624,38 @@ assignChallengerAddrsForBOTHPlayers sSelected appInfo =
                             sChallengerUpdated = assignChallengerAddr sUserUpdated appInfo.challenger appInfo.player.player.address --sUsers rnkId
                         in 
                             sChallengerUpdated
+
+--useful?:
+-- convertUserPlayersToPlayers : List SR.Types.UserPlayer -> List SR.Types.Player
+-- convertUserPlayersToPlayers luplayers =
+--     List.map Utils.MyUtils.refEachPlayer luplayers
+
+--useful?
+-- convertPlayersToUserPlayers : List SR.Types.Player -> List SR.Types.User -> List SR.Types.UserPlayer
+-- convertPlayersToUserPlayers lplayer luser =
+--     List.map (convertEachPlayerToUserPlayer luser) lplayer
+
+
+-- convertEachPlayerToUserPlayer : List SR.Types.User -> SR.Types.Player -> SR.Types.UserPlayer
+-- convertEachPlayerToUserPlayer luser player =
+--     { player = player, user = gotUserFromUserList luser player.address }
+
+
+-- gotRankingOwnerAsUserPlayer : SR.Types.RankingInfo -> List SR.Types.UserRanking -> List SR.Types.UserPlayer -> SR.Types.UserPlayer
+-- gotRankingOwnerAsUserPlayer selectedRanking luranking luplayer =
+--     let
+--         rankingOwnerAsUser =
+--             (gotUserRankingFromUserRankingList luranking (Internal.Types.RankingId selectedRanking.id)).userInfo
+
+--         rankingOwnerAsPlayer =
+--             gotRankingOwnerAPlayer rankingOwnerAsUser.ethaddress luplayer
+--     in
+--     { player = rankingOwnerAsPlayer
+--     , user = rankingOwnerAsUser
+--     }
+
+
+-- gotRankingOwnerAPlayer : String -> List SR.Types.UserPlayer -> SR.Types.Player
+-- gotRankingOwnerAPlayer selectedRanking luplayer =
+--     (gotUserPlayerFromPlayerListStrAddress luplayer selectedRanking).player
 
