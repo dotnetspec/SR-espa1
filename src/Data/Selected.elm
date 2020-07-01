@@ -641,8 +641,8 @@ assignChallengerAddrsForBOTHPlayers sSelected appInfo =
 --     { player = player, user = gotUserFromUserList luser player.address }
 
 
--- gotRankingOwnerAsUserPlayer : SR.Types.Ranking -> List SR.Types.UserRanking -> List SR.Types.UserPlayer -> SR.Types.UserPlayer
--- gotRankingOwnerAsUserPlayer selectedRanking luranking luplayer =
+-- gotRankingOwner : SR.Types.Ranking -> List SR.Types.UserRanking -> List SR.Types.UserPlayer -> SR.Types.UserPlayer
+-- gotRankingOwner selectedRanking luranking luplayer =
 --     let
 --         rankingOwnerAsUser =
 --             (gotUserRankingFromUserRankingList luranking (Internal.Types.RankingId selectedRanking.id)).userInfo

@@ -8717,7 +8717,7 @@ var $author$project$SR$ListOps$extractRanking = function (uranking) {
 var $author$project$SR$ListOps$extractRankingList = function (luserranking) {
 	return A2($elm$core$List$map, $author$project$SR$ListOps$extractRanking, luserranking);
 };
-var $author$project$Main$jsonEncodeNewGlobalRankingList = function (lotherrankingInfo) {
+var $author$project$Main$newJsonEncodedList = function (lotherrankingInfo) {
 	var newRankingInfoList = $author$project$SR$ListOps$extractRankingList(lotherrankingInfo);
 	var encodeAglobalRankingObj = function (rankingInfo) {
 		return $elm$json$Json$Encode$object(
@@ -8761,7 +8761,7 @@ var $author$project$Main$addedNewRankingListEntryInGlobal = F5(
 		return $elm$http$Http$request(
 			{
 				body: $elm$http$Http$jsonBody(
-					$author$project$Main$jsonEncodeNewGlobalRankingList(globalListWithJsonObjAdded)),
+					$author$project$Main$newJsonEncodedList(globalListWithJsonObjAdded)),
 				expect: A2(
 					$elm$http$Http$expectJson,
 					A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$Main$AddedNewRankingToGlobalList),
@@ -9814,7 +9814,7 @@ var $author$project$SR$ListOps$doesCurrentRankingIdNOTMatchId = F2(
 	function (rankingid, rankingInfo) {
 		return (!_Utils_eq(rankingInfo.id, rankingid)) ? $elm$core$Maybe$Just(rankingInfo) : $elm$core$Maybe$Nothing;
 	});
-var $author$project$SR$ListOps$filterSelectedRankingOutOfGlobalList = F2(
+var $author$project$SR$ListOps$filterSelected = F2(
 	function (rankingid, lrankinginfo) {
 		return A2(
 			$elm$core$List$filterMap,
@@ -9823,12 +9823,12 @@ var $author$project$SR$ListOps$filterSelectedRankingOutOfGlobalList = F2(
 	});
 var $author$project$Main$deleteSelectedRankingFromGlobalList = F4(
 	function (rankingId, lrankingInfo, luser, rankingowneraddress) {
-		var globalListWithDeletedRankingInfoRemoved = A2($author$project$SR$ListOps$filterSelectedRankingOutOfGlobalList, rankingId, lrankingInfo);
+		var globalListWithDeletedRankingInfoRemoved = A2($author$project$SR$ListOps$filterSelected, rankingId, lrankingInfo);
 		var newUserRankingList = A2($author$project$SR$ListOps$createAllUserAsOwnerGlobalRankingList, globalListWithDeletedRankingInfoRemoved, luser);
 		return $elm$http$Http$request(
 			{
 				body: $elm$http$Http$jsonBody(
-					$author$project$Main$jsonEncodeNewGlobalRankingList(newUserRankingList)),
+					$author$project$Main$newJsonEncodedList(newUserRankingList)),
 				expect: A2(
 					$elm$http$Http$expectJson,
 					A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$Main$DeletedRankingFromGlobalList),
@@ -9961,7 +9961,7 @@ var $author$project$SR$ListOps$createdUserRankingPlayerRanking = F2(
 		var newOwnedRanking = {rankingInfo: rankingInfo, userInfo: userOwner};
 		return newOwnedRanking;
 	});
-var $author$project$SR$ListOps$createduserRankingPlayerList = F2(
+var $author$project$SR$ListOps$createdPlayers = F2(
 	function (lrankinfo, luser) {
 		return A2(
 			$elm$core$List$map,
@@ -9980,7 +9980,7 @@ var $elm$core$List$member = F2(
 			},
 			xs);
 	});
-var $author$project$SR$ListOps$gotOthersGlobalRankingList = F2(
+var $author$project$SR$ListOps$gotOthers = F2(
 	function (luserOwnerPlayers, lalluserrankings) {
 		var lOwnerPlayerRankingIds = A2($elm$core$List$map, $author$project$SR$ListOps$gotAllRankindIds, luserOwnerPlayers);
 		var listWithfirstValFromOwnerPlayersFilteredOut = A2(
@@ -10003,7 +10003,7 @@ var $author$project$SR$ListOps$isRnkIdMatch = F2(
 	function (rankingid, rnk) {
 		return _Utils_eq(rnk.id, rankingid) ? true : false;
 	});
-var $author$project$SR$ListOps$gotUserIsPlayerNonUserRankingList = F2(
+var $author$project$SR$ListOps$gotUserIsPlayerNon = F2(
 	function (user, lrankinginfo) {
 		var gotSingleRankingInfo = function (rnkId) {
 			return $author$project$Utils$MyUtils$extractRankinigInfoFromMaybe(
@@ -10020,7 +10020,7 @@ var $author$project$SR$ListOps$isGlobalRankingOwnedByUser = F2(
 	function (user, ownedrnk) {
 		return _Utils_eq(ownedrnk.userInfo.ethaddress, user.ethaddress) ? $elm$core$Maybe$Just(ownedrnk) : $elm$core$Maybe$Nothing;
 	});
-var $author$project$SR$ListOps$gotUserOwnedGlobalRankingList = F2(
+var $author$project$SR$ListOps$gotOwned = F2(
 	function (lownedrankings, user) {
 		return A2(
 			$elm$core$List$filterMap,
@@ -10043,12 +10043,12 @@ var $author$project$Main$handleGlobalRankingsReceived = F2(
 			var txRec = model.e;
 			var extractedList = $author$project$SR$ListOps$ownerValidatedRankingList(
 				$author$project$SR$ListOps$extractRankingsFromWebData(rmtrnkingdata));
-			var currentUserAsPlayer = A2($author$project$SR$ListOps$gotUserIsPlayerNonUserRankingList, appInfo.user, extractedList);
-			var luserRankingPlayer = A2($author$project$SR$ListOps$createduserRankingPlayerList, currentUserAsPlayer, allLists.users);
+			var currentUserAsPlayer = A2($author$project$SR$ListOps$gotUserIsPlayerNon, appInfo.user, extractedList);
+			var luserRankingPlayer = A2($author$project$SR$ListOps$createdPlayers, currentUserAsPlayer, allLists.users);
 			var allUserAsOwnerGlobal = A2($author$project$SR$ListOps$createAllUserAsOwnerGlobalRankingList, extractedList, allLists.users);
-			var luserRankingOwner = A2($author$project$SR$ListOps$gotUserOwnedGlobalRankingList, allUserAsOwnerGlobal, appInfo.user);
+			var luserRankingOwner = A2($author$project$SR$ListOps$gotOwned, allUserAsOwnerGlobal, appInfo.user);
 			var ownerPlayerCombinedList = _Utils_ap(luserRankingOwner, luserRankingPlayer);
-			var luserRankingOther = A2($author$project$SR$ListOps$gotOthersGlobalRankingList, ownerPlayerCombinedList, allUserAsOwnerGlobal);
+			var luserRankingOther = A2($author$project$SR$ListOps$gotOthers, ownerPlayerCombinedList, allUserAsOwnerGlobal);
 			var addedRankingListToAllLists = _Utils_update(
 				allLists,
 				{userRankings: allUserAsOwnerGlobal});
@@ -11845,7 +11845,7 @@ var $author$project$SR$ListOps$gotUserRankingFromUserRankingList = F2(
 			return a;
 		}
 	});
-var $author$project$SR$ListOps$gotRankingOwnerAsUserPlayer = F3(
+var $author$project$SR$ListOps$gotRankingOwner = F3(
 	function (selectedRanking, luranking, luplayer) {
 		var rankingOwnerAsUser = A2(
 			$author$project$SR$ListOps$gotUserRankingFromUserRankingList,
@@ -11862,7 +11862,7 @@ var $author$project$Main$updatedSelectedRankingOnPlayersReceived = F2(
 			var appInfo = model.c;
 			var uiState = model.d;
 			var txRec = model.e;
-			var userPlayerOwner = A3($author$project$SR$ListOps$gotRankingOwnerAsUserPlayer, appInfo.selectedRanking, allLists.userRankings, luplayer);
+			var userPlayerOwner = A3($author$project$SR$ListOps$gotRankingOwner, appInfo.selectedRanking, allLists.userRankings, luplayer);
 			var newAppPlayer = _Utils_update(
 				appInfo,
 				{

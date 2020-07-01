@@ -1,10 +1,18 @@
 -- Global will be mainly used to handle internal data of the global rankings listing as it relates to the current user
-module Data.Global exposing (Global, gotOthersGlobalRankingList
-    , gotUserIsPlayerGlobalRankingList
-    , gotUserIsPlayerNonUserRankingList
-    , gotUserOwnedGlobalRankingList
-    , filterSelectedRankingOutOfGlobalList
- ,createduserRankingPlayerList, gotRankingOwnerAsUserPlayer, rankingsAsList, jsonEncodeNewGlobalRankingList, createdUserRankings, gotUserRanking, emptyGlobal, asGlobal, othersUserRanking, memberUserRanking, addUserRanking, removeUserRanking, asList, asSelected, isUserRankingMemberOfGlobalRanking, ownedUserRanking)
+-- Global currently uses the UserRankings type
+module Data.Global exposing (Global, gotOthers
+    , gotUserIsPlayer
+    , gotOwned
+    , filteredSelected
+    , createdPlayers
+    , gotRankingOwner
+    , rankingsAsList
+    , newJsonEncodedList
+    , createdGlobal
+    , gotUserRanking
+    , emptyGlobal
+    , asGlobal
+    , gotMember, addUserRanking, removeUserRanking, asList, asSelected)
 
 
 import SR.Types
@@ -38,8 +46,8 @@ asSelected esUserRanking =
 
 
 
-filterSelectedRankingOutOfGlobalList : String -> List SR.Types.Ranking -> List SR.Types.Ranking
-filterSelectedRankingOutOfGlobalList rankingid lrankinginfo =
+filteredSelected : String -> List SR.Types.Ranking -> List SR.Types.Ranking
+filteredSelected rankingid lrankinginfo =
     List.filterMap
         (doesCurrentRankingIdNOTMatchId
             rankingid
@@ -54,16 +62,7 @@ doesCurrentRankingIdNOTMatchId rankingid rankingInfo =
     else
         Nothing
 
-gotUserIsPlayerNonUserRankingList : SR.Types.User -> List SR.Types.Ranking -> List SR.Types.Ranking
-gotUserIsPlayerNonUserRankingList user lrankinginfo =
-    let
-        gotNewListRankingInfo =
-            List.map gotSingleRankingInfo user.userjoinrankings
 
-        gotSingleRankingInfo rnkId =
-            Utils.MyUtils.extractRankinigInfoFromMaybe (List.head (List.filter (isRnkIdMatch rnkId) lrankinginfo))
-    in
-    gotNewListRankingInfo
 
 
 
@@ -76,13 +75,93 @@ isRnkIdMatch rankingid rnk =
         False
 
 
-gotUserOwnedGlobalRankingList : List SR.Types.UserRanking -> SR.Types.User -> List SR.Types.UserRanking
-gotUserOwnedGlobalRankingList lownedrankings user =
-    List.filterMap
-        (isGlobalRankingOwnedByUser
+-- these following 3 are not currently distinguishing the rankings:
+gotOwned : Global -> SR.Types.User -> Global 
+gotOwned global user = 
+    asGlobal (
+        EverySet.fromList (List.filterMap
+        (isOwned
             user
         )
-        lownedrankings
+        (asList global)))
+        
+isOwned : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
+isOwned user ownedrnk =
+    if ownedrnk.userInfo.ethaddress == user.ethaddress then
+        Just ownedrnk
+
+    else
+        Nothing
+
+gotMember : Global -> SR.Types.User -> List SR.Types.UserRanking
+gotMember sGlobal user  =
+    let
+        lranking = rankingsAsList sGlobal
+        gotNewRankingList =
+            List.map gotSingleRankingInfo user.userjoinrankings
+
+        gotSingleRankingInfo rnkId =
+            Utils.MyUtils.extractRankinigInfoFromMaybe (List.head (List.filter (isRnkIdMatch rnkId) lranking))
+    in
+        -- it's ok to have empty users here cos we only use the ranking info to display member rankings
+        List.map addEmptyUser gotNewRankingList
+
+addEmptyUser : SR.Types.Ranking -> SR.Types.UserRanking 
+addEmptyUser ranking = 
+    let
+        newUserRanking = {rankingInfo = ranking, userInfo = SR.Defaults.emptyUser}
+    in
+        newUserRanking
+
+
+gotUsersFromUserRankings : List SR.Types.UserRanking -> List SR.Types.User 
+gotUsersFromUserRankings luRankings = 
+    List.map toUser luRankings
+
+toUser : SR.Types.UserRanking -> SR.Types.User 
+toUser uRanking = 
+    uRanking.userInfo
+
+
+
+-- gotOthers : List SR.Types.UserRanking -> List SR.Types.UserRanking -> Global
+-- gotOthers luserOwnerPlayers lalluserrankings =
+--     let
+--         lOwnerPlayerRankingIds =
+--             List.map gotAllRankindIds luserOwnerPlayers
+
+--         listWithfirstValFromOwnerPlayersFilteredOut =
+--             List.filter (\x -> not (List.member x.rankingInfo.id lOwnerPlayerRankingIds)) lalluserrankings
+--     in
+--     asGlobal (EverySet.fromList listWithfirstValFromOwnerPlayersFilteredOut)
+
+-- gotOthers : Global -> List SR.Types.UserRanking -> Global
+-- gotOthers sGlobal lalluserrankings =
+--     let
+--         lOwnerPlayerRankingIds =
+--             List.map gotAllRankindIds (asList sGlobal)
+
+--         listWithfirstValFromOwnerPlayersFilteredOut =
+--             List.filter (\x -> not (List.member x.rankingInfo.id lOwnerPlayerRankingIds)) lalluserrankings
+--     in
+--     asGlobal (EverySet.fromList listWithfirstValFromOwnerPlayersFilteredOut)
+
+gotOthers : Global -> SR.Types.User -> Global 
+gotOthers global user = 
+    asGlobal (
+        EverySet.fromList (List.filterMap
+        (isOthers
+            user
+        )
+        (asList global)))
+        
+isOthers : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
+isOthers user userRanking =
+    if userRanking.userInfo.ethaddress /= user.ethaddress then
+        Just userRanking
+
+    else
+        Nothing
 
 
 isGlobalRankingOwnedByUser : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
@@ -94,8 +173,8 @@ isGlobalRankingOwnedByUser user ownedrnk =
         Nothing
 
 
-gotUserIsPlayerGlobalRankingList : List SR.Types.UserRanking -> SR.Types.User -> List SR.Types.UserRanking
-gotUserIsPlayerGlobalRankingList lownedrankings user =
+gotUserIsPlayer : List SR.Types.UserRanking -> SR.Types.User -> List SR.Types.UserRanking
+gotUserIsPlayer lownedrankings user =
     List.filterMap
         (isUserPlayerInGlobalRankings
             user
@@ -114,16 +193,7 @@ isUserPlayerInGlobalRankings user ownedrnk =
 -- current
 
 
-gotOthersGlobalRankingList : List SR.Types.UserRanking -> List SR.Types.UserRanking -> List SR.Types.UserRanking
-gotOthersGlobalRankingList luserOwnerPlayers lalluserrankings =
-    let
-        lOwnerPlayerRankingIds =
-            List.map gotAllRankindIds luserOwnerPlayers
 
-        listWithfirstValFromOwnerPlayersFilteredOut =
-            List.filter (\x -> not (List.member x.rankingInfo.id lOwnerPlayerRankingIds)) lalluserrankings
-    in
-    listWithfirstValFromOwnerPlayersFilteredOut
 
 
 gotAllRankindIds : SR.Types.UserRanking -> String
@@ -146,26 +216,7 @@ gotUserRanking sGlobal rnkId =
                     ranking
     
 
--- these following 3 are not currently distinguishing the rankings:
-ownedUserRanking : Global -> SR.Types.User -> Global 
-ownedUserRanking global user = 
-    asGlobal (
-        EverySet.fromList (List.filterMap
-        (isOwned
-            user
-        )
-        (asList global)))
-        
 
-
-
-memberUserRanking : Global -> SR.Types.User -> Global 
-memberUserRanking global user = 
-     global
-
-othersUserRanking : Global -> SR.Types.User -> Global 
-othersUserRanking global user = 
-     global
 
 -- just using a default for now
 addUserRanking : Global -> RemoteData.WebData SR.Types.RankingId -> SR.Types.Ranking -> SR.Types.User -> Global
@@ -199,26 +250,7 @@ removeUserRanking uplayer srank =
          asSelected (EverySet.remove uplayer rankedUserRankings) 
 
 
-isUserRankingMemberOfGlobalRanking : List SR.Types.UserRanking -> SR.Types.User -> Bool
-isUserRankingMemberOfGlobalRanking luplayer user =
-    let
-        filteredList =
-            --findPlayerInList user luplayer
-            [SR.Defaults.emptyUserPlayer]
 
-        filteredRec =
-            List.head filteredList
-    in
-    case filteredRec of
-        Nothing ->
-            False
-
-        Just a ->
-            if (String.toLower a.player.address) == (String.toLower user.ethaddress) then
-                True
-
-            else
-                False
 
 
 -- isUserOwnerOfGlobalUserRanking : SR.Types.Ranking -> List SR.Types.UserRanking -> SR.Types.User -> Bool
@@ -319,8 +351,8 @@ removeUser uranking =
 --     else
 --         False
 
--- gotUserOwnedGlobalRankingList : List SR.Types.UserRanking -> SR.Types.User -> List SR.Types.UserRanking
--- gotUserOwnedGlobalRankingList lownedrankings user =
+-- gotOwned : List SR.Types.UserRanking -> SR.Types.User -> List SR.Types.UserRanking
+-- gotOwned lownedrankings user =
 --     List.filterMap
 --         (isOwned
 --             user
@@ -328,17 +360,11 @@ removeUser uranking =
 --         lownedrankings
 
 
-isOwned : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
-isOwned user ownedrnk =
-    if ownedrnk.userInfo.ethaddress == user.ethaddress then
-        Just ownedrnk
-
-    else
-        Nothing
 
 
-createdUserRankings : List SR.Types.Ranking -> List SR.Types.User -> List SR.Types.UserRanking
-createdUserRankings lrankinfo luser =
+
+createdGlobal : List SR.Types.Ranking -> List SR.Types.User -> List SR.Types.UserRanking
+createdGlobal lrankinfo luser =
     List.map (createNewOwnedRanking luser) lrankinfo
 
 createNewOwnedRanking : List SR.Types.User -> SR.Types.Ranking -> SR.Types.UserRanking
@@ -392,8 +418,8 @@ gotNewRankingIdFromWebData rankingIdremdata =
 
 
 -- we have a function within a function - this may be simplified ?
-jsonEncodeNewGlobalRankingList : List SR.Types.Ranking -> Json.Encode.Value
-jsonEncodeNewGlobalRankingList lotherrankingInfo =
+newJsonEncodedList : List SR.Types.Ranking -> Json.Encode.Value
+newJsonEncodedList lotherrankingInfo =
     let
         --newRankingInfoList =
             --SR.ListOps.extractRankingList lotherrankingInfo
@@ -415,8 +441,8 @@ jsonEncodeNewGlobalRankingList lotherrankingInfo =
     encodedList
 
 
-gotRankingOwnerAsUserPlayer : SR.Types.Ranking -> List SR.Types.UserRanking -> List SR.Types.UserPlayer -> SR.Types.UserPlayer
-gotRankingOwnerAsUserPlayer selectedRanking luranking luplayer =
+gotRankingOwner : SR.Types.Ranking -> List SR.Types.UserRanking -> List SR.Types.UserPlayer -> SR.Types.UserPlayer
+gotRankingOwner selectedRanking luranking luplayer =
     let
         rankingOwnerAsUser =
             (gotUserRankingFromUserRankingList luranking (Internal.Types.RankingId selectedRanking.id)).userInfo
@@ -448,8 +474,8 @@ gotRankingOwnerAsPlayer selectedRanking luplayer =
     (gotUserPlayerFromPlayerListStrAddress luplayer selectedRanking).player
 
 
--- gotRankingOwnerAsUserPlayer : SR.Types.Ranking -> List SR.Types.UserRanking -> List SR.Types.UserPlayer -> SR.Types.UserPlayer
--- gotRankingOwnerAsUserPlayer selectedRanking luranking luplayer =
+-- gotRankingOwner : SR.Types.Ranking -> List SR.Types.UserRanking -> List SR.Types.UserPlayer -> SR.Types.UserPlayer
+-- gotRankingOwner selectedRanking luranking luplayer =
 --     let
 --         rankingOwnerAsUser =
 --             (gotUserRankingFromUserRankingList luranking (Internal.Types.RankingId selectedRanking.id)).userInfo
@@ -476,8 +502,8 @@ gotUserPlayerFromPlayerListStrAddress luplayer addr =
         Just a ->
             a
 
-createduserRankingPlayerList : List SR.Types.Ranking -> List SR.Types.User -> List SR.Types.UserRanking
-createduserRankingPlayerList lrankinfo luser =
+createdPlayers : List SR.Types.Ranking -> List SR.Types.User -> List SR.Types.UserRanking
+createdPlayers lrankinfo luser =
     List.map (createdUserRankingPlayerRanking luser) lrankinfo
 
 createdUserRankingPlayerRanking : List SR.Types.User -> SR.Types.Ranking -> SR.Types.UserRanking

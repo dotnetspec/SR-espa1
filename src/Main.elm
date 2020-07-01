@@ -30,7 +30,6 @@ import SR.Decode
 import SR.Defaults
 import SR.Elements
 import SR.Encode
-
 import SR.Types
 import Task
 import Time exposing (Posix)
@@ -373,9 +372,9 @@ handledWalletStateOpened msg model =
                     case allSets of
                         GlobalFetched sGlobal sUsers -> 
                             let
-                                createUserRankings = Data.Global.createdUserRankings (Data.Rankings.extractRankingsFromWebData rmtrnkingdata) (Data.Users.asList sUsers)
+                                createUserRankings = Data.Global.createdGlobal (Data.Rankings.extractRankingsFromWebData rmtrnkingdata) (Data.Users.asList sUsers)
                             
-                                globalRankings = Data.Global.ownedUserRanking (Data.Global.asGlobal (EverySet.fromList createUserRankings)) appInfo.user
+                                globalRankings = Data.Global.gotOwned (Data.Global.asGlobal (EverySet.fromList createUserRankings)) appInfo.user
                     
                                 globalSet = GlobalFetched globalRankings sUsers
                             in 
@@ -622,15 +621,15 @@ handleWalletStateOperational msg model =
                 GlobalRankingsReceived rmtrnkingdata ->
                     let 
                         susers = case allSets of 
-                                                UsersFetched users ->
-                                                    users
-                                                
-                                                _ ->
-                                                    Data.Users.emptyUsers
+                                    UsersFetched users ->
+                                        users
+                                    
+                                    _ ->
+                                        Data.Users.emptyUsers
 
-                        allUserAsOwnerGlobal = Data.Global.createdUserRankings (Data.Rankings.extractRankingsFromWebData rmtrnkingdata) (Data.Users.asList susers)
+                        allUserAsOwnerGlobal = Data.Global.createdGlobal (Data.Rankings.extractRankingsFromWebData rmtrnkingdata) (Data.Users.asList susers)
                           
-                        newSetState = GlobalFetched (Data.Global.ownedUserRanking (Data.Global.asGlobal (EverySet.fromList allUserAsOwnerGlobal)) appInfo.user) susers
+                        newSetState = GlobalFetched (Data.Global.gotOwned (Data.Global.asGlobal (EverySet.fromList allUserAsOwnerGlobal)) appInfo.user) susers
                     in 
                         ( AppOps SR.Types.WalletOperational newSetState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
@@ -697,7 +696,7 @@ handleWalletStateOperational msg model =
                             in
                                 ( AppOps SR.Types.WalletOperational newGlobalUpdated appInfo SR.Types.UICreateNewLadder emptyTxRecord
                                 ,
-                                httpPutRequestForAddGlobal (Data.Global.jsonEncodeNewGlobalRankingList (newGlobalAsList)) newGlobalAsList
+                                httpPutRequestForAddGlobal (Data.Global.newJsonEncodedList (newGlobalAsList)) newGlobalAsList
                                 )
                         _ -> 
                                     let 
@@ -785,7 +784,7 @@ handleWalletStateOperational msg model =
                         GlobalUpdated sGlobal sUsers -> 
                             let
                                 allGlobal =
-                                    Data.Global.createdUserRankings (Data.Rankings.extractRankingsFromWebData updatedListAfterNewEntryAddedToGlobalList) (Data.Users.asList sUsers)
+                                    Data.Global.createdGlobal (Data.Rankings.extractRankingsFromWebData updatedListAfterNewEntryAddedToGlobalList) (Data.Users.asList sUsers)
 
                                 newGlobal = Data.Global.asGlobal (EverySet.fromList allGlobal)
                                 newGlobalUpdated = GlobalUpdated newGlobal sUsers
@@ -901,10 +900,10 @@ handleWalletStateOperational msg model =
                         UsersFetched sUsers ->       
                             let
                                 rankingsSet = Data.Rankings.asRankings (EverySet.fromList (Data.Rankings.extractRankingsFromWebData updatedListAfterRankingDeletedFromGlobalList))
-                                userRankings = Data.Global.createdUserRankings (Data.Rankings.asList rankingsSet) (Data.Users.asList sUsers)
+                                userRankings = Data.Global.createdGlobal (Data.Rankings.asList rankingsSet) (Data.Users.asList sUsers)
                                 
                                 updatedGlobal =
-                                    Data.Global.ownedUserRanking (Data.Global.asGlobal (EverySet.fromList userRankings)) appInfo.user
+                                    Data.Global.gotOwned (Data.Global.asGlobal (EverySet.fromList userRankings)) appInfo.user
 
                                 newSetState = GlobalUpdated updatedGlobal sUsers
 
@@ -2307,8 +2306,6 @@ enableButton enable =
 
 inputNewUser : SetState -> SR.Types.AppInfo -> Element Msg
 inputNewUser setState appInfo =
-    -- case model of
-    --     AppOps walletState allSets appInfo uiState txRec ->
             case setState of 
                 Selected sSelected sUsers _ -> 
                     Element.column Grid.section <|
@@ -2505,15 +2502,13 @@ globalResponsiveview sGlobal user =
                 Element.text ("SportRank - " ++ userName)
             ,displayUpdateProfileBtnIfExistingUser user.username ClickedUpdateExistingUser
             --, Element.text "\n"
-            --, displayCreateNewLadderBtnIfExistingUser user.username lowneduranking ClickedCreateNewLadder
-            , displayCreateNewLadderBtnIfExistingUser user.username (Data.Global.asList (Data.Global.ownedUserRanking sGlobal user)) ClickedCreateNewLadder
+            , displayCreateNewLadderBtnIfExistingUser user.username (Data.Global.asList (Data.Global.gotOwned sGlobal user)) ClickedCreateNewLadder
             , displayRegisterBtnIfNewUser
                 user.username
                 ClickedRegister
-            --, ownedrankingbuttons lowneduranking user
-            , ownedrankingbuttons (Data.Global.asList (Data.Global.ownedUserRanking sGlobal user)) user
-            , memberrankingbuttons (Data.Global.asList (Data.Global.memberUserRanking sGlobal user)) user
-            , otherrankingbuttons (Data.Global.asList (Data.Global.othersUserRanking sGlobal user)) user
+            , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
+            , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
+            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
             ]
 
 
@@ -2587,11 +2582,6 @@ selectedUserIsOwnerView setState appInfo =
         _ ->
             Html.text "Fail selectedUserIsOwnerView"
 
-
--- selectedUserIsPlayerView : Model -> Html Msg
--- selectedUserIsPlayerView model =
---     case model of
---         AppOps walletState allSets appInfo uiState txRec ->
 selectedUserIsPlayerView : SetState -> SR.Types.AppInfo -> Html Msg
 selectedUserIsPlayerView setState appInfo =
     case setState of
@@ -2607,11 +2597,6 @@ selectedUserIsPlayerView setState appInfo =
         _ ->
             Html.text "Error"
 
-
--- selectedUserIsNeitherOwnerNorPlayerView : Model -> Html Msg
--- selectedUserIsNeitherOwnerNorPlayerView model =
---     case model of
---         AppOps walletState allSets appInfo uiState txRec ->
 
 selectedUserIsNeitherOwnerNorPlayerView : SetState -> SR.Types.AppInfo -> Html Msg
 selectedUserIsNeitherOwnerNorPlayerView setState appInfo =
@@ -3076,14 +3061,14 @@ httpAddCurrentUserToPlayerList setState userRec =
 
 
 httpPutRequestForAddGlobal : Json.Encode.Value -> List SR.Types.Ranking -> Cmd Msg
-httpPutRequestForAddGlobal jsonEncodeNewGlobalRankingList globalListWithJsonObjAdded =
+httpPutRequestForAddGlobal newJsonEncodedList globalListWithJsonObjAdded =
     --AddedNewRankingToGlobalList is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
     -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
     -- the Decoder decodes what comes back in the response
     Http.request
         { body =
-            Http.jsonBody <| Data.Global.jsonEncodeNewGlobalRankingList globalListWithJsonObjAdded
+            Http.jsonBody <| Data.Global.newJsonEncodedList globalListWithJsonObjAdded
         , expect = Http.expectJson (RemoteData.fromResult >> AddedNewRankingToGlobalList) SR.Decode.decodeNewRankingListServerResponse
         , headers = [ SR.Defaults.secretKey, SR.Defaults.globalBinName, SR.Defaults.globalContainerId ]
         , method = "PUT"
@@ -3095,10 +3080,10 @@ httpPutRequestForAddGlobal jsonEncodeNewGlobalRankingList globalListWithJsonObjA
         }
 
 httpDeleteSelectedRankingFromGlobalList : Json.Encode.Value -> List SR.Types.Ranking -> Cmd Msg
-httpDeleteSelectedRankingFromGlobalList jsonEncodeNewGlobalRankingList globalListWithRankingDeleted =
+httpDeleteSelectedRankingFromGlobalList newJsonEncodedList globalListWithRankingDeleted =
     Http.request
             { body =
-                Http.jsonBody <| Data.Global.jsonEncodeNewGlobalRankingList globalListWithRankingDeleted
+                Http.jsonBody <| Data.Global.newJsonEncodedList globalListWithRankingDeleted
             , expect = Http.expectJson (RemoteData.fromResult >> DeletedRankingFromGlobalList) SR.Decode.decodeNewRankingListServerResponse
             , headers = [ SR.Defaults.secretKey, SR.Defaults.globalBinName, SR.Defaults.globalContainerId ]
             , method = "PUT"
@@ -3143,34 +3128,6 @@ postResultToJsonbin (Internal.Types.RankingId rankingId) =
         , tracker = Nothing
         , url = "https://api.jsonbin.io/b/" ++ rankingId
         }
-
-
-
-
-
--- deleteSelectedRankingFromGlobalList : String -> List SR.Types.Ranking -> List SR.Types.User -> String -> Cmd Msg
--- deleteSelectedRankingFromGlobalList rankingId lrankingInfo luser rankingowneraddress =
---     let
---         globalListWithDeletedRankingInfoRemoved =
---             SR.ListOps.filterSelectedRankingOutOfGlobalList rankingId lrankingInfo
-
---         newUserRankingList =
---             --SR.ListOps.createAllUserAsOwnerGlobalRankingList globalListWithDeletedRankingInfoRemoved luser
---             Data.Global.createdUserRankings globalListWithDeletedRankingInfoRemoved luser
---     in
-
-   
-    -- Http.request
-    --     { body =
-    --         Http.jsonBody <| jsonEncodeNewGlobalRankingList newUserRankingList
-    --     , expect = Http.expectJson (RemoteData.fromResult >> DeletedRankingFromGlobalList) SR.Decode.decodeNewRankingListServerResponse
-    --     , headers = [ SR.Defaults.secretKey, SR.Defaults.globalBinName, SR.Defaults.globalContainerId ]
-    --     , method = "PUT"
-    --     , timeout = Nothing
-    --     , tracker = Nothing
-    --     , url = SR.Constants.globalJsonbinRankingUpdateLink
-    --     }
-
 
 
 httpPlayerList : SetState -> Cmd Msg

@@ -108,6 +108,7 @@ createAllUserAsOwnerGlobalRankingListTest =
     describe "correctly assign an owned ranking to the Your Created Rankings list"
         [ test "createAllUserAsOwnerGlobalRankingList" <|
             \_ ->
-                SR.ListOps.gotUserOwnedGlobalRankingList Testdata.UserRankingTestData.userRankingList Testdata.UserTestData.singleUser
+                -- changed from ListOps
+                Data.Global.gotOwned Testdata.UserRankingTestData.userRankingList Testdata.UserTestData.singleUser
                     |> Expect.equal output
         ]
