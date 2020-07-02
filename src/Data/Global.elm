@@ -97,6 +97,8 @@ gotMember : Global -> SR.Types.User -> List SR.Types.UserRanking
 gotMember sGlobal user  =
     let
         lranking = rankingsAsList sGlobal
+
+        _ = Debug.log "lranking" lranking
         gotNewRankingList =
             List.map gotSingleRankingInfo user.userjoinrankings
 
@@ -104,12 +106,13 @@ gotMember sGlobal user  =
             Utils.MyUtils.extractRankinigInfoFromMaybe (List.head (List.filter (isRnkIdMatch rnkId) lranking))
     in
         -- it's ok to have empty users here cos we only use the ranking info to display member rankings
-        List.map addEmptyUser gotNewRankingList
+        List.map (addEmptyUser user) gotNewRankingList
 
-addEmptyUser : SR.Types.Ranking -> SR.Types.UserRanking 
-addEmptyUser ranking = 
+addEmptyUser : SR.Types.User -> SR.Types.Ranking -> SR.Types.UserRanking 
+addEmptyUser user ranking = 
     let
-        newUserRanking = {rankingInfo = ranking, userInfo = SR.Defaults.emptyUser}
+        newUserRanking = {rankingInfo = ranking, userInfo = user}
+       -- _ = Debug.log "add user " newUserRanking
     in
         newUserRanking
 

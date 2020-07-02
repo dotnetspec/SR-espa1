@@ -361,28 +361,34 @@ handledWalletStateOpened msg model =
                 -- there are 2 instances of this operation - necessary?
                 UsersReceived userList ->
                     let
+                        _ =
+                            Debug.log "Opened" userList
                         users = (Data.Users.asUsers (EverySet.fromList (Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList)))
                         
                         userInAppInfo = { appInfo | user = Data.Users.gotUser users appInfo.user.ethaddress }
+
+                        --_ = Debug.log "users" users
+
+                        newSetState = UsersFetched users
+                        -- _ = Debug.log "newSetState" newSetState
                     in
-                        ( AppOps SR.Types.WalletOperational (UsersFetched users) userInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotRankingList )
+                        ( AppOps SR.Types.WalletOpened newSetState userInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotRankingList )
 
 
                 GlobalRankingsReceived rmtrnkingdata ->
                     case allSets of
-                        GlobalFetched sGlobal sUsers -> 
+                        UsersFetched sUsers ->
+
                             let
                                 createUserRankings = Data.Global.createdGlobal (Data.Rankings.extractRankingsFromWebData rmtrnkingdata) (Data.Users.asList sUsers)
                             
-                                globalRankings = Data.Global.gotOwned (Data.Global.asGlobal (EverySet.fromList createUserRankings)) appInfo.user
-                    
-                                globalSet = GlobalFetched globalRankings sUsers
+                                globalSet = GlobalFetched (Data.Global.asGlobal (EverySet.fromList createUserRankings)) sUsers
                             in 
-                                ( AppOps SR.Types.WalletOperational globalSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+                                ( AppOps SR.Types.WalletOpened globalSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                         _ -> 
                             let 
-                                _ = Debug.log "1 - setState" allSets
+                                _ = Debug.log "1 - setsState" allSets
                             in
                                 (model, Cmd.none)
 
@@ -485,6 +491,8 @@ handleWalletStateOperational msg model =
 
                 UsersReceived userList ->
                     let
+                        _ =
+                            Debug.log "Operational" userList
                         
                         users = (Data.Users.asUsers (EverySet.fromList (Data.Users.extractUsersFromWebData userList)))
 
@@ -514,7 +522,7 @@ handleWalletStateOperational msg model =
                                         ( newModel, httpPlayerList newSetState)
                                 _ -> 
                                     let 
-                                        _ = Debug.log "2 - setState" allSets
+                                        _ = Debug.log "2 - setsState" allSets
                                     in
                                         (model, Cmd.none)
 
@@ -530,7 +538,7 @@ handleWalletStateOperational msg model =
                                         ( newModel, httpPlayerList newSetState)
                                 _ -> 
                                     let 
-                                        _ = Debug.log "3 - setState" allSets
+                                        _ = Debug.log "3 - setsState" allSets
                                     in
                                         (model, Cmd.none)
 
@@ -546,7 +554,7 @@ handleWalletStateOperational msg model =
                                         ( newModel, httpPlayerList newSetState)
                                 _ -> 
                                     let 
-                                        _ = Debug.log "4 - setState" allSets
+                                        _ = Debug.log "4 - setsState" allSets
                                     in
                                         (model, Cmd.none)
 
@@ -619,21 +627,17 @@ handleWalletStateOperational msg model =
                     )
 
                 GlobalRankingsReceived rmtrnkingdata ->
-                    let 
-                        susers = case allSets of 
-                                    UsersFetched users ->
-                                        users
-                                    
-                                    _ ->
-                                        Data.Users.emptyUsers
-
-                        allUserAsOwnerGlobal = Data.Global.createdGlobal (Data.Rankings.extractRankingsFromWebData rmtrnkingdata) (Data.Users.asList susers)
+                    case allSets of 
+                        UsersFetched susers -> 
+                            let 
+                                allUserAsOwnerGlobal = Data.Global.createdGlobal (Data.Rankings.extractRankingsFromWebData rmtrnkingdata) (Data.Users.asList susers)
                           
-                        newSetState = GlobalFetched (Data.Global.gotOwned (Data.Global.asGlobal (EverySet.fromList allUserAsOwnerGlobal)) appInfo.user) susers
-                    in 
-                        ( AppOps SR.Types.WalletOperational newSetState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
-
-                
+                                newSetState = GlobalFetched (Data.Global.gotOwned (Data.Global.asGlobal (EverySet.fromList allUserAsOwnerGlobal)) appInfo.user) susers
+                            in 
+                                ( AppOps SR.Types.WalletOperational newSetState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+                        _ ->
+                                (model, Cmd.none)
+          
                 ClickedSelectedOwnedRanking rnkidstr rnkownerstr rnknamestr ->
                     let
                         _ =
@@ -700,7 +704,7 @@ handleWalletStateOperational msg model =
                                 )
                         _ -> 
                                     let 
-                                        _ = Debug.log "4 - setState" allSets
+                                        _ = Debug.log "4 - setsState" allSets
                                     in
                                         (model, Cmd.none)
 
@@ -775,7 +779,7 @@ handleWalletStateOperational msg model =
                                 ( AppOps SR.Types.WalletOperational allSets appInfo SR.Types.UIRegisterNewUser emptyTxRecord, Cmd.none )
                         _ -> 
                                     let 
-                                        _ = Debug.log "6 - setState" allSets
+                                        _ = Debug.log "6 - setsState" allSets
                                     in
                                         (model, Cmd.none)
 
@@ -793,7 +797,7 @@ handleWalletStateOperational msg model =
                             ( AppOps SR.Types.WalletOperational newGlobalUpdated appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
                         _ -> 
                                     let 
-                                        _ = Debug.log "7 - setState" allSets
+                                        _ = Debug.log "7 - setsState" allSets
                                     in
                                         (model, Cmd.none)
 
@@ -834,7 +838,7 @@ handleWalletStateOperational msg model =
 
                         _ -> 
                             let 
-                                _ = Debug.log "7.1 - setState" allSets
+                                _ = Debug.log "7.1 - setsState" allSets
                             in
                                 (model, Cmd.none)
 
@@ -846,7 +850,7 @@ handleWalletStateOperational msg model =
                         
                         _ -> 
                             let 
-                                _ = Debug.log "8 - setState" allSets
+                                _ = Debug.log "8 - setsState" allSets
                             in
                                 (model, Cmd.none)
 
@@ -869,7 +873,7 @@ handleWalletStateOperational msg model =
                                 )
                         _ -> 
                                     let 
-                                        _ = Debug.log "9 - setState" allSets
+                                        _ = Debug.log "9 - setsState" allSets
                                     in
                                         (model, Cmd.none)
 
@@ -891,7 +895,7 @@ handleWalletStateOperational msg model =
                         
                         _ -> 
                                     let 
-                                        _ = Debug.log "10 - setState" allSets
+                                        _ = Debug.log "10 - setsState" allSets
                                     in
                                         (model, Cmd.none)
 
@@ -912,7 +916,7 @@ handleWalletStateOperational msg model =
 
                         _ -> 
                                     let 
-                                        _ = Debug.log "11 - setState" allSets
+                                        _ = Debug.log "11 - setsState" allSets
                                     in
                                         (model, Cmd.none)
 
@@ -933,7 +937,7 @@ handleWalletStateOperational msg model =
 
                         _ -> 
                                     let 
-                                        _ = Debug.log "12 - setState" allSets
+                                        _ = Debug.log "12 - setsState" allSets
                                     in
                                         (model, Cmd.none)
 
@@ -955,7 +959,7 @@ handleWalletStateOperational msg model =
                         
                         _ -> 
                                     let 
-                                        _ = Debug.log "13 - setState" allSets
+                                        _ = Debug.log "13 - setsState" allSets
                                     in
                                         (model, Cmd.none)
                     
@@ -1008,7 +1012,7 @@ handleWalletStateOperational msg model =
                             ( AppOps SR.Types.WalletOperational allSets appInfo SR.Types.UIRenderAllRankings txRec, updateExistingUser (Data.Users.asList sUsers) appInfo.user )
                         _ -> 
                                     let 
-                                        _ = Debug.log "14 - setState" allSets
+                                        _ = Debug.log "14 - setsState" allSets
                                     in
                                         (model, Cmd.none)
 
@@ -1083,7 +1087,7 @@ updateAppInfoOnRankingSelected appInfo rnkid rnkownerstr rnknamestr =
 
 
 handleWalletWaitingForUserInput : Msg -> SR.Types.WalletState -> SetState -> SR.Types.AppInfo -> TxRecord -> ( Model, Cmd Msg )
-handleWalletWaitingForUserInput msg walletState setState appInfo txRec =
+handleWalletWaitingForUserInput msg walletState setsState appInfo txRec =
     let
         _ =
             Debug.log "in handleWalletWaitingForUserInput" msg
@@ -1094,7 +1098,7 @@ handleWalletWaitingForUserInput msg walletState setState appInfo txRec =
                 _ =
                     Debug.log "ws in WaitingForTransactionReceipt" walletSentry_
             in
-            ( AppOps SR.Types.WalletWaitingForTransactionReceipt setState appInfo SR.Types.UIWaitingForTxReceipt txRec
+            ( AppOps SR.Types.WalletWaitingForTransactionReceipt setsState appInfo SR.Types.UIWaitingForTxReceipt txRec
             , Cmd.none
             )
 
@@ -1114,7 +1118,7 @@ handleWalletWaitingForUserInput msg walletState setState appInfo txRec =
                             _ =
                                 Debug.log "in CreateNewLadder" "yes"
                         in
-                        ( AppOps SR.Types.WalletOperational setState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }
+                        ( AppOps SR.Types.WalletOperational setsState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }
                         , Cmd.batch [subCmd, addedUserAsFirstPlayerInNewList appInfo.user] )
                     
                     SR.Types.AppStateCreateNewUser -> 
@@ -1122,7 +1126,7 @@ handleWalletWaitingForUserInput msg walletState setState appInfo txRec =
                             _ =
                                 Debug.log "in CreateNewUser" "yes"
 
-                            userSet = case setState of 
+                            userSet = case setsState of 
                                         UsersFetched users -> 
                                             users 
                                         UsersUpdated users ->
@@ -1130,7 +1134,7 @@ handleWalletWaitingForUserInput msg walletState setState appInfo txRec =
                                         _ -> 
                                             Data.Users.emptyUsers
                         in
-                        ( AppOps SR.Types.WalletOperational setState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }
+                        ( AppOps SR.Types.WalletOperational setsState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }
                         , Cmd.batch [subCmd,  createNewUser ( Data.Users.asList userSet) appInfo.user] )
 
 
@@ -1146,7 +1150,7 @@ handleWalletWaitingForUserInput msg walletState setState appInfo txRec =
                             
                         in
                         
-                             (AppOps SR.Types.WalletOperational setState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Won) )
+                             (AppOps SR.Types.WalletOperational setsState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Won) )
                             
                           
 
@@ -1155,7 +1159,7 @@ handleWalletWaitingForUserInput msg walletState setState appInfo txRec =
                             _ =
                                 Debug.log "in AppStateEnterLost" "yes"
                         in
-                        ( AppOps SR.Types.WalletOperational setState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Lost)
+                        ( AppOps SR.Types.WalletOperational setsState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Lost)
                         
                         )
 
@@ -1164,25 +1168,25 @@ handleWalletWaitingForUserInput msg walletState setState appInfo txRec =
                             _ =
                                 Debug.log "in AppStateEnterUndecided" "yes"
                         in
-                        ( AppOps SR.Types.WalletOperational setState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Undecided)
+                        ( AppOps SR.Types.WalletOperational setsState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Undecided)
                         
                         )
 
                     _ -> 
-                       ( AppOps SR.Types.WalletOperational setState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }, subCmd ) 
+                       ( AppOps SR.Types.WalletOperational setsState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }, subCmd ) 
 
             else
-                ( AppOps SR.Types.WalletOperational setState appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
+                ( AppOps SR.Types.WalletOperational setsState appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
 
         WatchTxHash (Ok txHash) ->
             let
                 _ =
                     Debug.log "handleWalletWaitingForUserInput" "watch tx hash"
             in
-            ( AppOps SR.Types.WalletOperational setState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txHash = Just txHash }, Cmd.none )
+            ( AppOps SR.Types.WalletOperational setsState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txHash = Just txHash }, Cmd.none )
 
         WatchTxHash (Err err) ->
-            ( AppOps SR.Types.WalletOperational setState appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
+            ( AppOps SR.Types.WalletOperational setsState appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
 
         WatchTx (Ok tx) ->
             let
@@ -1190,28 +1194,28 @@ handleWalletWaitingForUserInput msg walletState setState appInfo txRec =
                     Debug.log "handleWalletWaitingForUserInput" "tx ok"
             in
       
-            (AppOps walletState setState appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx }, Cmd.none )
+            (AppOps walletState setsState appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx }, Cmd.none )
 
         WatchTx (Err err) ->
             let
                 _ =
                     Debug.log "handleWalletWaitingForUserInput tx err" err
             in
-            ( AppOps SR.Types.WalletOperational setState appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving Tx: " ++ err) :: txRec.errors }, Cmd.none )
+            ( AppOps SR.Types.WalletOperational setsState appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving Tx: " ++ err) :: txRec.errors }, Cmd.none )
 
         WatchTxReceipt (Ok txReceipt) ->
             let
                 _ =
                     Debug.log "handleWalletWaitingForUserInput tx ok" txReceipt
             in
-            AppOps walletState setState appInfo SR.Types.UIRenderAllRankings { txRec | txReceipt = Just txReceipt } |> update (ProcessResult SR.Types.Won)
+            AppOps walletState setsState appInfo SR.Types.UIRenderAllRankings { txRec | txReceipt = Just txReceipt } |> update (ProcessResult SR.Types.Won)
 
         WatchTxReceipt (Err err) ->
             let
                 _ =
                     Debug.log "tx err" err
             in
-            ( AppOps SR.Types.WalletOperational setState appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
+            ( AppOps SR.Types.WalletOperational setsState appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
 
         _ ->
             let
@@ -1449,7 +1453,7 @@ updatedForChallenge model luplayer opponentAsPlayer user =
                     
                     _ -> 
                         let 
-                            _ = Debug.log "updatedForChallenge - setState" allSets
+                            _ = Debug.log "updatedForChallenge - setsState" allSets
                         in
                             model
         _ ->
@@ -1472,7 +1476,7 @@ updateSelectedRankingPlayerList model luplayers =
                                 AppOps walletState newSelectedUpdated appInfo uiState txRec
                         _ -> 
                             let 
-                                _ = Debug.log "updateSelectedRankingPlayerList - setState" allSets
+                                _ = Debug.log "updateSelectedRankingPlayerList - setsState" allSets
                             in
                                 model
 
@@ -1768,13 +1772,13 @@ neitherOwnerNorMemberRankingInfoBtn rankingobj =
 -- playerbuttons : Model -> Element Msg
 -- playerbuttons model =
 playerbuttons : SetState -> SR.Types.AppInfo -> Element Msg
-playerbuttons setState appInfo =
-    case setState of
+playerbuttons setsState appInfo =
+    case setsState of
         Selected sSelected sUsers rnkId ->
             Element.column Grid.section <|
                 [ SR.Elements.selectedRankingHeaderEl appInfo.selectedRanking
                 , Element.column (Card.simple ++ Grid.simple) <|
-                    insertPlayerList setState appInfo
+                    insertPlayerList setsState appInfo
                 ]
 
         _ ->
@@ -1782,9 +1786,9 @@ playerbuttons setState appInfo =
 
 
 configureThenAddPlayerRankingBtns : SetState -> SR.Types.AppInfo -> SR.Types.UserPlayer -> Element Msg
-configureThenAddPlayerRankingBtns setState  appInfo uplayer =
+configureThenAddPlayerRankingBtns setsState  appInfo uplayer =
    -- nb. 'uplayer' is the player that's being mapped cf. appInfo.player which is current user as player (single instance)
-            case setState of 
+            case setsState of 
                     Selected sSelected sUsers rnkId ->
                         let
                             playerAsUser =
@@ -1887,14 +1891,14 @@ configureThenAddPlayerRankingBtns setState  appInfo uplayer =
 -- insertPlayerList : Model -> List (Element Msg)
 -- insertPlayerList model =
 insertPlayerList : SetState -> SR.Types.AppInfo -> List (Element Msg)
-insertPlayerList setState appInfo =
-    case setState of
+insertPlayerList setsState appInfo =
+    case setsState of
         --AppOps walletState allSets appInfo uiState txRec ->
         Selected sselected sUsers rnkId ->
             let
                 mapOutPlayerList =
                     List.map
-                        (configureThenAddPlayerRankingBtns setState appInfo)
+                        (configureThenAddPlayerRankingBtns setsState appInfo)
                         (Data.Selected.asList sselected)
             in
             mapOutPlayerList
@@ -1999,7 +2003,7 @@ newrankingconfirmbutton appInfo allSets =
                 
             _ -> 
                 let 
-                    _ = Debug.log "newrankingconfirmbutton - setState" allSets
+                    _ = Debug.log "newrankingconfirmbutton - setsState" allSets
                 in
                     Element.text ""
 
@@ -2305,8 +2309,8 @@ enableButton enable =
 
 
 inputNewUser : SetState -> SR.Types.AppInfo -> Element Msg
-inputNewUser setState appInfo =
-            case setState of 
+inputNewUser setsState appInfo =
+            case setsState of 
                 Selected sSelected sUsers _ -> 
                     Element.column Grid.section <|
                         [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
@@ -2412,8 +2416,8 @@ and between 4-8 characters""")
 
 
 ladderNameValidationErr : SR.Types.AppInfo -> SetState -> Element Msg
-ladderNameValidationErr appInfo setState =
-    case setState of 
+ladderNameValidationErr appInfo setsState =
+    case setsState of 
         GlobalFetched sGlobal sUsers ->
             if Utils.Validation.Validate.isRankingNameValidated appInfo.selectedRanking (Data.Global.asList sGlobal) then
                 Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "laddernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Ladder name OK!")
@@ -2428,7 +2432,7 @@ ladderNameValidationErr appInfo setState =
 
         _ -> 
                 let 
-                    _ = Debug.log "setState - ladderNameValidationErr" setState
+                    _ = Debug.log "setsState - ladderNameValidationErr" setsState
                 in
                     (Element.text "") 
 
@@ -2568,30 +2572,30 @@ displayRegisterBtnIfNewUser uname msg =
             }
 
 selectedUserIsOwnerView : SetState -> SR.Types.AppInfo -> Html Msg
-selectedUserIsOwnerView setState appInfo =
-    case setState of
+selectedUserIsOwnerView setsState appInfo =
+    case setsState of
         Selected sSelected sUsers _ ->
             Framework.responsiveLayout [] <|
                 Element.column
                     Framework.container
                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ appInfo.user.username
                     , selecteduserIsOwnerhomebutton appInfo.user
-                    , playerbuttons setState appInfo
+                    , playerbuttons setsState appInfo
                     ]
 
         _ ->
             Html.text "Fail selectedUserIsOwnerView"
 
 selectedUserIsPlayerView : SetState -> SR.Types.AppInfo -> Html Msg
-selectedUserIsPlayerView setState appInfo =
-    case setState of
+selectedUserIsPlayerView setsState appInfo =
+    case setsState of
         Selected sSelected sUsers _ ->
             Framework.responsiveLayout [] <|
                 Element.column
                     Framework.container
                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ appInfo.user.username
                     , selecteduserIsPlayerHomebutton appInfo.user
-                    , playerbuttons setState appInfo
+                    , playerbuttons setsState appInfo
                     ]
 
         _ ->
@@ -2599,15 +2603,15 @@ selectedUserIsPlayerView setState appInfo =
 
 
 selectedUserIsNeitherOwnerNorPlayerView : SetState -> SR.Types.AppInfo -> Html Msg
-selectedUserIsNeitherOwnerNorPlayerView setState appInfo =
-    case setState of
+selectedUserIsNeitherOwnerNorPlayerView setsState appInfo =
+    case setsState of
         Selected sSelected sUsers _ ->
             Framework.responsiveLayout [] <|
                 Element.column
                     Framework.container
                     [ newOrExistingUserNameDisplay appInfo.user
                     , selecteduserIsNeitherPlayerNorOwnerHomebutton appInfo.user
-                    , playerbuttons  setState appInfo
+                    , playerbuttons  setsState appInfo
                     ]
 
         _ ->
@@ -2624,14 +2628,14 @@ newOrExistingUserNameDisplay user =
 
 
 inputNewUserview : SetState -> SR.Types.AppInfo -> Html Msg
-inputNewUserview setState appInfo =
-            case setState of 
+inputNewUserview setsState appInfo =
+            case setsState of 
                 UsersFetched sUsers -> 
                     Framework.responsiveLayout [] <|
                         Element.column
                             Framework.container
                             [ Element.el Heading.h4 <| Element.text "Create New User"
-                            , inputNewUser setState appInfo
+                            , inputNewUser setsState appInfo
                             , newuserConfirmPanel appInfo.user (Data.Users.asList sUsers)
                             ]
                 _ ->
@@ -3032,9 +3036,9 @@ jsonEncodeNewUsersList luserInfo =
 
 
 httpAddCurrentUserToPlayerList : SetState -> SR.Types.User -> Cmd Msg
-httpAddCurrentUserToPlayerList setState userRec =
+httpAddCurrentUserToPlayerList setsState userRec =
 
-    case setState of 
+    case setsState of 
         Selected sSelected sUsers rnkId -> 
             --ReturnFromPlayerListUpdate is the Msg handled by update whenever a request is made
             --RemoteData is used throughout the module, including update
@@ -3054,7 +3058,7 @@ httpAddCurrentUserToPlayerList setState userRec =
 
         _ -> 
                         let 
-                            _ = Debug.log "httpAddCurrentUserToPlayerList - setState" setState
+                            _ = Debug.log "httpAddCurrentUserToPlayerList - setsState" setsState
                         in
                             Cmd.none
 
@@ -3131,8 +3135,8 @@ postResultToJsonbin (Internal.Types.RankingId rankingId) =
 
 
 httpPlayerList : SetState -> Cmd Msg
-httpPlayerList setState =
-    case setState of
+httpPlayerList setsState =
+    case setsState of
         Selected sSelected sUsers rnkId -> 
             Http.request
                 { body =
@@ -3146,7 +3150,7 @@ httpPlayerList setState =
                 }
         _ -> 
             let 
-                _ = Debug.log "setState - httpPlayerList" setState
+                _ = Debug.log "setsState - httpPlayerList" setsState
             in
                 Cmd.none
     
