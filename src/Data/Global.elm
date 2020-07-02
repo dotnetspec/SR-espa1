@@ -12,7 +12,7 @@ module Data.Global exposing (Global, gotOthers
     , gotUserRanking
     , emptyGlobal
     , asGlobal
-    , gotMember, addUserRanking, removeUserRanking, asList, asSelected)
+    , gotMember, addUserRanking, removeUserRanking, asList, asSelected, gotNewRankingIdFromWebData)
 
 
 import SR.Types
@@ -29,6 +29,7 @@ import Json.Encode
 -- Global came from Selected - there are many functions etc. not relevant to Global in here currently (even if renamed)
 
 type Global = Global (EverySet SR.Types.UserRanking)
+
 
 
 emptyGlobal : Global 
@@ -93,20 +94,61 @@ isOwned user ownedrnk =
     else
         Nothing
 
+-- gotMember : Global -> SR.Types.User -> List SR.Types.UserRanking
+-- gotMember sGlobal user  =
+--     let
+--         lranking = rankingsAsList sGlobal
+
+--         _ = Debug.log "lranking" lranking
+--         gotNewRankingList =
+--             List.map gotSingleRankingInfo user.userjoinrankings
+
+--         gotSingleRankingInfo rnkId =
+--             Utils.MyUtils.extractRankinigInfoFromMaybe (List.head (List.filter (isRnkIdMatch rnkId) lranking))
+--     in
+--         -- it's ok to have empty users here cos we only use the ranking info to display member rankings
+--         List.map (addEmptyUser user) gotNewRankingList
+
 gotMember : Global -> SR.Types.User -> List SR.Types.UserRanking
-gotMember sGlobal user  =
+gotMember sGlobal user  = 
     let
-        lranking = rankingsAsList sGlobal
-
-        _ = Debug.log "lranking" lranking
-        gotNewRankingList =
-            List.map gotSingleRankingInfo user.userjoinrankings
-
-        gotSingleRankingInfo rnkId =
-            Utils.MyUtils.extractRankinigInfoFromMaybe (List.head (List.filter (isRnkIdMatch rnkId) lranking))
+        lmemberRankingIds = user.userjoinrankings
     in
-        -- it's ok to have empty users here cos we only use the ranking info to display member rankings
-        List.map (addEmptyUser user) gotNewRankingList
+        List.map (gotUserRanking sGlobal) lmemberRankingIds
+
+gotOthers : Global -> SR.Types.User -> Global
+gotOthers global user = 
+    -- let
+    --     lmemberRankingIds = user.userjoinrankings
+    --     memberRankingsFiltered = 
+        
+    -- in
+    --     List.map gotUserRanking lmemberRankingIds
+    --     |> asGlobal
+        global
+
+
+
+-- gotOthers : Global -> SR.Types.User -> Global
+-- gotOthers global user = 
+--     asGlobal (
+--         EverySet.fromList (List.filterMap
+--         (isOthers
+--             user
+--         )
+--         (asList global)))
+        
+-- isOthers : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
+-- isOthers user userRanking =
+    
+    
+--     if userRanking.userInfo.ethaddress /= user.ethaddress then
+--         Just userRanking
+
+--     else
+--         Nothing
+
+
 
 addEmptyUser : SR.Types.User -> SR.Types.Ranking -> SR.Types.UserRanking 
 addEmptyUser user ranking = 
@@ -149,22 +191,7 @@ toUser uRanking =
 --     in
 --     asGlobal (EverySet.fromList listWithfirstValFromOwnerPlayersFilteredOut)
 
-gotOthers : Global -> SR.Types.User -> Global 
-gotOthers global user = 
-    asGlobal (
-        EverySet.fromList (List.filterMap
-        (isOthers
-            user
-        )
-        (asList global)))
-        
-isOthers : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
-isOthers user userRanking =
-    if userRanking.userInfo.ethaddress /= user.ethaddress then
-        Just userRanking
 
-    else
-        Nothing
 
 
 isGlobalRankingOwnedByUser : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
@@ -193,11 +220,6 @@ isUserPlayerInGlobalRankings user ownedrnk =
     else
         Nothing
 
--- current
-
-
-
-
 
 gotAllRankindIds : SR.Types.UserRanking -> String
 gotAllRankindIds userRanking =
@@ -222,11 +244,12 @@ gotUserRanking sGlobal rnkId =
 
 
 -- just using a default for now
-addUserRanking : Global -> RemoteData.WebData SR.Types.RankingId -> SR.Types.Ranking -> SR.Types.User -> Global
+--addUserRanking : Global -> RemoteData.WebData SR.Types.RankingId -> SR.Types.Ranking -> SR.Types.User -> Global
+addUserRanking : Global -> String -> SR.Types.Ranking -> SR.Types.User -> Global
 addUserRanking sGlobal newrnkId rnkInfo user = 
     let
         newRankingInfo =
-            { id = gotNewRankingIdFromWebData newrnkId
+            { id =  newrnkId
             , active = True
             , rankingname = rnkInfo.rankingname
             , rankingdesc = rnkInfo.rankingdesc

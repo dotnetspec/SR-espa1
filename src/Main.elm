@@ -82,10 +82,10 @@ type alias AllLists =
 
 type SetState =
     AllEmpty
-    | UsersFetched Data.Users.Users
-    | UsersUpdated Data.Users.Users
-    | GlobalFetched Data.Global.Global Data.Users.Users
-    | GlobalUpdated Data.Global.Global Data.Users.Users
+    | UsersFetched Data.Users.Users SR.Types.User
+    | UsersUpdated Data.Users.Users SR.Types.User
+    | GlobalFetched Data.Global.Global SR.Types.User
+    | GlobalUpdated Data.Global.Global SR.Types.User
     | Selected Data.Selected.Selected Data.Users.Users Internal.Types.RankingId
     | SelectedUpdated Data.Selected.Selected Data.Users.Users Internal.Types.RankingId
     
@@ -361,28 +361,24 @@ handledWalletStateOpened msg model =
                 -- there are 2 instances of this operation - necessary?
                 UsersReceived userList ->
                     let
-                        _ =
-                            Debug.log "Opened" userList
+                       
                         users = (Data.Users.asUsers (EverySet.fromList (Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList)))
                         
                         userInAppInfo = { appInfo | user = Data.Users.gotUser users appInfo.user.ethaddress }
 
-                        --_ = Debug.log "users" users
-
-                        newSetState = UsersFetched users
-                        -- _ = Debug.log "newSetState" newSetState
+                        newSetState = UsersFetched users appInfo.user
+                        
                     in
                         ( AppOps SR.Types.WalletOpened newSetState userInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotRankingList )
 
 
                 GlobalRankingsReceived rmtrnkingdata ->
                     case allSets of
-                        UsersFetched sUsers ->
-
+                        UsersFetched sUsers user ->
                             let
                                 createUserRankings = Data.Global.createdGlobal (Data.Rankings.extractRankingsFromWebData rmtrnkingdata) (Data.Users.asList sUsers)
                             
-                                globalSet = GlobalFetched (Data.Global.asGlobal (EverySet.fromList createUserRankings)) sUsers
+                                globalSet = GlobalFetched (Data.Global.asGlobal (EverySet.fromList createUserRankings)) appInfo.user
                             in 
                                 ( AppOps SR.Types.WalletOpened globalSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
@@ -496,7 +492,7 @@ handleWalletStateOperational msg model =
                         
                         users = (Data.Users.asUsers (EverySet.fromList (Data.Users.extractUsersFromWebData userList)))
 
-                        newSetState = UsersFetched users
+                        newSetState = UsersFetched users appInfo.user
                          
                         userInAppInfo =
                             { appInfo | user = Data.Users.gotUser users appInfo.user.ethaddress }
@@ -628,11 +624,11 @@ handleWalletStateOperational msg model =
 
                 GlobalRankingsReceived rmtrnkingdata ->
                     case allSets of 
-                        UsersFetched susers -> 
+                        UsersFetched susers user -> 
                             let 
                                 allUserAsOwnerGlobal = Data.Global.createdGlobal (Data.Rankings.extractRankingsFromWebData rmtrnkingdata) (Data.Users.asList susers)
                           
-                                newSetState = GlobalFetched (Data.Global.gotOwned (Data.Global.asGlobal (EverySet.fromList allUserAsOwnerGlobal)) appInfo.user) susers
+                                newSetState = GlobalFetched (Data.Global.gotOwned (Data.Global.asGlobal (EverySet.fromList allUserAsOwnerGlobal)) appInfo.user) user
                             in 
                                 ( AppOps SR.Types.WalletOperational newSetState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
                         _ ->
@@ -694,7 +690,8 @@ handleWalletStateOperational msg model =
                     case allSets of 
                         GlobalFetched globalUserRankings sUsers ->
                             let
-                                newSGlobal = Data.Global.addUserRanking globalUserRankings idValueFromDecoder appInfo.selectedRanking appInfo.user
+                                extractedRankingId = Data.Global.gotNewRankingIdFromWebData idValueFromDecoder
+                                newSGlobal = Data.Global.addUserRanking globalUserRankings extractedRankingId appInfo.selectedRanking appInfo.user
                                 newGlobalAsList = Data.Global.rankingsAsList newSGlobal
                                 newGlobalUpdated = GlobalUpdated newSGlobal sUsers
                             in
@@ -743,9 +740,9 @@ handleWalletStateOperational msg model =
 
                 ClickedConfirmCreateNewLadder ->
                     case allSets of 
-                        GlobalFetched sGlobal sUsers ->
-
-                            if Data.Users.isRegistered (Data.Users.asList sUsers) appInfo.user then
+                        GlobalFetched sGlobal user ->
+                            --if Data.Users.isRegistered (Data.Users.asList sUsers) appInfo.user then
+                            if user.ethaddress /= "" then
                                 let
                                     txParams =
                                         { to = txRec.account
@@ -784,22 +781,27 @@ handleWalletStateOperational msg model =
                                         (model, Cmd.none)
 
                 AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
-                    case allSets of 
-                        GlobalUpdated sGlobal sUsers -> 
-                            let
-                                allGlobal =
-                                    Data.Global.createdGlobal (Data.Rankings.extractRankingsFromWebData updatedListAfterNewEntryAddedToGlobalList) (Data.Users.asList sUsers)
+                    -- I think the global set has already been updated
+                    ( AppOps SR.Types.WalletOperational allSets appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+                    -- case allSets of 
+                    --     GlobalUpdated sGlobal sUsers -> 
+                    --         let
+                    --             allGlobal =
+                    --                 Data.Global.createdGlobal (Data.Rankings.extractRankingsFromWebData updatedListAfterNewEntryAddedToGlobalList) (Data.Users.asList sUsers)
 
-                                newGlobal = Data.Global.asGlobal (EverySet.fromList allGlobal)
-                                newGlobalUpdated = GlobalUpdated newGlobal sUsers
+                    --             newGlobal = Data.Global.asGlobal (EverySet.fromList allGlobal)
+                    --             newGlobalUpdated = GlobalUpdated newGlobal sUsers
+
+                    --             --Global -> String -> SR.Types.Ranking -> SR.Types.User -> Global
+                    --             Data.Global.addUserRanking sGlobal 
                                    
-                            in
-                            ( AppOps SR.Types.WalletOperational newGlobalUpdated appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
-                        _ -> 
-                                    let 
-                                        _ = Debug.log "7 - setsState" allSets
-                                    in
-                                        (model, Cmd.none)
+                    --         in
+                    --         ( AppOps SR.Types.WalletOperational newGlobalUpdated appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+                    --     _ -> 
+                    --                 let 
+                    --                     _ = Debug.log "7 - setsState" allSets
+                    --                 in
+                    --                     (model, Cmd.none)
 
                 LadderNameInputChg namefield ->
                     let
@@ -901,7 +903,7 @@ handleWalletStateOperational msg model =
 
                 DeletedRankingFromGlobalList updatedListAfterRankingDeletedFromGlobalList ->
                     case allSets of 
-                        UsersFetched sUsers ->       
+                        UsersFetched sUsers user ->       
                             let
                                 rankingsSet = Data.Rankings.asRankings (EverySet.fromList (Data.Rankings.extractRankingsFromWebData updatedListAfterRankingDeletedFromGlobalList))
                                 userRankings = Data.Global.createdGlobal (Data.Rankings.asList rankingsSet) (Data.Users.asList sUsers)
@@ -909,7 +911,7 @@ handleWalletStateOperational msg model =
                                 updatedGlobal =
                                     Data.Global.gotOwned (Data.Global.asGlobal (EverySet.fromList userRankings)) appInfo.user
 
-                                newSetState = GlobalUpdated updatedGlobal sUsers
+                                newSetState = GlobalUpdated updatedGlobal appInfo.user
 
                             in
                                 ( AppOps SR.Types.WalletOperational newSetState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
@@ -968,7 +970,7 @@ handleWalletStateOperational msg model =
                     --( updateUserList model (Data.Users.extractUsersFromWebData response), Cmd.none )
                     let 
                         lusers = Data.Users.extractUsersFromWebData response
-                        resetUserList = UsersUpdated <| Data.Users.asUsers <| EverySet.fromList lusers
+                        resetUserList = UsersUpdated (Data.Users.asUsers (EverySet.fromList lusers)) appInfo.user
                     in
                         (AppOps walletState resetUserList appInfo uiState txRec, Cmd.none)
 
@@ -1008,7 +1010,7 @@ handleWalletStateOperational msg model =
 
                 ClickedConfirmedUpdateExistingUser ->
                     case allSets of
-                        UsersUpdated sUsers ->
+                        UsersUpdated sUsers user ->
                             ( AppOps SR.Types.WalletOperational allSets appInfo SR.Types.UIRenderAllRankings txRec, updateExistingUser (Data.Users.asList sUsers) appInfo.user )
                         _ -> 
                                     let 
@@ -1127,9 +1129,9 @@ handleWalletWaitingForUserInput msg walletState setsState appInfo txRec =
                                 Debug.log "in CreateNewUser" "yes"
 
                             userSet = case setsState of 
-                                        UsersFetched users -> 
+                                        UsersFetched users user -> 
                                             users 
-                                        UsersUpdated users ->
+                                        UsersUpdated users user ->
                                             users 
                                         _ -> 
                                             Data.Users.emptyUsers
@@ -2630,7 +2632,7 @@ newOrExistingUserNameDisplay user =
 inputNewUserview : SetState -> SR.Types.AppInfo -> Html Msg
 inputNewUserview setsState appInfo =
             case setsState of 
-                UsersFetched sUsers -> 
+                UsersFetched sUsers user -> 
                     Framework.responsiveLayout [] <|
                         Element.column
                             Framework.container
@@ -2647,7 +2649,7 @@ updateExistingUserView model =
     case model of
         AppOps walletState allSets appInfo uiState txRec ->
             case allSets of 
-                UsersFetched sUsers -> 
+                UsersFetched sUsers user -> 
                     Framework.responsiveLayout [] <|
                         Element.column
                             Framework.container
@@ -2724,7 +2726,7 @@ txErrorView model =
                 playerAsUser =
                     --SR.ListOps.gotUserFromUserList (EverySet.fromList allSets) appInfo.player.player.address
                     case allSets of 
-                        UsersFetched users ->
+                        UsersFetched users user ->
                             Data.Users.gotUser users appInfo.player.player.address
                         _ ->
                             Data.Users.gotUser Data.Users.emptyUsers appInfo.player.player.address
