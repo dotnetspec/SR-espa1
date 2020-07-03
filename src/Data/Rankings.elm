@@ -233,3 +233,16 @@ extractRankingInfoListFromMaybeList lranking =
 
         Nothing ->
             []
+
+-- ownerValidatedRankingList : List SR.Types.Ranking -> List SR.Types.Ranking
+-- ownerValidatedRankingList lrankinginfo =
+--     List.filter isValidOwnerAddress lrankinginfo
+
+
+-- isValidOwnerAddress : SR.Types.Ranking -> Bool
+-- isValidOwnerAddress rankInfo =
+--     if Eth.Utils.isAddress rankInfo.rankingowneraddr then
+--         True
+
+--     else
+--         False

@@ -383,9 +383,9 @@ handledWalletStateOpened msg model =
                                 ( AppOps SR.Types.WalletOpened globalSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                         _ -> 
-                            let 
-                                _ = Debug.log "1 - setsState" allSets
-                            in
+                            -- let 
+                            --     _ = Debug.log "1 - setsState" allSets
+                            -- in
                                 (model, Cmd.none)
 
                 NoOp ->
@@ -864,7 +864,7 @@ handleWalletStateOperational msg model =
                         GlobalFetched sGlobal sUsers ->
                             let
                                 userRankingToDelete = Data.Global.gotUserRanking sGlobal uaddr
-                                newGlobal = Data.Global.removeUserRanking userRankingToDelete sGlobal
+                                newGlobal = Data.Global.removeUserRanking sGlobal userRankingToDelete 
                             in 
                                 ( AppOps SR.Types.WalletOperational
                                     (GlobalUpdated newGlobal sUsers)
