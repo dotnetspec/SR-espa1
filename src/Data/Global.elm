@@ -28,7 +28,7 @@ import Http
 import Json.Encode
 -- Global came from Selected - there are many functions etc. not relevant to Global in here currently (even if renamed)
 
-type Global = Global (EverySet SR.Types.UserRanking)
+type Global = Global (EverySet SR.Types.UserRanking) 
 
 
 

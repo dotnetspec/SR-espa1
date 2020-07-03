@@ -1,5 +1,5 @@
 -- Selected will be mainly used to handle internal data of the selected ranking listing as it relates to the current user
-module Data.Selected exposing (Selected, assignChallengerAddrsForBOTHPlayers, updateSelectedRankingOnChallenge, jsonEncodeNewSelectedRankingPlayerList, getRankingId, handleWon, handleLost, handleUndecided, convertPlayersToUserPlayers, extractPlayersFromWebData, extractAndSortPlayerList, gotCurrentUserAsPlayerFromPlayerList, gotUserPlayerFromPlayerListStrAddress, convertUserPlayersToPlayers, isPlayerCurrentUser, printChallengerNameOrAvailable, userAdded, isChallenged, assignChallengerAddr, isUserOwnerOfSelectedUserRanking, addUserPlayer, removeUserPlayer, asList, changedRank, asSelected, isCurrentUserPlayerLowerRanked, isUserPlayerMemberOfSelectedRanking)
+module Data.Selected exposing (Selected, asEverySet, emptySelected, assignChallengerAddrsForBOTHPlayers, updateSelectedRankingOnChallenge, jsonEncodeNewSelectedRankingPlayerList, getRankingId, handleWon, handleLost, handleUndecided, convertPlayersToUserPlayers, extractPlayersFromWebData, extractAndSortPlayerList, gotCurrentUserAsPlayerFromPlayerList, gotUserPlayerFromPlayerListStrAddress, convertUserPlayersToPlayers, isPlayerCurrentUser, printChallengerNameOrAvailable, userAdded, isChallenged, assignChallengerAddr, isUserOwnerOfSelectedUserRanking, addUserPlayer, removeUserPlayer, asList, changedRank, asSelected, isCurrentUserPlayerLowerRanked, isUserPlayerMemberOfSelectedRanking)
 
 
 import SR.Types
@@ -14,11 +14,16 @@ import Data.AppState
 import Json.Encode
 
 
+
 type Selected = Selected (EverySet SR.Types.UserPlayer) Data.Users.Users Internal.Types.RankingId
 
 asSelected : EverySet SR.Types.UserPlayer -> Data.Users.Users -> Internal.Types.RankingId -> Selected 
 asSelected esUserPlayer susers rnkId = 
     Selected esUserPlayer susers rnkId
+
+asEverySet : Selected -> EverySet SR.Types.UserPlayer
+asEverySet (Selected esSelected susers rnkId)  = 
+     esSelected
 
 getRankingId : Selected -> Internal.Types.RankingId 
 getRankingId selected = 
@@ -26,6 +31,9 @@ getRankingId selected =
         Selected sSelected sUsers rnkId ->
             rnkId
 
+emptySelected : Selected 
+emptySelected = 
+    Selected (EverySet.empty) Data.Users.emptyUsers (Internal.Types.RankingId "")
 
 addUserPlayer : SR.Types.UserPlayer -> Selected -> Selected
 addUserPlayer uplayer srank = 
@@ -343,6 +351,8 @@ gotCurrentUserAsPlayerFromPlayerList luPlayer userRec =
 extractAndSortPlayerList : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.User -> List SR.Types.UserPlayer
 extractAndSortPlayerList rdlPlayer luser =
     let
+        _ = Debug.log "luser in extractAndSortPlayerList" luser
+
         lplayer =
             extractPlayersFromWebData rdlPlayer
 

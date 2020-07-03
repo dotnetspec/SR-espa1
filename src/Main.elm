@@ -84,8 +84,8 @@ type SetState =
     AllEmpty
     | UsersFetched Data.Users.Users SR.Types.User
     | UsersUpdated Data.Users.Users SR.Types.User
-    | GlobalFetched Data.Global.Global SR.Types.User
-    | GlobalUpdated Data.Global.Global SR.Types.User
+    | GlobalFetched Data.Global.Global Data.Users.Users SR.Types.User
+    | GlobalUpdated Data.Global.Global Data.Users.Users SR.Types.User
     | Selected Data.Selected.Selected Data.Users.Users Internal.Types.RankingId
     | SelectedUpdated Data.Selected.Selected Data.Users.Users Internal.Types.RankingId
     
@@ -378,7 +378,7 @@ handledWalletStateOpened msg model =
                             let
                                 createUserRankings = Data.Global.createdGlobal (Data.Rankings.extractRankingsFromWebData rmtrnkingdata) (Data.Users.asList sUsers)
                             
-                                globalSet = GlobalFetched (Data.Global.asGlobal (EverySet.fromList createUserRankings)) appInfo.user
+                                globalSet = GlobalFetched (Data.Global.asGlobal (EverySet.fromList createUserRankings)) sUsers appInfo.user
                             in 
                                 ( AppOps SR.Types.WalletOpened globalSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
@@ -628,27 +628,33 @@ handleWalletStateOperational msg model =
                             let 
                                 allUserAsOwnerGlobal = Data.Global.createdGlobal (Data.Rankings.extractRankingsFromWebData rmtrnkingdata) (Data.Users.asList susers)
                           
-                                newSetState = GlobalFetched (Data.Global.gotOwned (Data.Global.asGlobal (EverySet.fromList allUserAsOwnerGlobal)) appInfo.user) user
+                                newSetState = GlobalFetched (Data.Global.gotOwned (Data.Global.asGlobal (EverySet.fromList allUserAsOwnerGlobal))  appInfo.user) susers user
                             in 
                                 ( AppOps SR.Types.WalletOperational newSetState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
                         _ ->
                                 (model, Cmd.none)
           
                 ClickedSelectedOwnedRanking rnkidstr rnkownerstr rnknamestr ->
-                    let
-                        _ =
-                            Debug.log "user clicked owner" rnkidstr
+                        case allSets of 
+                            GlobalFetched sGlobal susers user ->
+                                let 
+                                    newAppInfo =
+                                        updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
 
-                        newAppInfo =
-                            updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
 
-                        -- re-factor from appInfo to AppState over time
-                        initAppState = 
-                            Data.AppState.updateAppState appInfo.user appInfo.player 
-                            appInfo.challenger (rnkidstr)
-                    in
-                    ( AppOps SR.Types.WalletOperational allSets newAppInfo SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, 
-                    fetchedSingleRanking rnkidstr )
+                                -- re-factor from appInfo to AppState over time
+                                    initAppState = 
+                                        Data.AppState.updateAppState appInfo.user appInfo.player 
+                                        appInfo.challenger (rnkidstr)
+
+                                    newSetState = Selected Data.Selected.emptySelected susers (Internal.Types.RankingId "")
+                            
+                            
+                                in
+                                    ( AppOps SR.Types.WalletOperational newSetState newAppInfo SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, 
+                                    fetchedSingleRanking rnkidstr )
+                            _ -> 
+                                (model, Cmd.none)
 
                 ClickedSelectedMemberRanking rnkidstr rnkownerstr rnknamestr ->
                     let
@@ -688,12 +694,12 @@ handleWalletStateOperational msg model =
                 -- the result now is the ranking id only at this point which was pulled out by the decoder
                 SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder ->
                     case allSets of 
-                        GlobalFetched globalUserRankings sUsers ->
+                        GlobalFetched globalUserRankings sUsers user ->
                             let
                                 extractedRankingId = Data.Global.gotNewRankingIdFromWebData idValueFromDecoder
                                 newSGlobal = Data.Global.addUserRanking globalUserRankings extractedRankingId appInfo.selectedRanking appInfo.user
                                 newGlobalAsList = Data.Global.rankingsAsList newSGlobal
-                                newGlobalUpdated = GlobalUpdated newSGlobal sUsers
+                                newGlobalUpdated = GlobalUpdated newSGlobal sUsers user
                             in
                                 ( AppOps SR.Types.WalletOperational newGlobalUpdated appInfo SR.Types.UICreateNewLadder emptyTxRecord
                                 ,
@@ -740,7 +746,7 @@ handleWalletStateOperational msg model =
 
                 ClickedConfirmCreateNewLadder ->
                     case allSets of 
-                        GlobalFetched sGlobal user ->
+                        GlobalFetched sGlobal sUsers user ->
                             --if Data.Users.isRegistered (Data.Users.asList sUsers) appInfo.user then
                             if user.ethaddress /= "" then
                                 let
@@ -847,9 +853,14 @@ handleWalletStateOperational msg model =
 
                 PlayersReceived lplayer ->
                     case allSets of
-                        Selected sSelected sUsers _ -> 
-                            ( updatedSelectedRankingOnPlayersReceived model (Data.Selected.extractAndSortPlayerList lplayer (Data.Users.asList sUsers)), Cmd.none )
-                        
+                        Selected sSelected sUsers _ ->
+                         
+                             let 
+                                _ = Debug.log "lplayer" lplayer
+                            in
+                            ( populatedSelected model (Data.Selected.extractAndSortPlayerList lplayer (Data.Users.asList sUsers)), Cmd.none )
+                            
+
                         _ -> 
                             let 
                                 _ = Debug.log "8 - setsState" allSets
@@ -861,13 +872,13 @@ handleWalletStateOperational msg model =
 
                 DeletedRanking uaddr ->
                     case allSets of 
-                        GlobalFetched sGlobal sUsers ->
+                        GlobalFetched sGlobal sUsers user ->
                             let
                                 userRankingToDelete = Data.Global.gotUserRanking sGlobal uaddr
                                 newGlobal = Data.Global.removeUserRanking sGlobal userRankingToDelete 
                             in 
                                 ( AppOps SR.Types.WalletOperational
-                                    (GlobalUpdated newGlobal sUsers)
+                                    (GlobalUpdated newGlobal sUsers user)
                                     appInfo
                                     uiState
                                     txRec
@@ -911,7 +922,8 @@ handleWalletStateOperational msg model =
                                 updatedGlobal =
                                     Data.Global.gotOwned (Data.Global.asGlobal (EverySet.fromList userRankings)) appInfo.user
 
-                                newSetState = GlobalUpdated updatedGlobal appInfo.user
+                                newSetState = GlobalUpdated updatedGlobal sUsers appInfo.user
+
 
                             in
                                 ( AppOps SR.Types.WalletOperational newSetState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
@@ -1486,27 +1498,29 @@ updateSelectedRankingPlayerList model luplayers =
             Failure <| "updateSelectedRankingPlayerList : "
 
 
-updatedSelectedRankingOnPlayersReceived : Model -> List SR.Types.UserPlayer -> Model
-updatedSelectedRankingOnPlayersReceived model luplayer =
+populatedSelected : Model -> List SR.Types.UserPlayer -> Model
+populatedSelected model luplayer =
     case model of
         AppOps walletState allSets appInfo uiState txRec ->
             case allSets of 
-                Selected sSelected sUsers _ -> 
+                Selected sSelected sUsers _ ->
                     let
-                                updatedSelectedRanking = Data.Selected.asSelected (EverySet.fromList luplayer ) sUsers (Internal.Types.RankingId appInfo.selectedRanking.id)
-                                updatedSSelected = SelectedUpdated updatedSelectedRanking sUsers (Internal.Types.RankingId appInfo.selectedRanking.id)
-                               
-                                newAppPlayer = { appInfo | player = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer appInfo.user.ethaddress }
+                        newSSelected = Data.Selected.asSelected (EverySet.fromList luplayer ) sUsers (Internal.Types.RankingId appInfo.selectedRanking.id)
 
-                                newAppChallengerAndPlayer = { newAppPlayer | challenger = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer newAppPlayer.player.player.challengeraddress }
+                        stateToSelected = Selected newSSelected sUsers (Internal.Types.RankingId appInfo.selectedRanking.id)
+                        
+                        newAppPlayer = { appInfo | player = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer appInfo.user.ethaddress }
 
-                                
+                        newAppChallengerAndPlayer = { newAppPlayer | challenger = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer newAppPlayer.player.player.challengeraddress }
+
+                        --_ = Debug.log "in populatedSelected" <| stateToSelected
+                    
                     in
-                        AppOps walletState updatedSSelected newAppChallengerAndPlayer uiState emptyTxRecord
+                        AppOps walletState stateToSelected newAppChallengerAndPlayer uiState emptyTxRecord
                 _ ->
-                    Failure <| "updatedSelectedRankingOnPlayersReceived : "
+                    Failure <| "populatedSelected : "
         _ ->
-            Failure <| "updatedSelectedRankingOnPlayersReceived : "
+            Failure <| "populatedSelected : "
 
 
 
@@ -1526,7 +1540,7 @@ view model =
                         Selected sSelected sUsers rnkId -> 
                             selectedUserIsOwnerView allSets appInfo
                         _ -> 
-                            greetingView <| "View error"
+                            greetingView <| "Owner View error"
                     
 
                 SR.Types.UISelectedRankingUserIsPlayer ->
@@ -1545,9 +1559,9 @@ view model =
 
                 SR.Types.UIRenderAllRankings ->
                     case allSets of 
-                        GlobalFetched sGlobal _ ->
+                        GlobalFetched sGlobal sUsers user ->
                             globalResponsiveview sGlobal appInfo.user
-                        GlobalUpdated sGlobal _ -> 
+                        GlobalUpdated sGlobal sUsers user -> 
                             globalResponsiveview sGlobal appInfo.user
                         _ ->
                             greetingView <| "No rankings to display ..."
@@ -1732,6 +1746,8 @@ insertMemberRankingList lrankinginfo =
             List.map
                 memberRankingInfoBtn
                 lrankinginfo
+
+        _ = Debug.log "mapOutRankingList" lrankinginfo
     in
     if List.isEmpty lrankinginfo then
         [ Element.text "Please Click On A \nRanking Below To View or Join:" ]
@@ -1787,122 +1803,129 @@ playerbuttons setsState appInfo =
             Element.text "Error"
 
 
-configureThenAddPlayerRankingBtns : SetState -> SR.Types.AppInfo -> SR.Types.UserPlayer -> Element Msg
-configureThenAddPlayerRankingBtns setsState  appInfo uplayer =
+-- configureThenAddPlayerRankingBtns : SetState -> SR.Types.AppInfo -> SR.Types.UserPlayer -> Element Msg
+-- configureThenAddPlayerRankingBtns setsState  appInfo uplayer =
+
+configureThenAddPlayerRankingBtns : Data.Selected.Selected -> SR.Types.AppInfo -> SR.Types.UserPlayer -> Element Msg
+configureThenAddPlayerRankingBtns sSelected appInfo uplayer =
    -- nb. 'uplayer' is the player that's being mapped cf. appInfo.player which is current user as player (single instance)
-            case setsState of 
-                    Selected sSelected sUsers rnkId ->
-                        let
-                            playerAsUser =
-                                Data.Users.gotUser sUsers uplayer.player.address
+    -- case setsState of 
+    --         Selected sSelected sUsers rnkId ->
+                let
+                    _ = Debug.log "userPlayer in configureThenAddPlayerRankingBtns" uplayer
+                    -- playerAsUser =
+                    --     Data.Users.gotUser sUsers uplayer.player.address
 
-                            challengerAsUser =
-                                Data.Users.gotUser sUsers uplayer.player.challengeraddress
+                    -- challengerAsUser =
+                    --     Data.Users.gotUser sUsers uplayer.player.challengeraddress
 
-                            printChallengerNameOrAvailable = Data.Selected.printChallengerNameOrAvailable sSelected uplayer
+                    printChallengerNameOrAvailable = Data.Selected.printChallengerNameOrAvailable sSelected uplayer
+                    --printChallengerNameOrAvailable = uplayer.challenger.name
 
-
+                    --_ = Debug.log "playerAsUser " playerAsUser
+                in
+                if Data.Selected.isUserPlayerMemberOfSelectedRanking (Data.Selected.asList sSelected) appInfo.user then
+                    let
+                        _ = Debug.log "player is in selected ranking" "current user not yet determined"
+                    in
+                    --if isPlayerCurrentUser then
+                    if Data.Selected.isPlayerCurrentUser appInfo.user uplayer then
+                        let 
+                                    _ = Debug.log "player is current user" "challenge not yet determined"
                         in
-                        if Data.Selected.isUserPlayerMemberOfSelectedRanking (Data.Selected.asList sSelected) appInfo.user then
-                            let
-                                _ = Debug.log "player is in selected ranking" "current user not yet determined"
-                            in
-                            --if isPlayerCurrentUser then
-                            if Data.Selected.isPlayerCurrentUser appInfo.user uplayer then
-                                let 
-                                            _ = Debug.log "player is current user" "challenge not yet determined"
-                                in
-                                --if isCurrentUserInAChallenge then
-                                if Data.Selected.isChallenged sSelected uplayer then
-                                    let 
-                                            _ = Debug.log "player is current user, and in a challenge" "here"
-                                    in
-                                    Element.column Grid.simple <|
-                                        [ Input.button (Button.fill ++ Color.success) <|
-                                            { onPress = Just <| ChangedUIStateToEnterResult appInfo.player
-                                            , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
-                                            }
-                                        ]
-                                
-                                else
-                                -- player is current user, but not in a challenge:
-                                let 
-                                    _ = Debug.log "player is current user, but not in a challenge" "here"
-                                in
-                                    Element.column Grid.simple <|
-                                        [ Input.button (Button.fill ++ Color.info) <|
-                                            { onPress = Nothing
-                                            , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
-                                            }
-                                        ]
-                                -- else if - this uplayer isn't the current user but the current user is in a challenge so disable any other players
-
-                            --else if isCurrentUserInAChallenge then
-                            else if Data.Selected.isChallenged sSelected uplayer then
-                                Element.column Grid.simple <|
-                                    [ Input.button (Button.fill ++ Color.disabled) <|
-                                        { onPress = Nothing
-                                        , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
-                                        }
-                                    ]
-                                -- else if - this uplayer isn't the current user but is being challenged
-
-                            else if Data.Selected.isChallenged sSelected uplayer then
-                                Element.column Grid.simple <|
-                                    [ Input.button (Button.fill ++ Color.disabled) <|
-                                        { onPress = Nothing
-                                        , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
-                                        }
-                                    ]
-                                
-
-                            else
-                            -- this uplayer isn't the current user and isn't challenged by anyone
+                        --if isCurrentUserInAChallenge then
+                        if Data.Selected.isChallenged sSelected uplayer then
                             let 
-                                    _ = Debug.log "player is not current user, and is ready to be challenged if higher ranked" uplayer
+                                    _ = Debug.log "player is current user, and in a challenge" "here"
                             in
-                                if Data.Selected.isCurrentUserPlayerLowerRanked uplayer appInfo.challenger then 
-                                    Element.column Grid.simple <|
-                                        [ Input.button (Button.fill ++ Color.light) <|
-                                            { onPress = Just <| ChallengeOpponentClicked uplayer
-                                            , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
-                                            }
-                                        ]
-                                else 
-                                        Element.column Grid.simple <|
-                                        [ Input.button (Button.fill ++ Color.disabled) <|
-                                            { onPress = Nothing
-                                            , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
-                                            }
-                                        ]
-                            
-
-                        else
-                            -- the user isn't a member of this ranking so disable everything
                             Element.column Grid.simple <|
-                                [ Input.button (Button.fill ++ Color.disabled) <|
-                                    { onPress = Nothing
-                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ playerAsUser.username ++ " vs " ++ printChallengerNameOrAvailable
+                                [ Input.button (Button.fill ++ Color.success) <|
+                                    { onPress = Just <| ChangedUIStateToEnterResult appInfo.player
+                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ uplayer.user.username ++ " vs " ++ printChallengerNameOrAvailable
                                     }
                                 ]
+                        
+                        else
+                        -- player is current user, but not in a challenge:
+                        let 
+                            _ = Debug.log "player is current user, but not in a challenge" "here"
+                        in
+                            Element.column Grid.simple <|
+                                [ Input.button (Button.fill ++ Color.info) <|
+                                    { onPress = Nothing
+                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ uplayer.user.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    }
+                                ]
+                        -- else if - this uplayer isn't the current user but the current user is in a challenge so disable any other players
 
-                    _ ->
-                        Element.text "Config Btns Failed"
+                    --else if isCurrentUserInAChallenge then
+                    else if Data.Selected.isChallenged sSelected uplayer then
+                        Element.column Grid.simple <|
+                            [ Input.button (Button.fill ++ Color.disabled) <|
+                                { onPress = Nothing
+                                , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ uplayer.user.username ++ " vs " ++ printChallengerNameOrAvailable
+                                }
+                            ]
+                        -- else if - this uplayer isn't the current user but is being challenged
 
+                    else if Data.Selected.isChallenged sSelected uplayer then
+                        Element.column Grid.simple <|
+                            [ Input.button (Button.fill ++ Color.disabled) <|
+                                { onPress = Nothing
+                                , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ uplayer.user.username ++ " vs " ++ printChallengerNameOrAvailable
+                                }
+                            ]
+                        
 
--- insertPlayerList : Model -> List (Element Msg)
--- insertPlayerList model =
+                    else
+                    -- this uplayer isn't the current user and isn't challenged by anyone
+                    let 
+                            _ = Debug.log "player is not current user, and is ready to be challenged if higher ranked" uplayer
+                    in
+                        if Data.Selected.isCurrentUserPlayerLowerRanked uplayer appInfo.challenger then 
+                            Element.column Grid.simple <|
+                                [ Input.button (Button.fill ++ Color.light) <|
+                                    { onPress = Just <| ChallengeOpponentClicked uplayer
+                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ uplayer.user.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    }
+                                ]
+                        else 
+                                Element.column Grid.simple <|
+                                [ Input.button (Button.fill ++ Color.disabled) <|
+                                    { onPress = Nothing
+                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ uplayer.user.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    }
+                                ]
+                    
+
+                else
+                    -- the user isn't a member of this ranking so disable everything
+                    Element.column Grid.simple <|
+                        [ Input.button (Button.fill ++ Color.disabled) <|
+                            { onPress = Nothing
+                            , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ uplayer.user.username ++ " vs " ++ printChallengerNameOrAvailable
+                            }
+                        ]
+
+            -- _ ->
+            --     Element.text "Config Btns Failed"
+
 insertPlayerList : SetState -> SR.Types.AppInfo -> List (Element Msg)
 insertPlayerList setsState appInfo =
     case setsState of
-        --AppOps walletState allSets appInfo uiState txRec ->
         Selected sselected sUsers rnkId ->
             let
+                
                 mapOutPlayerList =
                     List.map
-                        (configureThenAddPlayerRankingBtns setsState appInfo)
+                        --(configureThenAddPlayerRankingBtns setsState appInfo)
+                        (configureThenAddPlayerRankingBtns sselected appInfo)
                         (Data.Selected.asList sselected)
+
+                    -- EverySet.map
+                    --     (configureThenAddPlayerRankingBtns sselected appInfo) (Data.Selected.asEverySet sselected)
             in
+            --EverySet.toList mapOutPlayerList
             mapOutPlayerList
 
         _ ->
@@ -1984,7 +2007,7 @@ displayJoinBtnNewOrExistingUser user =
 newrankingconfirmbutton : SR.Types.AppInfo -> SetState -> Element Msg
 newrankingconfirmbutton appInfo allSets =
     case allSets of 
-            GlobalFetched sGlobal _ ->
+            GlobalFetched sGlobal sUsers user ->
                     Element.column Grid.section <|
                         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
                         , Element.column (Card.simple ++ Grid.simple) <|
@@ -2420,7 +2443,7 @@ and between 4-8 characters""")
 ladderNameValidationErr : SR.Types.AppInfo -> SetState -> Element Msg
 ladderNameValidationErr appInfo setsState =
     case setsState of 
-        GlobalFetched sGlobal sUsers ->
+        GlobalFetched sGlobal sUsers user ->
             if Utils.Validation.Validate.isRankingNameValidated appInfo.selectedRanking (Data.Global.asList sGlobal) then
                 Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "laddernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Ladder name OK!")
 
@@ -2498,6 +2521,8 @@ globalResponsiveview sGlobal user =
 
             else
                 "New User"
+
+        _ = Debug.log "gotMember" <| Data.Global.gotMember sGlobal user
     in
     Framework.responsiveLayout
         []
