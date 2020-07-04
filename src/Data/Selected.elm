@@ -1,5 +1,5 @@
 -- Selected will be mainly used to handle internal data of the selected ranking listing as it relates to the current user
-module Data.Selected exposing (Selected, asEverySet, emptySelected, assignChallengerAddrsForBOTHPlayers, updateSelectedRankingOnChallenge, jsonEncodeNewSelectedRankingPlayerList, getRankingId, handleWon, handleLost, handleUndecided, convertPlayersToUserPlayers, extractPlayersFromWebData, extractAndSortPlayerList, gotCurrentUserAsPlayerFromPlayerList, gotUserPlayerFromPlayerListStrAddress, convertUserPlayersToPlayers, isPlayerCurrentUser, printChallengerNameOrAvailable, userAdded, isChallenged, assignChallengerAddr, isUserOwnerOfSelectedUserRanking, addUserPlayer, removeUserPlayer, asList, changedRank, asSelected, isCurrentUserPlayerLowerRanked, isUserPlayerMemberOfSelectedRanking)
+module Data.Selected exposing (Selected, asEverySet, emptySelected, assignChallengerAddrsForBOTHPlayers, updateSelectedRankingOnChallenge, jsonEncodeNewSelectedRankingPlayerList, getRankingId, handleWon, handleLost, handleUndecided, convertPlayersToUserPlayers, extractAndSortPlayerList, gotCurrentUserAsPlayerFromPlayerList, gotUserPlayerFromPlayerListStrAddress, convertUserPlayersToPlayers, isPlayerCurrentUser, printChallengerNameOrAvailable, userAdded, isChallenged, assignChallengerAddr, isUserOwnerOfSelectedUserRanking, addUserPlayer, removeUserPlayer, asList, changedRank, asSelected, isCurrentUserPlayerLowerRanked, isUserPlayerMemberOfSelectedRanking)
 
 
 import SR.Types
@@ -11,6 +11,7 @@ import Element exposing (Element)
 import SR.Defaults
 import RemoteData
 import Data.AppState
+import Data.Players
 import Json.Encode
 
 
@@ -348,20 +349,7 @@ gotCurrentUserAsPlayerFromPlayerList luPlayer userRec =
         Just a ->
             a
 
-extractAndSortPlayerList : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.User -> List SR.Types.UserPlayer
-extractAndSortPlayerList rdlPlayer luser =
-    let
-        _ = Debug.log "luser in extractAndSortPlayerList" luser
 
-        lplayer =
-            extractPlayersFromWebData rdlPlayer
-
-        convertedPlayerListToUserPlayerList =
-            convertPlayersToUserPlayers
-                lplayer
-                luser
-    in
-    sortedRank <| convertedPlayerListToUserPlayerList
 
 
 gotRankingOwnerAsPlayer : String -> List SR.Types.UserPlayer -> SR.Types.Player
@@ -400,20 +388,20 @@ doesPlayerAddrNOTMatchAddr addr player =
         Nothing
 
 
-extractPlayersFromWebData : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
-extractPlayersFromWebData remData =
-    case remData of
-        RemoteData.NotAsked ->
-            []
+-- extractPlayersFromWebData : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
+-- extractPlayersFromWebData remData =
+--     case remData of
+--         RemoteData.NotAsked ->
+--             []
 
-        RemoteData.Loading ->
-            []
+--         RemoteData.Loading ->
+--             []
 
-        RemoteData.Success players ->
-            players
+--         RemoteData.Success players ->
+--             players
 
-        RemoteData.Failure httpError ->
-            []
+--         RemoteData.Failure httpError ->
+--             []
 
 convertUserPlayersToPlayers : List SR.Types.UserPlayer -> List SR.Types.Player
 convertUserPlayersToPlayers luplayers =
@@ -635,6 +623,22 @@ assignChallengerAddrsForBOTHPlayers sSelected appInfo =
                         in 
                             sChallengerUpdated
 
+extractAndSortPlayerList : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.User -> List SR.Types.UserPlayer
+extractAndSortPlayerList rdlPlayer luser =
+    let
+        _ = Debug.log "luser in extractAndSortPlayerList" luser
+
+        lplayer =
+            Data.Players.extractPlayersFromWebData rdlPlayer
+
+        convertedPlayerListToUserPlayerList =
+            convertPlayersToUserPlayers
+                lplayer
+                luser
+    in
+    sortedRank <| convertedPlayerListToUserPlayerList
+
+
 --useful?:
 -- convertUserPlayersToPlayers : List SR.Types.UserPlayer -> List SR.Types.Player
 -- convertUserPlayersToPlayers luplayers =
@@ -668,4 +672,5 @@ assignChallengerAddrsForBOTHPlayers sSelected appInfo =
 -- gotRankingOwnerAPlayer : String -> List SR.Types.UserPlayer -> SR.Types.Player
 -- gotRankingOwnerAPlayer selectedRanking luplayer =
 --     (gotUserPlayerFromPlayerListStrAddress luplayer selectedRanking).player
+
 

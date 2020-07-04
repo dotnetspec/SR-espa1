@@ -42,6 +42,7 @@ import EverySet exposing (EverySet)
 import Data.Users
 import Data.Global
 import Data.Rankings
+import Data.Players
 
 
 
@@ -73,10 +74,6 @@ type alias AllLists =
     { users : Data.Users.Users
     , rankings : Data.Rankings.Rankings
     , userRankings : Data.Global.Global
-    -- following will eventually be defined by Global and not exist here:
-    -- , lownedUserRanking : List SR.Types.UserRanking
-    -- , lmemberUserRanking : List SR.Types.UserRanking
-    -- , lotherUserRanking : List SR.Types.UserRanking
     , userPlayers : List SR.Types.UserPlayer
     }
 
@@ -934,7 +931,7 @@ handleWalletStateOperational msg model =
                         SelectedUpdated sSelected sUsers _ -> 
                             let
                                 lplayer =
-                                    Data.Selected.extractPlayersFromWebData response
+                                    Data.Players.extractPlayersFromWebData response
 
                                 convertedToUserPlayers =
                                     Data.Selected.convertPlayersToUserPlayers
