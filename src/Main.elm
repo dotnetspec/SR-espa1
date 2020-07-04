@@ -66,16 +66,10 @@ main =
 
 
 type Model
-    --= AppOps SR.Types.WalletState AllLists SR.Types.AppInfo SR.Types.UIState TxRecord
     = AppOps SR.Types.WalletState SetState SR.Types.AppInfo SR.Types.UIState TxRecord
     | Failure String
 
-type alias AllLists =
-    { users : Data.Users.Users
-    , rankings : Data.Rankings.Rankings
-    , userRankings : Data.Global.Global
-    , userPlayers : List SR.Types.UserPlayer
-    }
+
 
 type SetState =
     AllEmpty
@@ -89,12 +83,8 @@ type SetState =
 
 emptyAllLists =
     { userRankings = Data.Global.emptyGlobal
-    
     , users = Data.Users.emptyUsers
     , userPlayers = []
-    -- , lownedUserRanking = []
-    -- , lmemberUserRanking = []
-    -- , lotherUserRanking = []
     }
 
 
@@ -633,6 +623,7 @@ handleWalletStateOperational msg model =
                         case allSets of 
                             GlobalFetched sGlobal susers user ->
                                 let 
+                                    
                                     newAppInfo =
                                         updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
 
@@ -652,20 +643,26 @@ handleWalletStateOperational msg model =
                                 (model, Cmd.none)
 
                 ClickedSelectedMemberRanking rnkidstr rnkownerstr rnknamestr ->
-                    let
-                        _ =
-                            Debug.log "user clicked member" rnkidstr
+                    case allSets of 
+                            GlobalFetched sGlobal susers user ->
+                                let
+                                    _ =
+                                        Debug.log "user clicked member" rnkidstr
 
-                        newAppInfo =
-                            updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
+                                    newAppInfo =
+                                        updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
 
-                        -- re-factor from appInfo to AppState over time
-                        initAppState = 
-                            Data.AppState.updateAppState appInfo.user appInfo.player 
-                            appInfo.challenger ( rnkidstr)
-                    in
-                    ( AppOps SR.Types.WalletOperational allSets newAppInfo SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, 
-                    fetchedSingleRanking rnkidstr )
+                                    -- re-factor from appInfo to AppState over time
+                                    initAppState = 
+                                        Data.AppState.updateAppState appInfo.user appInfo.player 
+                                        appInfo.challenger ( rnkidstr)
+
+                                    newSetState = Selected Data.Selected.emptySelected susers (Internal.Types.RankingId "")
+                                in
+                                    ( AppOps SR.Types.WalletOperational newSetState newAppInfo SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, 
+                                    fetchedSingleRanking rnkidstr )
+                            _ -> 
+                                (model, Cmd.none)
 
                 ClickedSelectedNeitherOwnerNorMember rnkidstr rnkownerstr rnknamestr ->
                     let
@@ -834,14 +831,25 @@ handleWalletStateOperational msg model =
                          
                              let 
                                 _ = Debug.log "lplayer" lplayer
+
+                                newSSelected = Data.Selected.createdSelected lplayer sUsers (Internal.Types.RankingId appInfo.selectedRanking.id)
+                            
+                            --( populatedSelected model (Data.Selected.extractAndSortPlayerList lplayer (Data.Users.asList sUsers)), Cmd.none )
+                                --newAppPlayer = { appInfo | player = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer appInfo.user.ethaddress }
+                                newAppPlayer = { appInfo | player = Data.Selected.gotUserAsPlayer newSSelected appInfo.user.ethaddress }
+
+                                newAppChallengerAndPlayer = { newAppPlayer | challenger = Data.Selected.gotUserAsPlayer newSSelected newAppPlayer.player.player.challengeraddress }
+
+                                newSetState = Selected newSSelected sUsers (Internal.Types.RankingId appInfo.selectedRanking.id)
+                                
                             in
-                            ( populatedSelected model (Data.Selected.extractAndSortPlayerList lplayer (Data.Users.asList sUsers)), Cmd.none )
+                                (AppOps walletState newSetState newAppChallengerAndPlayer uiState emptyTxRecord, Cmd.none)
                             
 
                         _ -> 
-                            let 
-                                _ = Debug.log "8 - setsState" allSets
-                            in
+                            --let 
+                                --_ = Debug.log "8 - setsState" allSets
+                            --in
                                 (model, Cmd.none)
 
                 ChangedUIStateToEnterResult player ->
@@ -1469,29 +1477,29 @@ updateSelectedRankingPlayerList model luplayers =
             Failure <| "updateSelectedRankingPlayerList : "
 
 
-populatedSelected : Model -> List SR.Types.UserPlayer -> Model
-populatedSelected model luplayer =
-    case model of
-        AppOps walletState allSets appInfo uiState txRec ->
-            case allSets of 
-                Selected sSelected sUsers _ ->
-                    let
-                        newSSelected = Data.Selected.asSelected (EverySet.fromList luplayer ) sUsers (Internal.Types.RankingId appInfo.selectedRanking.id)
+-- populatedSelected : Model -> List SR.Types.UserPlayer -> Model
+-- populatedSelected model luplayer =
+--     case model of
+--         AppOps walletState allSets appInfo uiState txRec ->
+--             case allSets of 
+--                 Selected sSelected sUsers _ ->
+--                     let
+--                         newSSelected = Data.Selected.asSelected (EverySet.fromList luplayer ) sUsers (Internal.Types.RankingId appInfo.selectedRanking.id)
 
-                        stateToSelected = Selected newSSelected sUsers (Internal.Types.RankingId appInfo.selectedRanking.id)
+--                         stateToSelected = Selected newSSelected sUsers (Internal.Types.RankingId appInfo.selectedRanking.id)
                         
-                        newAppPlayer = { appInfo | player = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer appInfo.user.ethaddress }
+--                         newAppPlayer = { appInfo | player = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer appInfo.user.ethaddress }
 
-                        newAppChallengerAndPlayer = { newAppPlayer | challenger = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer newAppPlayer.player.player.challengeraddress }
+--                         newAppChallengerAndPlayer = { newAppPlayer | challenger = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer newAppPlayer.player.player.challengeraddress }
 
-                        --_ = Debug.log "in populatedSelected" <| stateToSelected
+--                         --_ = Debug.log "in populatedSelected" <| stateToSelected
                     
-                    in
-                        AppOps walletState stateToSelected newAppChallengerAndPlayer uiState emptyTxRecord
-                _ ->
-                    Failure <| "populatedSelected : "
-        _ ->
-            Failure <| "populatedSelected : "
+--                     in
+--                         AppOps walletState stateToSelected newAppChallengerAndPlayer uiState emptyTxRecord
+--                 _ ->
+--                     Failure <| "populatedSelected : "
+--         _ ->
+--             Failure <| "populatedSelected : "
 
 
 

@@ -1,5 +1,14 @@
 -- Selected will be mainly used to handle internal data of the selected ranking listing as it relates to the current user
-module Data.Selected exposing (Selected, asEverySet, emptySelected, assignChallengerAddrsForBOTHPlayers, updateSelectedRankingOnChallenge, jsonEncodeNewSelectedRankingPlayerList, getRankingId, handleWon, handleLost, handleUndecided, convertPlayersToUserPlayers, extractAndSortPlayerList, gotCurrentUserAsPlayerFromPlayerList, gotUserPlayerFromPlayerListStrAddress, convertUserPlayersToPlayers, isPlayerCurrentUser, printChallengerNameOrAvailable, userAdded, isChallenged, assignChallengerAddr, isUserOwnerOfSelectedUserRanking, addUserPlayer, removeUserPlayer, asList, changedRank, asSelected, isCurrentUserPlayerLowerRanked, isUserPlayerMemberOfSelectedRanking)
+module Data.Selected exposing (Selected, asEverySet, emptySelected
+    , assignChallengerAddrsForBOTHPlayers, updateSelectedRankingOnChallenge
+    , jsonEncodeNewSelectedRankingPlayerList, getRankingId, handleWon, handleLost
+    , handleUndecided, convertPlayersToUserPlayers, extractAndSortPlayerList
+    , gotCurrentUserAsPlayerFromPlayerList, gotUserPlayerFromPlayerListStrAddress
+    , convertUserPlayersToPlayers, isPlayerCurrentUser, printChallengerNameOrAvailable, userAdded
+    , isChallenged, assignChallengerAddr, isUserOwnerOfSelectedUserRanking, addUserPlayer
+    , removeUserPlayer, asList, changedRank, asSelected, isCurrentUserPlayerLowerRanked, isUserPlayerMemberOfSelectedRanking
+    , gotUserAsPlayer
+    , createdSelected)
 
 
 import SR.Types
@@ -35,6 +44,51 @@ getRankingId selected =
 emptySelected : Selected 
 emptySelected = 
     Selected (EverySet.empty) Data.Users.emptyUsers (Internal.Types.RankingId "")
+
+createdSelected : RemoteData.WebData (List SR.Types.Player) -> Data.Users.Users -> Internal.Types.RankingId -> Selected
+createdSelected rdlplayer sUser rnkId =
+    -- case model of
+    --     AppOps walletState allSets appInfo uiState txRec ->
+    --         case allSets of 
+    --             Selected sSelected sUsers _ ->
+                    let
+                        lplayer = Data.Players.extractPlayersFromWebData rdlplayer
+                        luser = Data.Users.asList sUser
+
+                        -- newSSelected = Data.Selected.asSelected (EverySet.fromList luplayer ) sUser rnkId
+
+                        -- stateToSelected = Selected newSSelected sUsers rnkId
+                        
+                        
+                        --_ = Debug.log "in createdSelected" <| stateToSelected
+
+                        esUserPlayers = 
+                            List.map (createdUserPlayer luser) lplayer
+                            |> EverySet.fromList
+                    
+                    in
+                        
+                        asSelected esUserPlayers sUser rnkId
+                
+
+createdUserPlayer : List SR.Types.User -> SR.Types.Player -> SR.Types.UserPlayer
+createdUserPlayer luser player =
+    let
+        user =
+            Data.Users.gotUserFromUserList luser player.address
+
+        newUserPlayer =
+            { player = player
+            , user = user
+            }
+    in
+    newUserPlayer
+
+gotUserAsPlayer : Selected -> String -> SR.Types.UserPlayer 
+gotUserAsPlayer sSelected uaddr = 
+    case sSelected of 
+        Selected esUserPlayer sUsers rnkId -> 
+            gotUserPlayerFromPlayerListStrAddress (EverySet.toList esUserPlayer) uaddr 
 
 addUserPlayer : SR.Types.UserPlayer -> Selected -> Selected
 addUserPlayer uplayer srank = 

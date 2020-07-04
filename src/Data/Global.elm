@@ -117,6 +117,7 @@ isOwned user ownedrnk =
 gotMember : Global -> SR.Types.User -> List SR.Types.UserRanking
 gotMember sGlobal user  = 
     let
+        
         lmemberRankingIds = user.userjoinrankings
     in
         List.map (gotUserRanking sGlobal) lmemberRankingIds
