@@ -665,20 +665,24 @@ handleWalletStateOperational msg model =
                                 (model, Cmd.none)
 
                 ClickedSelectedNeitherOwnerNorMember rnkidstr rnkownerstr rnknamestr ->
-                    let
-                        _ =
-                            Debug.log "user clicked other " rnkidstr
+                    case allSets of 
+                                GlobalFetched sGlobal susers user ->
+                                    let
 
-                        newAppInfo =
-                            updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
+                                        newAppInfo =
+                                            updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
 
-                        -- re-factor from appInfo to AppState over time
-                        initAppState = 
-                            Data.AppState.updateAppState appInfo.user appInfo.player 
-                            appInfo.challenger ( rnkidstr)
-                    in
-                    ( AppOps SR.Types.WalletOperational allSets newAppInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, 
-                    fetchedSingleRanking rnkidstr )
+                                        -- re-factor from appInfo to AppState over time
+                                        initAppState = 
+                                            Data.AppState.updateAppState appInfo.user appInfo.player 
+                                            appInfo.challenger ( rnkidstr)
+
+                                        newSetState = Selected Data.Selected.emptySelected susers (Internal.Types.RankingId "")
+                                    in
+                                        ( AppOps SR.Types.WalletOperational newSetState newAppInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, 
+                                        fetchedSingleRanking rnkidstr )
+                                _ -> 
+                                    (model, Cmd.none)
 
                 -- this is the response from addedUserAsFirstPlayerInNewList Cmd
                 -- it had the Http.expectStringResponse in it
