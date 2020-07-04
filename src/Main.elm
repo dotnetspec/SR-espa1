@@ -41,7 +41,7 @@ import Data.AppState
 import EverySet exposing (EverySet)
 import Data.Users
 import Data.Global
-import  Data.Rankings
+import Data.Rankings
 
 
 
@@ -376,16 +376,16 @@ handledWalletStateOpened msg model =
                     case allSets of
                         UsersFetched sUsers user ->
                             let
-                                createUserRankings = Data.Global.createdGlobal (Data.Rankings.extractRankingsFromWebData rmtrnkingdata) (Data.Users.asList sUsers)
-                            
-                                globalSet = GlobalFetched (Data.Global.asGlobal (EverySet.fromList createUserRankings)) sUsers appInfo.user
+                                globalSet = GlobalFetched (Data.Global.createdGlobal 
+                                                --(Data.Rankings.extractRankingsFromWebData 
+                                                rmtrnkingdata
+                                                --(Data.Users.asList 
+                                                sUsers) 
+                                                sUsers appInfo.user
                             in 
                                 ( AppOps SR.Types.WalletOpened globalSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
-                        _ -> 
-                            -- let 
-                            --     _ = Debug.log "1 - setsState" allSets
-                            -- in
+                        _ ->
                                 (model, Cmd.none)
 
                 NoOp ->
@@ -626,9 +626,7 @@ handleWalletStateOperational msg model =
                     case allSets of 
                         UsersFetched susers user -> 
                             let 
-                                allUserAsOwnerGlobal = Data.Global.createdGlobal (Data.Rankings.extractRankingsFromWebData rmtrnkingdata) (Data.Users.asList susers)
-                          
-                                newSetState = GlobalFetched (Data.Global.gotOwned (Data.Global.asGlobal (EverySet.fromList allUserAsOwnerGlobal))  appInfo.user) susers user
+                                newSetState = GlobalFetched (Data.Global.createdGlobal rmtrnkingdata susers) susers user
                             in 
                                 ( AppOps SR.Types.WalletOperational newSetState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
                         _ ->
@@ -789,25 +787,7 @@ handleWalletStateOperational msg model =
                 AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList ->
                     -- I think the global set has already been updated
                     ( AppOps SR.Types.WalletOperational allSets appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
-                    -- case allSets of 
-                    --     GlobalUpdated sGlobal sUsers -> 
-                    --         let
-                    --             allGlobal =
-                    --                 Data.Global.createdGlobal (Data.Rankings.extractRankingsFromWebData updatedListAfterNewEntryAddedToGlobalList) (Data.Users.asList sUsers)
-
-                    --             newGlobal = Data.Global.asGlobal (EverySet.fromList allGlobal)
-                    --             newGlobalUpdated = GlobalUpdated newGlobal sUsers
-
-                    --             --Global -> String -> SR.Types.Ranking -> SR.Types.User -> Global
-                    --             Data.Global.addUserRanking sGlobal 
-                                   
-                    --         in
-                    --         ( AppOps SR.Types.WalletOperational newGlobalUpdated appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
-                    --     _ -> 
-                    --                 let 
-                    --                     _ = Debug.log "7 - setsState" allSets
-                    --                 in
-                    --                     (model, Cmd.none)
+                    
 
                 LadderNameInputChg namefield ->
                     let
@@ -916,15 +896,9 @@ handleWalletStateOperational msg model =
                     case allSets of 
                         UsersFetched sUsers user ->       
                             let
-                                rankingsSet = Data.Rankings.asRankings (EverySet.fromList (Data.Rankings.extractRankingsFromWebData updatedListAfterRankingDeletedFromGlobalList))
-                                userRankings = Data.Global.createdGlobal (Data.Rankings.asList rankingsSet) (Data.Users.asList sUsers)
+                                userRankings = Data.Global.createdGlobal (updatedListAfterRankingDeletedFromGlobalList) sUsers
                                 
-                                updatedGlobal =
-                                    Data.Global.gotOwned (Data.Global.asGlobal (EverySet.fromList userRankings)) appInfo.user
-
-                                newSetState = GlobalUpdated updatedGlobal sUsers appInfo.user
-
-
+                                newSetState = GlobalUpdated userRankings sUsers appInfo.user
                             in
                                 ( AppOps SR.Types.WalletOperational newSetState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 

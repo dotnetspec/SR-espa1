@@ -45,6 +45,31 @@ asEverySet : Global -> EverySet SR.Types.UserRanking
 asEverySet (Global esGlobal)  = 
      esGlobal
 
+createdGlobal : RemoteData.WebData (List SR.Types.Ranking) -> Data.Users.Users -> Global
+createdGlobal rmtrnkingdata sUser =
+    let
+        lrankinginfo = Data.Rankings.extractRankingsFromWebData rmtrnkingdata
+        luser = Data.Users.asList sUser
+    in
+    
+    List.map (createdUserRanking luser) lrankinginfo
+    |> EverySet.fromList
+    |> asGlobal
+
+
+createdUserRanking : List SR.Types.User -> SR.Types.Ranking -> SR.Types.UserRanking
+createdUserRanking luser ranking =
+    let
+        userOwner =
+            Data.Users.gotUserFromUserList luser ranking.rankingowneraddr
+
+        newOwnedRanking =
+            { rankingInfo = ranking
+            , userInfo = userOwner
+            }
+    in
+    newOwnedRanking
+
 
 filteredSelected : String -> List SR.Types.Ranking -> List SR.Types.Ranking
 filteredSelected rankingid lrankinginfo =
@@ -252,22 +277,7 @@ removeUser uranking =
 
 
 
-createdGlobal : List SR.Types.Ranking -> List SR.Types.User -> List SR.Types.UserRanking
-createdGlobal lrankinfo luser =
-    List.map (createNewOwnedRanking luser) lrankinfo
 
-createNewOwnedRanking : List SR.Types.User -> SR.Types.Ranking -> SR.Types.UserRanking
-createNewOwnedRanking luser rankingInfo =
-    let
-        userOwner =
-            Data.Users.gotUserFromUserList luser rankingInfo.rankingowneraddr
-
-        newOwnedRanking =
-            { rankingInfo = rankingInfo
-            , userInfo = userOwner
-            }
-    in
-    newOwnedRanking
 
 
 gotNewRankingIdFromWebData : RemoteData.WebData SR.Types.RankingId -> String
