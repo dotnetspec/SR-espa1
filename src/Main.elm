@@ -43,6 +43,7 @@ import Data.Users
 import Data.Global
 import Data.Rankings
 import Data.Players
+import Widget exposing (..)
 
 
 
@@ -2155,7 +2156,7 @@ userDescValidationErr user =
             (List.append [ Element.htmlAttribute (Html.Attributes.id "descValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
                 ++ [ Element.moveLeft 0.0 ]
             )
-            (Element.text "45 characters max")
+            (Element.text "20 characters max")
 
 
 ladderDescValidationErr : SR.Types.Ranking -> Element Msg
@@ -2168,12 +2169,12 @@ ladderDescValidationErr rankingInfo =
             (List.append [ Element.htmlAttribute (Html.Attributes.id "ladderdescValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
                 ++ [ Element.moveLeft 0.0 ]
             )
-            (Element.text "45 characters max")
+            (Element.text "20 characters max")
 
 
 isUserDescValidated : SR.Types.User -> Bool
 isUserDescValidated user =
-    if String.length user.description <= 45 then
+    if String.length user.description <= 20 then
         True
 
     else
@@ -2182,7 +2183,7 @@ isUserDescValidated user =
 
 isLadderDescValidated : SR.Types.Ranking -> Bool
 isLadderDescValidated rankingInfo =
-    if String.length rankingInfo.rankingdesc <= 45 then
+    if String.length rankingInfo.rankingdesc <= 20 then
         True
 
     else
@@ -2479,12 +2480,16 @@ inputNewLadder appInfo allSets =
                     }
                 , ladderNameValidationErr appInfo allSets
                 , Input.multiline Input.simple
-                    { onChange = LadderDescInputChg
-                    , text = appInfo.selectedRanking.rankingdesc
-                    , placeholder = Nothing
-                    , label = Input.labelLeft Input.label <| Element.text "Desc:"
-                    , spellcheck = False
-                    }
+                -- Widget imported but not currently used
+                -- , Widget.textInput
+                --     { chips = [](Button msg)
+                --     , 
+                        {onChange = LadderDescInputChg
+                        , text =  Utils.Validation.Validate.validatedMaxTextLength appInfo.selectedRanking.rankingdesc 20
+                        , placeholder = Nothing
+                        , label = Input.labelLeft Input.label <| Element.text "Desc:"
+                        , spellcheck = False
+                        }
                 , Element.text "* Required"
                 , ladderDescValidationErr appInfo.selectedRanking
                 ]
@@ -2492,8 +2497,7 @@ inputNewLadder appInfo allSets =
         ]
 
 
--- globalResponsiveview : List SR.Types.UserRanking -> List SR.Types.UserRanking -> List SR.Types.UserRanking -> SR.Types.User -> Html Msg
--- globalResponsiveview lowneduranking lmemberusranking lotheruranking user =
+
 globalResponsiveview : Data.Global.Global -> SR.Types.User -> Html Msg
 globalResponsiveview sGlobal user =
 
