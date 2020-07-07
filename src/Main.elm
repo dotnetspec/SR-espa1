@@ -351,11 +351,9 @@ handledWalletStateOpened msg model =
                 UsersReceived userList ->
                     let
                        
-                        users = (Data.Users.asUsers (EverySet.fromList (Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList)))
+                        users = Data.Users.asUsers (EverySet.fromList (Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList))
                         newUser = Data.Users.gotUser users appInfo.user.ethaddress
                         userInAppInfo = { appInfo | user = newUser }
-
-                        --newSetState = StateFetched users appInfo.user
                         newDataKind = Users newUser
                         newDataState = StateFetched users newDataKind
                         
@@ -369,12 +367,15 @@ handledWalletStateOpened msg model =
                             case dKind of 
                                 Global sGlobal rnkId user ->
                                     let
+                                        _ = Debug.log "rankings received in wallet state opened" rmtrnkingdata
                                         newDataKind = Global (Data.Global.createdGlobal rmtrnkingdata sUsers) rnkId user
                                         newDataSet = StateFetched sUsers newDataKind
                                     in 
                                         ( AppOps SR.Types.WalletOpened newDataSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
                                 _ ->
                                         (model, Cmd.none)
+                        _ ->
+                            (model, Cmd.none)
 
                 NoOp ->
                     ( model, Cmd.none )
@@ -645,7 +646,7 @@ handleWalletStateOperational msg model =
                             case dKind of 
                                 Global sGlobal rnkId user ->
                                     let 
-                                        --newSetState = StateFetched (Data.Global.createdGlobal rmtrnkingdata susers) susers user
+                                        _ = Debug.log "rankings received in wallet state operational" rmtrnkingdata
                                         newDataKind = Global (Data.Global.createdGlobal rmtrnkingdata sUsers) rnkId user
                                         newDataSet = StateFetched sUsers newDataKind
                                     in 
@@ -1555,28 +1556,28 @@ updatedForChallenge model luplayer opponentAsPlayer userMaybeCanDelete =
             case dataState of
                 StateUpdated sUsers dKind -> 
                     case dKind of 
-                        Selected sSelected rnkId user -> 
-                            let 
-                                newAppInfoWithPlayer = { appInfo | player = Data.Selected.gotCurrentUserAsPlayerFromPlayerList luplayer user }
-                    
-                                newAppInfoWithChallengerAndPlayer = { newAppInfoWithPlayer | challenger = opponentAsPlayer }
-                                
-                                newAllListsWithSelectedRankingUpdate = 
-                                    StateUpdated (Data.Selected.updateSelectedRankingOnChallenge sSelected newAppInfoWithChallengerAndPlayer) sUsers rnkId
-                                
-                            in
-                                AppOps walletState newAllListsWithSelectedRankingUpdate newAppInfoWithChallengerAndPlayer SR.Types.UIChallenge txRec
+                            Selected sSelected rnkId user -> 
+                                let 
+                                    newAppInfoWithPlayer = { appInfo | player = Data.Selected.gotCurrentUserAsPlayerFromPlayerList luplayer user }
                         
-                        _ -> 
+                                    newAppInfoWithChallengerAndPlayer = { newAppInfoWithPlayer | challenger = opponentAsPlayer }
+                                  
+                                    newDataKind =  Selected (Data.Selected.updateSelectedRankingOnChallenge sSelected newAppInfoWithChallengerAndPlayer) rnkId user
+                                    newDataState = StateUpdated sUsers newDataKind
+                                in
+                                    AppOps walletState newDataState newAppInfoWithChallengerAndPlayer SR.Types.UIChallenge txRec
+                            
+                            _ -> 
+                                let 
+                                    _ = Debug.log "updatedForChallenge - dataState" dataState
+                                in
+                                    model
+
+                _ -> 
                             let 
                                 _ = Debug.log "updatedForChallenge - dataState" dataState
                             in
                                 model
-                _ -> 
-                    let 
-                        _ = Debug.log "updatedForChallenge - dataState" dataState
-                    in
-                        model
         _ ->
             Failure <| "updatedForChallenge : "
 
@@ -1692,9 +1693,11 @@ view model =
                              case dKind of 
                                 Global sGlobal rnkId user ->
                                     globalResponsiveview sGlobal appInfo.user
-                                
                                 _ ->
-                                    greetingView <| "Should be Global"
+                                    let  
+                                        _ = Debug.log "dKind of  " dKind
+                                     in 
+                                    greetingView <| "Should be Global 1"
                         
                         StateUpdated sUsers dKind ->
                              case dKind of
@@ -2534,6 +2537,8 @@ inputNewUser dataState appInfo =
                             ]
 
                     _ ->
+                        Element.text "Fail on inputNewUser"
+            _ ->
                         Element.text "Fail on inputNewUser"
 
 
