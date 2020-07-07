@@ -364,11 +364,10 @@ handledWalletStateOpened msg model =
                 GlobalRankingsReceived rmtrnkingdata ->
                     case dataState of
                         StateFetched sUsers dKind -> 
-                            case dKind of 
-                                Global sGlobal rnkId user ->
+                            case dKind of
+                                Users user ->
                                     let
-                                        _ = Debug.log "rankings received in wallet state opened" rmtrnkingdata
-                                        newDataKind = Global (Data.Global.createdGlobal rmtrnkingdata sUsers) rnkId user
+                                        newDataKind = Global (Data.Global.createdGlobal rmtrnkingdata sUsers) (Internal.Types.RankingId "") user
                                         newDataSet = StateFetched sUsers newDataKind
                                     in 
                                         ( AppOps SR.Types.WalletOpened newDataSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
@@ -1694,9 +1693,6 @@ view model =
                                 Global sGlobal rnkId user ->
                                     globalResponsiveview sGlobal appInfo.user
                                 _ ->
-                                    let  
-                                        _ = Debug.log "dKind of  " dKind
-                                     in 
                                     greetingView <| "Should be Global 1"
                         
                         StateUpdated sUsers dKind ->
@@ -1889,8 +1885,6 @@ insertMemberRankingList lrankinginfo =
             List.map
                 memberRankingInfoBtn
                 lrankinginfo
-
-        _ = Debug.log "mapOutRankingList" lrankinginfo
     in
     if List.isEmpty lrankinginfo then
         [ Element.text "Please Click On A \nRanking Below To View or Join:" ]
@@ -2694,8 +2688,6 @@ globalResponsiveview sGlobal user =
 
             else
                 "New User"
-
-        _ = Debug.log "gotMember" <| Data.Global.gotMember sGlobal user
     in
     Framework.responsiveLayout
         []
