@@ -904,7 +904,7 @@ handleWalletStateOperational msg model =
 
                 DeletedRankingFromGlobalList updatedListAfterRankingDeletedFromGlobalList ->
                     case allSets of 
-                        UsersFetched sUsers user ->       
+                        Selected sSelected sUsers rnkId ->       
                             let
                                 userRankings = Data.Global.createdGlobal (updatedListAfterRankingDeletedFromGlobalList) sUsers
                                 
