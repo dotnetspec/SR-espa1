@@ -358,7 +358,7 @@ handledWalletStateOpened msg model =
                         newDataState = StateFetched users newDataKind
                         
                     in
-                        ( AppOps SR.Types.WalletOpened newDataState userInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotRankingList )
+                        ( AppOps SR.Types.WalletOpened newDataState userInAppInfo SR.Types.UILoading emptyTxRecord, gotRankingList )
 
 
                 GlobalRankingsReceived rmtrnkingdata ->
