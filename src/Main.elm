@@ -81,6 +81,8 @@ type DataKind
   = Users SR.Types.User
   | Global Data.Global.Global Internal.Types.RankingId SR.Types.User
   | Selected Data.Selected.Selected Internal.Types.RankingId SR.Types.User
+
+
     
 
 emptyAllLists =
@@ -377,6 +379,10 @@ handledWalletStateOpened msg model =
                             (model, Cmd.none)
 
                 NoOp ->
+                 let
+                        _ =
+                            Debug.log "handledWalletStateOpened no op" msg
+                    in
                     ( model, Cmd.none )
 
                 _ ->
@@ -395,7 +401,10 @@ handledWalletStateOpened msg model =
 handleWalletStateOperational : Msg -> Model -> ( Model, Cmd Msg )
 handleWalletStateOperational msg model =
     
-    
+    let
+                        _ =
+                            Debug.log "handleWalletStateOperational1" msg
+                    in
     case model of
         AppOps walletState dataState appInfo uiState txRec ->
             case msg of
@@ -675,7 +684,7 @@ handleWalletStateOperational msg model =
                                                 newDataState = StateFetched sUsers newDataKind
                                         
                                             in
-                                                ( AppOps SR.Types.WalletOperational newDataState newAppInfo SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, 
+                                                ( AppOps SR.Types.WalletOperational newDataState newAppInfo SR.Types.UILoading emptyTxRecord, 
                                                 fetchedSingleRanking rnkidstr )
                                         _ -> 
                                             (model, Cmd.none)
@@ -683,6 +692,10 @@ handleWalletStateOperational msg model =
                                             (model, Cmd.none)
 
                 ClickedSelectedMemberRanking rnkidstr rnkownerstr rnknamestr ->
+                          let
+                                                _ =
+                                                    Debug.log "user clicked member" rnkidstr
+                            in
                     case dataState of 
                             StateFetched sUsers dKind ->
                                     case dKind of 
@@ -921,9 +934,24 @@ handleWalletStateOperational msg model =
 
                                             newDataKind = Selected newSSelected (Internal.Types.RankingId appInfo.selectedRanking.id) user
                                             newDataState = StateFetched sUsers newDataKind
+
+                                            --todo: fix
+                                            newUIState = SR.Types.UISelectedRankingUserIsOwner
+                                            
+                                            -- SR.Types.Ranking -> List SR.Types.UserRanking -> SR.Types.User -> Bool
+                                            -- if Data.Selected.isUserOwnerOfSelectedUserRanking then 
+                                            --     SR.Types.UISelectedRankingUserIsOwner
+                                            -- else if 
+
+                                            -- --List SR.Types.UserPlayer -> SR.Types.User -> Bool
+                                            -- Data.Selected.isUserPlayerMemberOfSelectedRanking (Data.Selected.asList sSelected) user then 
+                                            --     SR.Types.UISelectedRankingUserIsPlayer
+
+                                            -- else
+                                            --     SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
                                             
                                         in
-                                            (AppOps walletState newDataState newAppChallengerAndPlayer uiState emptyTxRecord, Cmd.none)
+                                            (AppOps walletState newDataState newAppChallengerAndPlayer newUIState emptyTxRecord, Cmd.none)
                                     _ -> 
                                         (model, Cmd.none)
 
@@ -1655,7 +1683,10 @@ view model =
                         StateFetched sUsers dKind -> 
                             case dKind of 
                                     Selected sSelected rnkId user ->
-                                        selectedUserIsOwnerView dataState appInfo
+                                        let 
+                                            _ = Debug.log "in Selected ready for view1" (Data.Selected.asList sSelected)
+                                        in
+                                            selectedUserIsOwnerView dataState appInfo
                                     _ -> 
                                         greetingView <| "Should be Selected"
                         _ -> 
@@ -1924,12 +1955,11 @@ neitherOwnerNorMemberRankingInfoBtn rankingobj =
         ]
 
 
--- playerbuttons : Model -> Element Msg
--- playerbuttons model =
+
 playerbuttons : DataState -> SR.Types.AppInfo -> Element Msg
 playerbuttons dataState appInfo =
      case dataState of
-        StateUpdated sUsers dKind -> 
+        StateFetched sUsers dKind -> 
             case dKind of 
                     Selected sSelected rnkId user ->
                         Element.column Grid.section <|
@@ -1944,8 +1974,7 @@ playerbuttons dataState appInfo =
             Element.text "Error"
 
 
--- configureThenAddPlayerRankingBtns : DataState -> SR.Types.AppInfo -> SR.Types.UserPlayer -> Element Msg
--- configureThenAddPlayerRankingBtns dataState  appInfo uplayer =
+
 
 configureThenAddPlayerRankingBtns : Data.Selected.Selected -> SR.Types.AppInfo -> SR.Types.UserPlayer -> Element Msg
 configureThenAddPlayerRankingBtns sSelected appInfo uplayer =
@@ -1953,7 +1982,7 @@ configureThenAddPlayerRankingBtns sSelected appInfo uplayer =
     -- case dataState of 
     --         Selected sSelected sUsers rnkId ->
                 let
-                    _ = Debug.log "userPlayer in configureThenAddPlayerRankingBtns" uplayer
+                    _ = Debug.log "userPlayer in configureThenAddPlayerRankingBtns" "uplayer"
                     -- playerAsUser =
                     --     Data.Users.gotUser sUsers uplayer.player.address
 
@@ -2054,11 +2083,11 @@ configureThenAddPlayerRankingBtns sSelected appInfo uplayer =
 insertPlayerList : DataState -> SR.Types.AppInfo -> List (Element Msg)
 insertPlayerList dataState appInfo =
     case dataState of
-                    StateUpdated sUsers dKind -> 
+                    StateFetched sUsers dKind -> 
                         case dKind of 
                                 Selected sSelected rnkId user ->
                                     let
-                                        
+                                        _ = Debug.log "in insertplayer list "  (Data.Selected.asList sSelected)
                                         mapOutPlayerList =
                                             List.map
                                                 (configureThenAddPlayerRankingBtns sSelected appInfo)
@@ -2766,7 +2795,7 @@ displayRegisterBtnIfNewUser uname msg =
 selectedUserIsOwnerView : DataState -> SR.Types.AppInfo -> Html Msg
 selectedUserIsOwnerView dataState appInfo =
     case dataState of
-        StateUpdated sUsers dKind -> 
+        StateFetched sUsers dKind -> 
             case dKind of 
                     Selected sSelected rnkId user ->
                         Framework.responsiveLayout [] <|
@@ -2785,7 +2814,7 @@ selectedUserIsOwnerView dataState appInfo =
 selectedUserIsPlayerView : DataState -> SR.Types.AppInfo -> Html Msg
 selectedUserIsPlayerView dataState appInfo =
     case dataState of
-        StateUpdated sUsers dKind -> 
+        StateFetched sUsers dKind -> 
             case dKind of 
                     Selected sSelected rnkId user ->
                         Framework.responsiveLayout [] <|
