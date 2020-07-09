@@ -101,7 +101,7 @@ init _ =
     ( AppOps SR.Types.WalletStateUnknown AllEmpty SR.Defaults.emptyAppInfo SR.Types.UILoading emptyTxRecord
     , Cmd.batch
         [ gotUserList
-        , gotRankingList
+        , gotGlobal
         , Ports.log
             "Sending out msg from init "
         ]
@@ -195,7 +195,7 @@ type Msg
     | SentResultToJsonbin (Result Http.Error ())
     | SentUserInfoAndDecodedResponseToNewUser (RemoteData.WebData (List SR.Types.User))
     | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
-    | GlobalRankingsReceived (RemoteData.WebData (List SR.Types.Ranking))
+    | GlobalReceived (RemoteData.WebData (List SR.Types.Ranking))
     | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
     | UsersReceived (RemoteData.WebData (List SR.Types.User))
     | ReturnFromPlayerListUpdate (RemoteData.WebData (List SR.Types.Player))
@@ -289,7 +289,7 @@ handleWalletStateLocked msg model =
                 UsersReceived userList ->
                     ( model, Cmd.none )
 
-                GlobalRankingsReceived lgranking ->
+                GlobalReceived lgranking ->
                     ( model, Cmd.none )
 
                 _ ->
@@ -363,10 +363,10 @@ handledWalletStateOpened msg model =
                         newDataState = StateFetched users newDataKind
                         
                     in
-                        ( AppOps SR.Types.WalletOpened newDataState userInAppInfo SR.Types.UILoading emptyTxRecord, gotRankingList )
+                        ( AppOps SR.Types.WalletOpened newDataState userInAppInfo SR.Types.UILoading emptyTxRecord, gotGlobal )
 
 
-                GlobalRankingsReceived rmtrnkingdata ->
+                GlobalReceived rmtrnkingdata ->
                     case dataState of
                         StateFetched sUsers dKind -> 
                             case dKind of
@@ -374,11 +374,98 @@ handledWalletStateOpened msg model =
                                     let
                                         newDataKind = Global (Data.Global.createdGlobal rmtrnkingdata sUsers) (Internal.Types.RankingId "") user
                                         newDataSet = StateFetched sUsers newDataKind
+
+                                    in 
+                                        ( AppOps SR.Types.WalletOpened newDataSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+                                
+                                Global sGlobal rnkId user ->
+                                    let
+                                        newDataKind = Global (Data.Global.createdGlobal rmtrnkingdata sUsers) (Internal.Types.RankingId "") user
+                                        newDataSet = StateFetched sUsers newDataKind
+
+                                        _ = Debug.log "glob rec" "here"
                                     in 
                                         ( AppOps SR.Types.WalletOpened newDataSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
                                 _ ->
                                         (model, Cmd.none)
                         _ ->
+                            (model, Cmd.none)
+
+                PlayersReceived lplayer ->
+                    case dataState of
+                        StateFetched sUsers dKind -> 
+                            case dKind of 
+                                    Selected sSelected rnkId user status ->
+                                        let 
+                                            _ = Debug.log "lplayer in opened" lplayer
+
+                                            newSSelected = Data.Selected.createdSelected lplayer sUsers (Internal.Types.RankingId appInfo.selectedRanking.id)
+                                        
+                                            newAppPlayer = { appInfo | player = Data.Selected.gotUserAsPlayer newSSelected appInfo.user.ethaddress }
+
+                                            newAppChallengerAndPlayer = { newAppPlayer | challenger = Data.Selected.gotUserAsPlayer newSSelected newAppPlayer.player.player.challengeraddress }
+
+                                            newDataKind = Selected newSSelected (Internal.Types.RankingId appInfo.selectedRanking.id) user status
+                                            newDataState = StateFetched sUsers newDataKind
+
+                                            
+                             
+                                        in
+                                            case status of 
+                                                UserIsOwner ->     
+                                                    (AppOps SR.Types.WalletOpened newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, Cmd.none)
+                                                UserIsMember  ->
+                                                    (AppOps SR.Types.WalletOpened newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, Cmd.none)
+                                                UserIsNeitherOwnerNorMember ->
+                                                    (AppOps SR.Types.WalletOpened newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, Cmd.none)
+            
+                                    _ -> 
+                                        (model, Cmd.none)
+
+                        _ -> 
+                            (model, Cmd.none)
+
+                ClickedSelectedOwnedRanking rnkidstr rnkownerstr rnknamestr ->
+                    case dataState of 
+                        StateFetched sUsers dKind ->
+                                case dKind of 
+                                    Global sGlobal rnkId user ->
+                                        let 
+                                            
+                                            newAppInfo =
+                                                updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
+
+
+                                        -- re-factor from appInfo to AppState over time
+                                            initAppState = 
+                                                Data.AppState.updateAppState appInfo.user appInfo.player 
+                                                appInfo.challenger (rnkidstr)
+
+                                            newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") user UserIsOwner
+                                            newDataState = StateFetched sUsers newDataKind
+                                    
+                                        in
+                                            ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UILoading emptyTxRecord, 
+                                            fetchedSingleRanking rnkidstr )
+                                    _ -> 
+                                        (model, Cmd.none)
+                        _ -> 
+                                        (model, Cmd.none)
+
+                ResetToShowGlobal ->
+                   case dataState of 
+                        StateFetched sUsers dKind ->
+                            case dKind of
+                                Selected sSelected rnkId user _ -> 
+                                    let 
+                                        newDataKind = Global Data.Global.emptyGlobal (Internal.Types.RankingId "") user
+                                        newDataState = StateFetched sUsers newDataKind
+                                    in
+                                    ( AppOps SR.Types.WalletOpened newDataState appInfo SR.Types.UILoading emptyTxRecord, gotGlobal )
+                                
+                                _ -> 
+                                    (model, Cmd.none)
+                        _ -> 
                             (model, Cmd.none)
 
                 NoOp ->
@@ -499,7 +586,8 @@ handleWalletStateOperational msg model =
                             { appInfo | user = Data.Users.gotUser users appInfo.user.ethaddress }
 
                     in
-                    ( AppOps SR.Types.WalletOperational newDataState userInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotRankingList )
+                    ( AppOps SR.Types.WalletOperational newDataState userInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotGlobal )
+                   
 
                 ProcessResult result ->
                     let
@@ -651,7 +739,7 @@ handleWalletStateOperational msg model =
                     , Cmd.none
                     )
 
-                GlobalRankingsReceived rmtrnkingdata ->
+                GlobalReceived rmtrnkingdata ->
                     case dataState of 
                         StateFetched sUsers dKind ->
                             case dKind of 
@@ -687,7 +775,7 @@ handleWalletStateOperational msg model =
                                                 newDataState = StateFetched sUsers newDataKind
                                         
                                             in
-                                                ( AppOps SR.Types.WalletOperational newDataState newAppInfo SR.Types.UILoading emptyTxRecord, 
+                                                ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UILoading emptyTxRecord, 
                                                 fetchedSingleRanking rnkidstr )
                                         _ -> 
                                             (model, Cmd.none)
@@ -786,13 +874,13 @@ handleWalletStateOperational msg model =
                     ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                 ResetToShowGlobal ->
-                    ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+                    ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotGlobal )
 
                 ResetRejectedNewUserToShowGlobal ->
                     let 
                         newAppInfo = {appInfo | user = SR.Defaults.emptyUser}
                     in 
-                    ( AppOps SR.Types.WalletOperational dataState newAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+                    ( AppOps SR.Types.WalletOperational dataState newAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotGlobal )
 
                 ResetToShowSelected ->
                 --todo: something like this will need to be implemented:
@@ -935,23 +1023,8 @@ handleWalletStateOperational msg model =
 
                                             newAppChallengerAndPlayer = { newAppPlayer | challenger = Data.Selected.gotUserAsPlayer newSSelected newAppPlayer.player.player.challengeraddress }
 
-                                             
-                                                
-
                                             newDataKind = Selected newSSelected (Internal.Types.RankingId appInfo.selectedRanking.id) user status
                                             newDataState = StateFetched sUsers newDataKind
-
-                                            -- SR.Types.Ranking -> List SR.Types.UserRanking -> SR.Types.User -> Bool
-                                            -- if Data.Selected.isUserOwnerOfSelectedUserRanking then 
-                                            --     SR.Types.UISelectedRankingUserIsOwner
-                                            -- else if 
-
-                                            -- --List SR.Types.UserPlayer -> SR.Types.User -> Bool
-                                            -- Data.Selected.isUserPlayerMemberOfSelectedRanking (Data.Selected.asList sSelected) user then 
-                                            --     SR.Types.UISelectedRankingUserIsPlayer
-
-                                            -- else
-                                            --     SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
                                             
                                         in
                                             case status of 
@@ -3028,13 +3101,13 @@ subscriptions model =
                         ]
 
                 SR.Types.WalletOpened ->
+                    Sub.none
+
+                SR.Types.WalletOperational ->
                     Sub.batch
                         [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
                         , Eth.Sentry.Tx.listen txRec.txSentry
                         ]
-
-                SR.Types.WalletOperational ->
-                    Sub.none
 
                 SR.Types.WalletWaitingForTransactionReceipt ->
                     let
@@ -3106,11 +3179,11 @@ fetchedSingleRanking (Internal.Types.RankingId rankingId) =
         }
 
 
-gotRankingList : Cmd Msg
-gotRankingList =
+gotGlobal : Cmd Msg
+gotGlobal =
     Http.request
         { body = Http.emptyBody
-        , expect = Http.expectJson (RemoteData.fromResult >> GlobalRankingsReceived) SR.Decode.rankingsDecoder
+        , expect = Http.expectJson (RemoteData.fromResult >> GlobalReceived) SR.Decode.rankingsDecoder
         , headers = [ SR.Defaults.secretKey, SR.Defaults.globalContainerId, SR.Defaults.globalContainerId ]
         , method = "GET"
         , timeout = Nothing
