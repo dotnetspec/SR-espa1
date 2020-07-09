@@ -1,13 +1,34 @@
 -- Selected will be mainly used to handle internal data of the selected ranking listing as it relates to the current user
-module Data.Selected exposing (Selected, asEverySet, emptySelected
-    , assignChallengerAddrsForBOTHPlayers, updateSelectedRankingOnChallenge
-    , jsonEncodeNewSelectedRankingPlayerList, getRankingId, handleWon, handleLost
-    , handleUndecided, convertPlayersToUserPlayers, extractAndSortPlayerList
-    , gotCurrentUserAsPlayerFromPlayerList, gotUserPlayerFromPlayerListStrAddress
-    , convertUserPlayersToPlayers, isPlayerCurrentUser, printChallengerNameOrAvailable, userAdded
-    , isChallenged, assignChallengerAddr, isUserOwnerOfSelectedUserRanking, addUserPlayer
-    , removeUserPlayer, asList, changedRank, asSelected, isCurrentUserPlayerLowerRanked, isUserPlayerMemberOfSelectedRanking
+module Data.Selected exposing (Selected
+    , asEverySet
+    , gotCurrentUserAsPlayerFromPlayerList
+    , gotUserPlayerFromPlayerListStrAddress
     , gotUserAsPlayer
+    , gotOpponent
+    , emptySelected
+    , assignChallengerAddrsForBOTHPlayers
+    , updateSelectedRankingOnChallenge
+    , jsonEncodeNewSelectedRankingPlayerList
+    , getRankingId
+    , handleWon
+    , handleLost
+    , handleUndecided
+    , convertPlayersToUserPlayers
+    , extractAndSortPlayerList
+    , convertUserPlayersToPlayers
+    , isPlayerCurrentUser
+    , printChallengerNameOrAvailable
+    , userAdded
+    , isChallenged
+    , assignChallengerAddr
+    , isUserOwnerOfSelectedUserRanking
+    , addUserPlayer
+    , removeUserPlayer
+    , asList
+    , changedRank
+    , asSelected
+    , isCurrentUserPlayerLowerRanked
+    , isUserPlayerMemberOfSelectedRanking
     , createdSelected)
 
 
@@ -270,12 +291,16 @@ isPlayerCurrentUser user uplayer =
                                 False
 
 printChallengerNameOrAvailable : Selected -> SR.Types.UserPlayer -> String 
-printChallengerNameOrAvailable sSelected challengerAsUPlayer = 
-    if isChallenged sSelected challengerAsUPlayer then
-                                challengerAsUPlayer.user.username
+printChallengerNameOrAvailable sSelected uplayer = 
+    if isChallenged sSelected uplayer then
+        (gotOpponent sSelected uplayer).user.username
+    else
+        "Available"
 
-                            else
-                                "Available"
+gotOpponent : Selected -> SR.Types.UserPlayer -> SR.Types.UserPlayer
+gotOpponent sSelected uplayer = 
+    gotUserPlayerFromPlayerListStrAddress (asList sSelected) uplayer.player.challengeraddress
+
 
 updatePlayerRankWithWonResult : List SR.Types.UserPlayer -> SR.Types.UserPlayer -> List SR.Types.UserPlayer
 updatePlayerRankWithWonResult luPlayer uplayer =

@@ -45,9 +45,6 @@ import Data.Rankings
 import Data.Players
 import Widget exposing (..)
 
-
-
-
 main =
     Browser.element
         { init = init
@@ -55,7 +52,6 @@ main =
         , subscriptions = subscriptions
         , view = view
         }
-
 
 
 --The model represents the state of the application
@@ -407,9 +403,6 @@ handledWalletStateOpened msg model =
 
                                             newDataKind = Selected newSSelected (Internal.Types.RankingId appInfo.selectedRanking.id) user status
                                             newDataState = StateFetched sUsers newDataKind
-
-                                            
-                             
                                         in
                                             case status of 
                                                 UserIsOwner ->     
