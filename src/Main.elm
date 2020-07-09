@@ -346,7 +346,7 @@ handledWalletStateOpened msg model =
         AppOps walletState dataState appInfo uiState txRec ->
             case msg of
                 WalletStatus walletSentry_ ->
-                    ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+                    ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                 -- there are 2 instances of this operation - necessary?
                 UsersReceived userList ->
@@ -393,8 +393,6 @@ handledWalletStateOpened msg model =
                             case dKind of 
                                     Selected sSelected rnkId user status ->
                                         let 
-                                            _ = Debug.log "lplayer in opened" lplayer
-
                                             newSSelected = Data.Selected.createdSelected lplayer sUsers (Internal.Types.RankingId appInfo.selectedRanking.id)
                                         
                                             newAppPlayer = { appInfo | player = Data.Selected.gotUserAsPlayer newSSelected appInfo.user.ethaddress }
@@ -501,6 +499,62 @@ handledWalletStateOpened msg model =
                 ClickedChangedUIStateToEnterResult player ->
                     ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIEnterResult emptyTxRecord, Cmd.none )
 
+                SentResultToWallet result ->
+                    let
+                        _ =
+                            Debug.log "SentResultToWallet" result
+
+                        txParams =
+                            { to = txRec.account
+                            , from = txRec.account
+                            , gas = Nothing
+                            , gasPrice = Just <| Eth.Units.gwei 4
+                            , value = Just <| Eth.Units.gwei 1
+                            , data = Nothing
+                            , nonce = Nothing
+                            }
+
+                        ( newSentry, sentryCmd ) =
+                            Eth.Sentry.Tx.customSend
+                                txRec.txSentry
+                                { onSign = Just WatchTxHash
+                                , onBroadcast = Just WatchTx
+                                , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                                }
+                                txParams
+
+                        _ =
+                            Debug.log "about to switch to " "SR.Types.WalletWaitingForTransactionReceipt"
+                        
+
+                    in
+
+                    case result of
+                        SR.Types.Won ->
+                            let 
+                                newAppInfo = {appInfo | appState = SR.Types.AppStateEnterWon }
+
+                                
+                            in
+                                ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
+                                , sentryCmd
+                                )
+                                
+                        SR.Types.Lost ->                                     
+                            let
+                                    newAppInfo = {appInfo | appState = SR.Types.AppStateEnterLost }
+                            in
+                                ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
+                                , sentryCmd
+                                )
+                        SR.Types.Undecided -> 
+                            let
+                                    newAppInfo = {appInfo | appState = SR.Types.AppStateEnterUndecided }
+                            in
+                                ( AppOps SR.Types.WalletOpened dataState newAppInfo SR.Types.UIEnterResultTxProblem emptyTxRecord
+                                    , sentryCmd
+                                    )
+
 
                 ResetToShowGlobal ->
                    case dataState of 
@@ -518,6 +572,23 @@ handledWalletStateOpened msg model =
                         _ -> 
                             (model, Cmd.none)
 
+                ResetToShowSelected ->
+                    case dataState of 
+                        StateFetched sUsers dKind ->
+                            case dKind of
+                                Selected sSelected rnkId user uState ->
+                                    case uState of 
+                                        UserIsOwner ->
+                                            (AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, Cmd.none )
+                                        UserIsMember ->
+                                            (AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, Cmd.none )
+                                        UserIsNeitherOwnerNorMember ->
+                                            (AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, Cmd.none )
+                                _ -> 
+                                    (model, Cmd.none)
+                        _ -> 
+                                    (model, Cmd.none)
+                    
                 NoOp ->
                  let
                         _ =
@@ -554,7 +625,8 @@ handleWalletStateOperational msg model =
                         _ =
                             Debug.log "ws in operational" walletSentry_
                     in
-                    ( model, Cmd.none )
+                    --( model, Cmd.none )
+                    ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings txRec, Cmd.none )
 
                 TxSentryMsg subMsg ->
                     let
@@ -567,17 +639,17 @@ handleWalletStateOperational msg model =
                        
                     in
                     if handleTxSubMsg subMsg then                      
-                        ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRenderAllRankings txRec, Cmd.none )
+                        ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings txRec, Cmd.none )
 
                     else
-                        ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
+                        ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
 
                 WatchTxHash (Ok txHash) ->
                     let
                         _ =
                             Debug.log "WatchTxHash in wallet operational " "Ok - hash watched and all ok"
                     in
-                    ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRenderAllRankings { txRec | txHash = Just txHash }, Cmd.none )
+                    ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings { txRec | txHash = Just txHash }, Cmd.none )
 
                 WatchTxHash (Err err) ->
                     let
@@ -591,7 +663,7 @@ handleWalletStateOperational msg model =
                         _ =
                             Debug.log "WatchTx" "tx Ok"
                     in
-                    AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx } |> update (ProcessResult SR.Types.Won)
+                    AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx } |> update (ProcessResult SR.Types.Won)
 
                 WatchTx (Err err) ->
                     let
@@ -605,7 +677,7 @@ handleWalletStateOperational msg model =
                         _ =
                             Debug.log "handleWalletStateOpenedAndOperational Receipt" txReceipt
                     in
-                    AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord
+                    AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord
                         |> update (ProcessResult SR.Types.Won)
 
                 WatchTxReceipt (Err err) ->
@@ -613,14 +685,14 @@ handleWalletStateOperational msg model =
                         _ =
                             Debug.log "tx err" err
                     in
-                    ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
+                    ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
 
                 TrackTx blockDepth ->
                     let
                         _ =
                             Debug.log "TrackTx" "TrackTx"
                     in
-                    ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | blockDepth = Just blockDepth }, Cmd.none )
+                    ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | blockDepth = Just blockDepth }, Cmd.none )
 
                 UsersReceived userList ->
                     let
@@ -636,7 +708,7 @@ handleWalletStateOperational msg model =
                             { appInfo | user = Data.Users.gotUser users appInfo.user.ethaddress }
 
                     in
-                    ( AppOps SR.Types.WalletOperational newDataState userInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotGlobal )
+                    ( AppOps SR.Types.WalletOpened newDataState userInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotGlobal )
                    
 
                 ProcessResult result ->
@@ -721,65 +793,65 @@ handleWalletStateOperational msg model =
                                     in
                                         (model, Cmd.none)
 
-                SentResultToWallet result ->
-                    let
-                        _ =
-                            Debug.log "SentResultToWallet" result
+                -- SentResultToWallet result ->
+                --     let
+                --         _ =
+                --             Debug.log "SentResultToWallet" result
 
-                        txParams =
-                            { to = txRec.account
-                            , from = txRec.account
-                            , gas = Nothing
-                            , gasPrice = Just <| Eth.Units.gwei 4
-                            , value = Just <| Eth.Units.gwei 1
-                            , data = Nothing
-                            , nonce = Nothing
-                            }
+                --         txParams =
+                --             { to = txRec.account
+                --             , from = txRec.account
+                --             , gas = Nothing
+                --             , gasPrice = Just <| Eth.Units.gwei 4
+                --             , value = Just <| Eth.Units.gwei 1
+                --             , data = Nothing
+                --             , nonce = Nothing
+                --             }
 
-                        ( newSentry, sentryCmd ) =
-                            Eth.Sentry.Tx.customSend
-                                txRec.txSentry
-                                { onSign = Just WatchTxHash
-                                , onBroadcast = Just WatchTx
-                                , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
-                                }
-                                txParams
+                --         ( newSentry, sentryCmd ) =
+                --             Eth.Sentry.Tx.customSend
+                --                 txRec.txSentry
+                --                 { onSign = Just WatchTxHash
+                --                 , onBroadcast = Just WatchTx
+                --                 , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                --                 }
+                --                 txParams
 
-                        _ =
-                            Debug.log "about to switch to " "SR.Types.WalletWaitingForTransactionReceipt"
+                --         _ =
+                --             Debug.log "about to switch to " "SR.Types.WalletWaitingForTransactionReceipt"
                         
 
-                    in
+                --     in
 
-                    case result of
-                        SR.Types.Won ->
-                            let 
-                                newAppInfo = {appInfo | appState = SR.Types.AppStateEnterWon }
+                --     case result of
+                --         SR.Types.Won ->
+                --             let 
+                --                 newAppInfo = {appInfo | appState = SR.Types.AppStateEnterWon }
 
                                 
-                            in
-                                ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
-                                , sentryCmd
-                                )
+                --             in
+                --                 ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
+                --                 , sentryCmd
+                --                 )
                                 
-                        SR.Types.Lost ->                                     
-                            let
-                                    newAppInfo = {appInfo | appState = SR.Types.AppStateEnterLost }
-                            in
-                                ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
-                                , sentryCmd
-                                )
-                        SR.Types.Undecided -> 
-                            let
-                                    newAppInfo = {appInfo | appState = SR.Types.AppStateEnterUndecided }
-                            in
-                                ( AppOps SR.Types.WalletOperational dataState newAppInfo SR.Types.UIEnterResultTxProblem emptyTxRecord
-                                    , sentryCmd
-                                    )
+                --         SR.Types.Lost ->                                     
+                --             let
+                --                     newAppInfo = {appInfo | appState = SR.Types.AppStateEnterLost }
+                --             in
+                --                 ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
+                --                 , sentryCmd
+                --                 )
+                --         SR.Types.Undecided -> 
+                --             let
+                --                     newAppInfo = {appInfo | appState = SR.Types.AppStateEnterUndecided }
+                --             in
+                --                 ( AppOps SR.Types.WalletOpened dataState newAppInfo SR.Types.UIEnterResultTxProblem emptyTxRecord
+                --                     , sentryCmd
+                --                     )
                     
 
                 SentResultToJsonbin a ->
-                    ( AppOps SR.Types.WalletOperational
+                    ( AppOps SR.Types.WalletOpened
                         dataState
                         appInfo
                         uiState
@@ -848,13 +920,13 @@ handleWalletStateOperational msg model =
                     in 
                     ( AppOps SR.Types.WalletOperational dataState newAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotGlobal )
 
-                ResetToShowSelected ->
-                --todo: something like this will need to be implemented:
-                    -- let
-                    --     uiType =
-                    --         ensuredCorrectSelectedUI appInfo dataState
-                    -- in
-                    ( AppOps SR.Types.WalletOperational dataState appInfo uiState emptyTxRecord, Cmd.none )
+                -- ResetToShowSelected ->
+                -- --todo: something like this will need to be implemented:
+                --     -- let
+                --     --     uiType =
+                --     --         ensuredCorrectSelectedUI appInfo dataState
+                --     -- in
+                --     ( AppOps SR.Types.WalletOpened dataState appInfo uiState emptyTxRecord, Cmd.none )
 
                 ClickedCreateNewLadder ->
                     let
@@ -1255,7 +1327,8 @@ handleWalletStateOperational msg model =
                     ( model, Cmd.none )
 
                 _ ->
-                    ( model, Cmd.none )
+                    --( model, Cmd.none )
+                    ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UILoading txRec, Cmd.none )
 
         Failure str ->
             ( Failure str, Cmd.none )
@@ -1330,17 +1403,10 @@ handleWalletWaitingForUserInput msg walletState dataState appInfo txRec =
                         ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }
                         , Cmd.batch [subCmd,  createNewUser ( Data.Users.asList userSet) appInfo.user] )
 
-
-
-
-
-
                     SR.Types.AppStateEnterWon -> 
                         let 
                             _ =
                                 Debug.log "in AppStateEnterWon" "yes"
-
-                            
                         in
                         
                              (AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Won) )
@@ -1366,17 +1432,17 @@ handleWalletWaitingForUserInput msg walletState dataState appInfo txRec =
                         )
 
                     _ -> 
-                       ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }, subCmd ) 
+                       ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }, subCmd ) 
 
             else
-                ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
+                ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
 
         WatchTxHash (Ok txHash) ->
             let
                 _ =
                     Debug.log "handleWalletWaitingForUserInput" "watch tx hash"
             in
-            ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txHash = Just txHash }, Cmd.none )
+            ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txHash = Just txHash }, Cmd.none )
 
         WatchTxHash (Err err) ->
             ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
@@ -1387,7 +1453,7 @@ handleWalletWaitingForUserInput msg walletState dataState appInfo txRec =
                     Debug.log "handleWalletWaitingForUserInput" "tx ok"
             in
       
-            (AppOps walletState dataState appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx }, Cmd.none )
+            (AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx }, Cmd.none )
 
         WatchTx (Err err) ->
             let
@@ -1401,7 +1467,7 @@ handleWalletWaitingForUserInput msg walletState dataState appInfo txRec =
                 _ =
                     Debug.log "handleWalletWaitingForUserInput tx ok" txReceipt
             in
-            AppOps walletState dataState appInfo SR.Types.UIRenderAllRankings { txRec | txReceipt = Just txReceipt } |> update (ProcessResult SR.Types.Won)
+            AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings { txRec | txReceipt = Just txReceipt } |> update (ProcessResult SR.Types.Won)
 
         WatchTxReceipt (Err err) ->
             let
@@ -2031,42 +2097,20 @@ playerbuttons dataState appInfo =
 configureThenAddPlayerRankingBtns : Data.Selected.Selected -> SR.Types.AppInfo -> SR.Types.UserPlayer -> Element Msg
 configureThenAddPlayerRankingBtns sSelected appInfo uplayer =
    -- nb. 'uplayer' is the player that's being mapped cf. appInfo.player which is current user as player (single instance)
-    -- case dataState of 
-    --         Selected sSelected sUsers rnkId ->
                 let
-                    _ = Debug.log "userPlayer in configureThenAddPlayerRankingBtns" "uplayer"
-                    -- playerAsUser =
-                    --     Data.Users.gotUser sUsers uplayer.player.address
-
-                    -- challengerAsUser =
-                    --     Data.Users.gotUser sUsers uplayer.player.challengeraddress
-
                     printChallengerNameOrAvailable = Data.Selected.printChallengerNameOrAvailable sSelected uplayer
-                    --printChallengerNameOrAvailable = uplayer.challenger.name
-
-                    --_ = Debug.log "playerAsUser " playerAsUser
                 in
                 if Data.Selected.isUserPlayerMemberOfSelectedRanking (Data.Selected.asList sSelected) appInfo.user then
-                    let
-                        _ = Debug.log "player is in selected ranking" "current user not yet determined"
-                    in
-                    --if isPlayerCurrentUser then
+                    
                     if Data.Selected.isPlayerCurrentUser appInfo.user uplayer then
-                        let 
-                                    _ = Debug.log "player is current user" "challenge not yet determined"
-                        in
                         --if isCurrentUserInAChallenge then
                         if Data.Selected.isChallenged sSelected uplayer then
-                            let 
-                                    _ = Debug.log "player is current user, and in a challenge" "here"
-                            in
                             Element.column Grid.simple <|
                                 [ Input.button (Button.fill ++ Color.success) <|
                                     { onPress = Just <| ClickedChangedUIStateToEnterResult appInfo.player
                                     , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ uplayer.user.username ++ " vs " ++ printChallengerNameOrAvailable
                                     }
                                 ]
-                        
                         else
                         -- player is current user, but not in a challenge:
                         let 
@@ -2097,13 +2141,8 @@ configureThenAddPlayerRankingBtns sSelected appInfo uplayer =
                                 , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ uplayer.user.username ++ " vs " ++ printChallengerNameOrAvailable
                                 }
                             ]
-                        
-
                     else
                     -- this uplayer isn't the current user and isn't challenged by anyone
-                    let 
-                            _ = Debug.log "player is not current user, and is ready to be challenged if higher ranked" uplayer
-                    in
                         if Data.Selected.isCurrentUserPlayerLowerRanked uplayer appInfo.challenger then 
                             Element.column Grid.simple <|
                                 [ Input.button (Button.fill ++ Color.light) <|
@@ -2118,8 +2157,6 @@ configureThenAddPlayerRankingBtns sSelected appInfo uplayer =
                                     , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ uplayer.user.username ++ " vs " ++ printChallengerNameOrAvailable
                                     }
                                 ]
-                    
-
                 else
                     -- the user isn't a member of this ranking so disable everything
                     Element.column Grid.simple <|
@@ -2128,7 +2165,6 @@ configureThenAddPlayerRankingBtns sSelected appInfo uplayer =
                             , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ uplayer.user.username ++ " vs " ++ printChallengerNameOrAvailable
                             }
                         ]
-
             -- _ ->
             --     Element.text "Config Btns Failed"
 
@@ -2361,15 +2397,8 @@ acknoweldgeTxErrorbtn model =
     case model of
         AppOps walletState dataState appInfo uiState txRec ->
             Element.column Grid.section <|
-                [ Element.column (Card.simple ++ Grid.simple) <|
-                    [ Element.wrappedRow Grid.simple <|
-                        [ Input.button (Button.simple ++ Color.simple) <|
-                            { onPress = Just <| ResetToShowSelected
-                            , label = Element.text "Cancel"
-                            }
-                        ]
-                    ]
-                , Element.paragraph (Card.fill ++ Color.info) <|
+                [ 
+                Element.paragraph (Card.fill ++ Color.info) <|
                     [ Element.el [] <| Element.text """ There was an error 
                                                         processing your transaction. 
                                                         It is unlikely to be 
@@ -2383,7 +2412,7 @@ acknoweldgeTxErrorbtn model =
                 , Element.column (Card.simple ++ Grid.simple) <|
                     [ Element.column Grid.simple <|
                         [ Input.button (Button.simple ++ Color.primary) <|
-                            { onPress = Just <| ResetRejectedNewUserToShowGlobal
+                            { onPress = Just <| ResetToShowSelected
                             , label = Element.text "Continue ..."
                             }
                         ]
@@ -3075,6 +3104,18 @@ subscriptions model =
                         [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
                         , Eth.Sentry.Tx.listen txRec.txSentry
                         ]
+
+                -- SR.Types.WalletOperational ->
+                --         Sub.batch   
+                --             [
+                --             if model.someInt < 9 then
+                --                  Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+                --                 , Eth.Sentry.Tx.listen txRec.txSentry
+                                
+                --             else 
+                --                 Sub.none
+                --             ]
+  
 
                 SR.Types.WalletWaitingForTransactionReceipt ->
                     let
