@@ -165,15 +165,15 @@ type Msg
     | ClickedCreateNewLadder
     | ClickedConfirmCreateNewLadder
     | ClickedNewChallengeConfirm
+    | ClickedChallengeOpponent SR.Types.UserPlayer
+    | ClickedJoinSelected
+    | ClickedChangedUIStateToEnterResult SR.Types.UserPlayer
     | ResetToShowGlobal
     | ResetToShowSelected
     | ResetRejectedNewUserToShowGlobal
     | DeletedRanking String
-    | ChallengeOpponentClicked SR.Types.UserPlayer
-    | ClickedJoinSelected
     | LadderNameInputChg String
     | LadderDescInputChg String
-    | ChangedUIStateToEnterResult SR.Types.UserPlayer
     | NewUserNameInputChg String
     | NewUserDescInputChg String
     | NewUserEmailInputChg String
@@ -497,6 +497,9 @@ handledWalletStateOpened msg model =
                                             (model, Cmd.none)
                                 _ -> 
                                     (model, Cmd.none)
+
+                ClickedChangedUIStateToEnterResult player ->
+                    ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIEnterResult emptyTxRecord, Cmd.none )
 
 
                 ResetToShowGlobal ->
@@ -1005,8 +1008,6 @@ handleWalletStateOperational msg model =
                         _ -> 
                             (model, Cmd.none)
 
-                ChangedUIStateToEnterResult player ->
-                    ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIEnterResult emptyTxRecord, Cmd.none )
 
                 DeletedRanking uaddr ->
                     case dataState of 
@@ -1048,9 +1049,12 @@ handleWalletStateOperational msg model =
                     
 
 
-                ChallengeOpponentClicked opponentAsPlayer ->
+                ClickedChallengeOpponent opponentAsPlayer ->
+                    let 
+                        _ = Debug.log "ClickedChallengeOpponent" dataState
+                    in
                     case dataState of
-                        StateUpdated sUsers dKind -> 
+                        StateFetched sUsers dKind -> 
                             case dKind of 
                                     Selected sSelected rnkId user status ->
                                         ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer appInfo.user, Cmd.none )
@@ -2058,7 +2062,7 @@ configureThenAddPlayerRankingBtns sSelected appInfo uplayer =
                             in
                             Element.column Grid.simple <|
                                 [ Input.button (Button.fill ++ Color.success) <|
-                                    { onPress = Just <| ChangedUIStateToEnterResult appInfo.player
+                                    { onPress = Just <| ClickedChangedUIStateToEnterResult appInfo.player
                                     , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ uplayer.user.username ++ " vs " ++ printChallengerNameOrAvailable
                                     }
                                 ]
@@ -2103,7 +2107,7 @@ configureThenAddPlayerRankingBtns sSelected appInfo uplayer =
                         if Data.Selected.isCurrentUserPlayerLowerRanked uplayer appInfo.challenger then 
                             Element.column Grid.simple <|
                                 [ Input.button (Button.fill ++ Color.light) <|
-                                    { onPress = Just <| ChallengeOpponentClicked uplayer
+                                    { onPress = Just <| ClickedChallengeOpponent uplayer
                                     , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ uplayer.user.username ++ " vs " ++ printChallengerNameOrAvailable
                                     }
                                 ]
@@ -2135,7 +2139,7 @@ insertPlayerList dataState appInfo =
                         case dKind of 
                                 Selected sSelected rnkId user status ->
                                     let
-                                        _ = Debug.log "in insertplayer list "  (Data.Selected.asList sSelected)
+                                       
                                         mapOutPlayerList =
                                             List.map
                                                 (configureThenAddPlayerRankingBtns sSelected appInfo)
@@ -2299,7 +2303,7 @@ confirmResultbutton model =
     case model of
         AppOps walletState dataState appInfo uiState txRec ->
             case dataState of
-                StateUpdated sUsers dKind -> 
+                StateFetched sUsers dKind -> 
                     case dKind of 
                         Selected sSelected rnkId user status ->
                             let
@@ -2980,7 +2984,7 @@ displayResultBeforeConfirmView model =
     case model of
         AppOps walletState dataState appInfo uiState txRec ->
                 case dataState of
-                    StateUpdated sUsers dKind -> 
+                    StateFetched sUsers dKind -> 
                         case dKind of 
                                 Selected sSelected rnkId user status ->
                                     let
