@@ -452,6 +452,60 @@ handledWalletStateOpened msg model =
                         _ -> 
                                         (model, Cmd.none)
 
+                ClickedSelectedMemberRanking rnkidstr rnkownerstr rnknamestr ->
+                    case dataState of 
+                            StateFetched sUsers dKind ->
+                                    case dKind of 
+                                        Global sGlobal rnkId user ->
+                                            let
+                                                _ =
+                                                    Debug.log "user clicked member" rnkidstr
+
+                                                newAppInfo =
+                                                    updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
+
+                                                -- re-factor from appInfo to AppState over time
+                                                initAppState = 
+                                                    Data.AppState.updateAppState appInfo.user appInfo.player 
+                                                    appInfo.challenger ( rnkidstr)
+
+                                                newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") user UserIsMember
+                                                newDataState = StateFetched sUsers newDataKind
+                                            in
+                                                ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, 
+                                                fetchedSingleRanking rnkidstr )
+                                        _ -> 
+                                            (model, Cmd.none)
+                            _ -> 
+                                            (model, Cmd.none)
+
+                ClickedSelectedNeitherOwnerNorMember rnkidstr rnkownerstr rnknamestr ->
+                    case dataState of 
+                                StateFetched sUsers dKind ->
+                                    case dKind of 
+                                        Global sGlobal rnkId user ->
+                                            let
+
+                                                newAppInfo =
+                                                    updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
+
+                                                -- re-factor from appInfo to AppState over time
+                                                initAppState = 
+                                                    Data.AppState.updateAppState appInfo.user appInfo.player 
+                                                    appInfo.challenger ( rnkidstr)
+
+                                             
+                                                newDataKind = Selected Data.Selected.emptySelected rnkidstr user UserIsNeitherOwnerNorMember
+                                                newDataState = StateFetched sUsers newDataKind
+                                            in
+                                                ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, 
+                                                fetchedSingleRanking rnkidstr )
+                                        _ -> 
+                                            (model, Cmd.none)
+                                _ -> 
+                                    (model, Cmd.none)
+
+
                 ResetToShowGlobal ->
                    case dataState of 
                         StateFetched sUsers dKind ->
@@ -728,8 +782,6 @@ handleWalletStateOperational msg model =
                                     )
                     
 
-
-
                 SentResultToJsonbin a ->
                     ( AppOps SR.Types.WalletOperational
                         dataState
@@ -755,89 +807,7 @@ handleWalletStateOperational msg model =
                         _ ->
                             (model, Cmd.none)
           
-                ClickedSelectedOwnedRanking rnkidstr rnkownerstr rnknamestr ->
-                        case dataState of 
-                            StateFetched sUsers dKind ->
-                                    case dKind of 
-                                        Global sGlobal rnkId user ->
-                                            let 
-                                                
-                                                newAppInfo =
-                                                    updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
 
-
-                                            -- re-factor from appInfo to AppState over time
-                                                initAppState = 
-                                                    Data.AppState.updateAppState appInfo.user appInfo.player 
-                                                    appInfo.challenger (rnkidstr)
-
-                                                newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") user UserIsOwner
-                                                newDataState = StateFetched sUsers newDataKind
-                                        
-                                            in
-                                                ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UILoading emptyTxRecord, 
-                                                fetchedSingleRanking rnkidstr )
-                                        _ -> 
-                                            (model, Cmd.none)
-                            _ -> 
-                                            (model, Cmd.none)
-
-                ClickedSelectedMemberRanking rnkidstr rnkownerstr rnknamestr ->
-                          let
-                                                _ =
-                                                    Debug.log "user clicked member" rnkidstr
-                            in
-                    case dataState of 
-                            StateFetched sUsers dKind ->
-                                    case dKind of 
-                                        Global sGlobal rnkId user ->
-                                            let
-                                                _ =
-                                                    Debug.log "user clicked member" rnkidstr
-
-                                                newAppInfo =
-                                                    updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
-
-                                                -- re-factor from appInfo to AppState over time
-                                                initAppState = 
-                                                    Data.AppState.updateAppState appInfo.user appInfo.player 
-                                                    appInfo.challenger ( rnkidstr)
-
-                                                newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") user UserIsMember
-                                                newDataState = StateFetched sUsers newDataKind
-                                            in
-                                                ( AppOps SR.Types.WalletOperational newDataState newAppInfo SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, 
-                                                fetchedSingleRanking rnkidstr )
-                                        _ -> 
-                                            (model, Cmd.none)
-                            _ -> 
-                                            (model, Cmd.none)
-
-                ClickedSelectedNeitherOwnerNorMember rnkidstr rnkownerstr rnknamestr ->
-                    case dataState of 
-                                StateFetched sUsers dKind ->
-                                    case dKind of 
-                                        Global sGlobal rnkId user ->
-                                            let
-
-                                                newAppInfo =
-                                                    updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
-
-                                                -- re-factor from appInfo to AppState over time
-                                                initAppState = 
-                                                    Data.AppState.updateAppState appInfo.user appInfo.player 
-                                                    appInfo.challenger ( rnkidstr)
-
-                                             
-                                                newDataKind = Selected Data.Selected.emptySelected rnkidstr user UserIsNeitherOwnerNorMember
-                                                newDataState = StateFetched sUsers newDataKind
-                                            in
-                                                ( AppOps SR.Types.WalletOperational newDataState newAppInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, 
-                                                fetchedSingleRanking rnkidstr )
-                                        _ -> 
-                                            (model, Cmd.none)
-                                _ -> 
-                                    (model, Cmd.none)
 
                 -- this is the response from addedUserAsFirstPlayerInNewList Cmd
                 -- it had the Http.expectStringResponse in it
