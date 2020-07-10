@@ -649,16 +649,11 @@ handledWalletStateOpened msg model =
                 ResetToShowGlobal ->
                    case dataState of 
                         StateFetched sUsers dKind ->
-                            case dKind of
-                                Global sGlobal rnkId user ->
-                                    let
-                                        newDataKind = Global Data.Global.emptyGlobal (Internal.Types.RankingId "") user
-                                        newDataState = StateFetched sUsers newDataKind
-                                    in
-                                    ( AppOps SR.Types.WalletOpened newDataState appInfo SR.Types.UILoading emptyTxRecord, gotGlobal )
-                                
-                                _ -> 
-                                    (model, Cmd.none)
+                            let
+                                newDataKind = Global Data.Global.emptyGlobal (Internal.Types.RankingId "") appInfo.user
+                                newDataState = StateFetched sUsers newDataKind
+                            in
+                            ( AppOps SR.Types.WalletOpened newDataState appInfo SR.Types.UILoading emptyTxRecord, gotGlobal )
                         _ -> 
                             (model, Cmd.none)
 
@@ -684,6 +679,57 @@ handledWalletStateOpened msg model =
                         _ = Debug.log "ClickedUpdateExistingUser " walletState
                     in
                     ( AppOps walletState dataState appInfo SR.Types.UIUpdateExistingUser txRec, Cmd.none )
+
+                LadderNameInputChg namefield ->
+                    let
+                        newSelectedRanking =
+                            appInfo.selectedRanking
+
+                        updatedSelectedRanking =
+                            { newSelectedRanking | rankingname = namefield }
+
+                        newAppInfo =
+                            { appInfo | selectedRanking = updatedSelectedRanking }
+                    in
+                    ( AppOps SR.Types.WalletOperational dataState newAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
+
+                LadderDescInputChg descfield ->
+                    let
+                        newSelectedRanking =
+                            appInfo.selectedRanking
+
+                        updatedSelectedRanking =
+                            { newSelectedRanking | rankingdesc = descfield }
+
+                        newAppInfo =
+                            { appInfo | selectedRanking = updatedSelectedRanking }
+                    in
+                    ( AppOps SR.Types.WalletOperational dataState newAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
+
+                
+                NewUserNameInputChg updateField ->
+                    ( handleNewUserInputs model (NewUserNameInputChg updateField), Cmd.none )
+
+                NewUserDescInputChg updateField ->
+                    ( handleNewUserInputs model (NewUserDescInputChg updateField), Cmd.none )
+
+                NewUserEmailInputChg updateField ->
+                    ( handleNewUserInputs model (NewUserEmailInputChg updateField), Cmd.none )
+
+                NewUserMobileInputChg updateField ->
+                    ( handleNewUserInputs model (NewUserMobileInputChg updateField), Cmd.none )
+
+                ExistingUserNameInputChg updateField ->
+                    ( handleExistingUserInputs model (ExistingUserNameInputChg updateField), Cmd.none )
+
+                ExistingUserDescInputChg updateField ->
+                    ( handleExistingUserInputs model (ExistingUserDescInputChg updateField), Cmd.none )
+
+                ExistingUserEmailInputChg updateField ->
+                    ( handleExistingUserInputs model (ExistingUserEmailInputChg updateField), Cmd.none )
+
+                ExistingUserMobileInputChg updateField ->
+                    ( handleExistingUserInputs model (ExistingUserMobileInputChg updateField), Cmd.none )
                     
                 NoOp ->
                  let
@@ -876,8 +922,7 @@ handleWalletStateOperational msg model =
                 SentUserInfoAndDecodedResponseToNewUser serverResponse ->
                     ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
-                -- ResetToShowGlobal ->
-                --     ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotGlobal )
+                
 
                 ResetRejectedNewUserToShowGlobal ->
                     let 
@@ -961,31 +1006,31 @@ handleWalletStateOperational msg model =
                     ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
                     
 
-                LadderNameInputChg namefield ->
-                    let
-                        newSelectedRanking =
-                            appInfo.selectedRanking
+                -- LadderNameInputChg namefield ->
+                --     let
+                --         newSelectedRanking =
+                --             appInfo.selectedRanking
 
-                        updatedSelectedRanking =
-                            { newSelectedRanking | rankingname = namefield }
+                --         updatedSelectedRanking =
+                --             { newSelectedRanking | rankingname = namefield }
 
-                        newAppInfo =
-                            { appInfo | selectedRanking = updatedSelectedRanking }
-                    in
-                    ( AppOps SR.Types.WalletOperational dataState newAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
+                --         newAppInfo =
+                --             { appInfo | selectedRanking = updatedSelectedRanking }
+                --     in
+                --     ( AppOps SR.Types.WalletOperational dataState newAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
 
-                LadderDescInputChg descfield ->
-                    let
-                        newSelectedRanking =
-                            appInfo.selectedRanking
+                -- LadderDescInputChg descfield ->
+                --     let
+                --         newSelectedRanking =
+                --             appInfo.selectedRanking
 
-                        updatedSelectedRanking =
-                            { newSelectedRanking | rankingdesc = descfield }
+                --         updatedSelectedRanking =
+                --             { newSelectedRanking | rankingdesc = descfield }
 
-                        newAppInfo =
-                            { appInfo | selectedRanking = updatedSelectedRanking }
-                    in
-                    ( AppOps SR.Types.WalletOperational dataState newAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
+                --         newAppInfo =
+                --             { appInfo | selectedRanking = updatedSelectedRanking }
+                --     in
+                --     ( AppOps SR.Types.WalletOperational dataState newAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
 
                 ClickedNewChallengeConfirm ->
                     case dataState of
@@ -1209,29 +1254,29 @@ handleWalletStateOperational msg model =
                     in
                     ( model, Cmd.none )
 
-                NewUserNameInputChg updateField ->
-                    ( handleNewUserInputs model (NewUserNameInputChg updateField), Cmd.none )
+                -- NewUserNameInputChg updateField ->
+                --     ( handleNewUserInputs model (NewUserNameInputChg updateField), Cmd.none )
 
-                NewUserDescInputChg updateField ->
-                    ( handleNewUserInputs model (NewUserDescInputChg updateField), Cmd.none )
+                -- NewUserDescInputChg updateField ->
+                --     ( handleNewUserInputs model (NewUserDescInputChg updateField), Cmd.none )
 
-                NewUserEmailInputChg updateField ->
-                    ( handleNewUserInputs model (NewUserEmailInputChg updateField), Cmd.none )
+                -- NewUserEmailInputChg updateField ->
+                --     ( handleNewUserInputs model (NewUserEmailInputChg updateField), Cmd.none )
 
-                NewUserMobileInputChg updateField ->
-                    ( handleNewUserInputs model (NewUserMobileInputChg updateField), Cmd.none )
+                -- NewUserMobileInputChg updateField ->
+                --     ( handleNewUserInputs model (NewUserMobileInputChg updateField), Cmd.none )
 
-                ExistingUserNameInputChg updateField ->
-                    ( handleExistingUserInputs model (ExistingUserNameInputChg updateField), Cmd.none )
+                -- ExistingUserNameInputChg updateField ->
+                --     ( handleExistingUserInputs model (ExistingUserNameInputChg updateField), Cmd.none )
 
-                ExistingUserDescInputChg updateField ->
-                    ( handleExistingUserInputs model (ExistingUserDescInputChg updateField), Cmd.none )
+                -- ExistingUserDescInputChg updateField ->
+                --     ( handleExistingUserInputs model (ExistingUserDescInputChg updateField), Cmd.none )
 
-                ExistingUserEmailInputChg updateField ->
-                    ( handleExistingUserInputs model (ExistingUserEmailInputChg updateField), Cmd.none )
+                -- ExistingUserEmailInputChg updateField ->
+                --     ( handleExistingUserInputs model (ExistingUserEmailInputChg updateField), Cmd.none )
 
-                ExistingUserMobileInputChg updateField ->
-                    ( handleExistingUserInputs model (ExistingUserMobileInputChg updateField), Cmd.none )
+                -- ExistingUserMobileInputChg updateField ->
+                --     ( handleExistingUserInputs model (ExistingUserMobileInputChg updateField), Cmd.none )
 
                 -- ClickedUpdateExistingUser ->
                 --     ( AppOps walletState dataState appInfo SR.Types.UIUpdateExistingUser txRec, Cmd.none )
