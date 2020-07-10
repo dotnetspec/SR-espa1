@@ -76,12 +76,7 @@ type DataState
 type DataKind
   = Users SR.Types.User
   | Global Data.Global.Global Internal.Types.RankingId SR.Types.User
-  | Selected Data.Selected.Selected Internal.Types.RankingId SR.Types.User SelectedStatus
-
-type SelectedStatus
- = UserIsOwner
- | UserIsMember
- | UserIsNeitherOwnerNorMember
+  | Selected Data.Selected.Selected Internal.Types.RankingId SR.Types.User SR.Types.SelectedStatus
     
 
 emptyAllLists =
@@ -410,11 +405,11 @@ handledWalletStateOpened msg model =
                                             newDataState = StateFetched sUsers newDataKind
                                         in
                                             case status of 
-                                                UserIsOwner ->     
+                                                SR.Types.UserIsOwner ->     
                                                     (AppOps SR.Types.WalletOpened newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, Cmd.none)
-                                                UserIsMember  ->
+                                                SR.Types.UserIsMember  ->
                                                     (AppOps SR.Types.WalletOpened newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, Cmd.none)
-                                                UserIsNeitherOwnerNorMember ->
+                                                SR.Types.UserIsNeitherOwnerNorMember ->
                                                     (AppOps SR.Types.WalletOpened newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, Cmd.none)
             
                                     _ -> 
@@ -439,7 +434,7 @@ handledWalletStateOpened msg model =
                                                 Data.AppState.updateAppState appInfo.user appInfo.player 
                                                 appInfo.challenger (rnkidstr)
 
-                                            newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") user UserIsOwner
+                                            newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") user SR.Types.UserIsOwner
                                             newDataState = StateFetched sUsers newDataKind
                                     
                                         in
@@ -467,7 +462,7 @@ handledWalletStateOpened msg model =
                                                     Data.AppState.updateAppState appInfo.user appInfo.player 
                                                     appInfo.challenger ( rnkidstr)
 
-                                                newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") user UserIsMember
+                                                newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") user SR.Types.UserIsMember
                                                 newDataState = StateFetched sUsers newDataKind
                                             in
                                                 ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, 
@@ -493,7 +488,7 @@ handledWalletStateOpened msg model =
                                                     appInfo.challenger ( rnkidstr)
 
                                              
-                                                newDataKind = Selected Data.Selected.emptySelected rnkidstr user UserIsNeitherOwnerNorMember
+                                                newDataKind = Selected Data.Selected.emptySelected rnkidstr user SR.Types.UserIsNeitherOwnerNorMember
                                                 newDataState = StateFetched sUsers newDataKind
                                             in
                                                 ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, 
@@ -562,7 +557,7 @@ handledWalletStateOpened msg model =
                                     , sentryCmd
                                     )
 
-                ProcessResult result ->
+                ProcessResult result ->               
                     let
                         _ =
                             Debug.log "process result" result
@@ -576,29 +571,16 @@ handledWalletStateOpened msg model =
                                             let 
                                                 handleWonTuple = Data.Selected.handleWon sSelected appInfo
                                                 newDataKind = Selected (Tuple.first handleWonTuple) rnkId user status
-                                                newDataState = StateUpdated sUsers newDataKind                                                      
+                                                newDataState = StateUpdated sUsers newDataKind
+                                                newModel = 
+                                                     AppOps walletState newDataState (Tuple.second handleWonTuple)  
+                                                        (Data.Selected.resultView status) txRec
                                             in
-                                            case status of 
-                                                UserIsOwner -> 
-                                                    let 
-                                                         newModel = AppOps walletState newDataState (Tuple.second handleWonTuple) SR.Types.UISelectedRankingUserIsOwner txRec
-                                                    in
-                                                        ( newModel, httpPlayerList newDataState)
-                                                
-                                                UserIsMember -> 
-                                                    let 
-                                                         newModel = AppOps walletState newDataState (Tuple.second handleWonTuple) SR.Types.UISelectedRankingUserIsPlayer txRec
-                                                    in
-                                                        ( newModel, httpPlayerList newDataState)
-                                                
-                                                UserIsNeitherOwnerNorMember -> 
-                                                    let 
-                                                         newModel = AppOps walletState newDataState (Tuple.second handleWonTuple) SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer txRec
-                                                    in
-                                                        ( newModel, httpPlayerList newDataState)          
+                                                 (newModel, httpPlayerList newDataState) 
+                                        
                                         _ -> 
                                             let 
-                                                _ = Debug.log "2 - dataState" dataState
+                                                _ = Debug.log "2.1 - dataState" dataState
                                             in
                                                 (model, Cmd.none)
                                 _ -> 
@@ -615,29 +597,15 @@ handledWalletStateOpened msg model =
                                             let 
                                                 handleLostTuple = Data.Selected.handleLost sSelected appInfo
                                                 newDataKind = Selected (Tuple.first handleLostTuple) rnkId user status
-                                                newDataState = StateUpdated sUsers newDataKind          
+                                                newDataState = StateUpdated sUsers newDataKind
+                                                newModel = 
+                                                     AppOps walletState newDataState (Tuple.second handleLostTuple)  
+                                                        (Data.Selected.resultView status) txRec
                                             in
-                                            case status of 
-                                                UserIsOwner -> 
-                                                    let 
-                                                         newModel = AppOps walletState newDataState (Tuple.second handleLostTuple)  SR.Types.UISelectedRankingUserIsOwner txRec
-                                                    in
-                                                        (newModel, httpPlayerList newDataState)
-                                                
-                                                UserIsMember -> 
-                                                    let 
-                                                         newModel = AppOps walletState newDataState (Tuple.second handleLostTuple)  SR.Types.UISelectedRankingUserIsPlayer txRec
-                                                    in
-                                                        (newModel, httpPlayerList newDataState)
-                                                
-                                                UserIsNeitherOwnerNorMember -> 
-                                                    let 
-                                                         newModel = AppOps walletState newDataState (Tuple.second handleLostTuple)  SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer txRec
-                                                    in
-                                                        (newModel, httpPlayerList newDataState)  
+                                                 (newModel, httpPlayerList newDataState) 
                                         _ -> 
                                             let 
-                                                _ = Debug.log "3 - dataState should be Selected" dataState
+                                                _ = Debug.log "3 - dataState" dataState
                                             in
                                                 (model, Cmd.none)
                                 _ -> 
@@ -655,26 +623,12 @@ handledWalletStateOpened msg model =
                                                 handleUndecidedTuple = Data.Selected.handleUndecided sSelected appInfo
                                                 newDataKind = Selected (Tuple.first handleUndecidedTuple) rnkId user status
                                                 newDataState = StateUpdated sUsers newDataKind
-                                                --newModel = AppOps walletState newDataState (Tuple.second handleUndecidedTuple) SR.Types.UISelectedRankingUserIsPlayer txRec
+                                                newModel = 
+                                                     AppOps walletState newDataState (Tuple.second handleUndecidedTuple)  
+                                                        (Data.Selected.resultView status) txRec
                                             in
-                                            case status of 
-                                                UserIsOwner -> 
-                                                    let 
-                                                         newModel = AppOps walletState newDataState (Tuple.second handleUndecidedTuple)  SR.Types.UISelectedRankingUserIsOwner txRec
-                                                    in
-                                                        (newModel, httpPlayerList newDataState)
-                                                
-                                                UserIsMember -> 
-                                                    let 
-                                                         newModel = AppOps walletState newDataState (Tuple.second handleUndecidedTuple)  SR.Types.UISelectedRankingUserIsPlayer txRec
-                                                    in
-                                                        (newModel, httpPlayerList newDataState)
-                                                
-                                                UserIsNeitherOwnerNorMember -> 
-                                                    let 
-                                                         newModel = AppOps walletState newDataState (Tuple.second handleUndecidedTuple)  SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer txRec
-                                                    in
-                                                        (newModel, httpPlayerList newDataState)  
+                                                 (newModel, httpPlayerList newDataState) 
+  
                                         _ -> 
                                             let 
                                                 _ = Debug.log "4 - dataState" dataState
@@ -709,11 +663,11 @@ handledWalletStateOpened msg model =
                             case dKind of
                                 Selected sSelected rnkId user uState ->
                                     case uState of 
-                                        UserIsOwner ->
+                                        SR.Types.UserIsOwner ->
                                             (AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, Cmd.none )
-                                        UserIsMember ->
+                                        SR.Types.UserIsMember ->
                                             (AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, Cmd.none )
-                                        UserIsNeitherOwnerNorMember ->
+                                        SR.Types.UserIsNeitherOwnerNorMember ->
                                             (AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, Cmd.none )
                                 _ -> 
                                     (model, Cmd.none)
@@ -849,144 +803,6 @@ handleWalletStateOperational msg model =
                     ( AppOps SR.Types.WalletOpened newDataState userInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotGlobal )
                    
 
-                -- ProcessResult result ->
-                --     let
-                --         _ =
-                --             Debug.log "process result" result
-                --     in
-                --     case result of
-                --         SR.Types.Won ->
-                --             case dataState of
-                --                 StateUpdated sUsers dKind -> 
-                --                     case dKind of 
-                --                             Selected sSelected rnkId user status ->
-                --                                 let 
-                --                                     -- prefer UISelectedRankingUserIsPlayer, but currently have to render all
-                --                                     handleWonTuple = Data.Selected.handleWon sSelected appInfo
-                --                                     newDataKind = Selected (Tuple.first handleWonTuple) rnkId user status
-                --                                     newDataState = StateUpdated sUsers newDataKind
-                --                                     newModel = AppOps walletState newDataState (Tuple.second handleWonTuple) SR.Types.UIRenderAllRankings txRec
-                                                            
-                --                                 in
-                --                                     ( newModel, httpPlayerList newDataState)
-                --                             _ -> 
-                --                                 let 
-                --                                     _ = Debug.log "2 - dataState" dataState
-                --                                 in
-                --                                     (model, Cmd.none)
-                --                 _ -> 
-                --                     let 
-                --                         _ = Debug.log "2 - dataState" dataState
-                --                     in
-                --                         (model, Cmd.none)
-
-                --         SR.Types.Lost ->
-                --             case dataState of
-                --                 StateUpdated sUsers dKind -> 
-                --                     case dKind of 
-                --                             Selected sSelected rnkId user status ->
-                --                                 let 
-                --                                     -- prefer UISelectedRankingUserIsPlayer, but currently have to render all
-                --                                     handleLostTuple = Data.Selected.handleLost sSelected appInfo
-                --                                     --newSetState = Selected (Tuple.first handleLostTuple) sUsers rnkId
-                                                    
-                --                                     newDataKind = Selected (Tuple.first handleLostTuple) rnkId user status
-                --                                     newDataState = StateUpdated sUsers newDataKind
-                --                                     newModel = AppOps walletState newDataState (Tuple.second handleLostTuple) SR.Types.UIRenderAllRankings txRec
-                --                                 in
-                --                                     ( newModel, httpPlayerList newDataState)
-                --                             _ -> 
-                --                                 let 
-                --                                     _ = Debug.log "3 - dataState should be Selected" dataState
-                --                                 in
-                --                                     (model, Cmd.none)
-                --                 _ -> 
-                --                     let 
-                --                         _ = Debug.log "3 - dataState" dataState
-                --                     in
-                --                         (model, Cmd.none)
-
-                --         SR.Types.Undecided ->
-                --             case dataState of
-                --                 StateUpdated sUsers dKind -> 
-                --                     case dKind of 
-                --                             Selected sSelected rnkId user status ->
-                --                                 let 
-                --                                     -- prefer UISelectedRankingUserIsPlayer, but currently have to render all
-                --                                     handleUndecidedTuple = Data.Selected.handleLost sSelected appInfo
-                --                                     --newSetState = Selected (Tuple.first handleUndecidedTuple) sUsers rnkId
-                --                                     newDataKind = Selected (Tuple.first handleUndecidedTuple) rnkId user status
-                --                                     newDataState = StateUpdated sUsers newDataKind
-                --                                     newModel = AppOps walletState newDataState (Tuple.second handleUndecidedTuple) SR.Types.UIRenderAllRankings txRec
-                --                                 in
-                --                                     ( newModel, httpPlayerList newDataState)
-                --                             _ -> 
-                --                                 let 
-                --                                     _ = Debug.log "4 - dataState" dataState
-                --                                 in
-                --                                     (model, Cmd.none)
-                --                 _ -> 
-                --                     let 
-                --                         _ = Debug.log "4 - dataState" dataState
-                --                     in
-                --                         (model, Cmd.none)
-
-                -- SentResultToWallet result ->
-                --     let
-                --         _ =
-                --             Debug.log "SentResultToWallet" result
-
-                --         txParams =
-                --             { to = txRec.account
-                --             , from = txRec.account
-                --             , gas = Nothing
-                --             , gasPrice = Just <| Eth.Units.gwei 4
-                --             , value = Just <| Eth.Units.gwei 1
-                --             , data = Nothing
-                --             , nonce = Nothing
-                --             }
-
-                --         ( newSentry, sentryCmd ) =
-                --             Eth.Sentry.Tx.customSend
-                --                 txRec.txSentry
-                --                 { onSign = Just WatchTxHash
-                --                 , onBroadcast = Just WatchTx
-                --                 , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
-                --                 }
-                --                 txParams
-
-                --         _ =
-                --             Debug.log "about to switch to " "SR.Types.WalletWaitingForTransactionReceipt"
-                        
-
-                --     in
-
-                --     case result of
-                --         SR.Types.Won ->
-                --             let 
-                --                 newAppInfo = {appInfo | appState = SR.Types.AppStateEnterWon }
-
-                                
-                --             in
-                --                 ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
-                --                 , sentryCmd
-                --                 )
-                                
-                --         SR.Types.Lost ->                                     
-                --             let
-                --                     newAppInfo = {appInfo | appState = SR.Types.AppStateEnterLost }
-                --             in
-                --                 ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
-                --                 , sentryCmd
-                --                 )
-                --         SR.Types.Undecided -> 
-                --             let
-                --                     newAppInfo = {appInfo | appState = SR.Types.AppStateEnterUndecided }
-                --             in
-                --                 ( AppOps SR.Types.WalletOpened dataState newAppInfo SR.Types.UIEnterResultTxProblem emptyTxRecord
-                --                     , sentryCmd
-                --                     )
-                    
 
                 SentResultToJsonbin a ->
                     ( AppOps SR.Types.WalletOpened
@@ -1204,11 +1020,11 @@ handleWalletStateOperational msg model =
                                             
                                         in
                                             case status of 
-                                                UserIsOwner ->     
+                                                SR.Types.UserIsOwner ->     
                                                         (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, Cmd.none)
-                                                UserIsMember  ->
+                                                SR.Types.UserIsMember  ->
                                                         (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, Cmd.none)
-                                                UserIsNeitherOwnerNorMember ->
+                                                SR.Types.UserIsNeitherOwnerNorMember ->
                                                     
                                                         (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, Cmd.none)
             
@@ -1316,7 +1132,7 @@ handleWalletStateOperational msg model =
                                                 newLUPlayer = Data.Selected.userAdded sUsers appInfo.selectedRanking.id (Data.Selected.asList sSelected) appInfo.user
                                                 newSelected = Data.Selected.asSelected (EverySet.fromList newLUPlayer) sUsers rnkId
                                                 
-                                                newDataKind = Selected newSelected  rnkId user UserIsMember
+                                                newDataKind = Selected newSelected  rnkId user SR.Types.UserIsMember
                                                 newDataState = StateFetched sUsers newDataKind
                                                 updatedModel = AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings txRec
                                             in
@@ -1579,7 +1395,7 @@ handleWalletWaitingForUserInput msg walletState dataState appInfo txRec =
                                 let
                                     _ =
                                        Debug.log "in AppStateEnterUndecided" "yes"
-                                       
+
                                     newDataState = StateUpdated sUsers dKind
                                 in
                                     ( AppOps SR.Types.WalletOperational newDataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Undecided))

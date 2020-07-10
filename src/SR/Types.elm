@@ -5,6 +5,7 @@ module SR.Types exposing
     --, AllLists
     , AppInfo, Colors, CreateNewLadderFormFields, FormValidations, LadderState(..), ModalState(..), NewRankingListServerResponse, Ranking, ResultRadioOptions(..), User, UserListState(..), UserPlayer, UserRanking, colors
     ,  AppState(..)
+    , SelectedStatus(..)
     )
 
 {-| Types
@@ -35,6 +36,7 @@ import Ports
 import RemoteData
 import EverySet exposing (EverySet)
 --import Data.Users
+
 
 
 
@@ -127,7 +129,10 @@ type UserListState
     | Failure String
 
 
-
+type SelectedStatus
+ = UserIsOwner
+ | UserIsMember
+ | UserIsNeitherOwnerNorMember
 
 type alias CreateNewLadderFormFields =
     { name : String

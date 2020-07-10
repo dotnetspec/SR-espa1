@@ -29,7 +29,9 @@ module Data.Selected exposing (Selected
     , asSelected
     , isCurrentUserPlayerLowerRanked
     , isUserPlayerMemberOfSelectedRanking
-    , createdSelected)
+    , createdSelected
+    , resultView
+    )
 
 
 import SR.Types
@@ -68,28 +70,28 @@ emptySelected =
 
 createdSelected : RemoteData.WebData (List SR.Types.Player) -> Data.Users.Users -> Internal.Types.RankingId -> Selected
 createdSelected rdlplayer sUser rnkId =
-    -- case model of
-    --     AppOps walletState allSets appInfo uiState txRec ->
-    --         case allSets of 
-    --             Selected sSelected sUsers _ ->
+    
                     let
                         lplayer = Data.Players.extractPlayersFromWebData rdlplayer
                         luser = Data.Users.asList sUser
-
-                        -- newSSelected = Data.Selected.asSelected (EverySet.fromList luplayer ) sUser rnkId
-
-                        -- stateToSelected = Selected newSSelected sUsers rnkId
-                        
-                        
-                        --_ = Debug.log "in createdSelected" <| stateToSelected
-
                         esUserPlayers = 
                             List.map (createdUserPlayer luser) lplayer
                             |> EverySet.fromList
-                    
                     in
                         
                         asSelected esUserPlayers sUser rnkId
+
+resultView : SR.Types.SelectedStatus -> SR.Types.UIState
+resultView  status = 
+            case status of
+                    SR.Types.UserIsOwner -> 
+                        SR.Types.UISelectedRankingUserIsOwner
+
+                    SR.Types.UserIsMember -> 
+                        SR.Types.UISelectedRankingUserIsPlayer
+   
+                    SR.Types.UserIsNeitherOwnerNorMember -> 
+                        SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
                 
 
 createdUserPlayer : List SR.Types.User -> SR.Types.Player -> SR.Types.UserPlayer
