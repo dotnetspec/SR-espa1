@@ -284,12 +284,6 @@ handleWalletStateLocked msg model =
                     in
                     ( AppOps SR.Types.WalletStateLocked AllEmpty SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
 
-                UsersReceived userList ->
-                    ( model, Cmd.none )
-
-                GlobalReceived lgranking ->
-                    ( model, Cmd.none )
-
                 _ ->
                     let
                         _ =
@@ -535,8 +529,6 @@ handledWalletStateOpened msg model =
                         SR.Types.Won ->
                             let 
                                 newAppInfo = {appInfo | appState = SR.Types.AppStateEnterWon }
-
-                                
                             in
                                 ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = newSentry }
                                 , sentryCmd
@@ -640,13 +632,26 @@ handledWalletStateOpened msg model =
                                     in
                                         (model, Cmd.none)
 
+                ClickedCreateNewLadder ->
+                    let
+                        newSelectedRanking =
+                            appInfo.selectedRanking
+
+                        clearedNameFieldInSelectedRanking =
+                            { newSelectedRanking | rankingname = "" }
+
+                        clearedNameFieldAppInfo =
+                            { appInfo | selectedRanking = clearedNameFieldInSelectedRanking }
+                    in
+                    ( AppOps SR.Types.WalletOperational dataState clearedNameFieldAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
+
 
                 ResetToShowGlobal ->
                    case dataState of 
                         StateFetched sUsers dKind ->
                             case dKind of
-                                Selected sSelected rnkId user _ -> 
-                                    let 
+                                Global sGlobal rnkId user ->
+                                    let
                                         newDataKind = Global Data.Global.emptyGlobal (Internal.Types.RankingId "") user
                                         newDataState = StateFetched sUsers newDataKind
                                     in
@@ -673,6 +678,12 @@ handledWalletStateOpened msg model =
                                     (model, Cmd.none)
                         _ -> 
                                     (model, Cmd.none)
+
+                ClickedUpdateExistingUser ->
+                    let 
+                        _ = Debug.log "ClickedUpdateExistingUser " walletState
+                    in
+                    ( AppOps walletState dataState appInfo SR.Types.UIUpdateExistingUser txRec, Cmd.none )
                     
                 NoOp ->
                  let
@@ -786,48 +797,48 @@ handleWalletStateOperational msg model =
                     in
                     ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | blockDepth = Just blockDepth }, Cmd.none )
 
-                UsersReceived userList ->
-                    let
-                        _ =
-                            Debug.log "Operational" userList
+                -- UsersReceived userList ->
+                --     let
+                --         _ =
+                --             Debug.log "Operational" userList
                         
-                        users = (Data.Users.asUsers (EverySet.fromList (Data.Users.extractUsersFromWebData userList)))
+                --         users = (Data.Users.asUsers (EverySet.fromList (Data.Users.extractUsersFromWebData userList)))
 
-                        newDataKind = Users appInfo.user
-                        newDataState = StateFetched users newDataKind
+                --         newDataKind = Users appInfo.user
+                --         newDataState = StateFetched users newDataKind
                          
-                        userInAppInfo =
-                            { appInfo | user = Data.Users.gotUser users appInfo.user.ethaddress }
+                --         userInAppInfo =
+                --             { appInfo | user = Data.Users.gotUser users appInfo.user.ethaddress }
 
-                    in
-                    ( AppOps SR.Types.WalletOpened newDataState userInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotGlobal )
+                --     in
+                --     ( AppOps SR.Types.WalletOpened newDataState userInAppInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotGlobal )
                    
 
 
-                SentResultToJsonbin a ->
-                    ( AppOps SR.Types.WalletOpened
-                        dataState
-                        appInfo
-                        uiState
-                        txRec
-                    , Cmd.none
-                    )
+                -- SentResultToJsonbin a ->
+                --     ( AppOps SR.Types.WalletOpened
+                --         dataState
+                --         appInfo
+                --         uiState
+                --         txRec
+                --     , Cmd.none
+                --     )
 
-                GlobalReceived rmtrnkingdata ->
-                    case dataState of 
-                        StateFetched sUsers dKind ->
-                            case dKind of 
-                                Global sGlobal rnkId user ->
-                                    let 
-                                        _ = Debug.log "rankings received in wallet state operational" rmtrnkingdata
-                                        newDataKind = Global (Data.Global.createdGlobal rmtrnkingdata sUsers) rnkId user
-                                        newDataSet = StateFetched sUsers newDataKind
-                                    in 
-                                        ( AppOps SR.Types.WalletOperational newDataSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
-                                _ ->
-                                    (model, Cmd.none)
-                        _ ->
-                            (model, Cmd.none)
+                -- GlobalReceived rmtrnkingdata ->
+                --     case dataState of 
+                --         StateFetched sUsers dKind ->
+                --             case dKind of 
+                --                 Global sGlobal rnkId user ->
+                --                     let 
+                --                         _ = Debug.log "rankings received in wallet state operational" rmtrnkingdata
+                --                         newDataKind = Global (Data.Global.createdGlobal rmtrnkingdata sUsers) rnkId user
+                --                         newDataSet = StateFetched sUsers newDataKind
+                --                     in 
+                --                         ( AppOps SR.Types.WalletOperational newDataSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+                --                 _ ->
+                --                     (model, Cmd.none)
+                --         _ ->
+                --             (model, Cmd.none)
           
 
 
@@ -865,8 +876,8 @@ handleWalletStateOperational msg model =
                 SentUserInfoAndDecodedResponseToNewUser serverResponse ->
                     ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
-                ResetToShowGlobal ->
-                    ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotGlobal )
+                -- ResetToShowGlobal ->
+                --     ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, gotGlobal )
 
                 ResetRejectedNewUserToShowGlobal ->
                     let 
@@ -882,18 +893,18 @@ handleWalletStateOperational msg model =
                 --     -- in
                 --     ( AppOps SR.Types.WalletOpened dataState appInfo uiState emptyTxRecord, Cmd.none )
 
-                ClickedCreateNewLadder ->
-                    let
-                        newSelectedRanking =
-                            appInfo.selectedRanking
+                -- ClickedCreateNewLadder ->
+                --     let
+                --         newSelectedRanking =
+                --             appInfo.selectedRanking
 
-                        clearedNameFieldInSelectedRanking =
-                            { newSelectedRanking | rankingname = "" }
+                --         clearedNameFieldInSelectedRanking =
+                --             { newSelectedRanking | rankingname = "" }
 
-                        clearedNameFieldAppInfo =
-                            { appInfo | selectedRanking = clearedNameFieldInSelectedRanking }
-                    in
-                    ( AppOps SR.Types.WalletOperational dataState clearedNameFieldAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
+                --         clearedNameFieldAppInfo =
+                --             { appInfo | selectedRanking = clearedNameFieldInSelectedRanking }
+                --     in
+                --     ( AppOps SR.Types.WalletOperational dataState clearedNameFieldAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
 
                 ClickedConfirmCreateNewLadder ->
                     case dataState of 
@@ -1222,8 +1233,8 @@ handleWalletStateOperational msg model =
                 ExistingUserMobileInputChg updateField ->
                     ( handleExistingUserInputs model (ExistingUserMobileInputChg updateField), Cmd.none )
 
-                ClickedUpdateExistingUser ->
-                    ( AppOps walletState dataState appInfo SR.Types.UIUpdateExistingUser txRec, Cmd.none )
+                -- ClickedUpdateExistingUser ->
+                --     ( AppOps walletState dataState appInfo SR.Types.UIUpdateExistingUser txRec, Cmd.none )
 
                 ClickedConfirmedUpdateExistingUser ->
                     case dataState of
@@ -1859,14 +1870,17 @@ before continuing and
 refresh the browser"""
 
                 SR.Types.UIRegisterNewUser ->
-                    -- case dataState of 
-                    --     Selected sSelected sUsers rnkId -> 
+                    let 
+                        _ = Debug.log "UIregister new " walletState
+                    in 
                             inputNewUserview dataState appInfo
-                        -- _ -> 
-                        --     greetingView <| "View error"
+                       
                     
 
                 SR.Types.UIUpdateExistingUser ->
+                     let 
+                        _ = Debug.log "UIUpdateExistingUser new " walletState
+                    in 
                     updateExistingUserView model
 
                 _ ->
@@ -2791,6 +2805,9 @@ globalResponsiveview sGlobal user =
 
 displayUpdateProfileBtnIfExistingUser : String -> Msg -> Element Msg
 displayUpdateProfileBtnIfExistingUser uname msg =
+    let 
+        _ = Debug.log "updatae profile " msg
+    in
     if uname == "" then
         Element.text ""
 
