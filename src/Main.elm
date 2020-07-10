@@ -149,8 +149,7 @@ getTime =
 
 type Msg
     = -- User Ops
-      ClickedSelectedRanking Internal.Types.RankingId String String
-    | ClickedSelectedOwnedRanking Internal.Types.RankingId String String
+    ClickedSelectedOwnedRanking Internal.Types.RankingId String String
     | ClickedSelectedMemberRanking Internal.Types.RankingId String String
     | ClickedSelectedNeitherOwnerNorMember Internal.Types.RankingId String String
     | ClickedRegister
@@ -467,6 +466,9 @@ handledWalletStateOpened msg model =
                                             (model, Cmd.none)
 
                 ClickedSelectedNeitherOwnerNorMember rnkidstr rnkownerstr rnknamestr ->
+                    let 
+                        _ = Debug.log "rnkid" rnkidstr
+                    in
                     case dataState of 
                                 StateFetched sUsers dKind ->
                                     case dKind of 
@@ -677,8 +679,18 @@ handledWalletStateOpened msg model =
                 ClickedUpdateExistingUser ->
                     let 
                         _ = Debug.log "ClickedUpdateExistingUser " walletState
+                        --newDataState = StateFetched sUsers dKind
+                        --
                     in
-                    ( AppOps walletState dataState appInfo SR.Types.UIUpdateExistingUser txRec, Cmd.none )
+                    -- if user already did an update, need to ensure we start with StateFetched again
+                    case dataState of
+                        StateUpdated sUsers user ->
+                            let 
+                                newDataState = StateFetched sUsers user
+                            in
+                                ( AppOps walletState newDataState appInfo SR.Types.UIUpdateExistingUser txRec, Cmd.none )
+                        _ ->
+                            ( AppOps walletState dataState appInfo SR.Types.UIUpdateExistingUser txRec, Cmd.none )
 
                 LadderNameInputChg namefield ->
                     let
@@ -730,7 +742,24 @@ handledWalletStateOpened msg model =
 
                 ExistingUserMobileInputChg updateField ->
                     ( handleExistingUserInputs model (ExistingUserMobileInputChg updateField), Cmd.none )
-                    
+
+                ClickedConfirmedUpdateExistingUser ->
+                    case dataState of
+                        StateFetched sUsers user ->
+                            let 
+                                        _ = Debug.log "14.1" dataState
+                                        newDataState = StateUpdated sUsers user
+                            in
+                            ( AppOps SR.Types.WalletOpened newDataState appInfo SR.Types.UIRenderAllRankings txRec, updateExistingUser (Data.Users.asList sUsers) appInfo.user )
+                        _ -> 
+                                    let 
+                                        _ = Debug.log "14.3 - dataState" dataState
+                                    in
+                                        (model, Cmd.none)
+
+                SentUserInfoAndDecodedResponseToNewUser serverResponse ->
+                    (AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+                        
                 NoOp ->
                  let
                         _ =
@@ -919,8 +948,8 @@ handleWalletStateOperational msg model =
                                 in
                                     (model, Cmd.none)
 
-                SentUserInfoAndDecodedResponseToNewUser serverResponse ->
-                    ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+                -- SentUserInfoAndDecodedResponseToNewUser serverResponse ->
+                --     ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                 
 
@@ -1254,42 +1283,22 @@ handleWalletStateOperational msg model =
                     in
                     ( model, Cmd.none )
 
-                -- NewUserNameInputChg updateField ->
-                --     ( handleNewUserInputs model (NewUserNameInputChg updateField), Cmd.none )
 
-                -- NewUserDescInputChg updateField ->
-                --     ( handleNewUserInputs model (NewUserDescInputChg updateField), Cmd.none )
-
-                -- NewUserEmailInputChg updateField ->
-                --     ( handleNewUserInputs model (NewUserEmailInputChg updateField), Cmd.none )
-
-                -- NewUserMobileInputChg updateField ->
-                --     ( handleNewUserInputs model (NewUserMobileInputChg updateField), Cmd.none )
-
-                -- ExistingUserNameInputChg updateField ->
-                --     ( handleExistingUserInputs model (ExistingUserNameInputChg updateField), Cmd.none )
-
-                -- ExistingUserDescInputChg updateField ->
-                --     ( handleExistingUserInputs model (ExistingUserDescInputChg updateField), Cmd.none )
-
-                -- ExistingUserEmailInputChg updateField ->
-                --     ( handleExistingUserInputs model (ExistingUserEmailInputChg updateField), Cmd.none )
-
-                -- ExistingUserMobileInputChg updateField ->
-                --     ( handleExistingUserInputs model (ExistingUserMobileInputChg updateField), Cmd.none )
-
-                -- ClickedUpdateExistingUser ->
-                --     ( AppOps walletState dataState appInfo SR.Types.UIUpdateExistingUser txRec, Cmd.none )
-
-                ClickedConfirmedUpdateExistingUser ->
-                    case dataState of
-                        StateUpdated sUsers user ->
-                            ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRenderAllRankings txRec, updateExistingUser (Data.Users.asList sUsers) appInfo.user )
-                        _ -> 
-                                    let 
-                                        _ = Debug.log "14 - dataState" dataState
-                                    in
-                                        (model, Cmd.none)
+                -- ClickedConfirmedUpdateExistingUser ->
+                --     let 
+                --                         _ = Debug.log "14.2" dataState
+                --             in
+                --     case dataState of
+                --         StateUpdated sUsers user ->
+                --             let 
+                --                         _ = Debug.log "14.1" dataState
+                --             in
+                --             ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRenderAllRankings txRec, updateExistingUser (Data.Users.asList sUsers) appInfo.user )
+                --         _ -> 
+                --                     let 
+                --                         _ = Debug.log "14 - dataState" dataState
+                --                     in
+                --                         (model, Cmd.none)
 
                 ClickedRegister ->
                      ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRegisterNewUser txRec, Cmd.none )
@@ -1867,14 +1876,14 @@ view model =
                         StateFetched sUsers dKind ->
                              case dKind of 
                                 Global sGlobal rnkId user ->
-                                    globalResponsiveview sGlobal appInfo.user
+                                    globalResponsiveview sGlobal appInfo.user ""
                                 _ ->
                                     greetingView <| "Should be Global 1"
                         
                         StateUpdated sUsers dKind ->
                              case dKind of
                                 Global sGlobal rnkId user  -> 
-                                    globalResponsiveview sGlobal appInfo.user
+                                    globalResponsiveview sGlobal appInfo.user "Your Settings Have Been Updated"
 
                                 _ ->
                                     greetingView <| "Should be updated Global"
@@ -2818,8 +2827,8 @@ inputNewLadder appInfo dataState =
 
 
 
-globalResponsiveview : Data.Global.Global -> SR.Types.User -> Html Msg
-globalResponsiveview sGlobal user =
+globalResponsiveview : Data.Global.Global -> SR.Types.User -> String -> Html Msg
+globalResponsiveview sGlobal user updatedStr =
 
     let
         userName =
@@ -2837,7 +2846,7 @@ globalResponsiveview sGlobal user =
             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
                 Element.text ("SportRank - " ++ userName)
             ,displayUpdateProfileBtnIfExistingUser user.username ClickedUpdateExistingUser
-            --, Element.text "\n"
+            , Element.text ("\n" ++ updatedStr)
             , displayCreateNewLadderBtnIfExistingUser user.username (Data.Global.asList (Data.Global.gotOwned sGlobal user)) ClickedCreateNewLadder
             , displayRegisterBtnIfNewUser
                 user.username
@@ -3327,7 +3336,7 @@ updateExistingUser originaluserlist updatedUserInfo =
             , description = updatedUserInfo.description
             , email = updatedUserInfo.email
             , mobile = updatedUserInfo.mobile
-            , userjoinrankings = []
+            , userjoinrankings = updatedUserInfo.userjoinrankings
             }
 
         newListWithCurrentUserRemoved =
