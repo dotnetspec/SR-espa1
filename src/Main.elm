@@ -645,7 +645,7 @@ handledWalletStateOpened msg model =
                         clearedNameFieldAppInfo =
                             { appInfo | selectedRanking = clearedNameFieldInSelectedRanking }
                     in
-                    ( AppOps SR.Types.WalletOperational dataState clearedNameFieldAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
+                    ( AppOps SR.Types.WalletOpened dataState clearedNameFieldAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
 
 
                 ResetToShowGlobal ->
@@ -703,7 +703,7 @@ handledWalletStateOpened msg model =
                         newAppInfo =
                             { appInfo | selectedRanking = updatedSelectedRanking }
                     in
-                    ( AppOps SR.Types.WalletOperational dataState newAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
+                    ( AppOps SR.Types.WalletOpened dataState newAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
 
                 LadderDescInputChg descfield ->
                     let
@@ -716,7 +716,7 @@ handledWalletStateOpened msg model =
                         newAppInfo =
                             { appInfo | selectedRanking = updatedSelectedRanking }
                     in
-                    ( AppOps SR.Types.WalletOperational dataState newAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
+                    ( AppOps SR.Types.WalletOpened dataState newAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
 
                 
                 NewUserNameInputChg updateField ->
