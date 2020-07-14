@@ -122,9 +122,11 @@ addedNewJoinedRankingId rankingId user lUser =
     let
         -- currentUser =
         --     gotUserFromUserList lUser user.username
+        
 
+        -- if there's anything wrong with the existing joinrankings data fix it here:
         userJoinRankings =
-            user.userjoinrankings
+            List.filterMap removeInvalidRankingIds user.userjoinrankings
 
         validatedRankingAdded = 
             if Utils.Validation.Validate.isValidRankingId rankingId then
@@ -141,7 +143,17 @@ addedNewJoinedRankingId rankingId user lUser =
     newUserList
 
 
-removedRankingIdFromAll : Users -> String -> Users 
+removeInvalidRankingIds : String -> Maybe String 
+removeInvalidRankingIds rankingId = 
+    if Utils.Validation.Validate.isValidRankingId rankingId then
+        Just rankingId
+    else 
+        Nothing
+
+
+
+
+removedRankingIdFromAll : Users -> String -> Users
 removedRankingIdFromAll susers rnkId = 
     case susers of 
         Users setOfUsers->

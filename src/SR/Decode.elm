@@ -74,6 +74,7 @@ userDecoder =
 
 decodeUserJoinRankingsList : Decoder (List String)
 decodeUserJoinRankingsList =
+    -- you can apply a function to any Decode.type with e.g. (Json.Decode.string |> Json.Decode.andThen isValidRankingId)
     Json.Decode.list (Json.Decode.string |> Json.Decode.andThen isValidRankingId)
 
 

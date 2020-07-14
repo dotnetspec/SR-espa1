@@ -19,6 +19,7 @@ validatedMaxTextLength str maxLength =
     else
         str
 
+--there is a small degree of flexibility (+/- 4 chars) to account for server changes
 isValidRankingId : String -> Bool 
 isValidRankingId str = 
     let 

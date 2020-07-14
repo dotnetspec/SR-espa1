@@ -18,7 +18,6 @@ module Data.Rankings exposing (Rankings
 import SR.Types
 import EverySet exposing (EverySet)
 import Internal.Types
-import Utils.MyUtils
 import SR.Defaults
 import RemoteData
 import Http
