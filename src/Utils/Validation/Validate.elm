@@ -1,39 +1,50 @@
 module Utils.Validation.Validate exposing (
 
-    validatedUserList, isRankingNameValidated, isUserNameValidated, validatedMaxTextLength)
+    validatedUserList
+    , validatedMaxTextLength
+    , isValidRankingId)
 
 
 import SR.Types
-import Data.Users
-import Data.Global
-import Data.Rankings
 import Eth.Utils
+import Char
+import Parser exposing (..)
+import Set
 
 
 validatedMaxTextLength : String -> Int -> String
 validatedMaxTextLength str maxLength =
     if String.length str > maxLength then
         String.dropRight 1 str
-
     else
         str
 
+isValidRankingId : String -> Bool 
+isValidRankingId str = 
+    let 
+        result = run rankingIdVar str
+    in
+    case result of 
+        Ok a ->
+            if String.length a > 20 && String.length (validatedMaxTextLength a 24) < 25 then
+                True
+            else 
+                False
+        Err a ->
+            False
 
-isUserNameValidated : SR.Types.User -> List SR.Types.User -> Bool
-isUserNameValidated user luser =
-    if String.length user.username > 3 && String.length user.username < 9 && Data.Users.isUniqueUserName user.username luser then
-        True
+rankingIdVar : Parser String
+rankingIdVar =
+  variable
+    { start = Char.isAlphaNum
+    --, inner = \c -> Char.isAlphaNum c || c == '_'
+    , inner = \c -> Char.isAlphaNum c
+    --, reserved = Set.fromList [ "let", "in", "case", "of" ]
+    , reserved = Set.fromList [""]
+    }
 
-    else
-        False
 
-isRankingNameValidated : SR.Types.Ranking -> List SR.Types.UserRanking -> Bool
-isRankingNameValidated rankingInfo luranking =
-    if String.length rankingInfo.rankingname > 3 && String.length rankingInfo.rankingname < 9 && Data.Rankings.isUniqueRankingName rankingInfo.rankingname luranking then
-        True
 
-    else
-        False
 
 
 validatedUserList : List SR.Types.User -> List SR.Types.User

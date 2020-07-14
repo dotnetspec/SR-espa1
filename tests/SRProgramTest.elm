@@ -37,7 +37,7 @@ globalListTest =
                 start
                     |> ProgramTest.update (Main.WalletStatus Testdata.TestDefaults.simWalletSentryDataT1)
                     |> ProgramTest.update (Main.UsersReceived Testdata.UserTestData.remoteDataUsers)
-                    |> ProgramTest.update (Main.GlobalRankingsReceived Testdata.GlobalTestData.globalRankingsJson)
+                    |> ProgramTest.update (Main.GlobalReceived Testdata.GlobalTestData.globalRankingsJson)
                     |> expectViewHas
                         [ text "SportRank - Test 1"
 
@@ -59,7 +59,7 @@ existingUserCreateNewLadderTest =
             start
                 |> ProgramTest.update (Main.WalletStatus Testdata.TestDefaults.simWalletSentryDataT1)
                 |> ProgramTest.update (Main.UsersReceived Testdata.UserTestData.remoteDataUsers)
-                |> ProgramTest.update (Main.GlobalRankingsReceived Testdata.GlobalTestData.globalRankingsJson)
+                |> ProgramTest.update (Main.GlobalReceived Testdata.GlobalTestData.globalRankingsJson)
                 |> ProgramTest.update Main.ClickedCreateNewLadder
                 |> expectViewHas
                     [ text "Create New Ladder Ranking" ]
@@ -72,7 +72,7 @@ unregisteredUserCreateNewLadderTest =
         \() ->
             start
                 |> ProgramTest.update (Main.WalletStatus Testdata.TestDefaults.simWalletSentryDataT1)
-                |> ProgramTest.update (Main.GlobalRankingsReceived Testdata.GlobalTestData.globalRankingsJson)
+                |> ProgramTest.update (Main.GlobalReceived Testdata.GlobalTestData.globalRankingsJson)
                 |> ProgramTest.update Main.ClickedCreateNewLadder
                 |> expectViewHas
                     [ text "Create New Ladder Ranking" ]

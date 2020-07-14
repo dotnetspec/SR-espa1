@@ -10,13 +10,14 @@ import Internal.Types
 import Json.Encode
 import SR.Decode
 import SR.Defaults
-
+import EverySet exposing (EverySet)
 import SR.Types
 import Shrink
 import Test exposing (..)
 import Testdata.GlobalTestData
 import Testdata.UserTestData
 import Testdata.UserRankingTestData
+import Data.Global
 
 
 rankingInfoFuzzer : Fuzzer SR.Types.Ranking
@@ -34,22 +35,22 @@ rankingInfoFuzzer =
 -- this could be improved to become equal to a valid eth addrs - not just empty string
 
 
-ownerValidatedRankingListTest : Test
-ownerValidatedRankingListTest =
-    --skip <|
-    fuzz (Fuzz.list rankingInfoFuzzer) "a globalranking list entry must have valid owneraddresses" <|
-        \list ->
-            case SR.ListOps.ownerValidatedRankingList list of
-                [] ->
-                    Expect.pass
+-- ownerValidatedRankingListTest : Test
+-- ownerValidatedRankingListTest =
+--     --skip <|
+--     fuzz (Fuzz.list rankingInfoFuzzer) "a globalranking list entry must have valid owneraddresses" <|
+--         \list ->
+--             case Data.Global.ownerValidatedRankingList list of
+--                 [] ->
+--                     Expect.pass
 
-                --Expect.true "true" True
-                globalRankingList ->
-                    -- let
-                    --     _ =
-                    --         Debug.log "globalRankingList" globalRankingList
-                    -- in
-                    Expect.true "true" <| List.all isValidOwnerAddress <| SR.ListOps.ownerValidatedRankingList globalRankingList
+--                 --Expect.true "true" True
+--                 globalRankingList ->
+--                     -- let
+--                     --     _ =
+--                     --         Debug.log "globalRankingList" globalRankingList
+--                     -- in
+--                     Expect.true "true" <| List.all isValidOwnerAddress <| Data.Global.ownerValidatedRankingList globalRankingList
 
 
 
@@ -109,6 +110,7 @@ createAllUserAsOwnerGlobalRankingListTest =
         [ test "createAllUserAsOwnerGlobalRankingList" <|
             \_ ->
                 -- changed from ListOps
-                Data.Global.gotOwned Testdata.UserRankingTestData.userRankingList Testdata.UserTestData.singleUser
-                    |> Expect.equal output
+                Data.Global.gotOwned (Data.Global.asGlobal (EverySet.fromList Testdata.UserRankingTestData.userRankingList)) Testdata.UserTestData.singleUser
+                    |> Expect.equal (Data.Global.asGlobal (EverySet.fromList output))
         ]
+

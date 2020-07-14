@@ -119,6 +119,7 @@ type UIState
     | UIChallenge
     | UILoading
     | UIWaitingForTxReceipt
+    | UIDeleteRankingConfirm
 
 
 

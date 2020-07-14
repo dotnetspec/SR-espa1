@@ -31,6 +31,7 @@ module Data.Selected exposing (Selected
     , isUserPlayerMemberOfSelectedRanking
     , createdSelected
     , resultView
+    , sortedRank
     )
 
 
@@ -45,6 +46,7 @@ import RemoteData
 import Data.AppState
 import Data.Players
 import Json.Encode
+
 
 
 

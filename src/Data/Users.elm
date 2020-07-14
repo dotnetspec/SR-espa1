@@ -1,5 +1,27 @@
 -- Users will be mainly used to communicate externally to the jsonbin server
-module Data.Users exposing (Users, validatedUserList, addedNewJoinedRankingIdToUser, removeCurrentUserEntryFromUserList, removedDuplicateUserFromUserList, isRegistered, isUniqueUserName, gotUserListFromRemData, isNameValidationErr, extractUsersFromWebData, gotUserFromUserList, emptyUsers, updateAddr, addUser, removeUser, asList, asUsers, getUser, gotUser, userSetLength)
+module Data.Users exposing (Users
+    , validatedUserList
+    , addedNewJoinedRankingId
+    , removedRankingIdFromAll
+    , removeCurrentUserEntryFromUserList
+    , removedDuplicateUserFromUserList
+    , isRegistered
+    , isUniqueUserName
+    , gotUserListFromRemData
+    , isNameValidationErr
+    , extractUsersFromWebData
+    , gotUserFromUserList
+    , emptyUsers
+    , updateAddr
+    , addUser
+    , removeUser
+    , asList
+    , asUsers
+    , getUser
+    , gotUser
+    , userSetLength
+    , isUserNameValidated
+    )
 
 
 import SR.Types
@@ -11,6 +33,7 @@ import Eth.Utils
 import RemoteData
 import Http
 import List.Unique
+import Utils.Validation.Validate
 
 
 type Users = Users (EverySet SR.Types.User)
@@ -35,6 +58,14 @@ isRegistered luser user =
 
     else
         True
+
+isUserNameValidated : SR.Types.User -> List SR.Types.User -> Bool
+isUserNameValidated user luser =
+    if String.length user.username > 3 && String.length user.username < 9 && isUniqueUserName user.username luser then
+        True
+
+    else
+        False
 
 isUniqueUserName : String -> List SR.Types.User -> Bool
 isUniqueUserName str luser =
@@ -85,26 +116,55 @@ gotUser (Users susers) uaddr =
             a
 
 
--- probably should return a set, not a list:
-addedNewJoinedRankingIdToUser : String -> SR.Types.User -> List SR.Types.User -> List SR.Types.User
-addedNewJoinedRankingIdToUser rankingId user lUser =
+-- probably should be updated to return a set, not a list:
+addedNewJoinedRankingId : String -> SR.Types.User -> List SR.Types.User -> List SR.Types.User
+addedNewJoinedRankingId rankingId user lUser =
     let
-        currentUser =
-            gotUserFromUserList lUser user.username
+        -- currentUser =
+        --     gotUserFromUserList lUser user.username
 
         userJoinRankings =
-            currentUser.userjoinrankings
+            user.userjoinrankings
 
-        newUserJoinRankings =
-            rankingId :: userJoinRankings
+        validatedRankingAdded = 
+            if Utils.Validation.Validate.isValidRankingId rankingId then
+                rankingId :: userJoinRankings
+            else 
+                userJoinRankings
 
         newUser =
-            { user | userjoinrankings = newUserJoinRankings }
+            { user | userjoinrankings =  validatedRankingAdded}
 
         newUserList =
             newUser :: lUser
     in
     newUserList
+
+
+removedRankingIdFromAll : Users -> String -> Users 
+removedRankingIdFromAll susers rnkId = 
+    case susers of 
+        Users setOfUsers->
+           asUsers (EverySet.map (removeRankindIdFromUser rnkId) setOfUsers)
+
+
+removeRankindIdFromUser : String -> SR.Types.User -> SR.Types.User
+removeRankindIdFromUser  rnkId user = 
+    let
+        luserJoinRnkings = user.userjoinrankings
+        newUserJoinRankings = List.filter (isRankingIdInList rnkId) luserJoinRnkings
+        newUser = {user | userjoinrankings = newUserJoinRankings}
+    in
+        newUser
+
+isRankingIdInList : String -> String -> Bool
+isRankingIdInList rnkIdToFilter currentRnkId =
+    if currentRnkId == rnkIdToFilter then
+        True
+
+    else
+        False
+    
 
 removeUser : SR.Types.User -> Users -> Users
 removeUser user susers = 
@@ -292,3 +352,7 @@ isUserInListStrAddr userlist uaddr =
 
     else
         True
+
+-- isRankingId : String -> Bool
+-- isRankingId =
+--     Regex.contains (Maybe.withDefault Regex.never (Regex.fromString "^((0[Xx]){1})?[0-9A-Fa-f]{40}$"))

@@ -9,7 +9,6 @@ import Fuzz exposing (Fuzzer, int, list, string)
 import Internal.Types
 import Json.Encode
 import SR.Decode
-
 import SR.Types
 import Shrink
 import Test exposing (..)
@@ -75,6 +74,68 @@ validSetTest =
                     Expect.equal Testdata.UserTestData.singleUser.ethaddress newUser.ethaddress
         ]
     
+-- for now this test works with a list. Perhaps this will later be updated to work with a set ...
+addedNewJoinedRankingIdToUserTest : Test
+addedNewJoinedRankingIdToUserTest = 
+    --only <|
+        describe "correctly add a rankingId to a User's userjoinrankings list"
+            [
+            fuzzWith { runs = 1 } (Fuzz.list userFuzzer) """addRankingIdToUser must only add a valid rnkId to a User in the (fuzzy) set""" <|
+                \list ->
+                -- case Data.Users.asUsers (EverySet.fromList list) of
+                --     usersSet ->
+                --         case Data.Users.asList usersSet of
+                            --Set.isempty usersSet ->
+                    case list of
+                            [] ->
+                                let 
+                                    --addedANewRankingIdToUser = Data.Users.addedNewJoinedRankingId "1234567890" Testdata.UserTestData.singleUser usersSet
+                                    -- valid rankingId:
+                                    addedANewRankingIdToUserInList = Data.Users.addedNewJoinedRankingId "5e8e879d8e85c8437012e2a7" Testdata.UserTestData.singleUser list
+
+                                in 
+                                    case addedANewRankingIdToUserInList of 
+                                        [] ->
+                                            Expect.pass
+                                        x :: xs ->
+                                            Expect.equal x.userjoinrankings ["5e8e879d8e85c8437012e2a7"]
+                                            
+
+                            x :: xs ->
+                                    case x.userjoinrankings of 
+                                        [] ->
+                                            Expect.pass
+                                        y :: ys ->
+                                            let 
+                                                --addedANewRankingIdToUserInList = Data.Users.addedNewJoinedRankingId y Testdata.UserTestData.singleUser usersSet
+                                                addedANewRankingIdToUserInList = Data.Users.addedNewJoinedRankingId y Testdata.UserTestData.singleUser list
+                                            in
+                                            case addedANewRankingIdToUserInList of 
+                                                [] ->
+                                                    Expect.pass
+                                                z :: zs ->
+                                                    --Expect.equal x.userjoinrankings z.userjoinrankings
+                                                    -- we don't expect any to be valid with the fuzzy data (but we do have a valid test (above) as well):
+                                                    Expect.equal z.userjoinrankings []
+                   
+            ]
+
+removedRankingIdFromUserJoinRankings : Test 
+removedRankingIdFromUserJoinRankings =
+    --only <|
+        describe "correctly remove a rankingId from each User's userjoinrankings list"
+            [
+            fuzz (Fuzz.list userFuzzer) """removeRankingIdFromAllUsers must remove the correct rnkId from every User in the (fuzzy) set""" <|
+                \list ->
+                case Data.Users.asUsers (EverySet.fromList list) of
+                    usersSet ->
+                        --let 
+                            -- addedExtraUser = Data.Users.addUser Testdata.UserTestData.singleUser usersSet
+                            -- newUser = Data.Users.gotUser addedExtraUser "0xce987a7e670655f30e582fbde1573b5be8ffb9a8"
+                        --in
+                            --Expect.equal Testdata.UserTestData.singleUser.ethaddress newUser.ethaddress
+                            Expect.equal 1 1
+            ]
                     
 
 -- ListOp tests
@@ -97,7 +158,7 @@ gotUserFromUserListTest =
     describe " a single user must be obtained from the userlist"
         [ test "gotUserFromUserList" <|
             \_ ->
-                [ SR.ListOps.gotUserFromUserList Testdata.UserTestData.standardUserList "0x4A0a14bA869bEe85c490A5E6401D3f740039a01F" ]
+                [ Data.Users.gotUserFromUserList Testdata.UserTestData.standardUserList "0x4A0a14bA869bEe85c490A5E6401D3f740039a01F" ]
                     |> Expect.equal output
         ]
 
@@ -130,7 +191,7 @@ removedDuplicateUserFromUserListTest =
     describe " there cannot be more than 1 unique address for each user in the userlist"
         [ test "removedDuplicateUserFromUserList" <|
             \_ ->
-                SR.ListOps.removedDuplicateUserFromUserList Testdata.UserTestData.usersWithSameAddressInList
+                Data.Users.removedDuplicateUserFromUserList Testdata.UserTestData.usersWithSameAddressInList
                     |> Expect.equal output
         ]
 
@@ -143,12 +204,12 @@ validatedUserListTest : Test
 validatedUserListTest =
     fuzz (Fuzz.list userFuzzer) "a user list entry must have valid ethaddresses" <|
         \list ->
-            case SR.ListOps.validatedUserList list of
+            case Data.Users.validatedUserList list of
                 [] ->
                     Expect.pass
 
                 usersList ->
-                    Expect.true "Expect only valid ethaddresses" <| List.all isValidEthAddress <| SR.ListOps.validatedUserList usersList
+                    Expect.true "Expect only valid ethaddresses" <| List.all isValidEthAddress <| Data.Users.validatedUserList usersList
 
 
 
@@ -170,11 +231,11 @@ uniqueUserNameListTest =
     describe " a user list entry must have a unique user name"
         [ test "isUniqueUserName - True" <|
             \_ ->
-                SR.ListOps.isUniqueUserName "CTest1" Testdata.UserTestData.standardUserList
+                Data.Users.isUniqueUserName "CTest1" Testdata.UserTestData.standardUserList
                     |> Expect.true "Expected CTest1 to be unique"
         , test "isUniqueUserName - False" <|
             \_ ->
-                SR.ListOps.isUniqueUserName "Test 10" Testdata.UserTestData.standardUserList
+                Data.Users.isUniqueUserName "Test 10" Testdata.UserTestData.standardUserList
                     |> Expect.false "Expected Test 10 not to be unique"
         ]
 
@@ -185,6 +246,6 @@ removeDuplicateUserListTest =
     describe " each entry in the user list must be unique"
         [ test "removedDuplicateUserFromUserList" <|
             \_ ->
-                SR.ListOps.removedDuplicateUserFromUserList Testdata.UserTestData.duplicateUsers
+                Data.Users.removedDuplicateUserFromUserList Testdata.UserTestData.duplicateUsers
                     |> Expect.equal Testdata.UserTestData.duplicateUsersRemoved
         ]

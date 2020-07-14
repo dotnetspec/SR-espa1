@@ -10,7 +10,7 @@ module Data.Global exposing (Global, gotOthers
     , newJsonEncodedList
     , createdGlobal
     , gotUserRanking
-    , emptyGlobal
+    , empty
     , asGlobal
     , gotMember, addUserRanking, removeUserRanking, asList, gotNewRankingIdFromWebData)
 
@@ -32,8 +32,8 @@ type Global = Global (EverySet SR.Types.UserRanking)
 
 
 
-emptyGlobal : Global 
-emptyGlobal = 
+empty : Global 
+empty = 
     Global (EverySet.empty)
 
 asGlobal : EverySet SR.Types.UserRanking -> Global 
