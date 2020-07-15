@@ -27,7 +27,8 @@ isValidRankingId str =
     in
     case result of 
         Ok a ->
-            if String.length a > 20 && String.length (validatedMaxTextLength a 24) < 25 then
+            --if String.length a > 20 && String.length (validatedMaxTextLength a 24) < 25 then
+            if String.length a == 24 then
                 True
             else 
                 False

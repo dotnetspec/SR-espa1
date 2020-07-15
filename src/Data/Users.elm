@@ -21,6 +21,7 @@ module Data.Users exposing (Users
     , gotUser
     , userSetLength
     , isUserNameValidated
+    , removeInvalidRankingId
     )
 
 
@@ -126,7 +127,9 @@ addedNewJoinedRankingId rankingId user lUser =
 
         -- if there's anything wrong with the existing joinrankings data fix it here:
         userJoinRankings =
-            List.filterMap removeInvalidRankingIds user.userjoinrankings
+            List.Unique.filterDuplicates (List.filterMap removeInvalidRankingId user.userjoinrankings)
+
+        --_ = Debug.log "userJoinRankings in added" userJoinRankings
 
         validatedRankingAdded = 
             if Utils.Validation.Validate.isValidRankingId rankingId then
@@ -143,8 +146,8 @@ addedNewJoinedRankingId rankingId user lUser =
     newUserList
 
 
-removeInvalidRankingIds : String -> Maybe String 
-removeInvalidRankingIds rankingId = 
+removeInvalidRankingId : String -> Maybe String 
+removeInvalidRankingId rankingId = 
     if Utils.Validation.Validate.isValidRankingId rankingId then
         Just rankingId
     else 
@@ -157,25 +160,33 @@ removedRankingIdFromAll : Users -> String -> Users
 removedRankingIdFromAll susers rnkId = 
     case susers of 
         Users setOfUsers->
-           asUsers (EverySet.map (removeRankindIdFromUser rnkId) setOfUsers)
+           asUsers (EverySet.map (removedRankindIdFromUser rnkId) setOfUsers)
 
 
-removeRankindIdFromUser : String -> SR.Types.User -> SR.Types.User
-removeRankindIdFromUser  rnkId user = 
+removedRankindIdFromUser : String -> SR.Types.User -> SR.Types.User
+removedRankindIdFromUser  rnkId user = 
     let
-        luserJoinRnkings = user.userjoinrankings
-        newUserJoinRankings = List.filter (isRankingIdInList rnkId) luserJoinRnkings
-        newUser = {user | userjoinrankings = newUserJoinRankings}
+        -- if there's anything wrong with the existing joinrankings data fix it here:
+        userJoinRankings = List.Unique.filterDuplicates (List.filterMap removeInvalidRankingId user.userjoinrankings)
+        --_ = Debug.log "userJoinRankings" userJoinRankings
+
+        filteredOutRanking =
+            List.filterMap (filterRankingIds rnkId) userJoinRankings
+
+        _ = Debug.log "filteredOutRanking" filteredOutRanking
+
+        newUser = {user | userjoinrankings = filteredOutRanking}
     in
         newUser
 
-isRankingIdInList : String -> String -> Bool
-isRankingIdInList rnkIdToFilter currentRnkId =
+filterRankingIds : String -> String -> Maybe String 
+filterRankingIds rnkIdToFilter currentRnkId =
     if currentRnkId == rnkIdToFilter then
-        True
+        Nothing
 
     else
-        False
+        Just currentRnkId
+
     
 
 removeUser : SR.Types.User -> Users -> Users

@@ -142,47 +142,73 @@ addedNewJoinedRankingIdToUserTest =
                    
             ]
 
-removedRankingIdFromUserJoinRankings : Test 
-removedRankingIdFromUserJoinRankings =
+removedRankingIdFromAllUsersTest : Test 
+removedRankingIdFromAllUsersTest =
     --only <|
         describe "correctly remove a rankingId from each User's userjoinrankings list"
             [
-            fuzzWith { runs = 10} (Fuzz.list userFuzzer) """removeRankingIdFromAllUsers must remove the correct rnkId from every User in the (fuzzy) set""" <|
+            fuzz (Fuzz.list userFuzzer)"""removeRankingIdFromAllUsers must remove the correct rnkId from every User in the (fuzzy) set"""  <|
+            --fuzz (Fuzz.list userFuzzer) """removeRankingIdFromAllUsers must remove the correct rnkId from every User in the (fuzzy) set"""  <|
                 \list ->
-                case Data.Users.asUsers (EverySet.fromList list) of
-                    usersSet ->
-                        -- let 
-                            
-                        --     newUserSet = Data.Users.removedRankingIdFromAll usersSet "123456789"
-                        -- in
-                            --case Data.Users.asList newUserSet of 
-                            case Data.Users.asList usersSet of
-                                [] ->
-                                    -- let 
-                                    --     _ = Debug.log "newUserSet" newUserSet
-                                    -- in
-                                    Expect.pass
-
-                                -- the set is not empty
-                                x :: xs ->
+                -- case Data.Users.asUsers (EverySet.fromList list) of
+                --     usersSet ->
+                --         case Data.Users.asList usersSet of
+                            --Set.isempty usersSet ->
+                    case list of
+                            [] ->
+                                let 
+                                    --addedANewRankingIdToUser = Data.Users.addedNewJoinedRankingId "1234567890" Testdata.UserTestData.singleUser usersSet
+                                    -- if there's nothing in the list we can add and remove valid rankingIds to/from the test data:
+                                    addedANewRankingIdToUserInList = Data.Users.addedNewJoinedRankingId "5e8e879d8e85c8437012e2a7" Testdata.UserTestData.singleUser list
+                                    addedANewRankingIdToUserInList2 = Data.Users.addedNewJoinedRankingId "5e96c74b5fa47104cea0c7c6" Testdata.UserTestData.singleUser addedANewRankingIdToUserInList
+                                    removedRankingIdFromList = Data.Users.removedRankingIdFromAll (Data.Users.asUsers (EverySet.fromList addedANewRankingIdToUserInList2)) "5e8e879d8e85c8437012e2a7"
+                                in 
+                                    case Data.Users.asList removedRankingIdFromList of 
+                                        [] ->
+                                            Expect.pass
+                                        -- x is a User:
+                                        x :: xs ->
+                                            x.userjoinrankings
+                                            |>
+                                            Expect.all
+                                                [ 
+                                                --Expect.lessThan (List.length list + 2) 
+                                                --, Expect.greaterThan (List.length list)
+                                                  Expect.equal ["5e96c74b5fa47104cea0c7c6"]
+                                                 , Expect.notEqual ["5e8e879d8e85c8437012e2a7"] 
+                                                ]
+                            -- fuzz has generated a list
+                            -- take the first user:
+                            x :: xs ->
                                     case x.userjoinrankings of 
                                         [] ->
-                                            -- let 
-                                                
-                                            --     _ = Debug.log "x.userjoinrankings" x.userjoinrankings
-                                            -- in
                                             Expect.pass
-                                        -- the userjoinrankings is not empty
+                                        --take a single rankingid:
                                         y :: ys ->
-                                            let 
+                                            let
+                                                --addedANewRankingIdToUserInList = Data.Users.addedNewJoinedRankingId y Testdata.UserTestData.singleUser usersSet
+                                                -- y and x are both fuzzy but related - y is the ranking id being added to this user (x)
                                                 addedANewRankingIdToUserInList = Data.Users.addedNewJoinedRankingId y x list
-                                                --_ = Debug.log "y" y
+                                                addedANewRankingIdToUserInList2 = Data.Users.addedNewJoinedRankingId (y ++ "123") x list
+                                                removedRankingIdFromFuzzyList = Data.Users.removedRankingIdFromAll (Data.Users.asUsers (EverySet.fromList addedANewRankingIdToUserInList2))  (y ++ "123")
                                             in
-
-                                            Expect.equal 1 1 -- y x.userjoinrankings
-
-                            --Expect.equal Testdata.UserTestData.singleUser.ethaddress newUser.ethaddress
-                            
+                                            case Data.Users.asList removedRankingIdFromFuzzyList of 
+                                                [] ->
+                                                    Expect.pass
+                                                --user:
+                                                z :: zs ->
+                                                    -- following seeds provide valid data that won't result in an empty list for z:
+                                                    -- 151412038146962
+                                                    z.userjoinrankings
+                                                    |>
+                                                    Expect.all
+                                                        [ 
+                                                            -- it's only fair to test against a validated fuzz user (x)
+                                                            Expect.equal (List.filterMap Data.Users.removeInvalidRankingId x.userjoinrankings)
+                                                            -- if fuzz data is invalid, lists may equal [] cos first 'rankingid' won't be added
+                                                            --, Expect.notEqual []
+                                                        ]
+                   
             ]
                     
 
