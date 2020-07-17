@@ -1,4 +1,4 @@
-module Main exposing (Model(..), Msg(..), emptyTxRecord, init, main, update, view)
+module Main exposing (Model(..), Msg(..), httpDeleteSelectedRankingFromGlobalList, emptyTxRecord, init, main, update, view)
 
 import Browser
 import Element exposing (Element)
@@ -162,10 +162,11 @@ type Msg
     | ClickedChallengeOpponent SR.Types.UserPlayer
     | ClickedJoinSelected
     | ClickedChangedUIStateToEnterResult SR.Types.UserPlayer
+    | ClickedDeleteRanking String
+    | ClickedDeleteRankingConfirmed
     | ResetToShowGlobal
     | ResetToShowSelected
     | ResetRejectedNewUserToShowGlobal
-    | ClickedDeletedRanking String
     | LadderNameInputChg String
     | LadderDescInputChg String
     | NewUserNameInputChg String
@@ -190,8 +191,8 @@ type Msg
     | UsersReceived (RemoteData.WebData (List SR.Types.User))
     | ReturnFromPlayerListUpdate (RemoteData.WebData (List SR.Types.Player))
     | ReturnFromUserListUpdate (RemoteData.WebData (List SR.Types.User))
-    | DeletedRankingFromGlobalList (RemoteData.WebData (List SR.Types.Ranking))
-    | ReturnedFromDeletedSingleRankingFromJsonBin (RemoteData.WebData (List SR.Types.Ranking))
+    | ReturnedFromDeletedRankingFromGlobalList (RemoteData.WebData (List SR.Types.Ranking))
+    | ReturnedFromDeletedSelectedRankingFromJsonBin (RemoteData.WebData (List SR.Types.Ranking))
     | SentResultToWallet SR.Types.ResultOfMatch
     | AddedNewRankingToGlobalList (RemoteData.WebData (List SR.Types.Ranking))
     | TimeUpdated Posix
@@ -776,7 +777,7 @@ handledWalletStateOpened msg model =
                         _ ->
                             (model, Cmd.none)
 
-                ClickedDeletedRanking uaddr ->
+                ClickedDeleteRanking uaddr ->
                     case dataState of 
                         StateFetched sUsers dKind ->
                             case dKind of 
@@ -790,12 +791,11 @@ handledWalletStateOpened msg model =
                                             appInfo
                                             SR.Types.UIDeleteRankingConfirm
                                             txRec
-                                        --, httpDeleteSelectedRankingFromJsonBin (Utils.MyUtils.stringFromRankingId rnkId)
                                         , Cmd.none
                                         )
                                 _ -> 
                                     let 
-                                        _ = Debug.log "9 - dataState should be global" dataState
+                                        _ = Debug.log "9 - dataState should be updated" dataState
                                     in
                                         (model, Cmd.none)
                         _ -> 
@@ -803,8 +803,26 @@ handledWalletStateOpened msg model =
                                         _ = Debug.log "9 - dataState" dataState
                                     in
                                         (model, Cmd.none)
+                
+                ClickedDeleteRankingConfirmed ->
+                    case dataState of 
+                        StateUpdated sUsers dKind ->
+                            case dKind of 
+                                Selected sSelected rnkId user status ->
+                                    ( AppOps SR.Types.WalletOpened
+                                            dataState
+                                            appInfo
+                                            uiState
+                                            txRec
+                                        , httpDeleteSelectedRankingFromJsonBin (Utils.MyUtils.stringFromRankingId rnkId)
+                                        )
+                                _ ->
+                                    ( model, Cmd.none )
+                        _ ->
+                            ( model, Cmd.none )
 
-                ReturnedFromDeletedSingleRankingFromJsonBin result ->
+
+                ReturnedFromDeletedSelectedRankingFromJsonBin result ->
                     -- nb. you haven't used the result!
                     case dataState of
                         StateUpdated sUsers dKind ->
@@ -815,21 +833,23 @@ handledWalletStateOpened msg model =
                                         newGlobal = Data.Global.removeUserRanking sGlobal userRankingToDelete
                                         newDataKind = Global newGlobal rnkId user
                                         newDataState = StateUpdated sUsers newDataKind
+                                        
+                                        _ = Debug.log "Ranking removed on return from id deleted? " Data.Global.asList newGlobal
+                                        
                                     in 
                                         ( AppOps SR.Types.WalletOpened
                                             newDataState
                                             appInfo
                                             uiState
                                             txRec
-                                        
-                                        --, httpDeleteSelectedRankingFromGlobalList 
-                                        , Cmd.none)
+                                        , httpDeleteSelectedRankingFromGlobalList newGlobal
+                                        )
                                 _ ->
                                     ( model, Cmd.none )
                         _ ->
                             ( model, Cmd.none )
 
-                DeletedRankingFromGlobalList updatedListAfterRankingDeletedFromGlobalList ->
+                ReturnedFromDeletedRankingFromGlobalList updatedListAfterRankingDeletedFromGlobalList ->
                     case dataState of 
                         StateUpdated sUsers dKind ->
                             case dKind of 
@@ -838,6 +858,9 @@ handledWalletStateOpened msg model =
                                         newGlobal = Data.Global.createdGlobal (updatedListAfterRankingDeletedFromGlobalList) sUsers
                                         newDataKind = Global newGlobal rnkId user
                                         newDataState = StateUpdated sUsers newDataKind
+                                        
+                                        _ = Debug.log "Ranking removed on return from list updated? " Data.Global.asList newGlobal
+                                        
                                     in
                                         ( AppOps SR.Types.WalletOpened newDataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
@@ -1164,7 +1187,7 @@ handleWalletStateOperational msg model =
                             (model, Cmd.none)
 
 
-                -- ClickedDeletedRanking uaddr ->
+                -- ClickedDeleteRanking uaddr ->
                 --     case dataState of 
                 --         StateUpdated sUsers dKind ->
                 --             case dKind of 
@@ -1195,7 +1218,7 @@ handleWalletStateOperational msg model =
 
                 
                     
-                -- DeletedRankingFromGlobalList updatedListAfterRankingDeletedFromGlobalList ->
+                -- ReturnedFromDeletedRankingFromGlobalList updatedListAfterRankingDeletedFromGlobalList ->
                 --     case dataState of 
                 --         StateFetched sUsers dKind ->
                 --             case dKind of 
@@ -1939,6 +1962,9 @@ refresh the browser"""
                 SR.Types.UIDeleteRankingConfirm ->
                     deleteRankingview model
 
+                -- SR.Types.UIDeleteRankingInform ->
+                --     deletedRankingInformView model
+
 
                 SR.Types.UIRegisterNewUser ->
                     let 
@@ -2257,7 +2283,7 @@ selecteduserIsOwnerhomebutton user =
                     , label = Element.text "Home"
                     }
                 , Input.button (Button.simple ++ Color.danger) <|
-                    { onPress = Just <| ClickedDeletedRanking user.ethaddress
+                    { onPress = Just <| ClickedDeleteRanking user.ethaddress
                     , label = Element.text "Delete"
                     }
                 ]
@@ -2388,6 +2414,41 @@ confirmDelRankingBtn appInfo dataState =
                     _ = Debug.log "newrankingconfirmbutton - dataState" dataState
                 in
                     Element.text ""
+
+-- continueAfterDelRankingBtn : SR.Types.AppInfo -> DataState -> Element Msg
+-- continueAfterDelRankingBtn appInfo dataState =
+--     case dataState of 
+--             StateUpdated sUsers dKind ->
+--                  case dKind of 
+--                     Global sGlobal rnkId user ->
+--                         Element.column Grid.section <|
+--                             [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+--                             , Element.column (Card.simple ++ Grid.simple) <|
+--                                 [ Element.wrappedRow Grid.simple <|
+--                                     [ Input.button (Button.simple ++ Color.simple) <|
+--                                         { onPress = Just <| ResetToShowGlobal
+--                                         , label = Element.text "Continue"
+--                                         }
+--                                     -- , Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput appInfo.selectedRanking (Data.Global.asList sGlobal))) <|
+                                        
+--                                     --     { onPress = Just <| ClickedConfirmCreateNewLadder
+--                                     --     , label = Element.text "Confirm"
+--                                     --     }
+--                                     ]
+--                                 ]
+--                             , SR.Elements.warningParagraph
+--                             ]
+--                     _ -> 
+--                         let 
+--                             _ = Debug.log "newrankingconfirmbutton - dataState should be global" dataState
+--                         in
+--                             Element.text ""
+                    
+--             _ -> 
+--                 let 
+--                     _ = Debug.log "newrankingconfirmbutton - dataState" dataState
+--                 in
+--                     Element.text ""
 
 
 confirmChallengebutton : Model -> Element Msg
@@ -3119,6 +3180,23 @@ deleteRankingview model =
         _ ->
             Html.text "Fail"
 
+-- deletedRankingInformView : Model -> Html Msg
+-- deletedRankingInformView model =
+--     case model of
+--         AppOps walletState dataState appInfo uiState txRec ->
+--             Framework.responsiveLayout [] <|
+--                 Element.column
+--                     Framework.container
+--                     [ Element.el Heading.h4 <| Element.text "Deleted Ranking"
+--                     --, inputNewLadder appInfo dataState
+--                     , continueAfterDelRankingBtn appInfo dataState
+--                     --, newrankingconfirmbutton appInfo dataState
+--                     , SR.Elements.footer
+--                     ]
+
+--         _ ->
+--             Html.text "Fail"
+
 
 displayChallengeBeforeConfirmView : Model -> Html Msg
 displayChallengeBeforeConfirmView model =
@@ -3546,12 +3624,15 @@ httpPutRequestForAddGlobal newJsonEncodedList globalListWithJsonObjAdded =
         --, url = ""
         }
 
-httpDeleteSelectedRankingFromGlobalList : Json.Encode.Value -> List SR.Types.Ranking -> Cmd Msg
-httpDeleteSelectedRankingFromGlobalList newJsonEncodedList globalListWithRankingDeleted =
+httpDeleteSelectedRankingFromGlobalList : Data.Global.Global -> Cmd Msg
+httpDeleteSelectedRankingFromGlobalList sGlobalWithRankingDeleted =
+    let
+        globalListWithRankingDeleted = Data.Global.rankingsAsList sGlobalWithRankingDeleted
+    in
     Http.request
             { body =
                 Http.jsonBody <| Data.Global.newJsonEncodedList globalListWithRankingDeleted
-            , expect = Http.expectJson (RemoteData.fromResult >> DeletedRankingFromGlobalList) SR.Decode.decodeNewRankingListServerResponse
+            , expect = Http.expectJson (RemoteData.fromResult >> ReturnedFromDeletedRankingFromGlobalList) SR.Decode.decodeNewRankingListServerResponse
             , headers = [ SR.Defaults.secretKey, SR.Defaults.globalBinName, SR.Defaults.globalContainerId ]
             , method = "PUT"
             , timeout = Nothing
@@ -3566,7 +3647,7 @@ httpDeleteSelectedRankingFromJsonBin rankingId =
     Http.request
         { body =
             Http.emptyBody
-        , expect = Http.expectJson (RemoteData.fromResult >> ReturnedFromDeletedSingleRankingFromJsonBin) SR.Decode.decodeNewRankingListServerResponse
+        , expect = Http.expectJson (RemoteData.fromResult >> ReturnedFromDeletedSelectedRankingFromJsonBin) SR.Decode.decodeNewRankingListServerResponse
         , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
         , method = "DELETE"
         , timeout = Nothing

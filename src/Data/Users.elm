@@ -21,7 +21,7 @@ module Data.Users exposing (Users
     , gotUser
     , userSetLength
     , isUserNameValidated
-    , removeInvalidRankingId
+    , removedInvalidRankingId
     )
 
 
@@ -127,7 +127,7 @@ addedNewJoinedRankingId rankingId user lUser =
 
         -- if there's anything wrong with the existing joinrankings data fix it here:
         userJoinRankings =
-            List.Unique.filterDuplicates (List.filterMap removeInvalidRankingId user.userjoinrankings)
+            List.Unique.filterDuplicates (List.filterMap removedInvalidRankingId user.userjoinrankings)
 
         --_ = Debug.log "userJoinRankings in added" userJoinRankings
 
@@ -146,8 +146,8 @@ addedNewJoinedRankingId rankingId user lUser =
     newUserList
 
 
-removeInvalidRankingId : String -> Maybe String 
-removeInvalidRankingId rankingId = 
+removedInvalidRankingId : String -> Maybe String 
+removedInvalidRankingId rankingId = 
     if Utils.Validation.Validate.isValidRankingId rankingId then
         Just rankingId
     else 
@@ -167,7 +167,7 @@ removedRankindIdFromUser : String -> SR.Types.User -> SR.Types.User
 removedRankindIdFromUser  rnkId user = 
     let
         -- if there's anything wrong with the existing joinrankings data fix it here:
-        userJoinRankings = List.Unique.filterDuplicates (List.filterMap removeInvalidRankingId user.userjoinrankings)
+        userJoinRankings = List.Unique.filterDuplicates (List.filterMap removedInvalidRankingId user.userjoinrankings)
         --_ = Debug.log "userJoinRankings" userJoinRankings
 
         filteredOutRanking =
