@@ -91,6 +91,7 @@ init _ =
     ( AppOps SR.Types.WalletStateUnknown AllEmpty SR.Defaults.emptyAppInfo SR.Types.UILoading emptyTxRecord
     , Cmd.batch
         [ gotUserList
+        , gotGlobal
         , Ports.log
             "Sending out msg from init "
         ]
@@ -2026,9 +2027,6 @@ ownedrankingbuttons urankingList user =
 
 determineOwnedRankingButtonsDisplay : List SR.Types.Ranking -> SR.Types.User -> List (Element Msg)
 determineOwnedRankingButtonsDisplay lranking user =
-    let
-            _ = Debug.log "2Create New Ladder2" "2Create New Ladder2"
-        in
     if List.isEmpty lranking then
                     [
                         Input.button
@@ -2091,25 +2089,16 @@ insertOwnedRankingList lrankinginfo user =
             List.map
                 ownedRankingInfoBtn
                 lrankinginfo
-
-        
-        _ = Debug.log "3Create New Ladder3" "3Create New Ladder3"
-        
     in
     if user.username == "" then
-        --Element.column (Card.simple ++ Grid.simple) <|
-            --[
-                [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ] 
-                    
+                [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
                     ++ Button.fill
                     ++ Button.simple 
                     ++ Color.info) <|
                     { onPress = Just <| ClickedCreateNewLadder
-                    , label = Element.text "3Create New Ladder3"
+                    , label = Element.text "Create New Ladder"
                     }
                 ]
-            --]
-
     else
         mapOutRankingList
 
@@ -3015,24 +3004,20 @@ displayCreateNewLadderBtnIfExistingUser : String -> List SR.Types.UserRanking ->
 displayCreateNewLadderBtnIfExistingUser uname luserRanking msg =
     if uname == "" || List.isEmpty luserRanking then
         Element.text ""
-
     else
-        let
-            _ = Debug.log "1Create New Ladder1" "1Create New Ladder1"
-        in 
-    Element.column (Card.simple ++ Grid.simple) <|
-     [
-        Input.button
-            ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
-                ++ Button.fill
-                ++ Button.simple
-                ++ Color.info
-            )
-        <|
-            { onPress = Just <| msg
-            , label = Element.text "1Create New Ladder1"
-            }
-     ]
+        Element.column (Card.simple ++ Grid.simple) <|
+        [
+            Input.button
+                ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
+                    ++ Button.fill
+                    ++ Button.simple
+                    ++ Color.info
+                )
+            <|
+                { onPress = Just <| msg
+                , label = Element.text "Create New Ladder"
+                }
+        ]
 
 
 displayRegisterBtnIfNewUser : String -> Msg -> Element Msg
