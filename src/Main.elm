@@ -86,18 +86,15 @@ emptyAllLists =
     }
 
 
-
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( AppOps SR.Types.WalletStateUnknown AllEmpty SR.Defaults.emptyAppInfo SR.Types.UILoading emptyTxRecord
     , Cmd.batch
         [ gotUserList
-        , gotGlobal
         , Ports.log
             "Sending out msg from init "
         ]
     )
-
 
 
 emptyTxRecord : TxRecord
@@ -294,6 +291,10 @@ handleWalletStateLocked msg model =
                     )
 
         _ ->
+            let
+                _ =
+                    Debug.log "msg" msg
+            in
             ( Failure "handleWalletStateLocked model"
             , Cmd.none
             )
@@ -319,6 +320,7 @@ handleWalletStateAwaitOpening msg model =
 
                                 Just uaddr ->
                                     handledWalletStateOpened msg (gotWalletAddrApplyToUser model uaddr)
+
 
                         _ ->
                             ( Failure "handleWalletStateAwaitOpening"
@@ -368,7 +370,7 @@ handledWalletStateOpened msg model =
                                         newDataSet = StateFetched sUsers newDataKind
 
                                     in 
-                                        ( AppOps SR.Types.WalletOpened newDataSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+                                        (AppOps SR.Types.WalletOpened newDataSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none)
                                 
                                 Global sGlobal rnkId user ->
                                     let
@@ -1940,6 +1942,7 @@ view model =
                     greetingView <| "Loading ..."
 
                 SR.Types.UIWalletMissingInstructions ->
+                
                     greetingView <|
                         """Your Ethereum  
 wallet browser
@@ -1950,6 +1953,7 @@ before continuing and
 refresh the browser"""
 
                 SR.Types.UIDisplayWalletLockedInstructions ->
+                
                     greetingView <|
                         """Your Ethereum  
 wallet browser
@@ -2022,22 +2026,22 @@ ownedrankingbuttons urankingList user =
 
 determineOwnedRankingButtonsDisplay : List SR.Types.Ranking -> SR.Types.User -> List (Element Msg)
 determineOwnedRankingButtonsDisplay lranking user =
+    let
+            _ = Debug.log "2Create New Ladder2" "2Create New Ladder2"
+        in
     if List.isEmpty lranking then
-        List.singleton <|
-            Element.el []
-                (Input.button
-                    ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
-                        
-                        ++ Button.simple
-                        ++ Button.fill
-                        ++ Color.info
-                    )
-                 <|
-                    { onPress = Just <| ClickedCreateNewLadder
-                    , label = Element.text "Create New Ladder"
-                    }
-                )
-
+                    [
+                        Input.button
+                            ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
+                                ++ Button.fill
+                                ++ Button.simple
+                                ++ Color.info
+                            )
+                        <|
+                            { onPress = Just <| ClickedCreateNewLadder
+                            , label = Element.text "Create New Ladder"
+                            }
+                    ]
     else
         insertOwnedRankingList lranking user
 
@@ -2087,13 +2091,24 @@ insertOwnedRankingList lrankinginfo user =
             List.map
                 ownedRankingInfoBtn
                 lrankinginfo
+
+        
+        _ = Debug.log "3Create New Ladder3" "3Create New Ladder3"
+        
     in
     if user.username == "" then
-        [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ] ++ Button.simple ++ Color.info) <|
-            { onPress = Just <| ClickedCreateNewLadder
-            , label = Element.text "Create New Ladder"
-            }
-        ]
+        --Element.column (Card.simple ++ Grid.simple) <|
+            --[
+                [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ] 
+                    
+                    ++ Button.fill
+                    ++ Button.simple 
+                    ++ Color.info) <|
+                    { onPress = Just <| ClickedCreateNewLadder
+                    , label = Element.text "3Create New Ladder3"
+                    }
+                ]
+            --]
 
     else
         mapOutRankingList
@@ -3002,6 +3017,9 @@ displayCreateNewLadderBtnIfExistingUser uname luserRanking msg =
         Element.text ""
 
     else
+        let
+            _ = Debug.log "1Create New Ladder1" "1Create New Ladder1"
+        in 
     Element.column (Card.simple ++ Grid.simple) <|
      [
         Input.button
@@ -3012,7 +3030,7 @@ displayCreateNewLadderBtnIfExistingUser uname luserRanking msg =
             )
         <|
             { onPress = Just <| msg
-            , label = Element.text "Create New Ladder"
+            , label = Element.text "1Create New Ladder1"
             }
      ]
 
@@ -3154,7 +3172,7 @@ inputNewLadderview model =
             Framework.responsiveLayout [] <|
                 Element.column
                     Framework.container
-                    [ Element.el Heading.h4 <| Element.text "Create New Ladder Ranking"
+                    [ Element.el Heading.h4 <| Element.text "4Create New Ladder Ranking"
                     , inputNewLadder appInfo dataState
                     , newrankingconfirmbutton appInfo dataState
                     , SR.Elements.footer
