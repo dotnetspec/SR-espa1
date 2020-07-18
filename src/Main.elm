@@ -243,7 +243,7 @@ update msgOfTransitonThatAlreadyHappened currentmodel =
             ( Failure <| "Model failure in AppOps: " ++ str, Cmd.none )
 
 
-
+-- needed to prevent looping
 handleWalletStateUnknown : Msg -> Model -> ( Model, Cmd Msg )
 handleWalletStateUnknown msg model =
     case msg of
@@ -257,7 +257,11 @@ handleWalletStateUnknown msg model =
                             )
 
                         Just uaddr ->
-                            ( gotWalletAddrApplyToUser model uaddr, Cmd.none )
+                            let 
+                                newModel = AppOps SR.Types.WalletOpened AllEmpty (gotWalletAddrApplyToUser SR.Defaults.emptyAppInfo uaddr) SR.Types.UILoading emptyTxRecord
+                            in
+                                (newModel, Cmd.none)
+
 
                 _ ->
                     ( Failure "Please install and open an Etherum wallet on Rinkeby"
@@ -320,7 +324,10 @@ handleWalletStateAwaitOpening msg model =
                                     )
 
                                 Just uaddr ->
-                                    handledWalletStateOpened msg (gotWalletAddrApplyToUser model uaddr)
+                                    let 
+                                        newModel = AppOps SR.Types.WalletOpened dataState (gotWalletAddrApplyToUser appInfo uaddr) SR.Types.UILoading emptyTxRecord
+                                    in
+                                    handledWalletStateOpened msg newModel
 
 
                         _ ->
@@ -1594,10 +1601,8 @@ handleTxSubMsg subMsg =
             False
 
 
-gotWalletAddrApplyToUser : Model -> Eth.Types.Address -> Model
-gotWalletAddrApplyToUser model uaddr =
-    case model of
-        AppOps walletState dataState appInfo uiState txRec ->
+gotWalletAddrApplyToUser : SR.Types.AppInfo -> Eth.Types.Address ->  SR.Types.AppInfo
+gotWalletAddrApplyToUser appInfo uaddr =
             let
                 newAppInfoUser =
                     appInfo.user
@@ -1608,11 +1613,7 @@ gotWalletAddrApplyToUser model uaddr =
                 newAppInfo =
                     { appInfo | user = newUserWithAddr }
             in
-            AppOps SR.Types.WalletOpened dataState newAppInfo SR.Types.UILoading emptyTxRecord
-
-        _ ->
-            Failure "gotWalletAddrApplyToUser"
-
+            newAppInfo
 
 
 -- assignChallengerAddrsForBOTHPlayers : Model -> ( Model, Cmd Msg )
