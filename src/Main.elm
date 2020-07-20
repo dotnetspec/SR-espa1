@@ -202,119 +202,34 @@ type Msg
     | TrackTx Eth.Sentry.Tx.TxTracker
     | TxSentryMsg Eth.Sentry.Tx.Msg
     | WalletStatus Eth.Sentry.Wallet.WalletSentry
+    --| GotAccountAddress Eth.Types.Address
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msgOfTransitonThatAlreadyHappened currentmodel =
-    case currentmodel of
-        AppOps walletState dataState appInfo uiState txRec ->
+update msg model =
+    case ( msg, model ) of
+        ( WalletStatus walletSentry_, AppOps walletState dataState appInfo uiState txRec ) ->
             case walletState of
                 SR.Types.WalletStateUnknown ->
-                    handleWalletStateUnknown msgOfTransitonThatAlreadyHappened currentmodel
+                        case walletSentry_.networkId of
+                            Rinkeby ->
+                                case walletSentry_.account of
+                                    Nothing ->
+                                        ( AppOps SR.Types.WalletStateLocked AllEmpty SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
+                                        , Cmd.none
+                                        --, msg
+                                        )
+
+                                    Just uaddr ->
+                                        let 
+                                            newModel = AppOps SR.Types.WalletOpened AllEmpty (gotWalletAddrApplyToUser SR.Defaults.emptyAppInfo uaddr) SR.Types.UILoading emptyTxRecord
+                                        in
+                                            (newModel, Cmd.none)
+                                --(newModel, GotAccountAddress uaddr)
+                            _ ->
+                                (model, Cmd.none)
 
                 SR.Types.WalletStateLocked ->
-                    handleWalletStateLocked msgOfTransitonThatAlreadyHappened currentmodel
-
-                SR.Types.WalletStateAwaitOpening ->
-                    handleWalletStateAwaitOpening msgOfTransitonThatAlreadyHappened currentmodel
-
-                SR.Types.WalletOpened ->
-                    handledWalletStateOpened msgOfTransitonThatAlreadyHappened currentmodel
-
-                SR.Types.WalletOperational ->
-                    case dataState of
-                        StateFetched sUsers dKind -> 
-                            let
-                                newDataState = StateUpdated sUsers dKind
-                                newModel = AppOps walletState newDataState appInfo uiState txRec
-                            in
-                                handleWalletStateOperational msgOfTransitonThatAlreadyHappened newModel
-                        _ ->
-                            handleWalletStateOperational msgOfTransitonThatAlreadyHappened currentmodel
-
-                SR.Types.WalletWaitingForTransactionReceipt ->
-                    
-                    handleWalletWaitingForUserInput msgOfTransitonThatAlreadyHappened walletState dataState appInfo txRec
-
-                _ ->
-                    ( Failure "WalletState failure", Cmd.none )
-
-        Failure str ->
-            ( Failure <| "Model failure in AppOps: " ++ str, Cmd.none )
-
-
--- needed to prevent looping
-handleWalletStateUnknown : Msg -> Model -> ( Model, Cmd Msg )
-handleWalletStateUnknown msg model =
-    case msg of
-        WalletStatus walletSentry_ ->
-            case walletSentry_.networkId of
-                Rinkeby ->
-                    case walletSentry_.account of
-                        Nothing ->
-                            ( AppOps SR.Types.WalletStateLocked AllEmpty SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
-                            , Cmd.none
-                            )
-
-                        Just uaddr ->
-                            let 
-                                newModel = AppOps SR.Types.WalletOpened AllEmpty (gotWalletAddrApplyToUser SR.Defaults.emptyAppInfo uaddr) SR.Types.UILoading emptyTxRecord
-                            in
-                                (newModel, Cmd.none)
-
-
-                _ ->
-                    ( Failure "Please install and open an Etherum wallet on Rinkeby"
-                    , Cmd.none
-                    )
-
-        _ ->
-            ( model
-            , Cmd.none
-            )
-
-
-handleWalletStateLocked : Msg -> Model -> ( Model, Cmd Msg )
-handleWalletStateLocked msg model =
-    case model of
-        AppOps walletState dataState appInfo uiState txRec ->
-            case msg of
-                WalletStatus walletSentry_ ->
-                    let
-                        _ =
-                            Debug.log "ws in locked" walletSentry_
-                    in
-                    ( AppOps SR.Types.WalletStateLocked AllEmpty SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord, Cmd.none )
-
-                _ ->
-                    let
-                        _ =
-                            Debug.log "msg" msg
-                    in
-                    ( Failure "handleWalletStateLocked"
-                    , Cmd.none
-                    )
-
-        _ ->
-            let
-                _ =
-                    Debug.log "msg" msg
-            in
-            ( Failure "handleWalletStateLocked model"
-            , Cmd.none
-            )
-
-
-handleWalletStateAwaitOpening : Msg -> Model -> ( Model, Cmd Msg )
-handleWalletStateAwaitOpening msg model =
-    case model of
-        AppOps walletState dataState appInfo uiState txRec ->
-            case msg of
-                WalletStatus walletSentry_ ->
-                    let
-                        _ =
-                            Debug.log "ws in awaitopening" walletSentry_
-                    in
                     case walletSentry_.networkId of
                         Rinkeby ->
                             case walletSentry_.account of
@@ -328,47 +243,52 @@ handleWalletStateAwaitOpening msg model =
                                         newModel = AppOps SR.Types.WalletOpened dataState (gotWalletAddrApplyToUser appInfo uaddr) SR.Types.UILoading emptyTxRecord
                                     in
                                     handledWalletStateOpened msg newModel
-
-
                         _ ->
-                            ( Failure "handleWalletStateAwaitOpening"
-                            , Cmd.none
-                            )
+                            (model, Cmd.none)
 
-                _ ->
-                    ( Failure "handleWalletStateAwaitOpening"
+
+                SR.Types.WalletOpened ->
+                    handledWalletStateOpened msg model
+
+                SR.Types.WalletOperational ->
+                    case dataState of
+                        StateFetched sUsers dKind -> 
+                            let
+                                newDataState = StateUpdated sUsers dKind
+                                newModel = AppOps walletState newDataState appInfo uiState txRec
+                            in
+                                handleWalletStateOperational msg newModel
+                        _ ->
+                            handleWalletStateOperational msg model
+
+                SR.Types.WalletWaitingForTransactionReceipt ->
+                    
+                    handleWalletWaitingForUserInput msg walletState dataState appInfo txRec
+
+                _ -> 
+                    ( AppOps SR.Types.WalletStateLocked AllEmpty SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
                     , Cmd.none
                     )
 
-        _ ->
-            ( Failure "handleWalletStateAwaitOpening"
-            , Cmd.none
-            )
+        ( UsersReceived userList, AppOps walletState dataState appInfo uiState txRec ) ->
+            let 
+                extractedList = Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList
+            in
+                --todo: copy createGlobal to handle this:
+                if List.isEmpty extractedList then 
+                    (model, Cmd.none)
+                else 
+                            let
+                                users = Data.Users.asUsers (EverySet.fromList (extractedList))
+                                newUser = Data.Users.gotUser users appInfo.user.ethaddress
+                                userInAppInfo = { appInfo | user = newUser }
+                                newDataKind = Users newUser
+                                newDataState = StateFetched users newDataKind
+                            in
+                                ( AppOps SR.Types.WalletOpened newDataState userInAppInfo SR.Types.UILoading emptyTxRecord, gotGlobal )
 
 
-handledWalletStateOpened : Msg -> Model -> ( Model, Cmd Msg )
-handledWalletStateOpened msg model =
-    case model of
-        AppOps walletState dataState appInfo uiState txRec ->
-            case msg of
-                WalletStatus walletSentry_ ->
-                    ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
-
-                -- there are 2 instances of this operation - necessary?
-                UsersReceived userList ->
-                    let
-                       
-                        users = Data.Users.asUsers (EverySet.fromList (Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList))
-                        newUser = Data.Users.gotUser users appInfo.user.ethaddress
-                        userInAppInfo = { appInfo | user = newUser }
-                        newDataKind = Users newUser
-                        newDataState = StateFetched users newDataKind
-                        
-                    in
-                        ( AppOps SR.Types.WalletOpened newDataState userInAppInfo SR.Types.UILoading emptyTxRecord, gotGlobal )
-
-
-                GlobalReceived rmtrnkingdata ->
+        (GlobalReceived rmtrnkingdata, AppOps walletState dataState appInfo uiState txRec ) ->
                     case dataState of
                         StateFetched sUsers dKind -> 
                             case dKind of
@@ -393,19 +313,20 @@ handledWalletStateOpened msg model =
                         _ ->
                             (model, Cmd.none)
 
-                PlayersReceived lplayer ->
+        (PlayersReceived lplayer, AppOps walletState dataState appInfo uiState txRec )  ->
                     case dataState of
                         StateFetched sUsers dKind -> 
                             case dKind of 
                                     Selected sSelected rnkId user status ->
                                         let 
-                                            newSSelected = Data.Selected.createdSelected lplayer sUsers (Internal.Types.RankingId appInfo.selectedRanking.id)
+                                            newSSelected = Data.Selected.createdSelected lplayer sUsers rnkId
+
                                         
-                                            newAppPlayer = { appInfo | player = Data.Selected.gotUserAsPlayer newSSelected appInfo.user.ethaddress }
+                                            newAppPlayer = { appInfo | player = Data.Selected.gotUserAsPlayer newSSelected user.ethaddress }
 
                                             newAppChallengerAndPlayer = { newAppPlayer | challenger = Data.Selected.gotUserAsPlayer newSSelected newAppPlayer.player.player.challengeraddress }
 
-                                            newDataKind = Selected newSSelected (Internal.Types.RankingId appInfo.selectedRanking.id) user status
+                                            newDataKind = Selected newSSelected rnkId user status
                                             newDataState = StateFetched sUsers newDataKind
                                         in
                                             case status of 
@@ -415,12 +336,25 @@ handledWalletStateOpened msg model =
                                                     (AppOps SR.Types.WalletOpened newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, Cmd.none)
                                                 SR.Types.UserIsNeitherOwnerNorMember ->
                                                     (AppOps SR.Types.WalletOpened newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, Cmd.none)
-            
-                                    _ -> 
+                                    _ ->
                                         (model, Cmd.none)
-
-                        _ -> 
+                        _ ->
                             (model, Cmd.none)
+                
+        (_, _) ->
+            let 
+                _ = Debug.log "model fail " msg
+            in
+                    ( Failure <| "Model failure in Update: ", Cmd.none )
+
+
+handledWalletStateOpened : Msg -> Model -> ( Model, Cmd Msg )
+handledWalletStateOpened msg model =
+    case model of
+        AppOps walletState dataState appInfo uiState txRec ->
+            case msg of
+                WalletStatus walletSentry_ ->
+                    ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                 ClickedSelectedOwnedRanking rnkidstr rnkownerstr rnknamestr ->
                     case dataState of 
