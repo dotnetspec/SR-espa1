@@ -180,7 +180,7 @@ type Msg
     | ExistingUserDescInputChg String
     | ExistingUserEmailInputChg String
     | ExistingUserMobileInputChg String
-    | CreateNewUserRequested SR.Types.User
+    | ClickedCreateNewUserToWallet SR.Types.User
       -- App Only Ops
     | MissingWalletInstructions
     | OpenWalletInstructions
@@ -265,6 +265,15 @@ update msg model =
                     )
         ( WalletStatus _, Failure _ ) ->
             (model, Cmd.none)
+
+        (ClickedRegister, AppOps walletState dataState appInfo uiState txRec ) ->
+            case walletState of
+                SR.Types.WalletStateLocked ->
+                    ( AppOps walletState dataState appInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
+                SR.Types.WalletOperational ->
+                    ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser txRec, Cmd.none )
+                _ ->
+                    (model, Cmd.none)
 
 
         ( UsersReceived userList, AppOps walletState dataState appInfo uiState txRec ) ->
@@ -1241,17 +1250,13 @@ handleWalletStateOperational msg model =
                     in
                     ( model, Cmd.none )
 
-
-                
-
                 ClickedRegister ->
                      ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRegisterNewUser txRec, Cmd.none )
                 
                 ClickedConfirmedRegisterNewUser ->
                     ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState appInfo SR.Types.UIWaitingForTxReceipt txRec, Cmd.none )
 
-                CreateNewUserRequested userInfo ->
-                
+                ClickedCreateNewUserToWallet userInfo ->
                     let
                         txParams =
                             { to = txRec.account
@@ -1872,8 +1877,7 @@ before continuing and
 refresh the browser"""
 
                 SR.Types.UIDisplayWalletLockedInstructions ->
-                
-                    greetingView <|
+                    continueView <|
                         """Your Ethereum  
 wallet browser
 extension is LOCKED. Please 
@@ -2600,7 +2604,7 @@ newuserConfirmPanel user luser =
                     , label = Element.text "Cancel"
                     }
                 , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput user luser False)) <|
-                    { onPress = Just <| CreateNewUserRequested user
+                    { onPress = Just <| ClickedCreateNewUserToWallet user
                     , label = Element.text "Register"
                     }
                 ]
@@ -3195,6 +3199,25 @@ greetingView greetingMsg =
             [ Element.el Heading.h4 <| Element.text "SportRank"
             , greetingHeading greetingMsg
             ]
+
+continueView : String -> Html Msg
+continueView continueStr =
+    Framework.responsiveLayout [] <|
+        Element.column
+            Framework.container
+            [ Element.el Heading.h4 <| Element.text "SportRank"
+            , greetingHeading continueStr
+            , Element.column (Card.simple ++ Grid.simple) <|
+                    [ Element.column Grid.simple <|
+                        [ Input.button (Button.simple ++ Color.primary) <|
+                            { onPress = Just <| ResetToShowGlobal
+                            , label = Element.text "Continue ..."
+                            }
+                        ]
+                    ]
+            ]
+
+           
 
 
 subscriptions : Model -> Sub Msg
