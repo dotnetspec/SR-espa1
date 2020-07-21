@@ -13,6 +13,14 @@ const ethEnabled = () => {
   return false;
 }
 
+const ethereumButton = document.querySelector('.enableEthereumButton');
+
+ethereumButton.addEventListener('click', () => {
+  //Will Start the metamask extension
+  alert("here now")
+  ethereum.request({ method: 'eth_requestAccounts' });
+});
+
 window.addEventListener('load', function () {
     if (typeof ethEnabled()) {
         console.log('MetaMask is installed!');
