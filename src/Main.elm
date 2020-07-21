@@ -237,9 +237,6 @@ update msg model =
                                     in
                                     --handledWalletStateOpened msg 
                                     (newModel, Cmd.none)
-        
-                  
-                        
                         _ ->
                             (model, Cmd.none)
 
@@ -267,6 +264,9 @@ update msg model =
             (model, Cmd.none)
 
         (ClickedRegister, AppOps walletState dataState appInfo uiState txRec ) ->
+            let
+                    _ = Debug.log "walletState in clickreg " walletState
+            in
             case walletState of
                 SR.Types.WalletStateLocked ->
                     ( AppOps walletState dataState appInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
@@ -293,13 +293,7 @@ update msg model =
                                 newDataKind = Users newUser
                                 newDataState = StateFetched users newDataKind
                             in
-                                case walletState of
-                                    SR.Types.WalletStateLocked -> 
-                                        ( AppOps SR.Types.WalletStateLocked newDataState userInAppInfo SR.Types.UILoading emptyTxRecord, gotGlobal )
-                                    SR.Types.WalletOpened -> 
-                                        ( AppOps SR.Types.WalletOpened newDataState userInAppInfo SR.Types.UILoading emptyTxRecord, gotGlobal )
-                                    _ ->
-                                        ( AppOps SR.Types.WalletStateLocked newDataState userInAppInfo SR.Types.UILoading emptyTxRecord, gotGlobal )
+                                ( AppOps walletState newDataState userInAppInfo SR.Types.UILoading emptyTxRecord, gotGlobal )
         
         ( UsersReceived _, Failure _ ) ->
             (model, Cmd.none)
@@ -314,13 +308,7 @@ update msg model =
                                         newDataKind = Global (Data.Global.createdGlobal rmtrnkingdata sUsers) (Internal.Types.RankingId "") user
                                         newDataSet = StateFetched sUsers newDataKind
                                     in 
-                                        case walletState of
-                                            SR.Types.WalletStateLocked -> 
-                                                ( AppOps SR.Types.WalletStateLocked newDataSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none)
-                                            SR.Types.WalletOpened -> 
-                                                ( AppOps SR.Types.WalletOpened newDataSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none)
-                                            _ ->
-                                                (AppOps SR.Types.WalletOpened newDataSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none)
+                                        (AppOps walletState newDataSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none)
                                 
                                 Global sGlobal rnkId user ->
                                     let
@@ -329,13 +317,9 @@ update msg model =
 
                                         _ = Debug.log "glob rec" "here"
                                     in
-                                        case walletState of
-                                            SR.Types.WalletStateLocked -> 
-                                                ( AppOps SR.Types.WalletStateLocked newDataSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none)
-                                            SR.Types.WalletOpened -> 
-                                                ( AppOps SR.Types.WalletOpened newDataSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none)
-                                            _ ->
-                                                (AppOps SR.Types.WalletOpened newDataSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none)
+                                       
+                                        ( AppOps walletState newDataSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none)
+                                           
                                 _ ->
                                         (model, Cmd.none)
                         _ ->
@@ -362,13 +346,13 @@ update msg model =
                                         in
                                             case status of 
                                                 SR.Types.UserIsOwner ->     
-                                                    (AppOps SR.Types.WalletOpened newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, Cmd.none)
+                                                    (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, Cmd.none)
                                                 SR.Types.UserIsMember  ->
-                                                    (AppOps SR.Types.WalletOpened newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, Cmd.none)
+                                                    (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, Cmd.none)
                                                 SR.Types.UserIsNeitherOwnerNorMember ->
-                                                    (AppOps SR.Types.WalletOpened newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, Cmd.none)
+                                                    (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, Cmd.none)
                                                 SR.Types.UserIsUnRegistered -> 
-                                                    (AppOps SR.Types.WalletStateLocked newDataState appInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, Cmd.none)
+                                                    (AppOps walletState newDataState appInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, Cmd.none)
                                     _ ->
                                         (model, Cmd.none)
                         _ ->
@@ -399,7 +383,7 @@ update msg model =
                                                         newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") user SR.Types.UserIsMember
                                                         newDataState = StateFetched sUsers newDataKind
                                                     in
-                                                        ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, 
+                                                        ( AppOps walletState newDataState newAppInfo SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, 
                                                         fetchedSingleRanking rnkidstr )
                                                 _ -> 
                                                     (model, Cmd.none)
@@ -427,7 +411,7 @@ update msg model =
                                         newDataKind = Selected Data.Selected.emptySelected rnkidstr user SR.Types.UserIsNeitherOwnerNorMember
                                         newDataState = StateFetched sUsers newDataKind
                                     in
-                                        ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, 
+                                        ( AppOps walletState newDataState newAppInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, 
                                         fetchedSingleRanking rnkidstr )
                                 _ -> 
                                     (model, Cmd.none)
@@ -438,7 +422,7 @@ update msg model =
 
 
         (ClickedChangedUIStateToEnterResult player, AppOps walletState dataState appInfo uiState txRec)  ->
-            ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIEnterResult emptyTxRecord, Cmd.none )
+            ( AppOps walletState dataState appInfo SR.Types.UIEnterResult emptyTxRecord, Cmd.none )
 
 
         (SentResultToWallet result, AppOps walletState dataState appInfo uiState txRec)  ->
@@ -496,7 +480,7 @@ update msg model =
                     let
                             newAppInfo = {appInfo | appState = SR.Types.AppStateEnterUndecided }
                     in
-                        ( AppOps SR.Types.WalletOpened dataState newAppInfo SR.Types.UIEnterResultTxProblem emptyTxRecord
+                        ( AppOps walletState dataState newAppInfo SR.Types.UIEnterResultTxProblem emptyTxRecord
                             , sentryCmd
                             )
 
@@ -601,7 +585,7 @@ update msg model =
                 clearedNameFieldAppInfo =
                     { appInfo | selectedRanking = clearedNameFieldInSelectedRanking }
             in
-            ( AppOps SR.Types.WalletOpened dataState clearedNameFieldAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
+            ( AppOps walletState dataState clearedNameFieldAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
 
 
 
@@ -668,7 +652,7 @@ update msg model =
                 newAppInfo =
                     { appInfo | selectedRanking = updatedSelectedRanking }
             in
-            ( AppOps SR.Types.WalletOpened dataState newAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
+            ( AppOps walletState dataState newAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
 
 
         (LadderDescInputChg descfield, AppOps walletState dataState appInfo uiState txRec ) ->
@@ -684,7 +668,7 @@ update msg model =
                 newAppInfo =
                     { appInfo | selectedRanking = updatedSelectedRanking }
             in
-            ( AppOps SR.Types.WalletOpened dataState newAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
+            ( AppOps walletState dataState newAppInfo SR.Types.UICreateNewLadder emptyTxRecord, Cmd.none )
 
 
         
@@ -727,7 +711,7 @@ update msg model =
                                 _ = Debug.log "14.1" dataState
                                 newDataState = StateUpdated sUsers user
                     in
-                    ( AppOps SR.Types.WalletOpened newDataState appInfo SR.Types.UIRenderAllRankings txRec, updateExistingUser (Data.Users.asList sUsers) appInfo.user )
+                    ( AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings txRec, updateExistingUser (Data.Users.asList sUsers) appInfo.user )
                 _ -> 
                             let 
                                 _ = Debug.log "14.3 - dataState" dataState
@@ -736,7 +720,7 @@ update msg model =
 
 
         (SentUserInfoAndDecodedResponseToNewUser serverResponse, AppOps walletState dataState appInfo uiState txRec )  ->
-            (AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+            (AppOps walletState dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
 
         (ClickedChallengeOpponent opponentAsPlayer, AppOps walletState dataState appInfo uiState txRec )  ->
@@ -762,7 +746,7 @@ update msg model =
                                 newDataKind = Global Data.Global.empty rnkId user
                                 newDataState = StateUpdated sUsers newDataKind
                             in
-                                ( AppOps SR.Types.WalletOpened
+                                ( AppOps walletState
                                     newDataState
                                     appInfo
                                     SR.Types.UIDeleteRankingConfirm
@@ -785,7 +769,7 @@ update msg model =
                 StateUpdated sUsers dKind ->
                     case dKind of 
                         Selected sSelected rnkId user status ->
-                            ( AppOps SR.Types.WalletOpened
+                            ( AppOps walletState
                                     dataState
                                     appInfo
                                     uiState
@@ -815,7 +799,7 @@ update msg model =
                                 _ = Debug.log "Ranking removed on return from id deleted? " Data.Global.asList newGlobal
                                 
                             in 
-                                ( AppOps SR.Types.WalletOpened
+                                ( AppOps walletState
                                     newDataState
                                     appInfo
                                     uiState
@@ -841,7 +825,7 @@ update msg model =
                                 _ = Debug.log "Ranking removed on return from list updated? " Data.Global.asList newGlobal
                                 
                             in
-                                ( AppOps SR.Types.WalletOpened newDataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+                                ( AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
 
                         _ -> 
@@ -907,19 +891,19 @@ handleWalletStateOperational msg model =
                 --                     _ =
                 --                         Debug.log "handleTxSubMsg subMsg  dataState" dataState
                 --                 in                 
-                --                     ( AppOps SR.Types.WalletOpened newDataState appInfo SR.Types.UIRenderAllRankings txRec, Cmd.none )
+                --                    ( AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings txRec, Cmd.none )
                 --             _ -> 
                 --                 ( model, Cmd.none )
 
                 --     else
-                --         ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
+                        --( AppOps walletState dataState appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
 
                 WatchTxHash (Ok txHash) ->
                     let
                         _ =
                             Debug.log "WatchTxHash in wallet operational " "Ok - hash watched and all ok"
                     in
-                    ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings { txRec | txHash = Just txHash }, Cmd.none )
+                    ( AppOps walletState dataState appInfo SR.Types.UIRenderAllRankings { txRec | txHash = Just txHash }, Cmd.none )
 
                 WatchTxHash (Err err) ->
                     let
@@ -933,7 +917,7 @@ handleWalletStateOperational msg model =
                         _ =
                             Debug.log "WatchTx" "tx Ok"
                     in
-                    AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx } |> update (ProcessResult SR.Types.Won)
+                    AppOps walletState dataState appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx } |> update (ProcessResult SR.Types.Won)
 
                 WatchTx (Err err) ->
                     let
@@ -947,7 +931,7 @@ handleWalletStateOperational msg model =
                         _ =
                             Debug.log "handleWalletStateOpenedAndOperational Receipt" txReceipt
                     in
-                    AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord
+                    AppOps walletState dataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord
                         |> update (ProcessResult SR.Types.Won)
 
                 WatchTxReceipt (Err err) ->
@@ -955,14 +939,14 @@ handleWalletStateOperational msg model =
                         _ =
                             Debug.log "tx err" err
                     in
-                    ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
+                    ( AppOps walletState dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
 
                 TrackTx blockDepth ->
                     let
                         _ =
                             Debug.log "TrackTx" "TrackTx"
                     in
-                    ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | blockDepth = Just blockDepth }, Cmd.none )
+                    ( AppOps walletState dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | blockDepth = Just blockDepth }, Cmd.none )
 
                 -- this is the response from addedUserAsFirstPlayerInNewList Cmd
                 -- it had the Http.expectStringResponse in it
@@ -1161,7 +1145,7 @@ handleWalletStateOperational msg model =
                 --                         newDataKind = Global newGlobal rnkId user
                 --                         newDataState = StateUpdated sUsers newDataKind
                 --                     in
-                --                         ( AppOps SR.Types.WalletOpened newDataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
+                --                        ( AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
 
                 --                 _ -> 
                 --                             let 
@@ -1296,7 +1280,7 @@ handleWalletStateOperational msg model =
 
                 _ ->
                     --( model, Cmd.none )
-                    ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UILoading txRec, Cmd.none )
+                    ( AppOps walletState dataState appInfo SR.Types.UILoading txRec, Cmd.none )
 
         Failure str ->
             ( Failure str, Cmd.none )
@@ -1384,10 +1368,10 @@ handleWalletWaitingForUserInput msg walletState dataState appInfo txRec =
                                         Debug.log "handleTxSubMsg subMsg  dataState" newDataState
                                 in 
                         
-                                    (AppOps SR.Types.WalletOpened newDataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Won) )
+                                    (AppOps walletState newDataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Won) )
                             
                             _ ->
-                                ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
+                                ( AppOps walletState dataState appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
                           
 
                     SR.Types.AppStateEnterLost ->
@@ -1401,7 +1385,7 @@ handleWalletWaitingForUserInput msg walletState dataState appInfo txRec =
                                 in
                                     (AppOps SR.Types.WalletOperational newDataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Lost))
                             _ ->
-                                ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
+                                ( AppOps walletState dataState appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
                     
                     SR.Types.AppStateEnterUndecided -> 
                         case dataState of
@@ -1414,20 +1398,20 @@ handleWalletWaitingForUserInput msg walletState dataState appInfo txRec =
                                 in
                                     ( AppOps SR.Types.WalletOperational newDataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Undecided))
                             _ ->
-                                ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
+                                ( AppOps walletState dataState appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
 
                     _ -> 
-                       ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }, subCmd ) 
+                       ( AppOps walletState dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }, subCmd ) 
 
             else
-                ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
+                ( AppOps walletState dataState appInfo SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
 
         WatchTxHash (Ok txHash) ->
             let
                 _ =
                     Debug.log "handleWalletWaitingForUserInput" "watch tx hash"
             in
-            ( AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txHash = Just txHash }, Cmd.none )
+            ( AppOps walletState dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | txHash = Just txHash }, Cmd.none )
 
         WatchTxHash (Err err) ->
             ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
@@ -1438,7 +1422,7 @@ handleWalletWaitingForUserInput msg walletState dataState appInfo txRec =
                     Debug.log "handleWalletWaitingForUserInput" "tx ok"
             in
       
-            (AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx }, Cmd.none )
+            (AppOps walletState dataState appInfo SR.Types.UIRenderAllRankings { txRec | tx = Just tx }, Cmd.none )
 
         WatchTx (Err err) ->
             let
@@ -1452,7 +1436,7 @@ handleWalletWaitingForUserInput msg walletState dataState appInfo txRec =
                 _ =
                     Debug.log "handleWalletWaitingForUserInput tx ok" txReceipt
             in
-            AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings { txRec | txReceipt = Just txReceipt } |> update (ProcessResult SR.Types.Won)
+            AppOps walletState dataState appInfo SR.Types.UIRenderAllRankings { txRec | txReceipt = Just txReceipt } |> update (ProcessResult SR.Types.Won)
 
         WatchTxReceipt (Err err) ->
             let
