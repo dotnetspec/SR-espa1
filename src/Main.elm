@@ -604,7 +604,7 @@ update msg model =
                         newDataKind = Global Data.Global.empty (Internal.Types.RankingId "") appInfo.user
                         newDataState = StateFetched sUsers newDataKind
                     in
-                    ( AppOps SR.Types.WalletOpened newDataState appInfo SR.Types.UILoading emptyTxRecord, gotGlobal )
+                    ( AppOps walletState newDataState appInfo SR.Types.UILoading emptyTxRecord, gotGlobal )
                 _ -> 
                     (model, Cmd.none)
 
@@ -616,17 +616,17 @@ update msg model =
                         Selected sSelected rnkId user uState ->
                             case uState of 
                                 SR.Types.UserIsOwner ->
-                                    (AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, Cmd.none )
+                                    (AppOps walletState dataState appInfo SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, Cmd.none )
                                 SR.Types.UserIsMember ->
-                                    (AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, Cmd.none )
+                                    (AppOps walletState dataState appInfo SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, Cmd.none )
                                 SR.Types.UserIsNeitherOwnerNorMember ->
-                                    (AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, Cmd.none )
+                                    (AppOps walletState dataState appInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, Cmd.none )
                                 SR.Types.UserIsUnRegistered ->
-                                    (AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, Cmd.none )
+                                    (AppOps walletState dataState appInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, Cmd.none )
                         _ -> 
                             (model, Cmd.none)
                 _ -> 
-                            (model, Cmd.none)
+                    (model, Cmd.none)
 
 
         (ClickedUpdateExistingUser, AppOps walletState dataState appInfo uiState txRec ) ->
