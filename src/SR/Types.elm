@@ -87,13 +87,12 @@ type Username
 
 
 type WalletState
-    = WalletStateUnknown
-    | WalletStateMissing
+    = 
+    WalletStateMissing
     | WalletStateLocked
     | WalletStateAwaitOpening
     | WalletOpenedWithoutUserCheck Eth.Types.Address
     | WalletWaitingForTransactionReceipt
-      --| WalletOpenedAndOperational
     | WalletOpened
     | WalletOperational
 
@@ -134,6 +133,7 @@ type SelectedStatus
  = UserIsOwner
  | UserIsMember
  | UserIsNeitherOwnerNorMember
+ | UserIsUnRegistered
 
 type alias CreateNewLadderFormFields =
     { name : String

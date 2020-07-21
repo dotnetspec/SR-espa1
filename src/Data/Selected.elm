@@ -85,15 +85,18 @@ createdSelected rdlplayer sUser rnkId =
 
 resultView : SR.Types.SelectedStatus -> SR.Types.UIState
 resultView  status = 
-            case status of
-                    SR.Types.UserIsOwner -> 
-                        SR.Types.UISelectedRankingUserIsOwner
+    case status of
+            SR.Types.UserIsOwner -> 
+                SR.Types.UISelectedRankingUserIsOwner
 
-                    SR.Types.UserIsMember -> 
-                        SR.Types.UISelectedRankingUserIsPlayer
-   
-                    SR.Types.UserIsNeitherOwnerNorMember -> 
-                        SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
+            SR.Types.UserIsMember -> 
+                SR.Types.UISelectedRankingUserIsPlayer
+
+            SR.Types.UserIsNeitherOwnerNorMember -> 
+                SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
+
+            SR.Types.UserIsUnRegistered ->
+                SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
                 
 
 createdUserPlayer : List SR.Types.User -> SR.Types.Player -> SR.Types.UserPlayer
