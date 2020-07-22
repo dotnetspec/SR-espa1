@@ -257,7 +257,7 @@ update msg model =
             let 
                 _ = Debug.log " eth enabled : " "yes"
             in
-            (AppOps walletState dataState appInfo uiState txRec, Cmd.none)
+            (AppOps SR.Types.WalletOperational dataState appInfo uiState txRec, Cmd.none)
 
 
         (ClickedConfirmedRegisterNewUser, AppOps walletState dataState appInfo uiState txRec ) ->
@@ -602,15 +602,23 @@ update msg model =
 
 
         (ResetToShowGlobal, AppOps walletState dataState appInfo uiState txRec ) ->
-            case dataState of 
-                StateFetched sUsers dKind ->
-                    let
-                        newDataKind = Global Data.Global.empty (Internal.Types.RankingId "") appInfo.user
-                        newDataState = StateFetched sUsers newDataKind
-                    in
-                    ( AppOps walletState newDataState appInfo SR.Types.UILoading emptyTxRecord, gotGlobal )
-                _ -> 
-                    (model, Cmd.none)
+            let 
+                _ = Debug.log "reset to global wallet state" walletState
+            in
+            -- case walletState of 
+            --     SR.Types.WalletStateLocked ->
+                    case dataState of 
+                        StateFetched sUsers dKind ->
+                            let
+                                newDataKind = Global Data.Global.empty (Internal.Types.RankingId "") appInfo.user
+                                newDataState = StateFetched sUsers newDataKind
+                            in
+                            ( AppOps walletState newDataState appInfo SR.Types.UILoading emptyTxRecord, gotGlobal )
+                        _ -> 
+                            (model, Cmd.none)
+                --SR.Types.WalletOperational ->
+
+
 
 
         (ResetToShowSelected, AppOps walletState dataState appInfo uiState txRec ) ->

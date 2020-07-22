@@ -13,13 +13,12 @@ const ethEnabled = () => {
   return false;
 }
 
-const ethereumButton = document.querySelector('.enableEthereumButton');
 
-ethereumButton.addEventListener('click', () => {
-  //Will Start the metamask extension
-  alert("here now")
-  ethereum.request({ method: 'eth_requestAccounts' });
-});
+
+// Start the Elm application in the elm docs
+// var app = Elm.Main.init({
+//     node: document.getElementById('myapp')
+// });
 
 window.addEventListener('load', function () {
     if (typeof ethEnabled()) {
@@ -60,3 +59,27 @@ const actions = {
     'LOG': (message) =>
         console.log(`From Elm:`, message)
 }
+
+
+// Create your WebSocket.
+var socket = new WebSocket('wss://echo.websocket.org');
+
+// When a command goes to the `sendMessage` port, we pass the message
+// along to the WebSocket.
+app.ports.sendMessage.subscribe(function(message) {
+    socket.send(message);
+});
+
+// When a message comes into our WebSocket, we pass the message along
+// to the `messageReceiver` port.
+socket.addEventListener("message", function(event) {
+    app.ports.messageReceiver.send(event.data);
+});
+
+const ethereumButton = document.querySelector('.enableEthereumButton');
+
+ethereumButton.addEventListener('click', () => {
+  //Will Start the metamask extension
+  alert("here now")
+  ethereum.request({ method: 'eth_requestAccounts' });
+});
