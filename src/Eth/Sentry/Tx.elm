@@ -130,7 +130,7 @@ listen : TxSentry msg -> Sub msg
 listen (TxSentry sentry) =
     let 
         _ =
-                    Debug.log "listening" "sentry"
+                    Debug.log "listening" sentry
     in
     Sub.map sentry.tagger (sentry.inPort decodeTxData)
 

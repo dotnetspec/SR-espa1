@@ -2814,7 +2814,7 @@ globalResponsiveview sGlobal user updatedStr =
             , displayUpdateProfileBtnIfExistingUser user.username
             , Element.text ("\n" ++ updatedStr)
             , displayCreateNewLadderBtnIfExistingUser user.username (Data.Global.asList (Data.Global.gotOwned sGlobal user)) ClickedCreateNewLadder
-            , displayEnableEthereumBtn
+            --, displayEnableEthereumBtn
             , Element.text ("\n" ++ updatedStr)
             , displayRegisterBtnIfNewUser
                 user.username
@@ -2885,18 +2885,14 @@ displayRegisterBtnIfNewUser uname msg =
             }
 
 
-displayEnableEthereumBtn : Element Msg
-displayEnableEthereumBtn = 
-    Input.button
-            (Button.simple ++ Button.fill ++ Color.warning ++ [ Element.htmlAttribute (Html.Attributes.id "enableEthereumButton") ] ++ [ Element.htmlAttribute (Html.Attributes.class "enableEthereumButton") ])
-        <|
-            { onPress = Just <| ClickedEnableEthereum
-            , label = Element.text "Enable Ethereum"
-            }
-
-
-            -- Input.button [ class "enableEthereumButton" ]
-            --     [ text "Enable Ethereum" ]
+-- displayEnableEthereumBtn : Element Msg
+-- displayEnableEthereumBtn = 
+--     Input.button
+--             (Button.simple ++ Button.fill ++ Color.warning ++ [ Element.htmlAttribute (Html.Attributes.id "enableEthereumButton") ] ++ [ Element.htmlAttribute (Html.Attributes.class "enableEthereumButton") ])
+--         <|
+--             { onPress = Just <| ClickedEnableEthereum
+--             , label = Element.text "Enable Ethereum"
+--             }
 
 selectedUserIsOwnerView : DataState -> SR.Types.AppInfo -> Html Msg
 selectedUserIsOwnerView dataState appInfo =

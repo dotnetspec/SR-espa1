@@ -5,6 +5,8 @@ var node = document.getElementById("elmapp");
 var setOfFlags = {};
 //const web3 = new Web3(Web3.givenProvider || 'wss://rinkeby.infura.io/ws' || 'ws://localhost:8546', null, {});
 
+
+
 const Web3 = require("web3");
 const ethEnabled = () => {
   if (window.ethereum) {
@@ -13,12 +15,13 @@ const ethEnabled = () => {
   return false;
 }
 
+const ethereumButton = document.querySelector('.enableEthereumButton');
 
+ethereumButton.addEventListener('click', () => {
+  //Will Start the metamask extension
+  ethereum.request({ method: 'eth_requestAccounts' });
+});
 
-// Start the Elm application in the elm docs
-// var app = Elm.Main.init({
-//     node: document.getElementById('myapp')
-// });
 
 window.addEventListener('load', function () {
     if (typeof ethEnabled()) {
@@ -47,9 +50,12 @@ window.ports = {
                     : console.warn(`I didn't recognize action "${action}".`)
             )
             // next line commented to enable walletSentry until we're ready to implement txSentry
+            // ,
+            // elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, web3)
+            // , elm_ethereum_ports.walletSentry(app.ports.walletSentry, web3)
             ,
-            elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, web3)
-            , elm_ethereum_ports.walletSentry(app.ports.walletSentry, web3)
+            elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, window.ethereum)
+            , elm_ethereum_ports.walletSentry(app.ports.walletSentry, window.ethereum)
         )
 }
 
@@ -60,26 +66,26 @@ const actions = {
         console.log(`From Elm:`, message)
 }
 
-
+// Example code:
 // Create your WebSocket.
-var socket = new WebSocket('wss://echo.websocket.org');
+// var socket = new WebSocket('wss://echo.websocket.org');
 
-// When a command goes to the `sendMessage` port, we pass the message
-// along to the WebSocket.
-app.ports.sendMessage.subscribe(function(message) {
-    socket.send(message);
-});
+// // When a command goes to the `sendMessage` port, we pass the message
+// // along to the WebSocket.
+// app.ports.sendMessage.subscribe(function(message) {
+//     socket.send(message);
+// });
 
-// When a message comes into our WebSocket, we pass the message along
-// to the `messageReceiver` port.
-socket.addEventListener("message", function(event) {
-    app.ports.messageReceiver.send(event.data);
-});
+// // When a message comes into our WebSocket, we pass the message along
+// // to the `messageReceiver` port.
+// socket.addEventListener("message", function(event) {
+//     app.ports.messageReceiver.send(event.data);
+// });
 
-const ethereumButton = document.querySelector('.enableEthereumButton');
+// const ethereumButton = document.querySelector('.enableEthereumButton');
 
-ethereumButton.addEventListener('click', () => {
-  //Will Start the metamask extension
-  alert("here now")
-  ethereum.request({ method: 'eth_requestAccounts' });
-});
+// ethereumButton.addEventListener('click', () => {
+//   //Will Start the metamask extension
+//   alert("here now")
+//   ethereum.request({ method: 'eth_requestAccounts' });
+// });
