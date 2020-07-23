@@ -15,12 +15,17 @@ const ethEnabled = () => {
   return false;
 }
 
-const ethereumButton = document.querySelector('.enableEthereumButton');
+// const ethereumButton = document.querySelector('.enableEthereumButton');
 
-ethereumButton.addEventListener('click', () => {
-  //Will Start the metamask extension
-  ethereum.request({ method: 'eth_requestAccounts' });
-});
+// ethereumButton.addEventListener('click', () => {
+//   //Will Start the metamask extension
+//   ethereum.request({ method: 'eth_requestAccounts' });
+// });
+
+// var app = Elm.Main.init({
+//     node: document.getElementById('elmapp')
+// });
+
 
 
 window.addEventListener('load', function () {
@@ -39,22 +44,39 @@ window.addEventListener('load', function () {
     }
 });
 
+
+
 //multi-port initialize
 window.ports = {
     init: (app) =>
         (
-            app.ports.outgoing.subscribe(({ action, data }) =>
+            //js is subscribed to Elm's 'outgoing' port:
+            // app.ports.outgoing.subscribe(({ action, data }) =>
 
-                actions[action]
-                    ? actions[action](data)
-                    : console.warn(`I didn't recognize action "${action}".`)
-            )
+            //     actions[action]
+            //         ? actions[action](data)
+            //         : console.warn(`I didn't recognize action "${action}".`)
+            // )
+            
+            // app.ports.outgoing.subscribe(({ action, data }) =>
+            //     ethereum.request({ method: 'eth_requestAccounts' })
+            //}
+            //)
+            app.ports.outgoing.subscribe(function({ action, data }) {
+                console.log(`From Elm at port:`, data)
+                if (data == "eth_requestAccounts") {
+                    ethereum.request({ method: 'eth_requestAccounts' });
+                } else {
+                    console.log('Nothing happened');
+                }
+            })
+
             // next line commented to enable walletSentry until we're ready to implement txSentry
             // ,
             // elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, web3)
             // , elm_ethereum_ports.walletSentry(app.ports.walletSentry, web3)
-            ,
-            elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, window.ethereum)
+            //,
+            , elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, window.ethereum)
             , elm_ethereum_ports.walletSentry(app.ports.walletSentry, window.ethereum)
         )
 }

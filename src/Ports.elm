@@ -1,4 +1,4 @@
-port module Ports exposing (..)
+port module Ports exposing (txIn, txOut, walletSentry, EthNode, ethNode, log)
 
 -- ( EthNode
 -- , Model
@@ -259,7 +259,7 @@ port outgoing : { action : String, data : Json.Value } -> Cmd msg
 
 
 
---web3 ports
+--ethereum ports
 
 
 port walletSentry : (Value -> msg) -> Sub msg

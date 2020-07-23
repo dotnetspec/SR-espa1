@@ -99,6 +99,8 @@ init _ =
         , gotGlobal
         , Ports.log
             "Sending out msg from init "
+        -- , Ports.log
+        --     "eth_requestAccounts"
         ]
     )
 
@@ -213,9 +215,9 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    let 
-                 _ = Debug.log "msg in update" msg
-    in
+    -- let 
+    --              _ = Debug.log "msg in update" msg
+    -- in
     case ( msg, model ) of
         ( WalletStatus walletSentry_, AppOps walletState dataState appInfo uiState txRec ) ->
             let 
@@ -256,8 +258,9 @@ update msg model =
         (ClickedEnableEthereum, AppOps walletState dataState appInfo uiState txRec ) ->
             let 
                 _ = Debug.log " eth enabled : " "yes"
+                
             in
-            (AppOps SR.Types.WalletOperational dataState appInfo uiState txRec, Cmd.none)
+            (AppOps SR.Types.WalletStateAwaitOpening dataState appInfo uiState txRec, Ports.log "eth_requestAccounts")
 
 
         (ClickedConfirmedRegisterNewUser, AppOps walletState dataState appInfo uiState txRec ) ->
@@ -289,8 +292,8 @@ update msg model =
 
         ( UsersReceived userList, AppOps walletState dataState appInfo uiState txRec ) ->
             let 
-                _ =
-                                    Debug.log "UsersReceived" userList
+                -- _ =
+                --                     Debug.log "UsersReceived" userList
                 extractedList = Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList
             in
                 --todo: copy createGlobal to handle this:
@@ -2814,7 +2817,7 @@ globalResponsiveview sGlobal user updatedStr =
             , displayUpdateProfileBtnIfExistingUser user.username
             , Element.text ("\n" ++ updatedStr)
             , displayCreateNewLadderBtnIfExistingUser user.username (Data.Global.asList (Data.Global.gotOwned sGlobal user)) ClickedCreateNewLadder
-            --, displayEnableEthereumBtn
+            , displayEnableEthereumBtn
             , Element.text ("\n" ++ updatedStr)
             , displayRegisterBtnIfNewUser
                 user.username
@@ -2885,14 +2888,14 @@ displayRegisterBtnIfNewUser uname msg =
             }
 
 
--- displayEnableEthereumBtn : Element Msg
--- displayEnableEthereumBtn = 
---     Input.button
---             (Button.simple ++ Button.fill ++ Color.warning ++ [ Element.htmlAttribute (Html.Attributes.id "enableEthereumButton") ] ++ [ Element.htmlAttribute (Html.Attributes.class "enableEthereumButton") ])
---         <|
---             { onPress = Just <| ClickedEnableEthereum
---             , label = Element.text "Enable Ethereum"
---             }
+displayEnableEthereumBtn : Element Msg
+displayEnableEthereumBtn = 
+    Input.button
+            (Button.simple ++ Button.fill ++ Color.warning ++ [ Element.htmlAttribute (Html.Attributes.id "enableEthereumButton") ] ++ [ Element.htmlAttribute (Html.Attributes.class "enableEthereumButton") ])
+        <|
+            { onPress = Just <| ClickedEnableEthereum
+            , label = Element.text "Enable Ethereum"
+            }
 
 selectedUserIsOwnerView : DataState -> SR.Types.AppInfo -> Html Msg
 selectedUserIsOwnerView dataState appInfo =
