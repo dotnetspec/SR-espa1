@@ -47,10 +47,10 @@ window.ports = {
                     console.log('Nothing happened');
                 }
             })
-            // elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, web3)
-            // , elm_ethereum_ports.walletSentry(app.ports.walletSentry, web3)
+            , elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, web3)
+            , elm_ethereum_ports.walletSentry(app.ports.walletSentry, web3)
             //,
-            , elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, window.ethereum)
-            , elm_ethereum_ports.walletSentry(app.ports.walletSentry, window.ethereum)
+            //, elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, window.ethereum)
+            //, elm_ethereum_ports.walletSentry(app.ports.walletSentry, window.ethereum)
         )
 }
