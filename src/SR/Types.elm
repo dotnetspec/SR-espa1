@@ -95,6 +95,7 @@ type WalletState
     | WalletWaitingForTransactionReceipt
     | WalletOpened
     | WalletOperational
+    | WalletStopSub
 
 
 type LadderState

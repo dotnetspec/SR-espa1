@@ -1,4 +1,5 @@
-port module Ports exposing (txIn, txOut, walletSentry, EthNode, ethNode, log)
+--port module Ports exposing (txIn, txOut, walletSentry, EthNode, ethNode, log)
+port module Ports exposing (..)
 
 -- ( EthNode
 -- , Model
@@ -107,7 +108,7 @@ ethNode networkId =
 
 type Msg
     = TxSentryMsg TxSentry.Msg
-    | WalletStatus WalletSentry
+    --| WalletStatus WalletSentry
     --| PollBlock (Result Http.Error Int)
     | InitTx
     | WatchTxHash (Result String TxHash)
@@ -133,17 +134,17 @@ update msg model =
             in
             ( { model | txSentry = subModel }, subCmd )
 
-        WalletStatus walletSentry_ ->
-            let 
-                _ =
-                        Debug.log "walletSentry_ in ports.update" walletSentry_
-            in
-            ( { model
-                | account = walletSentry_.account
-                , node = ethNode walletSentry_.networkId
-              }
-            , Cmd.none
-            )
+        -- WalletStatus walletSentry_ ->
+        --     let 
+        --         _ =
+        --                 Debug.log "walletSentry_ in ports.update" walletSentry_
+        --     in
+        --     ( { model
+        --         | account = walletSentry_.account
+        --         , node = ethNode walletSentry_.networkId
+        --       }
+        --     , Cmd.none
+        --     )
 
         -- PollBlock (Ok blockNumber) ->
         --     ( { model | blockNumber = Just blockNumber }
@@ -220,13 +221,13 @@ update msg model =
 --retrieveAddress : Maybe Eth.Types.Address -> String
 
 
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    Sub.batch
-        [ incoming decodeValue
-        , walletSentry (WalletSentry.decodeToMsg Fail WalletStatus)
-        , TxSentry.listen model.txSentry
-        ]
+-- subscriptions : Model -> Sub Msg
+-- subscriptions model =
+--     Sub.batch
+--         [ incoming decodeValue
+--         , walletSentry (WalletSentry.decodeToMsg Fail WalletStatus)
+--         , TxSentry.listen model.txSentry
+--         ]
 
 
 

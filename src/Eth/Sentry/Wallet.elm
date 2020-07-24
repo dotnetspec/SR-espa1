@@ -36,6 +36,14 @@ decoder =
 {-| -}
 decodeToMsg : (String -> msg) -> (WalletSentry -> msg) -> Value -> msg
 decodeToMsg failMsg successMsg val =
+    let 
+        _ = Debug.log "decodeToMsg" failMsg
+
+        _ = Debug.log "decodeToMsg" successMsg
+
+        _ = Debug.log "decodeToMsg" val
+
+    in
     case Decode.decodeValue decoder val of
         Err error ->
             failMsg (Decode.errorToString error)

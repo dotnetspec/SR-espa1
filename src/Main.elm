@@ -1,4 +1,4 @@
-module Main exposing (Model(..), Msg(..), httpDeleteSelectedRankingFromGlobalList, emptyTxRecord, init, main, update, view)
+module  Main exposing (Model(..), Msg(..), httpDeleteSelectedRankingFromGlobalList, emptyTxRecord, init, main, update, view)
 
 import Browser
 import Element exposing (Element)
@@ -89,10 +89,6 @@ emptyAllLists =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    let 
-                 _ = Debug.log "init" "init"
-
-    in
     ( AppOps SR.Types.WalletStateLocked AllEmpty SR.Defaults.emptyAppInfo SR.Types.UILoading emptyTxRecord
     , Cmd.batch
         [ gotUserList
@@ -187,7 +183,6 @@ type Msg
       -- App Only Ops
     | MissingWalletInstructions
     | OpenWalletInstructions
-    | Fail String
     | NoOp
     | SentResultToJsonbin (Result Http.Error ())
     | SentUserInfoAndDecodedResponseToNewUser (RemoteData.WebData (List SR.Types.User))
@@ -210,18 +205,19 @@ type Msg
     | TrackTx Eth.Sentry.Tx.TxTracker
     | TxSentryMsg Eth.Sentry.Tx.Msg
     | WalletStatus Eth.Sentry.Wallet.WalletSentry
+    | Fail String
     --| GotAccountAddress Eth.Types.Address
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    -- let 
-    --              _ = Debug.log "msg in update" msg
-    -- in
+    let 
+        _ = Debug.log "msg in update" msg
+    in
     case ( msg, model ) of
         ( WalletStatus walletSentry_, AppOps walletState dataState appInfo uiState txRec ) ->
             let 
-                 _ = Debug.log "walletState" walletState
+                 _ = Debug.log "walletState in WalletStatus" walletState
             in
             -- walletState might be unnecessary here, because WalletStatus is only relevant at time of unlocking i.e. one off
             case walletState of
@@ -243,13 +239,16 @@ update msg model =
                         _ ->
                             (model, Cmd.none)
 
+                SR.Types.WalletOpened ->
+                    (model, Cmd.none)
+
 
                 SR.Types.WalletWaitingForTransactionReceipt ->
                     
                     handleWalletWaitingForUserInput msg walletState dataState appInfo txRec
 
                 _ -> 
-                    ( AppOps SR.Types.WalletStateLocked AllEmpty SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
+                    ( AppOps SR.Types.WalletStopSub AllEmpty SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
                     , Cmd.none
                     )
         ( WalletStatus _, Failure _ ) ->
@@ -325,10 +324,10 @@ update msg model =
                                         newDataKind = Global (Data.Global.createdGlobal rmtrnkingdata sUsers) (Internal.Types.RankingId "") user
                                         newDataSet = StateFetched sUsers newDataKind
 
-                                        _ = Debug.log "glob rec" "here"
+                                        _ = Debug.log "glob rec" walletState
                                     in
-                                       
-                                        ( AppOps walletState newDataSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none)
+                                       -- WalletStopSub works here to stop looping but there may be a better solution
+                                        ( AppOps SR.Types.WalletStopSub newDataSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none)
                                            
                                 _ ->
                                         (model, Cmd.none)
@@ -3160,23 +3159,35 @@ continueView continueStr =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
-        AppOps walletStatus _ _ _ txRec ->
+        AppOps walletState dataState appInfo uiState txRec ->
+            let 
+                _ = Debug.log "walletState in subs" walletState
+            in
             -- the orig code uses Ports.walletSentry ... same as here:
-            case walletStatus of
+            case walletState of
                 -- SR.Types.WalletStateUnknown ->
                 --     Sub.batch
                 --         [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
                 --         , Eth.Sentry.Tx.listen txRec.txSentry
                 --         ]
 
+
                 SR.Types.WalletStateMissing ->
                     Sub.batch
+                        -- decodeToMsg uses partial application to return Value -> Msg which is what walletSentry expects as an arg
                         [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
                         , Eth.Sentry.Tx.listen txRec.txSentry
                         ]
 
                 SR.Types.WalletStateLocked ->
-                    Sub.none
+                        Sub.batch
+                            [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+                            , Eth.Sentry.Tx.listen txRec.txSentry
+                            ]
+
+                SR.Types.WalletStopSub ->
+                        Sub.none
+                    
 
                 SR.Types.WalletStateAwaitOpening ->
                     Sub.batch
@@ -3208,7 +3219,7 @@ subscriptions model =
                 SR.Types.WalletWaitingForTransactionReceipt ->
                     let
                         _ =
-                            Debug.log "SR.Types is now WalletWaitingForTransactionReceipt :" walletStatus
+                            Debug.log "SR.Types is now WalletWaitingForTransactionReceipt :" walletState
                     in
                     Sub.batch
                         [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
@@ -3218,12 +3229,14 @@ subscriptions model =
                 _ ->
                     let
                         _ =
-                            Debug.log "walletStatus :" walletStatus
+                            Debug.log "walletState fell thru:" walletState
                     in
                     Sub.none
 
         Failure _ ->
             Sub.none
+
+
 
 
 
