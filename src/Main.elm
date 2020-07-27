@@ -255,7 +255,7 @@ update msg model =
             (model, Cmd.none)
 
         (ClickedEnableEthereum, AppOps walletState dataState appInfo uiState txRec ) ->
-            (AppOps SR.Types.WalletStateLocked dataState appInfo uiState txRec, Ports.log "eth_requestAccounts")
+            (AppOps SR.Types.WalletStopSub dataState appInfo uiState txRec, Ports.log "eth_requestAccounts")
 
 
         (ClickedConfirmedRegisterNewUser, AppOps walletState dataState appInfo uiState txRec ) ->
