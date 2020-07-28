@@ -6,6 +6,7 @@ module SR.Types exposing
     , AppInfo, Colors, CreateNewLadderFormFields, FormValidations, LadderState(..), ModalState(..), NewRankingListServerResponse, Ranking, ResultRadioOptions(..), User, UserListState(..), UserPlayer, UserRanking, colors
     ,  AppState(..)
     , SelectedStatus(..)
+    , SubState(..)
     )
 
 {-| Types
@@ -121,6 +122,10 @@ type UIState
     | UIWaitingForTxReceipt
     | UIDeleteRankingConfirm
     | UIEnableEthereum
+
+type SubState 
+    = Subscribe 
+    | StopSubscription
 
 
 
