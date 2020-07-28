@@ -388,6 +388,35 @@ update msg model =
         ( PlayersReceived _, Failure _ ) ->
             (model, Cmd.none)
 
+        (ClickedSelectedOwnedRanking rnkidstr rnkownerstr rnknamestr, AppOps walletState dataState appInfo uiState subState  txRec )  ->
+                            case dataState of 
+                                StateFetched sUsers dKind ->
+                                        case dKind of 
+                                            Global sGlobal rnkId user ->
+                                                let                                                     
+                                                    newAppInfo =
+                                                        updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
+
+
+                                                -- re-factor from appInfo to AppState over time
+                                                    initAppState = 
+                                                        Data.AppState.updateAppState appInfo.user appInfo.player 
+                                                        appInfo.challenger (rnkidstr)
+
+
+                                                    newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") user SR.Types.UserIsOwner
+                                                    newDataState = StateFetched sUsers newDataKind
+                                            
+                                                in
+                                                    ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, 
+                                                    fetchedSingleRanking rnkidstr )
+
+                                            _ ->
+                                                (model, Cmd.none)
+                                _ ->
+                                    (model, Cmd.none)
+
+
         (ClickedSelectedMemberRanking rnkidstr rnkownerstr rnknamestr, AppOps walletState dataState appInfo uiState subState  txRec ) ->
                             case dataState of 
                                     StateFetched sUsers dKind ->
