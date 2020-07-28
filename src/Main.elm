@@ -1858,7 +1858,7 @@ refresh the browser"""
                     let 
                         _ = Debug.log "UIregister new " walletState
                     in 
-                            inputNewUserview dataState appInfo
+                            inputNewUserview walletState dataState appInfo
                        
                     
 
@@ -2553,28 +2553,58 @@ mobileValidationErr user =
         Element.el [] <| Element.text ""
 
 
-newuserConfirmPanel : SR.Types.User -> List SR.Types.User -> Element Msg
-newuserConfirmPanel user luser =
-    Element.column Grid.section <|
-        [ SR.Elements.warningParagraph
-        , Element.el Heading.h6 <| Element.text "Click to continue ..."
-        , Element.column (Card.simple ++ Grid.simple) <|
-            [ Element.wrappedRow Grid.simple <|
-                [ Input.button (Button.simple ++ Color.info) <|
-                    { onPress = Just <| ResetToShowGlobal
-                    , label = Element.text "Cancel"
-                    }
-                , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput user luser False)) <|
-                    { onPress = Just <| ClickedEnableEthereum
-                    , label = Element.text "Enable Ethereum"
-                    }
-                , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput user luser False)) <|
-                    { onPress = Just <| ClickedCreateNewUserToWallet user
-                    , label = Element.text "Register"
-                    }
+newuserConfirmPanel : SR.Types.WalletState -> SR.Types.User -> List SR.Types.User -> Element Msg
+newuserConfirmPanel walletState user luser =
+    case walletState of 
+        SR.Types.WalletOpened -> 
+            Element.column Grid.section <|
+                [ SR.Elements.warningParagraph
+                , Element.el Heading.h6 <| Element.text "Click to continue ..."
+                , Element.column (Card.simple ++ Grid.simple) <|
+                    [ Element.wrappedRow Grid.simple <|
+                        [ Input.button (Button.simple ++ Color.info) <|
+                            { onPress = Just <| ResetToShowGlobal
+                            , label = Element.text "Cancel"
+                            }
+                        , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput user luser False)) <|
+                            { onPress = Just <| ClickedCreateNewUserToWallet user
+                            , label = Element.text "Register"
+                            }
+                        ]
+                    ]
                 ]
-            ]
-        ]
+
+        SR.Types.WalletStateLocked ->
+            Element.column Grid.section <|
+                [ SR.Elements.ethereumNotEnabledPara
+                , Element.el Heading.h6 <| Element.text "Enable Ethereum to Register"
+                , Element.column (Card.simple ++ Grid.simple) <|
+                    [ Element.wrappedRow Grid.simple <|
+                        [ Input.button (Button.simple ++ Color.info) <|
+                            { onPress = Just <| ResetToShowGlobal
+                            , label = Element.text "Cancel"
+                            }
+                        ]
+                    ]
+                ]
+            
+        SR.Types.WalletStopSub ->
+            Element.column Grid.section <|
+                [ SR.Elements.ethereumNotEnabledPara
+                , Element.el Heading.h6 <| Element.text "Enable Ethereum to Register"
+                , Element.column (Card.simple ++ Grid.simple) <|
+                    [ Element.wrappedRow Grid.simple <|
+                        [ Input.button (Button.simple ++ Color.info) <|
+                            { onPress = Just <| ResetToShowGlobal
+                            , label = Element.text "Cancel"
+                            }
+                        ]
+                    ]
+                ]
+        _ ->
+            Element.text "wallet state fell through in newuserConfirmPanel"
+
+
 
 
 existingUserConfirmPanel : SR.Types.User -> List SR.Types.User -> Element Msg
@@ -2640,55 +2670,136 @@ enableButton enable =
         Color.disabled
 
 
-inputNewUser : DataState -> SR.Types.AppInfo -> Element Msg
-inputNewUser dataState appInfo =
+inputNewUser : SR.Types.WalletState -> DataState -> SR.Types.AppInfo -> Element Msg
+inputNewUser walletState dataState appInfo =
     case dataState of
-            StateUpdated sUsers dKind -> 
-                case dKind of 
-                    Selected sSelected rnkId user status -> 
-                        Element.column Grid.section <|
-                            [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-                            , Element.wrappedRow (Card.fill ++ Grid.simple)
-                                [ Element.column
-                                    Grid.simple
-                                    [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                                        { onChange = NewUserNameInputChg
-                                        , text = appInfo.user.username
-                                        , placeholder = Nothing
-                                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
-                                        }
-                                    , nameValidationErr appInfo sUsers
-                                    , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
-                                        { onChange = NewUserDescInputChg
-                                        , text = appInfo.user.description
-                                        , placeholder = Nothing
-                                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
-                                        }
-                                    , userDescValidationErr appInfo.user
-                                    , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
-                                        { onChange = NewUserEmailInputChg
-                                        , text = appInfo.user.email
-                                        , placeholder = Nothing
-                                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
-                                        }
-                                    , emailValidationErr appInfo.user
-                                    , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
-                                        { onChange = NewUserMobileInputChg
-                                        , text = Utils.Validation.Validate.validatedMaxTextLength appInfo.user.mobile 25
-                                        , placeholder = Nothing
-                                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
-                                        }
-                                    , mobileValidationErr appInfo.user
+            StateFetched sUsers dKind -> 
+                case walletState of 
+                    SR.Types.WalletOpened -> 
+                            Element.column Grid.section <|
+                                [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                                    [ Element.column
+                                        Grid.simple
+                                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                                            { onChange = NewUserNameInputChg
+                                            , text = appInfo.user.username
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+                                            }
+                                        , nameValidationErr appInfo sUsers
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+                                            { onChange = NewUserDescInputChg
+                                            , text = appInfo.user.description
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+                                            }
+                                        , userDescValidationErr appInfo.user
+                                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+                                            { onChange = NewUserEmailInputChg
+                                            , text = appInfo.user.email
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+                                            }
+                                        , emailValidationErr appInfo.user
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+                                            { onChange = NewUserMobileInputChg
+                                            , text = Utils.Validation.Validate.validatedMaxTextLength appInfo.user.mobile 25
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+                                            }
+                                        , mobileValidationErr appInfo.user
+                                        ]
                                     ]
+                                , Element.text "* required and CANNOT be changed \nunder current ETH account"
+                                , SR.Elements.justParasimpleUserInfoText
                                 ]
-                            , Element.text "* required and CANNOT be changed \nunder current ETH account"
-                            , SR.Elements.justParasimpleUserInfoText
-                            ]
+
+                    SR.Types.WalletStateLocked ->
+                        Element.column Grid.section <|
+                                [ Element.el (Heading.h5 ++ [ Font.color SR.Types.colors.red ]) <| Element.text "Please Enable Ethereum to Register "
+                                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                                    [ Element.column
+                                        Grid.simple
+                                        [ Input.text (Color.disabled ++ Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                                            { onChange = NewUserNameInputChg
+                                            , text = appInfo.user.username
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+                                            }
+                                        , nameValidationErr appInfo sUsers
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+                                            { onChange = NewUserDescInputChg
+                                            , text = appInfo.user.description
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+                                            }
+                                        , userDescValidationErr appInfo.user
+                                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+                                            { onChange = NewUserEmailInputChg
+                                            , text = appInfo.user.email
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+                                            }
+                                        , emailValidationErr appInfo.user
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+                                            { onChange = NewUserMobileInputChg
+                                            , text = Utils.Validation.Validate.validatedMaxTextLength appInfo.user.mobile 25
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+                                            }
+                                        , mobileValidationErr appInfo.user
+                                        ]
+                                    ]
+                                , Element.text "* required and CANNOT be changed \nunder current ETH account"
+                                , SR.Elements.justParasimpleUserInfoText
+                                ]
+
+                    SR.Types.WalletStopSub ->
+                        Element.column Grid.section <|
+                                [ Element.el (Heading.h5 ++ [ Font.color SR.Types.colors.red ])  <| Element.text "Please Enable Ethereum to Register "
+                                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                                    [ Element.column
+                                        Grid.simple
+                                        [ Input.text (Color.disabled ++ Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                                            { onChange = NewUserNameInputChg
+                                            , text = appInfo.user.username
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+                                            }
+                                        , nameValidationErr appInfo sUsers
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+                                            { onChange = NewUserDescInputChg
+                                            , text = appInfo.user.description
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+                                            }
+                                        , userDescValidationErr appInfo.user
+                                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+                                            { onChange = NewUserEmailInputChg
+                                            , text = appInfo.user.email
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+                                            }
+                                        , emailValidationErr appInfo.user
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+                                            { onChange = NewUserMobileInputChg
+                                            , text = Utils.Validation.Validate.validatedMaxTextLength appInfo.user.mobile 25
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+                                            }
+                                        , mobileValidationErr appInfo.user
+                                        ]
+                                    ]
+                                , Element.text "* required and CANNOT be changed \nunder current ETH account"
+                                , SR.Elements.justParasimpleUserInfoText
+                                ]
 
                     _ ->
-                        Element.text "Fail on inputNewUser"
+                        Element.text "WalletSate fell through in inputNewUser"   
+                    
             _ ->
-                        Element.text "Fail on inputNewUser"
+                        Element.text "Problem creating new user"
 
 
 inputUpdateExistingUser : Model -> Element Msg
@@ -3017,19 +3128,47 @@ newOrExistingUserNameDisplay user =
         Element.el Heading.h4 <| Element.text <| "SportRank - " ++ user.username ++ " - Join?"
 
 
-inputNewUserview : DataState -> SR.Types.AppInfo -> Html Msg
-inputNewUserview dataState appInfo =
+inputNewUserview : SR.Types.WalletState -> DataState -> SR.Types.AppInfo -> Html Msg
+inputNewUserview walletState dataState appInfo =
             case dataState of 
-                StateFetched sUsers dKind -> 
-                    Framework.responsiveLayout [] <|
-                        Element.column
-                            Framework.container
-                            [ Element.el Heading.h4 <| Element.text "Create New User"
-                            , inputNewUser dataState appInfo
-                            , newuserConfirmPanel appInfo.user (Data.Users.asList sUsers)
-                            ]
+                StateFetched sUsers dKind ->
+                    case walletState of 
+                        SR.Types.WalletOpened ->
+                            Framework.responsiveLayout [] <|
+                                Element.column
+                                    Framework.container
+                                    [ Element.el Heading.h4 <| Element.text "Create New User"
+                                    , inputNewUser walletState dataState appInfo
+                                    , newuserConfirmPanel walletState appInfo.user (Data.Users.asList sUsers)
+                                    ]
+                        SR.Types.WalletStateLocked ->
+                            Framework.responsiveLayout [] <|
+                                Element.column
+                                    Framework.container
+                                    [ displayEnableEthereumBtn
+                                    , Element.text "\n"
+                                    , Element.el Heading.h4 <| Element.text "Create New User"
+                                    , inputNewUser walletState dataState appInfo
+                                    , newuserConfirmPanel walletState appInfo.user (Data.Users.asList sUsers)
+                                    ]
+                        
+                        SR.Types.WalletStopSub ->
+                            Framework.responsiveLayout [] <|
+                                Element.column
+                                    Framework.container
+                                    [ displayEnableEthereumBtn
+                                    , Element.text "\n"
+                                    , Element.el Heading.h4 <| Element.text "Create New User"
+                                    , inputNewUser walletState dataState appInfo
+                                    , newuserConfirmPanel walletState appInfo.user (Data.Users.asList sUsers)
+                                    ]
+                        _ ->
+                            Html.text "fell thru in  inputNewUserview"
+                            
                 _ ->
                     Html.text "Fail inputNewUserview"
+
+
 
 
 updateExistingUserView : Model -> Html Msg
