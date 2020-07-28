@@ -89,14 +89,12 @@ emptyAllLists =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( AppOps SR.Types.WalletStateLocked AllEmpty SR.Defaults.emptyAppInfo SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord
+    ( AppOps SR.Types.WalletStateLocked AllEmpty SR.Defaults.emptyAppInfo SR.Types.UILoading SR.Types.Subscribe emptyTxRecord
     , Cmd.batch
         [ gotUserList
         , gotGlobal
         , Ports.log
             "Sending out msg from init "
-        -- , Ports.log
-        --     "eth_requestAccounts"
         ]
     )
 
@@ -264,7 +262,7 @@ update msg model =
             (model, Cmd.none)
 
         (ClickedEnableEthereum, AppOps walletState dataState appInfo uiState subState  txRec ) ->
-            (AppOps SR.Types.WalletStopSub dataState appInfo uiState SR.Types.StopSubscription txRec, Ports.log "eth_requestAccounts")
+            (AppOps walletState dataState appInfo uiState SR.Types.StopSubscription txRec, Ports.log "eth_requestAccounts")
 
 
         (ClickedConfirmedRegisterNewUser, AppOps walletState dataState appInfo uiState subState  txRec ) ->
@@ -618,16 +616,10 @@ update msg model =
             ( AppOps walletState dataState clearedNameFieldAppInfo SR.Types.UICreateNewLadder SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
 
-
-
         (ResetToShowGlobal, AppOps walletState dataState appInfo uiState subState  txRec ) ->
             let 
                 _ = Debug.log "reset to global wallet state" walletState
-
-                --_ = Debug.log "datastate" dataState
             in
-            -- case walletState of 
-            --     SR.Types.WalletStateLocked ->
                     case dataState of 
                         StateFetched sUsers dKind ->
                             let
@@ -638,13 +630,9 @@ update msg model =
                                 _ = Debug.log "toGlobal now" "now"
             
                             in
-                            ( AppOps SR.Types.WalletStateLocked newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, gotGlobal )
+                            ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, gotGlobal )
                         _ -> 
                             (model, Cmd.none)
-                --SR.Types.WalletOperational ->
-
-
-
 
         (ResetToShowSelected, AppOps walletState dataState appInfo uiState subState  txRec ) ->
             case dataState of 
