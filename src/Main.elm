@@ -268,15 +268,22 @@ update msg model =
 
 
         (ClickedConfirmedRegisterNewUser, AppOps walletState dataState appInfo uiState txRec ) ->
+            let 
+                        _ = Debug.log "ClickedConfirmedRegisterNewUser: " "here"
+            in
             case walletState of 
                 SR.Types.WalletOperational ->
                     ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState appInfo SR.Types.UIWaitingForTxReceipt txRec, Cmd.none )
 
                 SR.Types.WalletStateLocked ->
                     ( AppOps walletState dataState appInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
+
+                SR.Types.WalletStopSub ->
+                    ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser txRec, Cmd.none )
+
                 _ ->
                     let 
-                        _ = Debug.log "ClickedConfirmedRegisterNewUser walletState : " walletState
+                        _ = Debug.log "ClickedConfirmedRegisterNewUser fall thru walletState : " walletState
                     in
                     ( AppOps walletState dataState appInfo SR.Types.UIWaitingForTxReceipt txRec, Cmd.none )
                 
@@ -1096,6 +1103,9 @@ update msg model =
 
 
         (ClickedJoinSelected,  AppOps walletState dataState appInfo uiState txRec ) ->
+            let 
+                _ = Debug.log "ClickedJoinSelected" "here"
+            in
             case walletState of 
                 SR.Types.WalletOperational ->
                     case dataState of
@@ -1125,7 +1135,17 @@ update msg model =
                                         _ = Debug.log "12 - dataState" dataState
                                     in
                                         (model, Cmd.none)
+
+                SR.Types.WalletStopSub ->
+                    ( AppOps walletState dataState appInfo SR.Types.UIEnableEthereum txRec, Cmd.none )
+
+                SR.Types.WalletStateLocked ->
+                    ( AppOps walletState dataState appInfo SR.Types.UIEnableEthereum txRec, Cmd.none )
+
                 _ -> 
+                    let 
+                        _ = Debug.log "walletState in ClickedJoinSelected : " walletState
+                    in
                     (model, Cmd.none)
 
         (ReturnFromPlayerListUpdate response,  AppOps walletState dataState appInfo uiState txRec ) ->
@@ -1756,6 +1776,8 @@ view model =
                         
                         -- _ -> 
                         --     greetingView <| "View error"
+                SR.Types.UIEnableEthereum ->
+                    greetingView <| "Please use the 'Enable Ethereum' button to join a ranking"
 
                 SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer ->
                     let 
@@ -2967,7 +2989,7 @@ selectedUserIsPlayerView dataState appInfo =
 
 
 selectedUserIsNeitherOwnerNorPlayerView : DataState -> SR.Types.AppInfo -> Html Msg
-selectedUserIsNeitherOwnerNorPlayerView dataState appInfo =
+selectedUserIsNeitherOwnerNorPlayerView  dataState appInfo =
     case dataState of
         StateFetched sUsers dKind -> 
             case dKind of 

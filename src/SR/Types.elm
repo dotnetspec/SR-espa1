@@ -120,6 +120,7 @@ type UIState
     | UILoading
     | UIWaitingForTxReceipt
     | UIDeleteRankingConfirm
+    | UIEnableEthereum
 
 
 
