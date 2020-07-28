@@ -239,6 +239,12 @@ update msg model =
                         _ ->
                             (model, Cmd.none)
 
+                SR.Types.WalletStopSub ->
+                    let 
+                        _ = Debug.log "in walletstopsub" "here"
+                    in
+                    (model, Cmd.none)
+
                 SR.Types.WalletOpened ->
                     (model, Cmd.none)
 
@@ -247,7 +253,10 @@ update msg model =
                     
                     handleWalletWaitingForUserInput msg walletState dataState appInfo txRec
 
-                _ -> 
+                _ ->
+                    let 
+                        _ = Debug.log "fell thru at: " "update - walletState"
+                    in
                     ( AppOps SR.Types.WalletStopSub AllEmpty SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions emptyTxRecord
                     , Cmd.none
                     )
@@ -278,8 +287,10 @@ update msg model =
             in
             case walletState of
                 SR.Types.WalletStateLocked ->
-                    ( AppOps walletState dataState appInfo SR.Types.UIDisplayWalletLockedInstructions txRec, Cmd.none )
+                    ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser txRec, Cmd.none )
                 SR.Types.WalletOperational ->
+                    ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser txRec, Cmd.none )
+                SR.Types.WalletStopSub ->
                     ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser txRec, Cmd.none )
                 _ ->
                     (model, Cmd.none)
@@ -309,6 +320,9 @@ update msg model =
 
 
         (GlobalReceived rmtrnkingdata, AppOps walletState dataState appInfo uiState txRec ) ->
+            let
+                _ = Debug.log "glob rec 1" dataState
+            in
                     case dataState of
                         StateFetched sUsers dKind -> 
                             case dKind of
@@ -324,7 +338,7 @@ update msg model =
                                         newDataKind = Global (Data.Global.createdGlobal rmtrnkingdata sUsers) (Internal.Types.RankingId "") user
                                         newDataSet = StateFetched sUsers newDataKind
 
-                                        _ = Debug.log "glob rec" walletState
+                                        _ = Debug.log "glob rec, global datastate" walletState
                                     in
                                        -- WalletStopSub works here to stop looping but there may be a better solution
                                         ( AppOps SR.Types.WalletStopSub newDataSet appInfo SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none)
@@ -602,6 +616,8 @@ update msg model =
         (ResetToShowGlobal, AppOps walletState dataState appInfo uiState txRec ) ->
             let 
                 _ = Debug.log "reset to global wallet state" walletState
+
+                _ = Debug.log "datastate" dataState
             in
             -- case walletState of 
             --     SR.Types.WalletStateLocked ->
@@ -610,8 +626,12 @@ update msg model =
                             let
                                 newDataKind = Global Data.Global.empty (Internal.Types.RankingId "") appInfo.user
                                 newDataState = StateFetched sUsers newDataKind
+
+                                
+                                _ = Debug.log "toGlobal now" "now"
+            
                             in
-                            ( AppOps walletState newDataState appInfo SR.Types.UILoading emptyTxRecord, gotGlobal )
+                            ( AppOps SR.Types.WalletStateLocked newDataState appInfo SR.Types.UILoading emptyTxRecord, gotGlobal )
                         _ -> 
                             (model, Cmd.none)
                 --SR.Types.WalletOperational ->
@@ -3179,6 +3199,13 @@ subscriptions model =
                         , Eth.Sentry.Tx.listen txRec.txSentry
                         ]
 
+                -- SR.Types.WalletEthEnabled ->
+                --     Sub.batch
+                --         -- decodeToMsg uses partial application to return Value -> Msg which is what walletSentry expects as an arg
+                --         [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+                --         , Eth.Sentry.Tx.listen txRec.txSentry
+                --         ]
+
                 SR.Types.WalletStateLocked ->
                         Sub.batch
                             [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
@@ -3284,6 +3311,9 @@ fetchedSingleRanking (Internal.Types.RankingId rankingId) =
 
 gotGlobal : Cmd Msg
 gotGlobal =
+    let 
+        _ = Debug.log "got Global " "here"
+    in
     Http.request
         { body = Http.emptyBody
         , expect = Http.expectJson (RemoteData.fromResult >> GlobalReceived) SR.Decode.rankingsDecoder
