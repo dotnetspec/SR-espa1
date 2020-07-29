@@ -2,7 +2,7 @@ module SR.Elements exposing (
     
     ethereumWalletWarning, footer, 
     justParasimpleUserInfoText, legalUserInfoText, placeholder, selectedRankingHeaderEl, 
-    simpleUserInfoText, warningParagraph, ethereumNotEnabledPara)
+    simpleUserInfoText, warningParagraph, ethereumNotEnabledPara, permanentlyDeleteWarnPara)
 
 --import RemoteData
 
@@ -43,6 +43,15 @@ ethereumNotEnabledPara =
         , Element.paragraph [] <|
             List.singleton <|
                 Element.text "Ethereum is not current enabled for this dApp. Please click 'Enable Ethereum' (at top) to continue."
+        ]
+
+permanentlyDeleteWarnPara : Element msg
+permanentlyDeleteWarnPara =
+    Element.paragraph (Card.fill ++ Color.warning) <|
+        [ Element.el [ Font.bold ] <| Element.text "Please note: "
+        , Element.paragraph [] <|
+            List.singleton <|
+                Element.text "Clicking 'Confirm' will permanently delete this ranking. Participants will be notified in due course."
         ]
 
 

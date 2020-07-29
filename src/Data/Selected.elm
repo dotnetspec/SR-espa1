@@ -46,6 +46,7 @@ import RemoteData
 import Data.AppState
 import Data.Players
 import Json.Encode
+--import Data.Rankings
 
 
 
@@ -65,6 +66,13 @@ getRankingId selected =
     case selected of 
         Selected sSelected sUsers rnkId ->
             rnkId
+
+-- gotRankingName : Selected -> String 
+-- gotRankingName selected = 
+--     case selected of 
+--         Selected sSelected sUsers rnkId ->
+--             sSelected.
+
 
 emptySelected : Selected 
 emptySelected = 

@@ -821,6 +821,7 @@ update msg model =
                             in
                                 ( AppOps walletState
                                     newDataState
+                                    --dataState
                                     appInfo
                                     SR.Types.UIDeleteRankingConfirm
                                     SR.Types.StopSubscription
@@ -2299,12 +2300,22 @@ newrankingconfirmbutton appInfo dataState =
 
 confirmDelRankingBtn : SR.Types.AppInfo -> DataState -> Element Msg
 confirmDelRankingBtn appInfo dataState =
+    
     case dataState of 
             StateUpdated sUsers dKind ->
                  case dKind of 
                     Global sGlobal rnkId user ->
+                        let 
+                            --userRanking = Data.Global.gotUserRanking sGlobal (Utils.MyUtils.stringFromRankingId rnkId)
+                            _ = Debug.log "ranking id" (Utils.MyUtils.stringFromRankingId rnkId)
+                            userRanking = Data.Global.gotUserRanking sGlobal appInfo.selectedRanking.id
+                            rankingName = userRanking.rankingInfo.rankingname
+                            _ = Debug.log "rankingname" rankingName
+                        in
                         Element.column Grid.section <|
-                            [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+                            [ 
+                            Element.el Heading.h5 <| Element.text rankingName
+                            , Element.el Heading.h6 <| Element.text "Click to continue ..."
                             , Element.column (Card.simple ++ Grid.simple) <|
                                 [ Element.wrappedRow Grid.simple <|
                                     [ Input.button (Button.simple ++ Color.simple) <|
@@ -2318,8 +2329,35 @@ confirmDelRankingBtn appInfo dataState =
                                         }
                                     ]
                                 ]
-                            , SR.Elements.warningParagraph
+                            , SR.Elements.permanentlyDeleteWarnPara
                             ]
+                    -- Selected sSelected sUser rnkId ->
+                    --     let 
+                    --         --userRanking = Data.Global.gotUserRanking sGlobal (Utils.MyUtils.stringFromRankingId rnkId)
+                    --         _ = Debug.log "ranking id" (Utils.MyUtils.stringFromRankingId rnkId)
+                    --         userRanking = Data.Global.gotUserRanking sGlobal appInfo.selectedRanking.id
+                    --         rankingName = userRanking.rankingInfo.rankingname
+                    --         _ = Debug.log "rankingname" rankingName
+                    --     in
+                    --     Element.column Grid.section <|
+                    --         [ 
+                    --         Element.el Heading.h5 <| Element.text rankingName
+                    --         , Element.el Heading.h6 <| Element.text "Click to continue ..."
+                    --         , Element.column (Card.simple ++ Grid.simple) <|
+                    --             [ Element.wrappedRow Grid.simple <|
+                    --                 [ Input.button (Button.simple ++ Color.simple) <|
+                    --                     { onPress = Just <| ResetToShowGlobal
+                    --                     , label = Element.text "Cancel"
+                    --                     }
+                    --                 -- , Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput appInfo.selectedRanking (Data.Global.asList sGlobal))) <|
+                                        
+                    --                 --     { onPress = Just <| ClickedConfirmCreateNewLadder
+                    --                 --     , label = Element.text "Confirm"
+                    --                 --     }
+                    --                 ]
+                    --             ]
+                    --         , SR.Elements.permanentlyDeleteWarnPara
+                    --         ]
                     _ -> 
                         let 
                             _ = Debug.log "newrankingconfirmbutton - dataState should be global" dataState
