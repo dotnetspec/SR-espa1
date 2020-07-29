@@ -660,7 +660,18 @@ update msg model =
             
                             in
                             ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, gotGlobal )
-                        _ -> 
+                        
+                        StateUpdated sUsers dKind ->
+                            let
+                                newDataKind = Global Data.Global.empty (Internal.Types.RankingId "") appInfo.user
+                                newDataState = StateFetched sUsers newDataKind
+
+                                _ = Debug.log "toGlobal now" "stateupdated"
+                            in
+                            ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, gotGlobal )
+                        
+                        
+                        AllEmpty -> 
                             (model, Cmd.none)
 
         (ResetToShowSelected, AppOps walletState dataState appInfo uiState subState  txRec ) ->
@@ -806,6 +817,7 @@ update msg model =
                             let 
                                 newDataKind = Global Data.Global.empty rnkId user
                                 newDataState = StateUpdated sUsers newDataKind
+                                _ = Debug.log "new dataState should be updated" newDataState
                             in
                                 ( AppOps walletState
                                     newDataState
@@ -817,7 +829,7 @@ update msg model =
                                 )
                         _ -> 
                             let 
-                                _ = Debug.log "9 - dataState should be updated" dataState
+                                _ = Debug.log "8 - dataState should be updated" dataState
                             in
                                 (model, Cmd.none)
                 _ -> 

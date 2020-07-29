@@ -204,7 +204,7 @@ removedRankingIdFromAllUsersTest =
                                                     Expect.all
                                                         [ 
                                                             -- it's only fair to test against a validated fuzz user (x)
-                                                            Expect.equal (List.filterMap Data.Users.removeInvalidRankingId x.userjoinrankings)
+                                                            Expect.equal (List.filterMap Data.Users.removedInvalidRankingId x.userjoinrankings)
                                                             -- if fuzz data is invalid, lists may equal [] cos first 'rankingid' won't be added
                                                             --, Expect.notEqual []
                                                         ]
