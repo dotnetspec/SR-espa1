@@ -7,6 +7,7 @@ module Data.Global exposing (Global, gotOthers
     , createdPlayers
     , gotRankingOwner
     , rankingsAsList
+    , asRankings
     , newJsonEncodedList
     , createdGlobal
     , gotUserRanking
@@ -269,6 +270,13 @@ rankingsAsList sGlobal =
         Global rankedUserRankings ->
             EverySet.map removeUser rankedUserRankings
             |> EverySet.toList
+
+
+asRankings : Global -> Data.Rankings.Rankings
+asRankings sGlobal = 
+    case sGlobal of 
+        Global rankedUserRankings ->
+            Data.Rankings.asRankings (EverySet.map removeUser rankedUserRankings)
 
 
 removeUser : SR.Types.UserRanking -> SR.Types.Ranking

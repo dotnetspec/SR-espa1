@@ -404,7 +404,7 @@ update msg model =
                                                         appInfo.challenger (rnkidstr)
 
 
-                                                    newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") user SR.Types.UserIsOwner Data.Rankings.emptyRankings
+                                                    newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") user SR.Types.UserIsOwner (Data.Global.asRankings sGlobal)
                                                     newDataState = StateFetched sUsers newDataKind
                                             
                                                 in
