@@ -1,6 +1,11 @@
-module SR.Decode exposing
-    ( rankingsDecoder
-    , decodeNewPlayerListServerResponse, decodeNewRankingListServerResponse, decodeNewUserListServerResponse, ladderOfPlayersDecoder, listOfUsersDecoder, newRankingIdDecoder, playerDecoder, userDecoder
+module SR.Decode exposing ( rankingsDecoder
+    , decodeNewPlayerListServerResponse
+    , decodeNewRankingListServerResponse
+    , decodeNewUserListServerResponse
+    , ladderOfPlayersDecoder
+    , listOfUsersDecoder, newRankingIdDecoder, playerDecoder, userDecoder
+    , decodeDeleteBinResponse
+    , decodeUpdateGlobalBinResponse
     )
 
 {-|
@@ -94,3 +99,18 @@ decodeNewUserListServerResponse =
 decodeNewPlayerListServerResponse : Decoder (List SR.Types.Player)
 decodeNewPlayerListServerResponse =
     Json.Decode.field "data" (Json.Decode.list playerDecoder)
+
+decodeDeleteBinResponse : Decoder SR.Types.DeleteBinResponse
+decodeDeleteBinResponse = 
+    Json.Decode.succeed SR.Types.DeleteBinResponse
+        |> Json.Decode.Pipeline.required "success" Json.Decode.bool
+        |> Json.Decode.Pipeline.required "id" Json.Decode.string
+        |> Json.Decode.Pipeline.required "message" Json.Decode.string
+
+decodeUpdateGlobalBinResponse : Decoder SR.Types.UpdateGlobalBinResponse
+decodeUpdateGlobalBinResponse = 
+    Json.Decode.succeed SR.Types.UpdateGlobalBinResponse
+        |> Json.Decode.Pipeline.required "success" Json.Decode.bool
+        |> Json.Decode.Pipeline.required "data" (Json.Decode.list rankingDecoder)
+        |> Json.Decode.Pipeline.required "version" Json.Decode.int
+        |> Json.Decode.Pipeline.required "parentId" Json.Decode.string

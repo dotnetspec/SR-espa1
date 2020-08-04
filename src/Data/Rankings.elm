@@ -7,10 +7,12 @@ module Data.Rankings exposing (Rankings
     , isUniqueRankingName
     , gotRankingInfo
     , extractRankingsFromWebData
-    , emptyRankings
+    , empty
     , updateAddr
     , addRanking
-    , removeRanking
+    , remove
+    , removedById
+    , handleServerDeletedRanking
     , asList, asRankings, getRanking, gotRanking, rankingsetLength
     , isRankingNameValidated)
 
@@ -21,13 +23,14 @@ import Internal.Types
 import SR.Defaults
 import RemoteData
 import Http
+import Utils.MyUtils
 
 
 
 type Rankings = Rankings (EverySet SR.Types.Ranking)
 
-emptyRankings : Rankings 
-emptyRankings = 
+empty : Rankings 
+empty = 
     Rankings (EverySet.empty)
 
 asRankings : EverySet SR.Types.Ranking -> Rankings 
@@ -95,6 +98,22 @@ gotRanking (Rankings sRankings) uaddr =
         Just a ->
             a
 
+gotRankingById : Rankings  -> String -> SR.Types.Ranking
+gotRankingById (Rankings sRankings) rnkId =
+    let
+        existingRanking =
+            List.head <|
+                 EverySet.toList (EverySet.filter (\r -> (String.toLower <| r.id) == (String.toLower <| rnkId))
+                    sRankings)
+    in
+    
+    case existingRanking of
+        Nothing ->
+            SR.Defaults.emptyRankingInfo
+
+        Just a ->
+            a
+
 
 -- probably should return a set, not a list:
 -- addedNewJoinedRankingIdToRanking : String -> SR.Types.Ranking -> List SR.Types.Ranking -> List SR.Types.Ranking
@@ -117,13 +136,25 @@ gotRanking (Rankings sRankings) uaddr =
 --     in
 --     newRankingList
 
-removeRanking : SR.Types.Ranking -> Rankings -> Rankings
-removeRanking ranking sRankings = 
+remove : SR.Types.Ranking -> Rankings -> Rankings
+remove ranking sRankings = 
     case sRankings of 
-        Rankings setOfRankings->
+        Rankings everySetOfRankings->
         --    rnkId 
         --    |> 
-           asRankings (EverySet.remove ranking setOfRankings) 
+           asRankings (EverySet.remove ranking everySetOfRankings)
+
+removedById : Internal.Types.RankingId -> Rankings -> Rankings
+removedById rnkId sRankings = 
+    let
+        rankingToRemove = gotRankingById sRankings (Utils.MyUtils.stringFromRankingId rnkId)
+        _ = Debug.log "ranking to remove " rankingToRemove
+    in
+    case sRankings of 
+        Rankings everySetOfRankings->
+        --    rnkId 
+        --    |> 
+           asRankings (EverySet.remove rankingToRemove everySetOfRankings) 
 
 
 getRanking : List SR.Types.Ranking -> String -> Maybe SR.Types.Ranking
@@ -156,11 +187,43 @@ updateAddr : Rankings -> String -> Rankings
 updateAddr sRankings addr =
             let 
                 ranking = gotRanking sRankings addr
-                rankingRemoved = removeRanking ranking sRankings
+                rankingRemoved = remove ranking sRankings
                 updatedRankingAddr =
                         { ranking | rankingowneraddr = addr }
             in 
                 addRanking updatedRankingAddr rankingRemoved
+
+
+
+handleServerDeletedRanking : RemoteData.WebData (SR.Types.UpdateGlobalBinResponse) -> (Rankings, String)
+handleServerDeletedRanking rdupdateglobalbinresponse =
+    case rdupdateglobalbinresponse of
+        RemoteData.Success a ->
+            (asRankings (EverySet.fromList a.data), "Success")
+
+        RemoteData.NotAsked ->
+            (empty, "Not Asked")
+
+        RemoteData.Loading ->
+            (empty, "Loading")
+
+        RemoteData.Failure err ->
+            case err of
+                Http.BadUrl s ->
+                    (empty, s)
+
+                Http.Timeout ->
+                    (empty, "TimeOut")
+
+                Http.NetworkError ->
+                    (empty, "Network Err")
+
+                Http.BadStatus statuscode ->
+                    (empty, (String.fromInt statuscode))
+
+                Http.BadBody s ->
+                    (empty, s)
+
 
 
 extractRankingsFromWebData : RemoteData.WebData (List SR.Types.Ranking) -> List SR.Types.Ranking

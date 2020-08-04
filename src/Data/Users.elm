@@ -3,6 +3,7 @@ module Data.Users exposing (Users
     , validatedUserList
     , addedNewJoinedRankingId
     , removedRankingIdFromAll
+    , removedRankindIdFromUser
     , removeCurrentUserEntryFromUserList
     , removedDuplicateUserFromUserList
     , isRegistered
@@ -13,6 +14,7 @@ module Data.Users exposing (Users
     , gotUserFromUserList
     , emptyUsers
     , updateAddr
+    , updatedUser
     , addUser
     , removeUser
     , asList
@@ -231,6 +233,17 @@ updateAddr susers addr =
                         { user | ethaddress = addr }
             in 
                 addUser updatedUserAddr userRemoved
+
+updatedUser : Users -> SR.Types.User -> Users
+updatedUser susers newUser =
+            let 
+                -- use the address to get the existing user entry to remove
+                user = gotUser susers newUser.ethaddress
+                userRemoved = removeUser user susers
+                -- updatedUserAddr =
+                --         { user | ethaddress = addr }
+            in 
+                addUser newUser userRemoved
 
 
 -- todo: remove?

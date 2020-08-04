@@ -7,6 +7,8 @@ module SR.Types exposing
     ,  AppState(..)
     , SelectedStatus(..)
     , SubState(..)
+    , DeleteBinResponse
+    , UpdateGlobalBinResponse
     )
 
 {-| Types
@@ -122,6 +124,8 @@ type UIState
     | UIWaitingForTxReceipt
     | UIDeleteRankingConfirm
     | UIEnableEthereum
+    | UIOwnerDeletedRanking
+    | UIUnableToFindGlobalRankings
 
 type SubState 
     = Subscribe 
@@ -221,8 +225,21 @@ type alias FormValidations =
     }
 
 
+type alias DeleteBinResponse =
+    {
+    success : Bool,
+    id : String,
+    message : String
+    }
 
-
+type alias UpdateGlobalBinResponse =
+    {
+    success : Bool,
+    data : List Ranking,
+    version : Int,
+    parentId : String
+    }
+    
 
 type alias Ranking =
     { id : String

@@ -78,11 +78,13 @@ emptySelected : Selected
 emptySelected = 
     Selected (EverySet.empty) Data.Users.emptyUsers (Internal.Types.RankingId "")
 
-createdSelected : RemoteData.WebData (List SR.Types.Player) -> Data.Users.Users -> Internal.Types.RankingId -> Selected
-createdSelected rdlplayer sUser rnkId =
+-- createdSelected : RemoteData.WebData (List SR.Types.Player) -> Data.Users.Users -> Internal.Types.RankingId -> Selected
+-- createdSelected rdlplayer sUser rnkId =
+createdSelected : List SR.Types.Player -> Data.Users.Users -> Internal.Types.RankingId -> Selected
+createdSelected lplayer sUser rnkId =
     
                     let
-                        lplayer = Data.Players.extractPlayersFromWebData rdlplayer
+                        --lplayer = Data.Players.extractPlayersFromWebData lplayer
                         luser = Data.Users.asList sUser
                         esUserPlayers = 
                             List.map (createdUserPlayer luser) lplayer

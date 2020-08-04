@@ -7,13 +7,18 @@ module Data.Global exposing (Global, gotOthers
     , createdPlayers
     , gotRankingOwner
     , rankingsAsList
+    , usersAsList
     , asRankings
     , newJsonEncodedList
-    , createdGlobal
-    , gotUserRanking
+    , created
+    , createdFromRemote
+    , gotUserRankingByRankingId
     , empty
     , asGlobal
-    , gotMember, addUserRanking, removeUserRanking, asList, gotNewRankingIdFromWebData)
+    , gotMember, addUserRanking, removeUserRanking, asList
+    , removedUserRankingByRankingId
+    , gotUpdatedFromWebData
+    , gotNewRankingIdFromWebData)
 
 
 import SR.Types
@@ -46,8 +51,8 @@ asEverySet : Global -> EverySet SR.Types.UserRanking
 asEverySet (Global esGlobal)  = 
      esGlobal
 
-createdGlobal : RemoteData.WebData (List SR.Types.Ranking) -> Data.Users.Users -> Global
-createdGlobal rmtrnkingdata sUser =
+createdFromRemote : RemoteData.WebData (List SR.Types.Ranking) -> Data.Users.Users -> Global
+createdFromRemote rmtrnkingdata sUser =
     let
         lrankinginfo = Data.Rankings.extractRankingsFromWebData rmtrnkingdata
         luser = Data.Users.asList sUser
@@ -56,6 +61,19 @@ createdGlobal rmtrnkingdata sUser =
     List.map (createdUserRanking luser) lrankinginfo
     |> EverySet.fromList
     |> asGlobal
+
+created : Data.Rankings.Rankings -> Data.Users.Users -> Global
+created rankings sUser =
+    let
+        --lrankinginfo = Data.Rankings.extractRankingsFromWebData rmtrnkingdata
+        luser = Data.Users.asList sUser
+    in
+    
+    List.map (createdUserRanking luser) (Data.Rankings.asList rankings)
+    |> EverySet.fromList
+    |> asGlobal
+
+
 
 
 createdUserRanking : List SR.Types.User -> SR.Types.Ranking -> SR.Types.UserRanking
@@ -120,7 +138,7 @@ gotMember sGlobal user  =
     let
         lmemberRankingIds = user.userjoinrankings
     in
-        List.map (gotUserRanking sGlobal) lmemberRankingIds
+        List.map (gotUserRankingByRankingId sGlobal) lmemberRankingIds
 
 gotOthers : Global -> SR.Types.User -> Global
 gotOthers global user = 
@@ -155,6 +173,10 @@ removeUserRanking  sGlobal uRanking =
     case sGlobal of 
         Global rankedUserRankings->
          asGlobal (EverySet.remove uRanking rankedUserRankings)
+
+removedUserRankingByRankingId : Global -> Internal.Types.RankingId -> Global 
+removedUserRankingByRankingId sGlobal rnkId = 
+    created (Data.Rankings.removedById rnkId (rankingsAsSet sGlobal) ) (usersAsSet sGlobal)
 
 
 addEmptyUser : SR.Types.User -> SR.Types.Ranking -> SR.Types.UserRanking 
@@ -208,8 +230,8 @@ gotAllRankindIds userRanking =
 
 
 
-gotUserRanking : Global -> String -> SR.Types.UserRanking 
-gotUserRanking sGlobal rnkId = 
+gotUserRankingByRankingId : Global -> String -> SR.Types.UserRanking 
+gotUserRankingByRankingId sGlobal rnkId = 
     case sGlobal of 
         Global userRankings ->
             let 
@@ -271,6 +293,33 @@ rankingsAsList sGlobal =
             EverySet.map removeUser rankedUserRankings
             |> EverySet.toList
 
+rankingsAsSet : Global -> Data.Rankings.Rankings
+rankingsAsSet sGlobal = 
+    case sGlobal of 
+        Global rankedUserRankings ->
+            Data.Rankings.asRankings (EverySet.map removeUser rankedUserRankings)
+
+removeUser : SR.Types.UserRanking -> SR.Types.Ranking
+removeUser uranking = 
+    uranking.rankingInfo
+
+usersAsList : Global -> List SR.Types.User
+usersAsList sGlobal = 
+    case sGlobal of 
+        Global rankedUserRankings ->
+            EverySet.map removeRanking rankedUserRankings
+            |> EverySet.toList
+
+usersAsSet : Global -> Data.Users.Users
+usersAsSet sGlobal = 
+    case sGlobal of 
+        Global rankedUserRankings ->
+            Data.Users.asUsers (EverySet.map removeRanking rankedUserRankings)
+
+removeRanking : SR.Types.UserRanking -> SR.Types.User
+removeRanking uranking = 
+    uranking.userInfo
+
 
 asRankings : Global -> Data.Rankings.Rankings
 asRankings sGlobal = 
@@ -279,9 +328,7 @@ asRankings sGlobal =
             Data.Rankings.asRankings (EverySet.map removeUser rankedUserRankings)
 
 
-removeUser : SR.Types.UserRanking -> SR.Types.Ranking
-removeUser uranking = 
-    uranking.rankingInfo
+
 
 
 
@@ -320,6 +367,42 @@ gotNewRankingIdFromWebData rankingIdremdata =
 
                 Http.BadBody s ->
                     "BadBody " ++ s
+
+
+gotUpdatedFromWebData : RemoteData.WebData SR.Types.UpdateGlobalBinResponse -> String
+gotUpdatedFromWebData  rdugbinresponse =
+    case rdugbinresponse of
+        RemoteData.Success a ->
+            let
+                _ = Debug.log "in success " a
+            in
+            "success in gotUpdatedFromWebData"
+
+        RemoteData.NotAsked ->
+            "Initialising."
+
+        RemoteData.Loading ->
+            "Loading."
+
+        RemoteData.Failure err ->
+            case err of
+                Http.BadUrl s ->
+                    "Bad Url"
+
+                Http.Timeout ->
+                    "Timeout"
+
+                Http.NetworkError ->
+                    "Network Err"
+
+                Http.BadStatus statuscode ->
+                    String.fromInt <| statuscode
+
+                Http.BadBody s ->
+                    "BadBody " ++ s
+
+
+
 
 
 -- we have a function within a function - this may be simplified ?

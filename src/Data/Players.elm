@@ -1,5 +1,15 @@
 -- Players will be mainly used to communicate externally to the jsonbin server
-module Data.Players exposing (Players, gotAddress, validatedPlayerList, extractPlayersFromWebData, emptyPlayers, addPlayer, removePlayer, asList, asPlayers, playersetLength)
+module Data.Players exposing (Players
+    , gotAddress
+    , validatedPlayerList
+    , handleFetchedPlayers
+    , extractPlayersFromWebData
+    , emptyPlayers
+    , addPlayer
+    , removePlayer
+    , asList
+    , asPlayers
+    , playersetLength)
 
 
 import SR.Types
@@ -135,41 +145,34 @@ extractPlayersFromWebData remData =
             []
 
 
-gotPlayerListFromRemData : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
-gotPlayerListFromRemData lplayer =
+handleFetchedPlayers : RemoteData.WebData (List SR.Types.Player) -> (Players, String)
+handleFetchedPlayers lplayer =
     case lplayer of
         RemoteData.Success a ->
-            a
+            (asPlayers (EverySet.fromList a), "Success")
 
         RemoteData.NotAsked ->
-            [ SR.Defaults.emptyPlayer
-            ]
+            (emptyPlayers, "Not Asked")
 
         RemoteData.Loading ->
-            [ SR.Defaults.emptyPlayer
-            ]
+            (emptyPlayers, "Loading")
 
         RemoteData.Failure err ->
             case err of
                 Http.BadUrl s ->
-                    [ SR.Defaults.emptyPlayer
-                    ]
+                    (emptyPlayers, s)
 
                 Http.Timeout ->
-                    [ SR.Defaults.emptyPlayer
-                    ]
+                    (emptyPlayers, "TimeOut")
 
                 Http.NetworkError ->
-                    [ SR.Defaults.emptyPlayer
-                    ]
+                    (emptyPlayers, "Network Err")
 
                 Http.BadStatus statuscode ->
-                    [ SR.Defaults.emptyPlayer
-                    ]
+                    (emptyPlayers, (String.fromInt statuscode))
 
                 Http.BadBody s ->
-                    [ SR.Defaults.emptyPlayer
-                    ]
+                    (emptyPlayers, s)
 
 
 gotAddress : SR.Types.Player -> String
