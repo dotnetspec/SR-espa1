@@ -80,8 +80,8 @@ addedNewJoinedRankingIdToUserTest =
     --only <|
         describe "correctly add a rankingId to a User's userjoinrankings list"
             [
-            --fuzzWith { runs = 1 } (Fuzz.list userFuzzer) """addRankingIdToUser must only add a valid rnkId to a User in the (fuzzy) set""" <|
-            fuzz (Fuzz.list userFuzzer) """addRankingIdToUser must only add a valid rnkId to a User in the (fuzzy) set""" <|
+            --fuzzWith { runs = 1 } (Fuzz.list userFuzzer) """addedNewJoinedRankingId must only add a valid rnkId to a User in the (fuzzy) set""" <|
+            fuzz (Fuzz.list userFuzzer) """addedNewJoinedRankingId must only add a valid rnkId to a User in the (fuzzy) set""" <|
                 \list ->
                 -- case Data.Users.asUsers (EverySet.fromList list) of
                 --     usersSet ->
@@ -107,7 +107,7 @@ addedNewJoinedRankingIdToUserTest =
                                                 --Expect.lessThan (List.length list + 2) 
                                                 --, Expect.greaterThan (List.length list)
                                                   Expect.notEqual []
-                                                 , Expect.equal ["5e8e879d8e85c8437012e2a7"] 
+                                                 , Expect.equal ["5e8e879d8e85c8437012e2a7"]
                                                 ]
                             -- user:
                             x :: xs ->
@@ -224,7 +224,8 @@ gotUserFromUserListTest =
               , description = "t1"
               , email = "t1@t.com"
               , mobile = "11111111"
-              , userjoinrankings = []
+              , userjoinrankings = ["5e96c74b5fa47104cea0c7c6"
+          , "5e8e879d8e85c8437012e2a7"]
               }
             ]
     in

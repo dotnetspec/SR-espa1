@@ -13,6 +13,8 @@ module Utils.MyUtils exposing
     , stringFromMaybeString
     , stringFromRankingId
     , stringToRankingId
+    , stringListToRankingIdList
+    , rankingIdListToStringList
     )
 
 import Eth.Types
@@ -56,10 +58,22 @@ stringToRankingId : String -> Internal.Types.RankingId
 stringToRankingId rnkId =
     Internal.Types.RankingId rnkId
 
+stringListToRankingIdList : List String -> List Internal.Types.RankingId
+stringListToRankingIdList lrnkId =
+    List.map stringToRankingId lrnkId
+
+rankingIdListToStringList : List Internal.Types.RankingId -> List String
+rankingIdListToStringList lrnkId =
+    List.map stringFromRankingId lrnkId
+
 
 stringFromRankingId : Internal.Types.RankingId -> String
 stringFromRankingId (Internal.Types.RankingId rnkId) =
     rnkId
+
+-- convertToRankingId : String -> Internal.Types.RankingId 
+-- convertToRankingId str = 
+--     Internal.Types.RankingId str
 
 
 refEachPlayer : SR.Types.UserPlayer -> SR.Types.Player

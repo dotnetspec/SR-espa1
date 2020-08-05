@@ -1,7 +1,7 @@
 -- Global will be mainly used to handle internal data of the global rankings listing as it relates to the current user
 -- Global currently uses the UserRankings type
 module Data.Global exposing (Global, gotOthers
-    , gotUserIsPlayer
+    , gotUserRanking
     , gotOwned
     , filteredSelected
     , createdPlayers
@@ -17,6 +17,7 @@ module Data.Global exposing (Global, gotOthers
     , asGlobal
     , gotMember, addUserRanking, removeUserRanking, asList
     , removedUserRankingByRankingId
+    , removedDeletedRankingsFromUserJoined
     , gotUpdatedFromWebData
     , gotNewRankingIdFromWebData)
 
@@ -32,6 +33,8 @@ import Data.Users
 import Data.Rankings
 import Http
 import Json.Encode
+import EverySet
+import List
 -- Global came from Selected - there are many functions etc. not relevant to Global in here currently (even if renamed)
 
 type Global = Global (EverySet SR.Types.UserRanking) 
@@ -174,6 +177,8 @@ removeUserRanking  sGlobal uRanking =
         Global rankedUserRankings->
          asGlobal (EverySet.remove uRanking rankedUserRankings)
 
+
+
 removedUserRankingByRankingId : Global -> Internal.Types.RankingId -> Global 
 removedUserRankingByRankingId sGlobal rnkId = 
     created (Data.Rankings.removedById rnkId (rankingsAsSet sGlobal) ) (usersAsSet sGlobal)
@@ -206,17 +211,27 @@ isGlobalRankingOwnedByUser user ownedrnk =
         Nothing
 
 
-gotUserIsPlayer : List SR.Types.UserRanking -> SR.Types.User -> List SR.Types.UserRanking
-gotUserIsPlayer lownedrankings user =
+gotUserRanking : List SR.Types.UserRanking -> SR.Types.User -> List SR.Types.UserRanking
+gotUserRanking lownedrankings user =
     List.filterMap
-        (isUserPlayerInGlobalRankings
+        (isUserInGlobalRankings
             user
         )
         lownedrankings
 
+removedDeletedRankingsFromUserJoined : SR.Types.User -> Global -> SR.Types.User 
+removedDeletedRankingsFromUserJoined user sGlobal = 
+    let
+        lwithDeletedRankingIdsRemoved = List.filter (Data.Rankings.isIdInSet (asRankings sGlobal)) (Utils.MyUtils.stringListToRankingIdList user.userjoinrankings)
+        newUser = {user | userjoinrankings = Utils.MyUtils.rankingIdListToStringList lwithDeletedRankingIdsRemoved}
 
-isUserPlayerInGlobalRankings : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
-isUserPlayerInGlobalRankings user ownedrnk =
+    in
+        newUser
+    
+
+
+isUserInGlobalRankings : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
+isUserInGlobalRankings user ownedrnk =
     if ownedrnk.userInfo.ethaddress == user.ethaddress then
         Just ownedrnk
 

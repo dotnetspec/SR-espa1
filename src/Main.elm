@@ -164,6 +164,7 @@ type Msg
     | ClickedChangedUIStateToEnterResult SR.Types.UserPlayer
     | ClickedDeleteRanking String
     | ClickedDeleteRankingConfirmed
+    | ClickedRemoveFromUserMemberRankings Internal.Types.RankingId
     | ClickedEnableEthereum
     | ResetToShowGlobal
     | ResetToShowSelected
@@ -266,6 +267,13 @@ update msg model =
 
         (ClickedEnableEthereum, AppOps walletState dataState appInfo uiState subState  txRec ) ->
             (AppOps walletState dataState appInfo uiState SR.Types.StopSubscription txRec, Ports.log "eth_requestAccounts")
+
+        (ClickedRemoveFromUserMemberRankings rnkId, AppOps walletState dataState appInfo uiState subState  txRec ) ->
+            let 
+                        _ = Debug.log "ClickedRemoveFromUserMemberRankings: " rnkId
+                        --newgotDeletedListings = 
+            in
+            (AppOps walletState dataState appInfo uiState SR.Types.StopSubscription txRec, Cmd.none)
 
 
         (ClickedConfirmedRegisterNewUser, AppOps walletState dataState appInfo uiState subState  txRec ) ->
@@ -462,34 +470,34 @@ update msg model =
 
 
         (ClickedSelectedMemberRanking rnkidstr rnkownerstr rnknamestr, AppOps walletState dataState appInfo uiState subState  txRec ) ->
-                            case dataState of 
-                                    StateFetched sUsers dKind ->
-                                            case dKind of 
-                                                Global sGlobal rnkId user ->
-                                                    let
-                                                        _ =
-                                                            Debug.log "user clicked member" rnkidstr
+            case dataState of 
+                StateFetched sUsers dKind ->
+                    case dKind of 
+                        Global sGlobal rnkId user ->
+                            let
+                                _ =
+                                    Debug.log "user clicked member" user.userjoinrankings
 
 
-                                                        newAppInfo =
-                                                            updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
+                                newAppInfo =
+                                    updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
 
 
-                                                        -- re-factor from appInfo to AppState over time
-                                                        initAppState = 
-                                                            Data.AppState.updateAppState appInfo.user appInfo.player 
-                                                            appInfo.challenger ( rnkidstr)
+                                -- re-factor from appInfo to AppState over time
+                                initAppState = 
+                                    Data.AppState.updateAppState appInfo.user appInfo.player 
+                                    appInfo.challenger ( rnkidstr)
 
 
-                                                        newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") user SR.Types.UserIsMember (Data.Global.asRankings sGlobal)
-                                                        newDataState = StateFetched sUsers newDataKind
-                                                    in
-                                                        ( AppOps walletState newDataState newAppInfo SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription emptyTxRecord, 
-                                                        fetchedSingleRanking rnkidstr )
-                                                _ -> 
-                                                    (model, Cmd.none)
-                                    _ -> 
-                                                    (model, Cmd.none)
+                                newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") user SR.Types.UserIsMember (Data.Global.asRankings sGlobal)
+                                newDataState = StateFetched sUsers newDataKind
+                            in
+                                ( AppOps walletState newDataState newAppInfo SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription emptyTxRecord, 
+                                fetchedSingleRanking rnkidstr )
+                        _ -> 
+                            (model, Cmd.none)
+                _ -> 
+                                (model, Cmd.none)
 
 
         (ClickedSelectedNeitherOwnerNorMember rnkidstr rnkownerstr rnknamestr, AppOps walletState dataState appInfo uiState subState  txRec)  ->
@@ -1889,10 +1897,19 @@ view model =
                     greetingView <| "Please use the 'Enable Ethereum' button to join a ranking"
 
                 SR.Types.UIOwnerDeletedRanking ->
-                    continueView <|
-                        """Unfortunately this 
+                    case dataState of
+                        StateFetched sUsers dKind -> 
+                            case dKind of 
+                                    Selected sSelected rnkId user status rankings ->
+                                        let 
+                                            _ = Debug.log "in Selected ready for view1" (Data.Selected.asList sSelected)
+                                        in
+                                            --selectedUserIsOwnerView dataState appInfo
+                                            continueWithRemoveDeletedRankingView rnkId <| """Unfortunately this 
 ladder has 
-been DELETED by the owner.
+been DELETED by the owner
+and will be removed from
+your listings.
 Please contact the owner
 for more details.
 If you would like to      
@@ -1900,6 +1917,12 @@ create a new one
 please click 
 'Create New Ladder'
 in the home view"""
+                                    _ -> 
+                                        greetingView <| "Should be Selected"
+                        _ -> 
+                            greetingView <| "Owner View error"
+                    
+                    
 
                 SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer ->
                     let 
@@ -2147,13 +2170,30 @@ insertMemberRankingList lrankinginfo =
 
 
 memberRankingInfoBtn : SR.Types.Ranking -> Element Msg
-memberRankingInfoBtn rankingobj =
-    Element.column Grid.simple <|
-        [ Input.button (Button.fill ++ Color.primary) <|
-            { onPress = Just (ClickedSelectedMemberRanking (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr rankingobj.rankingname)
-            , label = Element.text rankingobj.rankingname
-            }
-        ]
+memberRankingInfoBtn ranking =
+    if ranking.rankingname /= "" then
+        Element.column Grid.simple <|
+            [ Input.button (Button.fill ++ Color.primary) <|
+                { onPress = Just (ClickedSelectedMemberRanking (Internal.Types.RankingId ranking.id) ranking.rankingowneraddr ranking.rankingname)
+                , label = Element.text ranking.rankingname
+                }
+            ]
+    else 
+        Element.column Grid.simple <|
+            [ Input.button (Button.fill ++ Color.primary) <|
+                { onPress = Just (ClickedSelectedMemberRanking (Internal.Types.RankingId ranking.id) ranking.rankingowneraddr ranking.rankingname)
+                , label = Element.el
+                            [ Font.color (Element.rgb 1 0 0)
+                            , Font.size 18
+                            , Font.family
+                                [ Font.typeface "Open Sans"
+                                , Font.sansSerif
+                                ]
+                            , Font.center
+                            ]
+                            (Element.text  "              Deleted")
+                }
+            ]
 
 
 insertNeitherOwnerNorMemberRankingList : List SR.Types.Ranking -> List (Element Msg)
@@ -3410,23 +3450,6 @@ deleteRankingview model =
         _ ->
             Html.text "Fail"
 
--- deletedRankingInformView : Model -> Html Msg
--- deletedRankingInformView model =
---     case model of
---         AppOps walletState dataState appInfo uiState subState  txRec ->
---             Framework.responsiveLayout [] <|
---                 Element.column
---                     Framework.container
---                     [ Element.el Heading.h4 <| Element.text "Deleted Ranking"
---                     --, inputNewLadder appInfo dataState
---                     , continueAfterDelRankingBtn appInfo dataState
---                     --, newrankingconfirmbutton appInfo dataState
---                     , SR.Elements.footer
---                     ]
-
---         _ ->
---             Html.text "Fail"
-
 
 displayChallengeBeforeConfirmView : Model -> Html Msg
 displayChallengeBeforeConfirmView model =
@@ -3516,6 +3539,32 @@ continueView continueStr =
                         [ Input.button (Button.simple ++ Color.primary) <|
                             { onPress = Just <| ResetToShowGlobal
                             , label = Element.text "Continue ..."
+                            }
+                        ]
+                    ]
+            ]
+
+continueWithRemoveDeletedRankingView : Internal.Types.RankingId -> String -> Html Msg
+continueWithRemoveDeletedRankingView rnkId continueStr =
+    Framework.responsiveLayout [] <|
+        Element.column
+            Framework.container
+            [ Element.el Heading.h4 <| Element.text "SportRank"
+            , greetingHeading continueStr
+            ,  Element.column (Card.simple ++ Grid.simple) <|
+                    [ Element.column Grid.simple <|
+                        [ Input.button (Button.simple ++ Color.primary) <|
+                            { onPress = Just <| ClickedRemoveFromUserMemberRankings rnkId
+                            , label = Element.text "Remove Listing(s)"
+                            }
+                        ]
+                    ]
+            , Element.text ("\n")
+            , Element.column (Card.simple ++ Grid.simple) <|
+                    [ Element.column Grid.simple <|
+                        [ Input.button (Button.simple ++ Color.primary) <|
+                            { onPress = Just <| ResetToShowGlobal
+                            , label = Element.text "Cancel"
                             }
                         ]
                     ]

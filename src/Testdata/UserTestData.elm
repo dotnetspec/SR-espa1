@@ -14,6 +14,19 @@ singleUser =
       , mobile = "10101000"
       , userjoinrankings = []
       }
+
+singleUserWithuserjoinrankings =
+     { datestamp = 1569839363942
+      , active = True
+      , username = "Test 10"
+      , ethaddress = "0xce987a7e670655f30e582fbde1573b5be8ffb9a8"
+      , description = "t10"
+      , email = "t10@t.com"
+      , mobile = "10101000"
+      , userjoinrankings = ["5e96c74b5fa47104cea0c7c6"
+          , "5e8e879d8e85c8437012e2a7"
+          , "5e96baff2940c704e1d86316"]
+      }
     
 
 singleUserList =
@@ -73,7 +86,9 @@ standardUserList =
       , description = "t1"
       , email = "t1@t.com"
       , mobile = "11111111"
-      , userjoinrankings = []
+      , userjoinrankings = 
+        ["5e96c74b5fa47104cea0c7c6"
+          , "5e8e879d8e85c8437012e2a7"]
       }
     , { datestamp = 1569839363942
       , active = True

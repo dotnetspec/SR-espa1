@@ -5,6 +5,8 @@ module Data.Rankings exposing (Rankings
     , extractRankingList
     , gotRankingFromRankingList
     , isUniqueRankingName
+    , isIdInSet
+    , isIdInList
     , gotRankingInfo
     , extractRankingsFromWebData
     , empty
@@ -24,6 +26,7 @@ import SR.Defaults
 import RemoteData
 import Http
 import Utils.MyUtils
+import Utils.Validation.Validate
 
 
 
@@ -51,6 +54,8 @@ isRankingNameValidated rankingInfo luranking =
     else
         False
 
+
+
 extractRankingList : List SR.Types.UserRanking -> List SR.Types.Ranking
 extractRankingList luserranking =
     List.map extractRanking luserranking
@@ -59,6 +64,25 @@ extractRankingList luserranking =
 extractRanking : SR.Types.UserRanking -> SR.Types.Ranking
 extractRanking uranking =
     uranking.rankingInfo
+
+
+isIdInList : List SR.Types.Ranking -> Internal.Types.RankingId -> Bool
+isIdInList lranking rnkId = 
+    isIdInSet (asRankings (EverySet.fromList lranking)) rnkId
+
+
+isIdInSet : Rankings -> Internal.Types.RankingId -> Bool 
+isIdInSet sRankings rnkId = 
+    let
+        --_ = Debug.log "rnkId" rnkId
+        _ = Debug.log "(asList sRankings)" (asList sRankings)
+        ranking = gotRankingFromRankingList (asList sRankings) rnkId
+        --_ = Debug.log "ranking isidinset" ranking
+    in
+    if Utils.Validation.Validate.isValidRankingId ranking.id then
+        True 
+    else 
+        False
 
 gotRankingFromRankingList : List SR.Types.Ranking -> Internal.Types.RankingId -> SR.Types.Ranking
 gotRankingFromRankingList rankingList (Internal.Types.RankingId rnkid) =

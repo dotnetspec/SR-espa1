@@ -18,6 +18,9 @@ import Testdata.GlobalTestData
 import Testdata.UserTestData
 import Testdata.UserRankingTestData
 import Data.Global
+import Data.Global
+import Data.Global
+import Data.Global
 
 
 rankingInfoFuzzer : Fuzzer SR.Types.Ranking
@@ -94,7 +97,7 @@ createAllUserAsOwnerGlobalRankingListTest =
                     , description = "t10"
                     , email = "t10@t.com"
                     , mobile = "10101000"
-                    , userjoinrankings = []
+                    , userjoinrankings = ["5e96c74b5fa47104cea0c7c6","5e8e879d8e85c8437012e2a7", "5e96baff2940c704e1d86316"]
                     }
 
                 output =
@@ -112,5 +115,37 @@ createAllUserAsOwnerGlobalRankingListTest =
                 -- changed from ListOps
                 Data.Global.gotOwned (Data.Global.asGlobal (EverySet.fromList Testdata.UserRankingTestData.userRankingList)) Testdata.UserTestData.singleUser
                     |> Expect.equal (Data.Global.asGlobal (EverySet.fromList output))
+        ]
+
+
+
+
+removedDeletedRankingsFromUserJoinedTest : Test
+removedDeletedRankingsFromUserJoinedTest =
+    let
+                output =
+                            { datestamp = 1569839363942
+                            , active = True
+                            , username = "Test 10"
+                            , ethaddress = "0xce987a7e670655f30e582fbde1573b5be8ffb9a8"
+                            , description = "t10"
+                            , email = "t10@t.com"
+                            , mobile = "10101000"
+                            , userjoinrankings = ["5e96baff2940c704e1d86316"]
+                            }
+    in
+    --only <|
+    --skip <|
+    describe "remove userjoinedrankings from user that have been deleted by the owner"
+        [ test "removedDeletedRankingsFromUserJoined" <|
+            \_ ->
+                -- we're going to need a rankingid in the input that doesn't appear in the output because it's not in the userRankingList
+                -- Data.Global.gotOwned (Data.Global.asGlobal (EverySet.fromList Testdata.UserRankingTestData.userRankingList)) Testdata.UserTestData.singleUser
+                --     |> Expect.equal (Data.Global.asGlobal (EverySet.fromList output))
+                Data.Global.removedDeletedRankingsFromUserJoined 
+                    Testdata.UserTestData.singleUserWithuserjoinrankings 
+                    (Data.Global.asGlobal (EverySet.fromList Testdata.UserRankingTestData.userRankingList))
+
+                |> Expect.equal output 
         ]
 

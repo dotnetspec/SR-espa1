@@ -139,8 +139,13 @@ addedNewJoinedRankingId rankingId user lUser =
             else 
                 userJoinRankings
 
+        -- if, somehow, an existing id was added we can again filter out here:
+        validatedUserJoinRankings =
+            List.Unique.filterDuplicates (List.filterMap removedInvalidRankingId validatedRankingAdded)
+
         newUser =
-            { user | userjoinrankings =  validatedRankingAdded}
+            --{ user | userjoinrankings =  validatedRankingAdded}
+            { user | userjoinrankings =  validatedUserJoinRankings}
 
         newUserList =
             newUser :: lUser
@@ -175,7 +180,7 @@ removedRankindIdFromUser  rnkId user =
         filteredOutRanking =
             List.filterMap (filterRankingIds rnkId) userJoinRankings
 
-        _ = Debug.log "filteredOutRanking" filteredOutRanking
+        --_ = Debug.log "filteredOutRanking" filteredOutRanking
 
         newUser = {user | userjoinrankings = filteredOutRanking}
     in
