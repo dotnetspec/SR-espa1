@@ -351,9 +351,9 @@ update msg model =
 
 
         (GlobalReceived rmtrnkingdata, AppOps walletState dataState appInfo uiState subState  txRec ) ->
-            --let
-                --_ = Debug.log "glob rec 1" dataState
-            --in
+            let
+                _ = Debug.log "glob rec 1" uiState
+            in
                     case dataState of
                         StateFetched sUsers dKind -> 
                             case dKind of
@@ -692,12 +692,12 @@ update msg model =
 
                                 _ -> 
                                     let 
-                                        _ = Debug.log "4 - dataState" dataState
+                                        _ = Debug.log "4 - dataState in Undecided" dataState
                                     in
                                         (model, Cmd.none)
                         _ -> 
                             let 
-                                _ = Debug.log "4 - dataState" dataState
+                                _ = Debug.log "5 - dataState in undecided" dataState
                             in
                                 (model, Cmd.none)
 
@@ -1131,11 +1131,20 @@ update msg model =
                                             _ = Debug.log "dataState should be Global" dataState
                                         in
                                             (model, Cmd.none)
-                            _ -> 
-                                let 
-                                    _ = Debug.log "4 - dataState" dataState
-                                in
-                                    (model, Cmd.none)
+
+                            StateUpdated sUsers dKind ->
+                                case dKind of 
+                                    Global sGlobal rnkId user -> 
+                                        let 
+                                            _ = Debug.log "6 - dataState SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId" dataState
+                                        in
+                                            (AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription emptyTxRecord, Cmd.none)
+                                    _ -> 
+                                        (model, Cmd.none)
+
+                            AllEmpty ->
+                                (model, Cmd.none)
+                
                 _ -> 
                     (model, Cmd.none)
 
@@ -1379,6 +1388,7 @@ update msg model =
                 _ -> 
                     (model, Cmd.none)
 
+        -- TxSentryMsg updates when user clicks 'Confirm' in the wallet
         (TxSentryMsg subMsg,  AppOps walletState dataState appInfo uiState subState  txRec ) ->
             let
                 _ =
@@ -1519,92 +1529,6 @@ handleWalletWaitingForUserInput msg walletState dataState appInfo txRec =
             ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.Subscribe txRec
             , Cmd.none
             )
-
-        -- TxSentryMsg subMsg ->
-        --     let
-        --         _ =
-        --             Debug.log "handleTxSubMsg subMsg" <| handleTxSubMsg subMsg
-            
-            
-        --         ( subModel, subCmd ) =
-        --             Eth.Sentry.Tx.update subMsg txRec.txSentry
-        --     in
-        --     if handleTxSubMsg subMsg then
-        --         cas    let 
-        --              e appInfo.appState of
-        --             SR.Types.AppStateCreateNewLadder -> 
-        --                    _ =
-        --                         Debug.log "in CreateNewLadder" "yes"
-        --                 in
-        --                 ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel }
-        --                 , Cmd.batch [subCmd, addedUserAsFirstPlayerInNewList appInfo.user] )
-                    
-        --             SR.Types.AppStateCreateNewUser -> 
-        --                 let 
-        --                     _ =
-        --                         Debug.log "in CreateNewUser" "yes"
-
-        --                     userSet = case dataState of 
-        --                                 StateFetched users dKind -> 
-        --                                     users 
-        --                                 StateUpdated users user ->
-        --                                     users 
-        --                                 _ -> 
-        --                                     Data.Users.emptyUsers
-        --                 in
-        --                 ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel }
-        --                 , Cmd.batch [subCmd,  createNewUser ( Data.Users.asList userSet) appInfo.user] )
-
-        --             SR.Types.AppStateEnterWon -> 
-        --                 let 
-        --                     _ =
-        --                         Debug.log "in AppStateEnterWon" "yes"
-        --                 in
-        --                 case dataState of 
-        --                     StateFetched sUsers dKind -> 
-        --                         let 
-        --                             newDataState = StateUpdated sUsers dKind
-        --                             _ =
-        --                                 Debug.log "handleTxSubMsg subMsg  dataState" newDataState
-        --                         in 
-                        
-        --                             (AppOps walletState newDataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Won) )
-                            
-        --                     _ ->
-        --                         ( AppOps walletState dataState appInfo SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription txRec, Cmd.none )
-                          
-
-        --             SR.Types.AppStateEnterLost ->
-        --                 case dataState of
-        --                     StateFetched sUsers dKind -> 
-        --                         let
-        --                             _ =
-        --                                 Debug.log "in AppStateEnterLost" "yes"
-
-        --                             newDataState = StateUpdated sUsers dKind
-        --                         in
-        --                             (AppOps SR.Types.WalletOperational newDataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Lost))
-        --                     _ ->
-        --                         ( AppOps walletState dataState appInfo SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription txRec, Cmd.none )
-                    
-        --             SR.Types.AppStateEnterUndecided -> 
-        --                 case dataState of
-        --                     StateFetched sUsers dKind -> 
-        --                         let
-        --                             _ =
-        --                                Debug.log "in AppStateEnterUndecided" "yes"
-
-        --                             newDataState = StateUpdated sUsers dKind
-        --                         in
-        --                             ( AppOps SR.Types.WalletOperational newDataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Undecided))
-        --                     _ ->
-        --                         ( AppOps walletState dataState appInfo SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription txRec, Cmd.none )
-
-        --             _ -> 
-        --                ( AppOps walletState dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel }, subCmd ) 
-
-        --     else
-        --         ( AppOps walletState dataState appInfo SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription txRec, Cmd.none )
 
         WatchTxHash (Ok txHash) ->
             let
@@ -3245,26 +3169,27 @@ globalResponsiveview walletState sGlobal user updatedStr =
                 "New User"
     in
     case walletState of 
-        -- SR.Types.WalletStopSub ->
-        --     Framework.responsiveLayout
-        --         []
-        --         <|
-        --             Element.column
-        --                 Framework.container
-        --                 [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-        --                     Element.text ("SportRank - " ++ userName)
-        --                 --, displayUpdateProfileBtnIfExistingUser user.username
-        --                 --, Element.text ("\n" ++ updatedStr)
-        --                 --, displayCreateNewLadderBtnIfExistingUser user.username (Data.Global.asList (Data.Global.gotOwned sGlobal user)) ClickedCreateNewLadder
-        --                 , displayEnableEthereumBtn
-        --                 , Element.text ("\n" ++ updatedStr)
-        --                 , displayRegisterBtnIfNewUser
-        --                     user.username
-        --                     ClickedRegister
-        --                 , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
-        --                 , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
-        --                 , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
-        --                 ]
+        SR.Types.WalletWaitingForTransactionReceipt ->
+            Framework.responsiveLayout
+                []
+                <|
+                    Element.column
+                        Framework.container
+                        [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+                            Element.text ("SportRank - " ++ userName)
+                        , Element.text ("\n Waiting for Transaction Receipt")
+                        ]
+
+        SR.Types.WalletOperational ->
+            Framework.responsiveLayout
+                []
+                <|
+                    Element.column
+                        Framework.container
+                        [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+                            Element.text ("SportRank - " ++ userName)
+                        , Element.text ("\n Your wallet is performing a transaction")
+                        ]
 
         SR.Types.WalletStateLocked ->
             Framework.responsiveLayout
