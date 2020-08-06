@@ -15,6 +15,7 @@ module Data.Rankings exposing (Rankings
     , remove
     , removedById
     , handleServerDeletedRanking
+    , removedDeletedRankingsFromUserJoined
     , asList, asRankings, getRanking, gotRanking, rankingsetLength
     , isRankingNameValidated)
 
@@ -83,6 +84,15 @@ isIdInSet sRankings rnkId =
         True 
     else 
         False
+
+removedDeletedRankingsFromUserJoined : SR.Types.User -> Rankings -> SR.Types.User 
+removedDeletedRankingsFromUserJoined user sRankings = 
+    let
+        lwithDeletedRankingIdsRemoved = List.filter (isIdInSet sRankings) (Utils.MyUtils.stringListToRankingIdList user.userjoinrankings)
+        newUser = {user | userjoinrankings = Utils.MyUtils.rankingIdListToStringList lwithDeletedRankingIdsRemoved}
+
+    in
+        newUser
 
 gotRankingFromRankingList : List SR.Types.Ranking -> Internal.Types.RankingId -> SR.Types.Ranking
 gotRankingFromRankingList rankingList (Internal.Types.RankingId rnkid) =

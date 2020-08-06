@@ -164,7 +164,7 @@ type Msg
     | ClickedChangedUIStateToEnterResult SR.Types.UserPlayer
     | ClickedDeleteRanking String
     | ClickedDeleteRankingConfirmed
-    | ClickedRemoveFromUserMemberRankings Internal.Types.RankingId
+    | ClickedRemoveFromUserMemberRankings
     | ClickedEnableEthereum
     | ResetToShowGlobal
     | ResetToShowSelected
@@ -268,12 +268,27 @@ update msg model =
         (ClickedEnableEthereum, AppOps walletState dataState appInfo uiState subState  txRec ) ->
             (AppOps walletState dataState appInfo uiState SR.Types.StopSubscription txRec, Ports.log "eth_requestAccounts")
 
-        (ClickedRemoveFromUserMemberRankings rnkId, AppOps walletState dataState appInfo uiState subState  txRec ) ->
-            let 
-                        _ = Debug.log "ClickedRemoveFromUserMemberRankings: " rnkId
-                        --newgotDeletedListings = 
-            in
-            (AppOps walletState dataState appInfo uiState SR.Types.StopSubscription txRec, Cmd.none)
+        (ClickedRemoveFromUserMemberRankings, AppOps walletState dataState appInfo uiState subState  txRec ) ->
+            case dataState of
+                StateFetched sUsers dKind ->
+                    case dKind of
+                        Selected sSelected rnkId user status rankings ->
+                            let 
+                                _ = Debug.log "User: " user
+                                newUser = Data.Rankings.removedDeletedRankingsFromUserJoined user rankings
+                                _ = Debug.log "newUser: " newUser
+                                updatedsUsers = Data.Users.updatedUser sUsers newUser
+                                -- userInAppInfo = { appInfo | user = newUser }
+                                -- newDataKind = Users newUser
+                                -- newDataState = StateFetched users newDataKind
+                            in 
+                                (AppOps walletState dataState appInfo uiState SR.Types.StopSubscription txRec, httpUpdateUsers updatedsUsers)
+                        
+                        _ ->
+                            (model, Cmd.none)
+
+                _ ->
+                    (model, Cmd.none)
 
 
         (ClickedConfirmedRegisterNewUser, AppOps walletState dataState appInfo uiState subState  txRec ) ->
@@ -410,6 +425,9 @@ update msg model =
                                 (model, Cmd.none)
                     
                     (sPlayers, "404") ->
+                        let 
+                            _ = Debug.log " 404" "here"
+                        in 
                         case dataState of
                             StateFetched sUsers dKind -> 
                                 case dKind of 
@@ -421,6 +439,9 @@ update msg model =
                                 (model, Cmd.none)
 
                     (sPlayers, "422") ->
+                        let 
+                            _ = Debug.log " 422" "here"
+                        in 
                         case dataState of
                             StateFetched sUsers dKind -> 
                                 case dKind of 
@@ -1905,7 +1926,7 @@ view model =
                                             _ = Debug.log "in Selected ready for view1" (Data.Selected.asList sSelected)
                                         in
                                             --selectedUserIsOwnerView dataState appInfo
-                                            continueWithRemoveDeletedRankingView rnkId <| """Unfortunately this 
+                                            continueWithRemoveDeletedRankingView <| """Unfortunately this 
 ladder has 
 been DELETED by the owner
 and will be removed from
@@ -3544,8 +3565,8 @@ continueView continueStr =
                     ]
             ]
 
-continueWithRemoveDeletedRankingView : Internal.Types.RankingId -> String -> Html Msg
-continueWithRemoveDeletedRankingView rnkId continueStr =
+continueWithRemoveDeletedRankingView : String -> Html Msg
+continueWithRemoveDeletedRankingView continueStr =
     Framework.responsiveLayout [] <|
         Element.column
             Framework.container
@@ -3554,7 +3575,7 @@ continueWithRemoveDeletedRankingView rnkId continueStr =
             ,  Element.column (Card.simple ++ Grid.simple) <|
                     [ Element.column Grid.simple <|
                         [ Input.button (Button.simple ++ Color.primary) <|
-                            { onPress = Just <| ClickedRemoveFromUserMemberRankings rnkId
+                            { onPress = Just <| ClickedRemoveFromUserMemberRankings
                             , label = Element.text "Remove Listing(s)"
                             }
                         ]

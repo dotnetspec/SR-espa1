@@ -139,13 +139,10 @@ removedDeletedRankingsFromUserJoinedTest =
     describe "remove userjoinedrankings from user that have been deleted by the owner"
         [ test "removedDeletedRankingsFromUserJoined" <|
             \_ ->
-                -- we're going to need a rankingid in the input that doesn't appear in the output because it's not in the userRankingList
-                -- Data.Global.gotOwned (Data.Global.asGlobal (EverySet.fromList Testdata.UserRankingTestData.userRankingList)) Testdata.UserTestData.singleUser
-                --     |> Expect.equal (Data.Global.asGlobal (EverySet.fromList output))
+                -- need a rankingid in the input that doesn't appear in the output because it's not in the userRankingList
                 Data.Global.removedDeletedRankingsFromUserJoined 
                     Testdata.UserTestData.singleUserWithuserjoinrankings 
                     (Data.Global.asGlobal (EverySet.fromList Testdata.UserRankingTestData.userRankingList))
-
                 |> Expect.equal output 
         ]
 

@@ -219,6 +219,8 @@ gotUserRanking lownedrankings user =
         )
         lownedrankings
 
+--nb. the app is currently using the Data.Rankings version of removedDeletedRankingsFromUserJoined
+-- but the test was created using this version (a mistake, but little difference)
 removedDeletedRankingsFromUserJoined : SR.Types.User -> Global -> SR.Types.User 
 removedDeletedRankingsFromUserJoined user sGlobal = 
     let
