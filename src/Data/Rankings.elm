@@ -75,10 +75,7 @@ isIdInList lranking rnkId =
 isIdInSet : Rankings -> Internal.Types.RankingId -> Bool 
 isIdInSet sRankings rnkId = 
     let
-        --_ = Debug.log "rnkId" rnkId
-        _ = Debug.log "(asList sRankings)" (asList sRankings)
         ranking = gotRankingFromRankingList (asList sRankings) rnkId
-        --_ = Debug.log "ranking isidinset" ranking
     in
     if Utils.Validation.Validate.isValidRankingId ranking.id then
         True 

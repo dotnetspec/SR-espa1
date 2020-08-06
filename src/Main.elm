@@ -1152,7 +1152,7 @@ update msg model =
 
         (ClickedConfirmCreateNewLadder,  AppOps walletState dataState appInfo uiState subState  txRec ) ->
             case walletState of 
-                SR.Types.WalletOperational ->
+                SR.Types.WalletOpened ->
                     case dataState of 
                         StateFetched sUsers dKind ->
                                 case dKind of 
@@ -1182,9 +1182,10 @@ update msg model =
                                                 newAppInfo =
                                                         { appInfo | appState = SR.Types.AppStateCreateNewLadder }
                                                 
+                                                _ = Debug.log "global with useradd" user.ethaddress
                                                 
                                             in
-                                            ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription { txRec | txSentry = newSentry }
+                                            ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIRenderAllRankings SR.Types.Subscribe { txRec | txSentry = newSentry }
                                             --Cmd.batch [ sentryCmd, addedUserAsFirstPlayerInNewList appInfo.user ] )
                                             ,sentryCmd)
 
@@ -1378,62 +1379,7 @@ update msg model =
                 _ -> 
                     (model, Cmd.none)
 
-                
-        (NoOp, _) ->
-            let
-                _ =
-                    Debug.log "handledWalletStateOpened no op" msg
-            in
-            ( model, Cmd.none )
-
-
-        (_, _) ->
-            let
-                _ =
-                    Debug.log "handledWalletStateOpened1" msg
-            in
-            ( Failure "handledWalletStateOpened2"
-            , Cmd.none
-            )
-        
-       
-
-
-updateAppInfoOnRankingSelected : SR.Types.AppInfo -> Internal.Types.RankingId -> String -> String -> SR.Types.AppInfo
-updateAppInfoOnRankingSelected appInfo rnkid rnkownerstr rnknamestr =
-    let
-        newSelectedRanking =
-            appInfo.selectedRanking
-
-        newRnkInfo =
-            { newSelectedRanking | id = Utils.MyUtils.stringFromRankingId rnkid, rankingowneraddr = rnkownerstr, rankingname = rnknamestr }
-
-        newAppInfo =
-            { appInfo | selectedRanking = newRnkInfo }
-    in
-    newAppInfo
-
-
-
-
-
-handleWalletWaitingForUserInput : Msg -> SR.Types.WalletState -> DataState -> SR.Types.AppInfo -> TxRecord -> ( Model, Cmd Msg )
-handleWalletWaitingForUserInput msg walletState dataState appInfo txRec =
-    let
-        _ =
-            Debug.log "in handleWalletWaitingForUserInput" msg
-    in
-    case msg of
-        WalletStatus walletSentry_ ->
-            let
-                _ =
-                    Debug.log "ws in WaitingForTransactionReceipt" walletSentry_
-            in
-            ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription txRec
-            , Cmd.none
-            )
-
-        TxSentryMsg subMsg ->
+        (TxSentryMsg subMsg,  AppOps walletState dataState appInfo uiState subState  txRec ) ->
             let
                 _ =
                     Debug.log "handleTxSubMsg subMsg" <| handleTxSubMsg subMsg
@@ -1445,8 +1391,8 @@ handleWalletWaitingForUserInput msg walletState dataState appInfo txRec =
             if handleTxSubMsg subMsg then
                 case appInfo.appState of
                     SR.Types.AppStateCreateNewLadder -> 
-                        let 
-                            _ =
+                        let
+                           _ =
                                 Debug.log "in CreateNewLadder" "yes"
                         in
                         ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel }
@@ -1518,6 +1464,147 @@ handleWalletWaitingForUserInput msg walletState dataState appInfo txRec =
 
             else
                 ( AppOps walletState dataState appInfo SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription txRec, Cmd.none )
+
+                
+        (NoOp, _) ->
+            let
+                _ =
+                    Debug.log "handledWalletStateOpened no op" msg
+            in
+            ( model, Cmd.none )
+
+
+        (_, _) ->
+            let
+                _ =
+                    Debug.log "handledWalletStateOpened1" msg
+            in
+            ( Failure "handledWalletStateOpened2"
+            , Cmd.none
+            )
+        
+       
+
+
+updateAppInfoOnRankingSelected : SR.Types.AppInfo -> Internal.Types.RankingId -> String -> String -> SR.Types.AppInfo
+updateAppInfoOnRankingSelected appInfo rnkid rnkownerstr rnknamestr =
+    let
+        newSelectedRanking =
+            appInfo.selectedRanking
+
+        newRnkInfo =
+            { newSelectedRanking | id = Utils.MyUtils.stringFromRankingId rnkid, rankingowneraddr = rnkownerstr, rankingname = rnknamestr }
+
+        newAppInfo =
+            { appInfo | selectedRanking = newRnkInfo }
+    in
+    newAppInfo
+
+
+
+
+
+handleWalletWaitingForUserInput : Msg -> SR.Types.WalletState -> DataState -> SR.Types.AppInfo -> TxRecord -> ( Model, Cmd Msg )
+handleWalletWaitingForUserInput msg walletState dataState appInfo txRec =
+    let
+        _ =
+            Debug.log "in handleWalletWaitingForUserInput" msg
+    in
+    case msg of
+        WalletStatus walletSentry_ ->
+            let
+                _ =
+                    Debug.log "ws in WaitingForTransactionReceipt" walletSentry_
+            in
+            ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.Subscribe txRec
+            , Cmd.none
+            )
+
+        -- TxSentryMsg subMsg ->
+        --     let
+        --         _ =
+        --             Debug.log "handleTxSubMsg subMsg" <| handleTxSubMsg subMsg
+            
+            
+        --         ( subModel, subCmd ) =
+        --             Eth.Sentry.Tx.update subMsg txRec.txSentry
+        --     in
+        --     if handleTxSubMsg subMsg then
+        --         cas    let 
+        --              e appInfo.appState of
+        --             SR.Types.AppStateCreateNewLadder -> 
+        --                    _ =
+        --                         Debug.log "in CreateNewLadder" "yes"
+        --                 in
+        --                 ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel }
+        --                 , Cmd.batch [subCmd, addedUserAsFirstPlayerInNewList appInfo.user] )
+                    
+        --             SR.Types.AppStateCreateNewUser -> 
+        --                 let 
+        --                     _ =
+        --                         Debug.log "in CreateNewUser" "yes"
+
+        --                     userSet = case dataState of 
+        --                                 StateFetched users dKind -> 
+        --                                     users 
+        --                                 StateUpdated users user ->
+        --                                     users 
+        --                                 _ -> 
+        --                                     Data.Users.emptyUsers
+        --                 in
+        --                 ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel }
+        --                 , Cmd.batch [subCmd,  createNewUser ( Data.Users.asList userSet) appInfo.user] )
+
+        --             SR.Types.AppStateEnterWon -> 
+        --                 let 
+        --                     _ =
+        --                         Debug.log "in AppStateEnterWon" "yes"
+        --                 in
+        --                 case dataState of 
+        --                     StateFetched sUsers dKind -> 
+        --                         let 
+        --                             newDataState = StateUpdated sUsers dKind
+        --                             _ =
+        --                                 Debug.log "handleTxSubMsg subMsg  dataState" newDataState
+        --                         in 
+                        
+        --                             (AppOps walletState newDataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Won) )
+                            
+        --                     _ ->
+        --                         ( AppOps walletState dataState appInfo SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription txRec, Cmd.none )
+                          
+
+        --             SR.Types.AppStateEnterLost ->
+        --                 case dataState of
+        --                     StateFetched sUsers dKind -> 
+        --                         let
+        --                             _ =
+        --                                 Debug.log "in AppStateEnterLost" "yes"
+
+        --                             newDataState = StateUpdated sUsers dKind
+        --                         in
+        --                             (AppOps SR.Types.WalletOperational newDataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Lost))
+        --                     _ ->
+        --                         ( AppOps walletState dataState appInfo SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription txRec, Cmd.none )
+                    
+        --             SR.Types.AppStateEnterUndecided -> 
+        --                 case dataState of
+        --                     StateFetched sUsers dKind -> 
+        --                         let
+        --                             _ =
+        --                                Debug.log "in AppStateEnterUndecided" "yes"
+
+        --                             newDataState = StateUpdated sUsers dKind
+        --                         in
+        --                             ( AppOps SR.Types.WalletOperational newDataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel } |> update (ProcessResult SR.Types.Undecided))
+        --                     _ ->
+        --                         ( AppOps walletState dataState appInfo SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription txRec, Cmd.none )
+
+        --             _ -> 
+        --                ( AppOps walletState dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel }, subCmd ) 
+
+        --     else
+        --         ( AppOps walletState dataState appInfo SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription txRec, Cmd.none )
 
         WatchTxHash (Ok txHash) ->
             let
@@ -3062,8 +3149,7 @@ nameValidationErr appInfo sUsers =
             (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
                 ++ [ Element.moveLeft 0.0 ]
             )
-            (Element.text """Username must be unique
-and between 4-8 characters""")
+            (Element.text """Must be unique (4-8 chars)""")
 
 
 ladderNameValidationErr : SR.Types.AppInfo -> DataState -> Element Msg
@@ -3080,8 +3166,7 @@ ladderNameValidationErr appInfo dataState =
                             (List.append [ Element.htmlAttribute (Html.Attributes.id "laddernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
                                 ++ [ Element.moveLeft 0.0 ]
                             )
-                            (Element.text """Ladder name must be unique
-                and between 4-8 characters""")
+                            (Element.text """Must be unique (4-8 chars)""")
 
                 _ -> 
                     let 
@@ -3445,7 +3530,7 @@ inputNewLadderview model =
             Framework.responsiveLayout [] <|
                 Element.column
                     Framework.container
-                    [ Element.el Heading.h4 <| Element.text "4Create New Ladder Ranking"
+                    [ Element.el Heading.h4 <| Element.text "Create New Ladder Ranking"
                     , inputNewLadder appInfo dataState
                     , newrankingconfirmbutton appInfo dataState
                     , SR.Elements.footer
