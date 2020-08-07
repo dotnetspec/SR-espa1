@@ -462,32 +462,50 @@ update msg model =
             let
                 _ = Debug.log "selected ranking is : " rnkidstr
             in
-                            case dataState of 
-                                StateFetched sUsers dKind ->
-                                        case dKind of 
-                                            Global sGlobal rnkId user ->
-                                                let                                                     
-                                                    newAppInfo =
-                                                        updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
+            case dataState of 
+                StateFetched sUsers dKind ->
+                        case dKind of 
+                            Global sGlobal rnkId user ->
+                                let                                                     
+                                    newAppInfo =
+                                        updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
+
+                                    newDataKind = Selected Data.Selected.emptySelected rnkidstr user SR.Types.UserIsOwner (Data.Global.asRankings sGlobal)
+                                    newDataState = StateFetched sUsers newDataKind
+                            
+                                in
+                                    ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, 
+                                    fetchedSingleRanking rnkidstr )
+
+                            _ ->
+                                (model, Cmd.none)
+
+                -- you may have just done an update, we can re-set to StateFetched here         
+                StateUpdated sUsers dKind ->
+                        case dKind of 
+                            Global sGlobal rnkId user ->
+                                let                                                     
+                                    newAppInfo =
+                                        updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
 
 
-                                                -- re-factor from appInfo to AppState over time
-                                                    initAppState = 
-                                                        Data.AppState.updateAppState appInfo.user appInfo.player 
-                                                        appInfo.challenger (rnkidstr)
+                                -- re-factor from appInfo to AppState over time
+                                    initAppState = 
+                                        Data.AppState.updateAppState appInfo.user appInfo.player 
+                                        appInfo.challenger (rnkidstr)
 
 
-                                                    newDataKind = Selected Data.Selected.emptySelected rnkidstr user SR.Types.UserIsOwner (Data.Global.asRankings sGlobal)
-                                                    newDataState = StateFetched sUsers newDataKind
-                                            
-                                                in
-                                                    ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, 
-                                                    fetchedSingleRanking rnkidstr )
+                                    newDataKind = Selected Data.Selected.emptySelected rnkidstr user SR.Types.UserIsOwner (Data.Global.asRankings sGlobal)
+                                    newDataState = StateFetched sUsers newDataKind
+                            
+                                in
+                                    ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, 
+                                    fetchedSingleRanking rnkidstr )
 
-                                            _ ->
-                                                (model, Cmd.none)
-                                _ ->
-                                    (model, Cmd.none)
+                            _ ->
+                                (model, Cmd.none)
+                AllEmpty ->
+                    (model, Cmd.none)
 
 
         (ClickedSelectedMemberRanking rnkidstr rnkownerstr rnknamestr, AppOps walletState dataState appInfo uiState subState  txRec ) ->
@@ -714,6 +732,8 @@ update msg model =
 
                 clearedNameFieldAppInfo =
                     { appInfo | selectedRanking = clearedNameFieldInSelectedRanking }
+
+                _ = Debug.log "ClickedCreateNewLadder" dataState
             in
             ( AppOps walletState dataState clearedNameFieldAppInfo SR.Types.UICreateNewLadder SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
@@ -3199,9 +3219,6 @@ globalResponsiveview walletState sGlobal user updatedStr =
                         Framework.container
                         [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
                             Element.text ("SportRank - " ++ userName)
-                        --, displayUpdateProfileBtnIfExistingUser user.username
-                        --, Element.text ("\n" ++ updatedStr)
-                        --, displayCreateNewLadderBtnIfExistingUser user.username (Data.Global.asList (Data.Global.gotOwned sGlobal user)) ClickedCreateNewLadder
                         , displayEnableEthereumBtn
                         , Element.text ("\n" ++ updatedStr)
                         , displayRegisterBtnIfNewUser
