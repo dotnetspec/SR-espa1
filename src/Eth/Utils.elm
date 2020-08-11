@@ -1,5 +1,5 @@
 module Eth.Utils exposing
-    ( toAddress, addressToString, addressToChecksumString, isAddress, isChecksumAddress
+    ( toAddress, maybeAddressToString, addressToChecksumString, isAddress, isChecksumAddress
     , toHex, hexToString, isHex, hexToAscii, hexToUtf8, hexAppend, hexConcat
     , toTxHash, txHashToString, isTxHash
     , toBlockHash, blockHashToString, isBlockHash
@@ -14,7 +14,7 @@ module Eth.Utils exposing
 
 # Address
 
-@docs toAddress, addressToString, addressToChecksumString, isAddress, isChecksumAddress
+@docs toAddress, maybeAddressToString, addressToChecksumString, isAddress, isChecksumAddress
 
 
 # Hex
@@ -129,8 +129,8 @@ toAddress str =
 
 {-| Convert an Address to a String
 -}
-addressToString : Address -> String
-addressToString (Internal.Address address) =
+maybeAddressToString : Address -> String
+maybeAddressToString (Internal.Address address) =
     add0x address
 
 

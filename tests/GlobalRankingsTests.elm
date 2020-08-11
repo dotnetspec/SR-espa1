@@ -145,4 +145,3 @@ removedDeletedRankingsFromUserJoinedTest =
                     (Data.Global.asGlobal (EverySet.fromList Testdata.UserRankingTestData.userRankingList))
                 |> Expect.equal output 
         ]
-

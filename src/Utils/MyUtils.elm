@@ -1,6 +1,6 @@
 module Utils.MyUtils exposing
     ( addressFromStringResult
-    , addressToString
+    , maybeAddressToString
     , convertListOfMaybeToList
     , convertMaybePlayerToPlayer
     , createdMaybePlayerFromPlayer
@@ -8,6 +8,7 @@ module Utils.MyUtils exposing
     , extractUserRankinigFromMaybe
     , gotHttpErr
     , refEachPlayer
+    , refEachUser
     , splitPlayerFieldsToCreateMaybePlayer
     , stringFromBool
     , stringFromMaybeString
@@ -79,6 +80,10 @@ stringFromRankingId (Internal.Types.RankingId rnkId) =
 refEachPlayer : SR.Types.UserPlayer -> SR.Types.Player
 refEachPlayer uplayer =
     uplayer.player
+
+refEachUser : SR.Types.UserPlayer -> SR.Types.User
+refEachUser uplayer =
+    uplayer.user
 
 
 addressFromStringResult : String -> Internal.Types.Address
@@ -176,14 +181,14 @@ rankFromMaybeRank int =
 -- this is for Maybe Address - potential re-factor
 
 
-addressToString : Maybe Eth.Types.Address -> String
-addressToString addr =
+maybeAddressToString : Maybe Eth.Types.Address -> String
+maybeAddressToString addr =
     case addr of
         Nothing ->
             "No address"
 
         Just a ->
-            Eth.Utils.addressToString a
+            Eth.Utils.maybeAddressToString a
 
 
 

@@ -25,6 +25,7 @@ module Data.Selected exposing (Selected
     , addUserPlayer
     , removeUserPlayer
     , asList
+    , asUsers
     , changedRank
     , asSelected
     , isCurrentUserPlayerLowerRanked
@@ -46,6 +47,7 @@ import RemoteData
 import Data.AppState
 import Data.Players
 import Json.Encode
+import EverySet
 --import Data.Rankings
 
 
@@ -129,8 +131,8 @@ gotUserAsPlayer sSelected uaddr =
             gotUserPlayerFromPlayerListStrAddress (EverySet.toList esUserPlayer) uaddr 
 
 addUserPlayer : SR.Types.UserPlayer -> Selected -> Selected
-addUserPlayer uplayer srank = 
-    case srank of 
+addUserPlayer uplayer sSelected = 
+    case sSelected of 
         Selected rankedUserPlayers susers rnkId ->
                 rnkId 
                 |> asSelected (EverySet.insert (addNewUserPlayerJoinRanking uplayer rnkId) rankedUserPlayers)  susers 
@@ -502,6 +504,11 @@ doesPlayerAddrNOTMatchAddr addr player =
 convertUserPlayersToPlayers : List SR.Types.UserPlayer -> List SR.Types.Player
 convertUserPlayersToPlayers luplayers =
     List.map Utils.MyUtils.refEachPlayer luplayers
+
+asUsers : Selected -> Data.Users.Users 
+asUsers sSelected =
+    (EverySet.fromList (List.map Utils.MyUtils.refEachUser (asList sSelected)))
+    |> Data.Users.asUsers
 
 
 

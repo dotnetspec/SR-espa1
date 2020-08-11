@@ -9,6 +9,7 @@ module SR.Types exposing
     , SubState(..)
     , DeleteBinResponse
     , UpdateGlobalBinResponse
+    , AccountState(..)
     )
 
 {-| Types
@@ -94,11 +95,11 @@ type WalletState
     WalletStateMissing
     | WalletStateLocked
     | WalletStateAwaitOpening
-    | WalletOpenedWithoutUserCheck Eth.Types.Address
     | WalletWaitingForTransactionReceipt
     | WalletOpened
     | WalletOperational
     | WalletStopSub
+    | WalletOpenedNoUserAccount
 
 
 type LadderState
@@ -174,6 +175,10 @@ type AppState
     | AppStateEnterWon 
     | AppStateEnterLost 
     | AppStateEnterUndecided
+
+type AccountState 
+    = AccountUnRegistered 
+    | AccountRegistered
 
 
 type alias UserPlayer =

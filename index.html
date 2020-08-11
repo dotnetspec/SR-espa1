@@ -8954,11 +8954,11 @@ var $author$project$Main$createNewUser = F2(
 var $author$project$Eth$Utils$add0x = function (str) {
 	return (A2($elm$core$String$startsWith, '0x', str) || A2($elm$core$String$startsWith, '0X', str)) ? str : ('0x' + str);
 };
-var $author$project$Eth$Utils$addressToString = function (_v0) {
+var $author$project$Eth$Utils$maybeAddressToString = function (_v0) {
 	var address = _v0.a;
 	return $author$project$Eth$Utils$add0x(address);
 };
-var $author$project$Eth$Encode$address = A2($elm$core$Basics$composeR, $author$project$Eth$Utils$addressToString, $elm$json$Json$Encode$string);
+var $author$project$Eth$Encode$address = A2($elm$core$Basics$composeR, $author$project$Eth$Utils$maybeAddressToString, $elm$json$Json$Encode$string);
 var $cmditch$elm_bigint$BigInt$Magnitude = function (a) {
 	return {$: 'Magnitude', a: a};
 };
@@ -10297,7 +10297,7 @@ var $author$project$Main$gotWalletAddrApplyToUser = F2(
 			var newUserWithAddr = _Utils_update(
 				newAppInfoUser,
 				{
-					ethaddress: $author$project$Eth$Utils$addressToString(uaddr)
+					ethaddress: $author$project$Eth$Utils$maybeAddressToString(uaddr)
 				});
 			var newAppInfo = _Utils_update(
 				appInfo,

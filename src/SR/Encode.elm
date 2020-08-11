@@ -26,12 +26,6 @@ import SR.Types
 -}
 
 
-
--- address : Address -> Value
--- address =
---     addressToString >> string
-
-
 encodeUserList : List SR.Types.User -> Encode.Value
 encodeUserList lusers =
     let
