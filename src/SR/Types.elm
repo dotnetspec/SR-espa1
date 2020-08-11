@@ -145,7 +145,6 @@ type SelectedStatus
  = UserIsOwner
  | UserIsMember
  | UserIsNeitherOwnerNorMember
- | UserIsUnRegistered
 
 type alias CreateNewLadderFormFields =
     { name : String

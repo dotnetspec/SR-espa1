@@ -106,9 +106,6 @@ resultView  status =
 
             SR.Types.UserIsNeitherOwnerNorMember -> 
                 SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
-
-            SR.Types.UserIsUnRegistered ->
-                SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
                 
 
 createdUserPlayer : List SR.Types.User -> SR.Types.Player -> SR.Types.UserPlayer
