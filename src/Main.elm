@@ -311,15 +311,15 @@ update msg model =
             in
             case walletState of
                 SR.Types.WalletStateLocked ->
-                    ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.AccountRegistered txRec, Cmd.none )
+                    ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
                 SR.Types.WalletOpenedNoUserAccount ->
-                    ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.AccountRegistered txRec, Cmd.none )
+                    ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
                 SR.Types.WalletOperational ->
-                    ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.AccountRegistered txRec, Cmd.none )
+                    ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
                 SR.Types.WalletStopSub ->
-                    ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.AccountRegistered txRec, Cmd.none )
+                    ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
                 SR.Types.WalletOpened ->
-                    ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.AccountRegistered txRec, Cmd.none )
+                    ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
                 _ ->
                     (model, Cmd.none)
 
@@ -339,11 +339,10 @@ update msg model =
                 if List.isEmpty extractedList then 
                     (model, Cmd.none)
                 else if (Data.Users.isRegistered (Data.Users.asList users) newUser) then
-                            --let
-                                -- users = Data.Users.asUsers (EverySet.fromList (extractedList))
-                                -- newUser = Data.Users.gotUser users appInfo.user.ethaddress
+                            let
+                                _ = Debug.log "in isregistered " "here"
                                 
-                            --in
+                            in
                     ( AppOps walletState newDataState userInAppInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.AccountRegistered  emptyTxRecord, gotGlobal )
                 else 
                      ( AppOps walletState newDataState userInAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription  SR.Types.AccountUnRegistered emptyTxRecord, gotGlobal )
@@ -364,7 +363,7 @@ update msg model =
                                         newDataKind = Global (Data.Global.createdFromRemote rmtrnkingdata sUsers) (Internal.Types.RankingId "") user
                                         newDataSet = StateFetched sUsers newDataKind
                                     in 
-                                        (AppOps walletState newDataSet appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription SR.Types.AccountRegistered emptyTxRecord, Cmd.none)
+                                        (AppOps walletState newDataSet appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
                                 
                                 Global sGlobal rnkId user ->
                                     let
@@ -374,7 +373,7 @@ update msg model =
                                         _ = Debug.log "glob rec, global datastate" walletState
                                     in
                                        -- We have to StopSubscription here for some reason currently unknown
-                                        ( AppOps walletState newDataSet appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription SR.Types.AccountRegistered emptyTxRecord, Cmd.none)
+                                        ( AppOps walletState newDataSet appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
                                            
                                 _ ->
                                         (model, Cmd.none)
@@ -385,7 +384,7 @@ update msg model =
             (model, Cmd.none)
 
         (PlayersReceived response, AppOps walletState dataState appInfo uiState subState accountState  txRec )  ->
-        
+
             let 
                 --_ = Debug.log "players received " (Tuple.second (Data.Players.handleFetchedPlayers response))
                 --_ = Debug.log "players received dataState " dataState
@@ -796,7 +795,7 @@ update msg model =
                                 _ = Debug.log "toGlobal now" "now"
             
                             in
-                            ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.AccountRegistered emptyTxRecord, gotGlobal )
+                            ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription accountState emptyTxRecord, gotGlobal )
                         
                         StateUpdated sUsers dKind ->
                             let
@@ -2078,7 +2077,7 @@ in the home view"""
                              case dKind of 
                                 Global sGlobal rnkId user ->
                                     let 
-                                        _ = Debug.log "uirender all global walletstate " walletState
+                                        _ = Debug.log "accountState " accountState
                                     in
                                     globalResponsiveview walletState sGlobal appInfo.user "" accountState
                                 _ ->
@@ -3261,15 +3260,6 @@ inputNewLadder appInfo dataState =
 
 globalResponsiveview : SR.Types.WalletState -> Data.Global.Global -> SR.Types.User -> String -> SR.Types.AccountState -> Html Msg
 globalResponsiveview walletState sGlobal user updatedStr accountState =
-
-    -- let
-    --     userName =
-    --         if user.username /= "" then
-    --             user.username
-
-    --         else
-    --             "New User"
-    -- in
         case accountState of 
             SR.Types.AccountRegistered -> 
                 case walletState of 
@@ -3342,7 +3332,15 @@ globalResponsiveview walletState sGlobal user updatedStr accountState =
                                     Framework.container
                                     [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
                                         Element.text ("SportRank - New User")
-                                    , Element.text ("\n Please Register Below")
+                                    , displayEnableEthereumBtn
+                                    , Element.text ("\n")
+                                    , Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
+                                    , displayRegisterBtnIfNewUser
+                                        user.username
+                                        ClickedRegister
+                                    , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
+                                    , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
+                                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
                                     ]
         
 
