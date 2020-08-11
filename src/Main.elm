@@ -373,8 +373,15 @@ update msg model =
                                         _ = Debug.log "glob rec, global datastate" walletState
                                     in
                                        -- We have to StopSubscription here for some reason currently unknown
-                                        ( AppOps walletState newDataSet appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
-                                           
+                                       case accountState of 
+                                            SR.Types.AccountUnRegistered ->
+                                                ( AppOps SR.Types.WalletOpenedNoUserAccount newDataSet appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
+
+                                            SR.Types.AccountRegistered -> 
+                                                ( AppOps walletState newDataSet appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
+
+                                          
+
                                 _ ->
                                         (model, Cmd.none)
                         _ ->
@@ -1328,18 +1335,19 @@ update msg model =
                         StateFetched sUsers dKind -> 
                             case dKind of 
                                     Selected sSelected rnkId user status rankings ->
-                                        if Data.Users.isRegistered (Data.Users.asList sUsers) appInfo.user then
-                                            let
-                                                newLUPlayer = Data.Selected.userAdded sUsers appInfo.selectedRanking.id (Data.Selected.asList sSelected) appInfo.user
-                                                newSelected = Data.Selected.asSelected (EverySet.fromList newLUPlayer) sUsers rnkId
-                                                
-                                                newDataKind = Selected newSelected  rnkId user SR.Types.UserIsMember rankings
-                                                newDataState = StateUpdated sUsers newDataKind
-                                                updatedModel = AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription SR.Types.AccountRegistered txRec
-                                            in
-                                            ( updatedModel, httpPlayerList (newDataState))
-                                        else
-                                            ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.AccountRegistered txRec, Cmd.none )
+                                        case accountState of 
+                                            SR.Types.AccountUnRegistered -> 
+                                                ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.AccountUnRegistered txRec, Cmd.none )
+                                            SR.Types.AccountRegistered ->
+                                                let
+                                                    newLUPlayer = Data.Selected.userAdded sUsers appInfo.selectedRanking.id (Data.Selected.asList sSelected) appInfo.user
+                                                    newSelected = Data.Selected.asSelected (EverySet.fromList newLUPlayer) sUsers rnkId
+                                                    
+                                                    newDataKind = Selected newSelected  rnkId user SR.Types.UserIsMember rankings
+                                                    newDataState = StateUpdated sUsers newDataKind
+                                                    updatedModel = AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription SR.Types.AccountRegistered txRec
+                                                in
+                                                    ( updatedModel, httpPlayerList (newDataState))
                                     _ -> 
                                         let 
                                             _ = Debug.log "12 - dataState should be Selected" dataState
@@ -1357,6 +1365,9 @@ update msg model =
 
                 SR.Types.WalletStateLocked ->
                     ( AppOps walletState dataState appInfo SR.Types.UIEnableEthereum SR.Types.StopSubscription SR.Types.AccountRegistered txRec, Cmd.none )
+
+                SR.Types.WalletOpenedNoUserAccount ->
+                    ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
 
                 _ -> 
                     let 
@@ -2065,7 +2076,7 @@ in the home view"""
                             case dKind of 
                                     Selected sSelected rnkId user status rankings ->
                                         
-                                        selectedUserIsNeitherOwnerNorPlayerView dataState appInfo
+                                        selectedUserIsNeitherOwnerNorPlayerView dataState appInfo accountState
                                     _ -> 
                                         greetingView <| "shuld be Selected"
                         _ -> 
@@ -2503,8 +2514,8 @@ selecteduserIsPlayerHomebutton user =
         ]
 
 
-selecteduserIsNeitherPlayerNorOwnerHomebutton : SR.Types.User -> Element Msg
-selecteduserIsNeitherPlayerNorOwnerHomebutton user =
+selecteduserIsNeitherPlayerNorOwnerHomebutton : SR.Types.User -> SR.Types.AccountState -> Element Msg
+selecteduserIsNeitherPlayerNorOwnerHomebutton user accountState =
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         , Element.column (Card.simple ++ Grid.simple) <|
@@ -2513,7 +2524,7 @@ selecteduserIsNeitherPlayerNorOwnerHomebutton user =
                     { onPress = Just <| ResetToShowGlobal
                     , label = Element.text "Home"
                     }
-                , displayJoinBtnNewOrExistingUser user
+                , displayJoinBtnNewOrExistingUser user accountState
 
                 -- Input.button ([ Element.htmlAttribute (Html.Attributes.id "newUserJoinbtn") ] ++ Button.simple ++ Color.info) <|
                 --     { onPress = Just ClickedJoinSelected
@@ -2524,19 +2535,24 @@ selecteduserIsNeitherPlayerNorOwnerHomebutton user =
         ]
 
 
-displayJoinBtnNewOrExistingUser : SR.Types.User -> Element Msg
-displayJoinBtnNewOrExistingUser user =
-    if user.username == "" then
-        Input.button ([ Element.htmlAttribute (Html.Attributes.id "newUserJoinbtn") ] ++ Button.simple ++ Color.info) <|
-            { onPress = Just ClickedConfirmedRegisterNewUser
-            , label = Element.text "Join"
-            }
+displayJoinBtnNewOrExistingUser : SR.Types.User -> SR.Types.AccountState -> Element Msg
+displayJoinBtnNewOrExistingUser user accountState =
+    case accountState of 
+        SR.Types.AccountUnRegistered -> 
+            Input.button ([ Element.htmlAttribute (Html.Attributes.id "existingUserJoinbtn") ] ++ Button.simple ++ Color.info) <|
+                { onPress = Just ClickedJoinSelected
+                , label = Element.text "Join"
+                }
 
-    else
-        Input.button ([ Element.htmlAttribute (Html.Attributes.id "existingUserJoinbtn") ] ++ Button.simple ++ Color.info) <|
-            { onPress = Just ClickedJoinSelected
-            , label = Element.text "Join"
-            }
+        SR.Types.AccountRegistered -> 
+    --if user.username == "" then
+            Input.button ([ Element.htmlAttribute (Html.Attributes.id "newUserJoinbtn") ] ++ Button.simple ++ Color.info) <|
+                { onPress = Just ClickedConfirmedRegisterNewUser
+                , label = Element.text "Join"
+                }
+
+    --else
+       
 
 
 newrankingconfirmbutton : SR.Types.AppInfo -> DataState -> Element Msg
@@ -2906,6 +2922,20 @@ newuserConfirmPanel walletState user luser =
                 ]
             
         SR.Types.WalletStopSub ->
+            Element.column Grid.section <|
+                [ SR.Elements.ethereumNotEnabledPara
+                , Element.el Heading.h6 <| Element.text "Enable Ethereum to Register"
+                , Element.column (Card.simple ++ Grid.simple) <|
+                    [ Element.wrappedRow Grid.simple <|
+                        [ Input.button (Button.simple ++ Color.info) <|
+                            { onPress = Just <| ResetToShowGlobal
+                            , label = Element.text "Cancel"
+                            }
+                        ]
+                    ]
+                ]
+
+        SR.Types.WalletOpenedNoUserAccount ->
             Element.column Grid.section <|
                 [ SR.Elements.ethereumNotEnabledPara
                 , Element.el Heading.h6 <| Element.text "Enable Ethereum to Register"
@@ -3466,8 +3496,8 @@ selectedUserIsPlayerView dataState appInfo =
                     Html.text "Please refresh your browser"
 
 
-selectedUserIsNeitherOwnerNorPlayerView : DataState -> SR.Types.AppInfo -> Html Msg
-selectedUserIsNeitherOwnerNorPlayerView  dataState appInfo =
+selectedUserIsNeitherOwnerNorPlayerView : DataState -> SR.Types.AppInfo -> SR.Types.AccountState -> Html Msg
+selectedUserIsNeitherOwnerNorPlayerView  dataState appInfo accountState =
     case dataState of
         StateFetched sUsers dKind -> 
             case dKind of 
@@ -3475,8 +3505,8 @@ selectedUserIsNeitherOwnerNorPlayerView  dataState appInfo =
                         Framework.responsiveLayout [] <|
                             Element.column
                                 Framework.container
-                                [ newOrExistingUserNameDisplay appInfo.user
-                                , selecteduserIsNeitherPlayerNorOwnerHomebutton appInfo.user
+                                [ newOrExistingUserNameDisplay appInfo.user accountState
+                                , selecteduserIsNeitherPlayerNorOwnerHomebutton appInfo.user accountState
                                 , playerbuttons  dataState appInfo
                                 ]
 
@@ -3486,13 +3516,13 @@ selectedUserIsNeitherOwnerNorPlayerView  dataState appInfo =
             Html.text "Error4"
 
 
-newOrExistingUserNameDisplay : SR.Types.User -> Element msg
-newOrExistingUserNameDisplay user =
-    if user.username == "" then
-        Element.el Heading.h4 <| Element.text <| "SportRank - New User - Join?"
-
-    else
-        Element.el Heading.h4 <| Element.text <| "SportRank - " ++ user.username ++ " - Join?"
+newOrExistingUserNameDisplay : SR.Types.User -> SR.Types.AccountState -> Element msg
+newOrExistingUserNameDisplay user accountState =
+    case accountState of 
+        SR.Types.AccountUnRegistered ->
+            Element.el Heading.h4 <| Element.text <| "SportRank - New User - Join?"
+        SR.Types.AccountRegistered ->
+            Element.el Heading.h4 <| Element.text <| "SportRank - " ++ user.username ++ " - Join?"
 
 
 inputNewUserview : SR.Types.WalletState -> DataState -> SR.Types.AppInfo -> Html Msg
@@ -3529,8 +3559,19 @@ inputNewUserview walletState dataState appInfo =
                                     , inputNewUser walletState dataState appInfo
                                     , newuserConfirmPanel walletState appInfo.user (Data.Users.asList sUsers)
                                     ]
+
+                        SR.Types.WalletOpenedNoUserAccount ->
+                            Framework.responsiveLayout [] <|
+                                Element.column
+                                    Framework.container
+                                    [ displayEnableEthereumBtn
+                                    , Element.text "\n"
+                                    , Element.el Heading.h4 <| Element.text "Create New User"
+                                    , inputNewUser walletState dataState appInfo
+                                    , newuserConfirmPanel walletState appInfo.user (Data.Users.asList sUsers)
+                                    ]
                         _ ->
-                            Html.text "fell thru in  inputNewUserview"
+                            Html.text "fell thru in inputNewUserview"
                             
                 _ ->
                     Html.text "Fail inputNewUserview"
