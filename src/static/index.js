@@ -44,7 +44,7 @@ window.ports = {
                 if (data == "eth_requestAccounts") {
                     ethereum.request({ method: 'eth_requestAccounts' });
                 } else {
-                    console.log('Nothing happened');
+                    console.log('No outgoing request made');
                 }
             })
             , elm_ethereum_ports.txSentry(app.ports.txOut, app.ports.txIn, web3)
