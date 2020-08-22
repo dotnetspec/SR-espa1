@@ -3965,6 +3965,7 @@ createNewUser originaluserlist newuserinfo =
 
         _ =
             Debug.log "originaluserlist " originaluserlist
+            
     in
     --SentUserInfoAndDecodedResponseToNewUser is the Msg handled by update whenever a request is made by buttuser clicked
     --RemoteData is used throughout the module, including update

@@ -1,0 +1,15 @@
+type User 
+ {  
+    user_name : String! @unique
+    address : String! @unique
+    member_since: Int!
+}
+
+type Mutation {
+  createAndOrLoginUser(user_name: String!, password: String!): String! @resolver(name: "create_andor_login_user")
+}
+
+type Query {
+  allUserNames: [String!]! @resolver(name: "all_user_names")
+  
+}

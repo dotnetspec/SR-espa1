@@ -1,0 +1,16 @@
+type Player 
+ {  address : String! @unique
+    rank : Int!
+    challengeraddress : String
+}
+
+type Mutation {
+  createNewPlayer(address: String!, rank: Int!, challengeraddress: String): String! @resolver(name: "create_new_player")
+}
+
+type Query {
+  allPlayerAddresses: [String!]! @resolver(name: "all_player_addresses")
+  allPlayerRanks: [Int!]! @resolver(name: "all_player_ranks")
+  allPlayerChallengerAddresses: [String!]! @resolver(name: "all_player_challenger_addresses")
+  allPlayers: [Player] @resover(name: "all_players")
+}
