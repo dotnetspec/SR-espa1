@@ -70,6 +70,7 @@ userDecoder =
         |> Json.Decode.Pipeline.required "datestamp" Json.Decode.int
         |> Json.Decode.Pipeline.required "active" Json.Decode.bool
         |> Json.Decode.Pipeline.required "username" Json.Decode.string
+        |> Json.Decode.Pipeline.required "password" Json.Decode.string
         |> Json.Decode.Pipeline.required "ethaddress" Json.Decode.string
         |> Json.Decode.Pipeline.required "description" Json.Decode.string
         |> Json.Decode.Pipeline.required "email" Json.Decode.string

@@ -3034,6 +3034,12 @@ inputNewUser walletState dataState appInfo =
                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
                                             }
                                         , nameValidationErr appInfo sUsers
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                                            { onChange = NewUserDescInputChg
+                                            , text = appInfo.user.description
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                                            }
                                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
                                             { onChange = NewUserDescInputChg
                                             , text = appInfo.user.description
@@ -3950,6 +3956,7 @@ createNewUser originaluserlist newuserinfo =
             { datestamp = 123456789
             , active = True
             , username = newuserinfo.username
+            , password = newuserinfo.password
             , ethaddress = newuserinfo.ethaddress
             , description = newuserinfo.description
             , email = newuserinfo.email
@@ -4006,6 +4013,7 @@ updateExistingUser originaluserlist updatedUserInfo =
             { datestamp = 123456789
             , active = True
             , username = updatedUserInfo.username
+            , password = updatedUserInfo.password
             , ethaddress = updatedUserInfo.ethaddress
             , description = updatedUserInfo.description
             , email = updatedUserInfo.email

@@ -205,6 +205,7 @@ type alias User =
     { datestamp : Int
     , active : Bool
     , username : String
+    , password : String
     , ethaddress : String
     , description : String
     , email : String
