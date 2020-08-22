@@ -176,8 +176,9 @@ type AppState
     | AppStateEnterUndecided
 
 type AccountState 
-    = AccountUnRegistered 
-    | AccountRegistered
+    = Guest 
+    | Registered
+    | EthEnabled
 
 
 type alias UserPlayer =
