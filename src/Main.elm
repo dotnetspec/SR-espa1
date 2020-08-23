@@ -222,14 +222,14 @@ update msg model =
                         Rinkeby ->
                             case walletSentry_.account of
                                 Nothing ->
-                                    ( AppOps SR.Types.WalletStateLocked dataState SR.Defaults.emptyAppInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription SR.Types.Registered emptyTxRecord
+                                    ( AppOps SR.Types.WalletStateLocked dataState SR.Defaults.emptyAppInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription accountState emptyTxRecord
                                     , Cmd.none
                                     )
 
                                 Just uaddr ->
                                     let 
                                         _ = Debug.log "got uaddre" uaddr
-                                        newModel = AppOps SR.Types.WalletOpened dataState (gotWalletAddrApplyToUser appInfo uaddr) SR.Types.UIRenderAllRankings SR.Types.StopSubscription SR.Types.Registered emptyTxRecord
+                                        newModel = AppOps SR.Types.WalletOpened dataState (gotWalletAddrApplyToUser appInfo uaddr) SR.Types.UIRenderAllRankings SR.Types.StopSubscription SR.Types.EthEnabled emptyTxRecord
                                     in
                                     (newModel, Cmd.none)
                         _ ->
