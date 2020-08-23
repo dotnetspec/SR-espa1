@@ -127,7 +127,7 @@ type UIState
     | UIEnableEthereum
     | UIOwnerDeletedRanking
     | UIUnableToFindGlobalRankings
-    --| UIEthAlreadyEnabled
+    | UIEthAlreadyEnabled
 
 type SubState 
     = Subscribe 

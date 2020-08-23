@@ -266,9 +266,9 @@ update msg model =
                 SR.Types.Registered ->
                     (AppOps walletState dataState appInfo SR.Types.UIEnableEthereum SR.Types.StopSubscription accountState txRec, Ports.log "eth_requestAccounts")
                 SR.Types.EthEnabled ->
-                    (AppOps walletState dataState appInfo SR.Types.UIEnableEthereum SR.Types.StopSubscription accountState txRec, Cmd.none)
+                    (AppOps walletState dataState appInfo SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription accountState txRec, Cmd.none)
                 SR.Types.EthEnabledAndRegistered ->
-                    (AppOps walletState dataState appInfo SR.Types.UIEnableEthereum SR.Types.StopSubscription accountState txRec, Cmd.none)
+                    (AppOps walletState dataState appInfo SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription accountState txRec, Cmd.none)
             
 
         (ClickedRemoveFromUserMemberRankings, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
@@ -2120,6 +2120,12 @@ in the home view"""
 
                 SR.Types.UILoading ->
                     greetingView <| "Loading ..."
+
+                SR.Types.UIEthAlreadyEnabled ->
+                    greetingView <|
+                        """Your Ethereum  
+wallet is ALREADY enabled!
+"""
 
                 SR.Types.UIWalletMissingInstructions ->
                 
