@@ -1,0 +1,40 @@
+type User 
+ {  
+    active : Boolean!
+    user_name : String! @unique
+    ethaddress : String! @unique
+    description : String
+    email : String @unique 
+    mobile : String @unique
+    userjoinrankings : [String]
+    member_since: Int!
+}
+
+type Player 
+ {  address : String! @unique
+    rank : Int!
+    challengeraddress : String
+}
+
+type Ranking
+  { id : Int!
+    active : Boolean!
+    rankingname : String! @unique
+    rankingdesc : String
+    rankingowneraddr : String! @unique
+    }
+
+type Mutation {
+  createAndOrLoginUser(user_name: String!, password: String!): String! @resolver(name: "create_andor_login_user")
+  createNewPlayer(address: String!, rank: Int!, challengeraddress: String): String! @resolver(name: "create_new_player")
+  createNewRanking(id: Int!, active: Boolean!, rankingname : String!, rankingdesc : String, rankingowneraddr : String!): String! @resolver(name: "create_new_ranking")
+}
+
+type Query {
+  allUserNames: [String!]! @resolver(name: "all_user_names")
+  allPlayerAddresses: [String!]! @resolver(name: "all_player_addresses")
+  allPlayerRanks: [Int!]! @resolver(name: "all_player_ranks")
+  allPlayerChallengerAddresses: [String!]! @resolver(name: "all_player_challenger_addresses")
+  allPlayers: [Player] @resolver(name: "all_players")
+  allRankings: [Ranking] @resolver(name: "all_rankings")
+}
