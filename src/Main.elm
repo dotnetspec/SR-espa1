@@ -46,6 +46,7 @@ import Data.Players
 import Widget exposing (..)
 import SR.Types
 import SR.Types
+import SR.Types
 
 main =
     Browser.element
@@ -259,7 +260,16 @@ update msg model =
             (model, Cmd.none)
 
         (ClickedEnableEthereum, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
-            (AppOps walletState dataState appInfo uiState SR.Types.StopSubscription SR.Types.Registered txRec, Ports.log "eth_requestAccounts")
+            case accountState of
+                SR.Types.Guest ->
+                    (AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none)
+                SR.Types.Registered ->
+                    (AppOps walletState dataState appInfo SR.Types.UIEnableEthereum SR.Types.StopSubscription accountState txRec, Ports.log "eth_requestAccounts")
+                SR.Types.EthEnabled ->
+                    (AppOps walletState dataState appInfo SR.Types.UIEnableEthereum SR.Types.StopSubscription accountState txRec, Cmd.none)
+                SR.Types.EthEnabledAndRegistered ->
+                    (AppOps walletState dataState appInfo SR.Types.UIEnableEthereum SR.Types.StopSubscription accountState txRec, Cmd.none)
+            
 
         (ClickedRemoveFromUserMemberRankings, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
             case dataState of
@@ -384,6 +394,9 @@ update msg model =
                                             SR.Types.EthEnabled -> 
                                                 ( AppOps walletState newDataSet appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
 
+                                            SR.Types.EthEnabledAndRegistered -> 
+                                                ( AppOps walletState newDataSet appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
+
                                 _ ->
                                         (model, Cmd.none)
                         _ ->
@@ -423,21 +436,12 @@ update msg model =
                                             in
                                                 case status of 
                                                     SR.Types.UserIsOwner ->     
-                                                        (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none)
+                                                        (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
                                                     SR.Types.UserIsMember  ->
-                                                        (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none)
+                                                        (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
                                                     SR.Types.UserIsNeitherOwnerNorMember ->
-                                                        case accountState of 
-                                                            SR.Types.Guest ->
-                                                                (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription SR.Types.Guest emptyTxRecord, Cmd.none)
-                                                            SR.Types.Registered -> 
-                                                                (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none)
-                                                    
-                                                            SR.Types.EthEnabled ->
-                                                                (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription SR.Types.EthEnabled emptyTxRecord, Cmd.none)
-                                                    
-
-                                                
+                                                        (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
+ 
                                         _ ->
                                             (model, Cmd.none)
 
@@ -460,14 +464,8 @@ update msg model =
                                                     SR.Types.UserIsMember  ->
                                                         (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none)
                                                     SR.Types.UserIsNeitherOwnerNorMember ->
-                                                        case accountState of 
-                                                            SR.Types.Guest ->
-                                                                (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription SR.Types.Guest emptyTxRecord, Cmd.none)
-                                                            SR.Types.Registered -> 
-                                                                (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none)
-                                                    
-                                                            SR.Types.EthEnabled ->
-                                                                (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription SR.Types.EthEnabled emptyTxRecord, Cmd.none)
+                                                        (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
+                                                          
                                         _ ->
                                                 (model, Cmd.none)
                                 
@@ -829,19 +827,11 @@ update msg model =
                         Selected sSelected rnkId user uState rankings ->
                             case uState of 
                                 SR.Types.UserIsOwner ->
-                                    (AppOps walletState dataState appInfo SR.Types.UISelectedRankingUserIsOwner SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none )
+                                    (AppOps walletState dataState appInfo SR.Types.UISelectedRankingUserIsOwner SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none )
                                 SR.Types.UserIsMember ->
-                                    (AppOps walletState dataState appInfo SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none )
+                                    (AppOps walletState dataState appInfo SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none )
                                 SR.Types.UserIsNeitherOwnerNorMember ->
-                                    case accountState of 
-                                        SR.Types.Guest ->
-                                            (AppOps walletState dataState appInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription SR.Types.Guest emptyTxRecord, Cmd.none )
-                                        SR.Types.Registered ->
-                                            (AppOps walletState dataState appInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none )
-                                
-                                        SR.Types.EthEnabled ->
-                                             (AppOps walletState dataState appInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription SR.Types.EthEnabled emptyTxRecord, Cmd.none )
-                                
+                                    (AppOps walletState dataState appInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none )
                         _ -> 
                             (model, Cmd.none)
                 _ -> 
@@ -1344,20 +1334,24 @@ update msg model =
                                     Selected sSelected rnkId user status rankings ->
                                         case accountState of 
                                             SR.Types.Guest -> 
-                                                ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Guest txRec, Cmd.none )
+                                                ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
                                             SR.Types.Registered ->
-                                                ( AppOps walletState dataState appInfo SR.Types.UIEnableEthereum SR.Types.StopSubscription SR.Types.Guest txRec, Cmd.none )
+                                                ( AppOps walletState dataState appInfo SR.Types.UIEnableEthereum SR.Types.StopSubscription accountState txRec, Cmd.none )
 
                                             SR.Types.EthEnabled ->
+                                                ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
+
+                                            SR.Types.EthEnabledAndRegistered ->
                                                 let
                                                     newLUPlayer = Data.Selected.userAdded sUsers appInfo.selectedRanking.id (Data.Selected.asList sSelected) appInfo.user
                                                     newSelected = Data.Selected.asSelected (EverySet.fromList newLUPlayer) sUsers rnkId
                                                     
                                                     newDataKind = Selected newSelected  rnkId user SR.Types.UserIsMember rankings
                                                     newDataState = StateUpdated sUsers newDataKind
-                                                    updatedModel = AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription SR.Types.Registered txRec
+                                                    updatedModel = AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription accountState txRec
                                                 in
                                                     ( updatedModel, httpPlayerList (newDataState))
+
                                     _ -> 
                                         let 
                                             _ = Debug.log "12 - dataState should be Selected" dataState
@@ -2535,11 +2529,6 @@ selecteduserIsNeitherPlayerNorOwnerHomebutton user accountState =
                     , label = Element.text "Home"
                     }
                 , displayJoinBtnNewOrExistingUser user accountState
-
-                -- Input.button ([ Element.htmlAttribute (Html.Attributes.id "newUserJoinbtn") ] ++ Button.simple ++ Color.info) <|
-                --     { onPress = Just ClickedJoinSelected
-                --     , label = Element.text "Join"
-                --     }
                 ]
             ]
         ]
@@ -2550,19 +2539,25 @@ displayJoinBtnNewOrExistingUser user accountState =
     case accountState of 
         SR.Types.Guest -> 
             Input.button ([ Element.htmlAttribute (Html.Attributes.id "existingUserJoinbtn") ] ++ Button.simple ++ Color.info) <|
-                { onPress = Just ClickedJoinSelected
+                { onPress = Just ClickedRegister
                 , label = Element.text "Join"
                 }
 
         SR.Types.Registered ->
-            Input.button ([ Element.htmlAttribute (Html.Attributes.id "newUserJoinbtn") ] ++ Button.simple ++ Color.info) <|
-                { onPress = Just ClickedConfirmedRegisterNewUser
+            Input.button ([ Element.htmlAttribute (Html.Attributes.id "newUserJoinbtn") ] ++ Button.simple ++ Color.disabled) <|
+                { onPress = Nothing
                 , label = Element.text "Join"
                 }
 
         SR.Types.EthEnabled ->
             Input.button ([ Element.htmlAttribute (Html.Attributes.id "newUserJoinbtn") ] ++ Button.simple ++ Color.info) <|
-                { onPress = Just ClickedConfirmedRegisterNewUser
+                { onPress = Just ClickedRegister
+                , label = Element.text "Join"
+                }
+
+        SR.Types.EthEnabledAndRegistered -> 
+            Input.button ([ Element.htmlAttribute (Html.Attributes.id "newUserJoinbtn") ] ++ Button.simple ++ Color.info) <|
+                { onPress = Just ClickedJoinSelected
                 , label = Element.text "Join"
                 }
 
@@ -3457,7 +3452,70 @@ globalResponsiveview walletState sGlobal user updatedStr accountState =
                                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
                                     ]
                     _ ->
-                        Html.text "Fell through globalResponsiveview"    
+                        Html.text "Fell through globalResponsiveview"
+            
+            SR.Types.EthEnabledAndRegistered -> 
+                case walletState of 
+                    SR.Types.WalletWaitingForTransactionReceipt ->
+                        Framework.responsiveLayout
+                            []
+                            <|
+                                Element.column
+                                    Framework.container
+                                    [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+                                        Element.text ("SportRank - " ++ user.username)
+                                    , Element.text ("\n Waiting for Transaction Receipt")
+                                    ]
+
+                    SR.Types.WalletOperational ->
+                        Framework.responsiveLayout
+                            []
+                            <|
+                                Element.column
+                                    Framework.container
+                                    [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+                                        Element.text ("SportRank - " ++ user.username)
+                                    , Element.text ("\n Your wallet is performing a transaction")
+                                    ]
+
+                    SR.Types.WalletStateLocked ->
+                        Framework.responsiveLayout
+                            []
+                            <|
+                                Element.column
+                                    Framework.container
+                                    [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+                                        Element.text ("SportRank - " ++ user.username)
+                                    , displayEnableEthereumBtn
+                                    , Element.text ("\n" ++ updatedStr)
+                                    , displayRegisterBtnIfNewUser
+                                        user.username
+                                        ClickedRegister
+                                    , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
+                                    , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
+                                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
+                                    ]
+
+                    SR.Types.WalletOpened ->
+                        Framework.responsiveLayout
+                            []
+                            <|
+                                Element.column
+                                    Framework.container
+                                    [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+                                        Element.text ("SportRank - " ++ user.username)
+                                    , displayUpdateProfileBtnIfExistingUser user.username
+                                    , displayCreateNewLadderBtnIfExistingUser user.username (Data.Global.asList (Data.Global.gotOwned sGlobal user)) ClickedCreateNewLadder
+                                    , Element.el [ Font.color SR.Types.colors.red ] <| Element.text ("\n" ++ updatedStr)
+                                    , displayRegisterBtnIfNewUser
+                                        user.username
+                                        ClickedRegister
+                                    , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
+                                    , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
+                                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
+                                    ]
+                    _ ->
+                        Html.text "Fell through globalResponsiveview"
 
 
 displayUpdateProfileBtnIfExistingUser : String -> Element Msg
@@ -3523,7 +3581,7 @@ displayEnableEthereumBtn =
     Input.button
             (Button.simple ++ Button.fill ++ Color.warning ++ [ Element.htmlAttribute (Html.Attributes.id "enableEthereumButton") ] ++ [ Element.htmlAttribute (Html.Attributes.class "enableEthereumButton") ])
         <|
-            { onPress = Just <| ClickedEnableEthereum
+            { onPress = Just ClickedEnableEthereum
             , label = Element.text "Enable Ethereum"
             }
 
@@ -3605,10 +3663,12 @@ newOrExistingUserNameDisplay : SR.Types.User -> SR.Types.AccountState -> Element
 newOrExistingUserNameDisplay user accountState =
     case accountState of 
         SR.Types.Guest ->
-            Element.el Heading.h4 <| Element.text <| "New User - Please register and Enable Ethereum to join"
+            Element.el Heading.h4 <| Element.text <| "New User - Please Register and Enable Ethereum to join"
         SR.Types.Registered ->
             Element.el Heading.h4 <| Element.text <| user.username ++ " - Please Enable Ethereum To Join"
         SR.Types.EthEnabled ->
+            Element.el Heading.h4 <| Element.text <| "Please Register and Enable Ethereum to join"
+        SR.Types.EthEnabledAndRegistered ->
             Element.el Heading.h4 <| Element.text <| user.username ++ " - Join?"
 
 

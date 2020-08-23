@@ -127,6 +127,7 @@ type UIState
     | UIEnableEthereum
     | UIOwnerDeletedRanking
     | UIUnableToFindGlobalRankings
+    --| UIEthAlreadyEnabled
 
 type SubState 
     = Subscribe 
@@ -179,6 +180,7 @@ type AccountState
     = Guest 
     | Registered
     | EthEnabled
+    | EthEnabledAndRegistered
 
 
 type alias UserPlayer =
