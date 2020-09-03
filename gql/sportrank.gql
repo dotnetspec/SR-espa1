@@ -1,12 +1,12 @@
 type User 
  {  
     active : Boolean!
-    user_name : String! @unique
+    username : String! @unique
+    password : String! @unique
     ethaddress : String! @unique
     description : String
     email : String @unique 
     mobile : String @unique
-    userjoinrankings : [String]
     member_since: Int!
 }
 
@@ -17,17 +17,28 @@ type Player
 }
 
 type Ranking
-  { id : Int!
+  { 
     active : Boolean!
     rankingname : String! @unique
     rankingdesc : String
     rankingowneraddr : String! @unique
     }
 
+type UserJoinedRanking
+  { 
+    active : Boolean!
+    rankingid : String!
+    rankingname : String!
+    useraddr : String!
+    rankingowneraddr : String!
+    }
+
+
 type Mutation {
-  createAndOrLoginUser(user_name: String!, password: String!): String! @resolver(name: "create_andor_login_user")
-  createNewPlayer(address: String!, rank: Int!, challengeraddress: String): String! @resolver(name: "create_new_player")
-  createNewRanking(id: Int!, active: Boolean!, rankingname : String!, rankingdesc : String, rankingowneraddr : String!): String! @resolver(name: "create_new_ranking")
+  createAndOrLoginUser(active: Boolean!, username: String!, password: String!, ethaddress: String!, description: String, email: String, mobile: String): String! @resolver(name: "create_andor_login_user")
+  createNewPlayer(active: Boolean!, address: String!, rank: Int!, challengeraddress: String): Player! @resolver(name: "create_new_player")
+  createNewRanking(active: Boolean!, rankingname : String!, rankingdesc : String, rankingowneraddr : String!): Ranking! @resolver(name: "create_new_ranking")
+  createNewUserJoinedRanking(active: Boolean!, rankingid : String!, rankingname : String!, useraddr: String!, rankingowneraddr : String!): UserJoinedRanking! @resolver(name: "create_new_userjoinedranking")
 }
 
 type Query {
@@ -37,4 +48,5 @@ type Query {
   allPlayerChallengerAddresses: [String!]! @resolver(name: "all_player_challenger_addresses")
   allPlayers: [Player] @resolver(name: "all_players")
   allRankings: [Ranking] @resolver(name: "all_rankings")
+  allUserJoinedRanking: [UserJoinedRanking] @resolver(name: "all_userjoinedranking")
 }
