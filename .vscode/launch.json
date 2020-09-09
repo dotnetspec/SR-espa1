@@ -6,6 +6,17 @@
     //so add to .gitignore if want to use this
     "version": "0.2.0",
     "configurations": [
+        {
+            "name": "Attach to Chrome",
+            "port": 9222,
+            "request": "attach",
+            "runtimeExecutable": "/home/rossulbrecht/.nvm/versions/node/v11.10.0/bin/node",
+            "runtimeArgs": [" --remote-debugging-port=9222"],
+            "type": "pwa-chrome",
+            "webRoot": "${workspaceFolder}"
+        }
+
+
         // {
         //     "name": "Launch Chrome",
         //     "type": "chrome",
@@ -41,27 +52,32 @@
         //     "url": "localhost:3000",
         //     "webRoot": "${workspaceFolder}/app"
         // },
-        {
-            "name": "Attach Chrome",
-            "type": "chrome",
-            "request": "attach",
-            "url": "http://localhost:3000",
-            "port": 9222,
-            "sourceMaps": true,
-            "diagnosticLogging": true,
-            "webRoot": "${workspaceRoot}",
-            "userDataDir": "${workspaceRoot}/out/chrome"
-        },
-        {
-            "name": "Launch Chrome",
-            "type": "chrome",
-            "request": "launch",
-            "url": "http://localhost:3000",
-            "port": 9222,
-            "sourceMaps": true,
-            "diagnosticLogging": true,
-            "webRoot": "${workspaceRoot}",
-            "userDataDir": "${workspaceRoot}/out/chrome"
-        }
+        // {
+        //     "name": "Attach Chrome",
+        //     "type": "chrome",
+        //     "request": "attach",
+        //     "program":"${workspaceFolder}/app.js",
+        //     "runtimeExecutable": "/home/rossulbrecht/.nvm/versions/node/v11.10.0/bin/node",
+        //     "url": "http://localhost:9222",
+        //     "port": 9222,
+        //     "sourceMaps": true,
+        //     "diagnosticLogging": true,
+        //     "webRoot": "${workspaceRoot}",
+        //     "userDataDir": "${workspaceRoot}/out/chrome"
+        // },
+        // {
+        //     "name": "Launch Chrome",
+        //     "program":"${workspaceFolder}/bin/www",
+        //     "runtimeExecutable": "/home/rossulbrecht/.nvm/versions/node/v11.10.0/bin/node",
+        //     "type": "chrome",
+        //     "request": "launch",
+        //     "runtimeArgs": ["start", "debug"],
+        //     "url": "http://localhost:3000",
+        //     "port": 3000,
+        //     "sourceMaps": true,
+        //     "diagnosticLogging": true,
+        //     "webRoot": "${workspaceRoot}",
+        //     "userDataDir": "${workspaceRoot}/out/chrome"
+        // }
     ]
 }

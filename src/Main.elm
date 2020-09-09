@@ -207,9 +207,6 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    --let 
-       -- _ = Debug.log "msg in update" msg
-    --in
     case ( msg, model ) of
         ( WalletStatus walletSentry_, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
             let 
@@ -1336,7 +1333,7 @@ update msg model =
                                             SR.Types.Guest -> 
                                                 ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
                                             SR.Types.Registered ->
-                                                ( AppOps walletState dataState appInfo SR.Types.UIEnableEthereum SR.Types.StopSubscription accountState txRec, Cmd.none )
+                                                ( AppOps walletState dataState appInfo SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription accountState txRec, Cmd.none )
 
                                             SR.Types.EthEnabled ->
                                                 ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
@@ -3096,6 +3093,12 @@ inputNewUser walletState dataState appInfo =
                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
                                             }
                                         , nameValidationErr appInfo sUsers
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                                            { onChange = NewUserDescInputChg
+                                            , text = appInfo.user.description
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                                            }
                                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
                                             { onChange = NewUserDescInputChg
                                             , text = appInfo.user.description
@@ -3136,6 +3139,12 @@ inputNewUser walletState dataState appInfo =
                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
                                             }
                                         , nameValidationErr appInfo sUsers
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                                            { onChange = NewUserDescInputChg
+                                            , text = appInfo.user.description
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                                            }
                                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
                                             { onChange = NewUserDescInputChg
                                             , text = appInfo.user.description
