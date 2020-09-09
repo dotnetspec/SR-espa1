@@ -335,7 +335,8 @@ update msg model =
             let 
                 _ =
                                     Debug.log "UsersReceived" userList
-                extractedList = Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList
+                --extractedList = Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList
+                extractedList = [SR.Defaults.emptyUser]
                 users = Data.Users.asUsers (EverySet.fromList (extractedList))
                 newUser = Data.Users.gotUser users appInfo.user.ethaddress
                 userInAppInfo = { appInfo | user = newUser }
