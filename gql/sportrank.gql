@@ -50,5 +50,5 @@ type Query {
   allRankings: [Ranking] @resolver(name: "all_rankings")
   allUserJoinedRanking: [UserJoinedRanking] @resolver(name: "all_userjoinedranking")
   allUsers: [User] @resolver(name: "all_users")
-  usernameFromEthaddress: [String!]!
+  usernameFromEthaddress(ethaddress: String!): [String!]! @resolver(name: "usernameFromEthaddress")
 }
