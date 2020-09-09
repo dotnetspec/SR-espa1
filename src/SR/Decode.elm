@@ -76,6 +76,8 @@ userDecoder =
         |> Json.Decode.Pipeline.required "email" Json.Decode.string
         |> Json.Decode.Pipeline.required "mobile" Json.Decode.string
         |> Json.Decode.Pipeline.required "userjoinrankings" decodeUserJoinRankingsList
+        |> Json.Decode.Pipeline.required "member_since" Json.Decode.int
+        |> Json.Decode.Pipeline.optional "m_token" (Json.Decode.maybe Json.Decode.string) Nothing
 
 
 decodeUserJoinRankingsList : Decoder (List String)

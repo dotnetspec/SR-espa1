@@ -4118,6 +4118,8 @@ createNewUser originaluserlist newuserinfo =
             , email = newuserinfo.email
             , mobile = newuserinfo.mobile
             , userjoinrankings = []
+            , member_since = 1
+            , m_token = Nothing
             }
 
         newUserAddedToList =
@@ -4175,6 +4177,8 @@ updateExistingUser originaluserlist updatedUserInfo =
             , email = updatedUserInfo.email
             , mobile = updatedUserInfo.mobile
             , userjoinrankings = updatedUserInfo.userjoinrankings
+            , member_since = 1
+            , m_token = Nothing
             }
 
         newListWithCurrentUserRemoved =

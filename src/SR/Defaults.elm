@@ -30,6 +30,7 @@ emptyPlayer =
     }
 
 
+
 emptyUser : SR.Types.User
 emptyUser =
     { datestamp = 123456
@@ -41,6 +42,8 @@ emptyUser =
     , email = ""
     , mobile = ""
     , userjoinrankings = []
+    , member_since = 1
+    , m_token = Nothing
     }
 
 
@@ -66,6 +69,8 @@ emptyActiveUser =
     , email = ""
     , mobile = ""
     , userjoinrankings = []
+    , member_since = 1
+    , m_token = Nothing
     }
 
 

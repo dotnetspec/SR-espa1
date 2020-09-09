@@ -214,7 +214,13 @@ type alias User =
     , email : String
     , mobile : String
     , userjoinrankings : List String
+    , member_since : Int
+    , m_token : Maybe Token
     }
+
+type alias Token =
+    String
+
 
 type alias Player =
     { address : String
