@@ -167,10 +167,12 @@ type Msg
     | LadderNameInputChg String
     | LadderDescInputChg String
     | NewUserNameInputChg String
+    | NewUserPasswordInputChg String
     | NewUserDescInputChg String
     | NewUserEmailInputChg String
     | NewUserMobileInputChg String
     | ExistingUserNameInputChg String
+    | ExistingUserPasswordInputChg String
     | ExistingUserDescInputChg String
     | ExistingUserEmailInputChg String
     | ExistingUserMobileInputChg String
@@ -913,6 +915,9 @@ update msg model =
         (NewUserNameInputChg updateField, _) ->
             ( handleNewUserInputs model (NewUserNameInputChg updateField), Cmd.none )
 
+        (NewUserPasswordInputChg updateField, _) ->
+            ( handleNewUserInputs model (NewUserPasswordInputChg updateField), Cmd.none )
+
 
         (NewUserDescInputChg updateField, _) ->
             ( handleNewUserInputs model (NewUserDescInputChg updateField), Cmd.none )
@@ -928,6 +933,9 @@ update msg model =
 
         (ExistingUserNameInputChg updateField, _) ->
             ( handleExistingUserInputs model (ExistingUserNameInputChg updateField), Cmd.none )
+
+        (ExistingUserPasswordInputChg updateField, _) ->
+            ( handleExistingUserInputs model (ExistingUserPasswordInputChg updateField), Cmd.none )
 
 
         (ExistingUserDescInputChg updateField, _) ->
@@ -3145,7 +3153,7 @@ inputNewUser walletState dataState appInfo =
                                             , nameValidationErr appInfo sUsers
                                             , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
                                                 { onChange = NewUserDescInputChg
-                                                , text = userVal.description
+                                                , text = userVal.password
                                                 , placeholder = Nothing
                                                 , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
                                                 }
@@ -3195,7 +3203,7 @@ inputNewUser walletState dataState appInfo =
                                             , nameValidationErr appInfo sUsers
                                             , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
                                                 { onChange = NewUserDescInputChg
-                                                , text = userVal.description
+                                                , text = userVal.password
                                                 , placeholder = Nothing
                                                 , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
                                                 }
@@ -3245,7 +3253,7 @@ inputNewUser walletState dataState appInfo =
                                                 , nameValidationErr appInfo sUsers
                                                 , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
                                                     { onChange = NewUserDescInputChg
-                                                    , text = userVal.description
+                                                    , text = userVal.password
                                                     , placeholder = Nothing
                                                     , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
                                                     }
@@ -3301,6 +3309,12 @@ inputUpdateExistingUser model =
                                     , text = userVal.username
                                     , placeholder = Just <| Input.placeholder [] <| Element.text "yah placeholder"
                                     , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
+                                    }
+                                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userPassword") ])
+                                    { onChange = ExistingUserPasswordInputChg
+                                    , text = userVal.password
+                                    , placeholder = Nothing
+                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
                                     }
                                 , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
                                     { onChange = ExistingUserDescInputChg
