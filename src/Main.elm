@@ -250,9 +250,10 @@ update msg model =
                     let 
                         _ = Debug.log "fell thru at: " "update - walletState"
                     in
-                    ( AppOps SR.Types.WalletStopSub AllEmpty SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions SR.Types.StopSubscription SR.Types.Registered emptyTxRecord
-                    , Cmd.none
-                    )
+                    
+                            ( AppOps SR.Types.WalletStopSub AllEmpty SR.Defaults.emptyAppInfo SR.Types.UIDisplayWalletLockedInstructions SR.Types.StopSubscription SR.Types.Registered emptyTxRecord
+                            , Cmd.none
+                            )
         ( WalletStatus _, Failure _ ) ->
             (model, Cmd.none)
 
@@ -278,7 +279,7 @@ update msg model =
                                 newUser = Data.Rankings.removedDeletedRankingsFromUserJoined user rankings
                                 _ = Debug.log "newUser: " newUser
                                 updatedsUsers = Data.Users.updatedUser sUsers newUser
-                                -- userInAppInfo = { appInfo | user = newUser }
+                                -- userInAppInfo = { appInfo | m_user = Just newUser }
                                 -- newDataKind = Users newUser
                                 -- newDataState = StateFetched users newDataKind
                             in 
@@ -332,29 +333,33 @@ update msg model =
 
 
         ( UsersReceived userList, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
-            let 
-                _ =
-                                    Debug.log "UsersReceived" userList
-                --extractedList = Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList
-                extractedList = [SR.Defaults.emptyUser]
-                users = Data.Users.asUsers (EverySet.fromList (extractedList))
-                newUser = Data.Users.gotUser users appInfo.user.ethaddress
-                userInAppInfo = { appInfo | user = newUser }
-                newDataKind = Users newUser
-                newDataState = StateFetched users newDataKind
-            in
-                --todo: copy createGlobal to handle this:
-                if List.isEmpty extractedList then 
+            case appInfo.m_user of
+                Nothing ->
                     (model, Cmd.none)
-                else if (Data.Users.isRegistered (Data.Users.asList users) newUser) then
-                            let
-                                _ = Debug.log "in isregistered " "here"
-                                
-                            in
-                    ( AppOps walletState newDataState userInAppInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered  emptyTxRecord, gotGlobal )
-                else 
-                     ( AppOps walletState newDataState userInAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription  SR.Types.Guest emptyTxRecord, gotGlobal )
-        
+                Just userVal ->
+                    let 
+                        _ =
+                                            Debug.log "UsersReceived" userList
+                        --extractedList = Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList
+                        extractedList = [SR.Defaults.emptyUser]
+                        users = Data.Users.asUsers (EverySet.fromList (extractedList))
+                        newUser = Data.Users.gotUser users userVal.ethaddress
+                        userInAppInfo = { appInfo | m_user = Just newUser }
+                        newDataKind = Users newUser
+                        newDataState = StateFetched users newDataKind
+                    in
+                        --todo: copy createGlobal to handle this:
+                        if List.isEmpty extractedList then 
+                            (model, Cmd.none)
+                        else if (Data.Users.isRegistered (Data.Users.asList users) newUser) then
+                                    let
+                                        _ = Debug.log "in isregistered " "here"
+                                        
+                                    in
+                            ( AppOps walletState newDataState userInAppInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered  emptyTxRecord, gotGlobal )
+                        else 
+                            ( AppOps walletState newDataState userInAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription  SR.Types.Guest emptyTxRecord, gotGlobal )
+                
         ( UsersReceived _, Failure _ ) ->
             (model, Cmd.none)
 
@@ -532,23 +537,27 @@ update msg model =
                 StateUpdated sUsers dKind ->
                         case dKind of 
                             Global sGlobal rnkId user ->
-                                let                                                     
-                                    newAppInfo =
-                                        updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
+                                case appInfo.m_user of
+                                    Nothing ->
+                                        (model, Cmd.none)
+                                    Just userVal ->
+                                        let
+                                            newAppInfo =
+                                                updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
 
 
-                                -- re-factor from appInfo to AppState over time
-                                    initAppState = 
-                                        Data.AppState.updateAppState appInfo.user appInfo.player 
-                                        appInfo.challenger (rnkidstr)
+                                        -- re-factor from appInfo to AppState over time
+                                            initAppState = 
+                                                Data.AppState.updateAppState userVal appInfo.player 
+                                                appInfo.challenger (rnkidstr)
 
 
-                                    newDataKind = Selected Data.Selected.emptySelected rnkidstr user SR.Types.UserIsOwner (Data.Global.asRankings sGlobal)
-                                    newDataState = StateFetched sUsers newDataKind
-                            
-                                in
-                                    ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, 
-                                    fetchedSingleRanking rnkidstr )
+                                            newDataKind = Selected Data.Selected.emptySelected rnkidstr user SR.Types.UserIsOwner (Data.Global.asRankings sGlobal)
+                                            newDataState = StateFetched sUsers newDataKind
+                                    
+                                        in
+                                            ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, 
+                                            fetchedSingleRanking rnkidstr )
 
                             _ ->
                                 (model, Cmd.none)
@@ -561,29 +570,33 @@ update msg model =
                 StateFetched sUsers dKind ->
                     case dKind of 
                         Global sGlobal rnkId user ->
-                            let
+                            case appInfo.m_user of
+                                Nothing ->
+                                    (model, Cmd.none)
+                                Just userVal ->
+                                    let
 
-                                _ =
-                                    Debug.log "rnkid" (Utils.MyUtils.stringFromRankingId rnkId)
-                                _ =
-                                    Debug.log "user clicked member" user.userjoinrankings
-
-
-                                newAppInfo =
-                                    updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
-
-
-                                -- re-factor from appInfo to AppState over time
-                                initAppState = 
-                                    Data.AppState.updateAppState appInfo.user appInfo.player 
-                                    appInfo.challenger ( rnkidstr)
+                                        _ =
+                                            Debug.log "rnkid" (Utils.MyUtils.stringFromRankingId rnkId)
+                                        _ =
+                                            Debug.log "user clicked member" user.userjoinrankings
 
 
-                                newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") user SR.Types.UserIsMember (Data.Global.asRankings sGlobal)
-                                newDataState = StateFetched sUsers newDataKind
-                            in
-                                ( AppOps walletState newDataState newAppInfo SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, 
-                                fetchedSingleRanking rnkidstr )
+                                        newAppInfo =
+                                            updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
+
+
+                                        -- re-factor from appInfo to AppState over time
+                                        initAppState = 
+                                            Data.AppState.updateAppState userVal appInfo.player 
+                                            appInfo.challenger ( rnkidstr)
+
+
+                                        newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") user SR.Types.UserIsMember (Data.Global.asRankings sGlobal)
+                                        newDataState = StateFetched sUsers newDataKind
+                                    in
+                                        ( AppOps walletState newDataState newAppInfo SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, 
+                                        fetchedSingleRanking rnkidstr )
                         _ -> 
                             (model, Cmd.none)
                 _ -> 
@@ -595,16 +608,20 @@ update msg model =
                 _ = Debug.log "rnkid" rnkidstr
             in
             case dataState of 
-                        StateFetched sUsers dKind ->
-                            case dKind of 
-                                Global sGlobal rnkId user ->
+                StateFetched sUsers dKind ->
+                    case dKind of 
+                        Global sGlobal rnkId user ->
+                            case appInfo.m_user of
+                                Nothing ->
+                                    (model, Cmd.none)
+                                Just userVal ->
                                     let
                                         newAppInfo =
                                             updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
 
                                         -- re-factor from appInfo to AppState over time
                                         initAppState = 
-                                            Data.AppState.updateAppState appInfo.user appInfo.player 
+                                            Data.AppState.updateAppState userVal appInfo.player 
                                             appInfo.challenger ( rnkidstr)
                                         
                                         newDataKind = Selected Data.Selected.emptySelected rnkidstr user SR.Types.UserIsNeitherOwnerNorMember (Data.Global.asRankings sGlobal)
@@ -612,10 +629,10 @@ update msg model =
                                     in
                                         ( AppOps walletState newDataState newAppInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription accountState emptyTxRecord, 
                                         fetchedSingleRanking rnkidstr )
-                                _ -> 
-                                    (model, Cmd.none)
                         _ -> 
                             (model, Cmd.none)
+                _ -> 
+                    (model, Cmd.none)
         
         
 
@@ -795,24 +812,31 @@ update msg model =
             in
                     case dataState of 
                         StateFetched sUsers dKind ->
-                            let
-                                newDataKind = Global Data.Global.empty (Internal.Types.RankingId "") appInfo.user
-                                newDataState = StateFetched sUsers newDataKind
-
-                                
-                                _ = Debug.log "toGlobal now" "now"
-            
-                            in
-                            ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription accountState emptyTxRecord, gotGlobal )
+                            case appInfo.m_user of
+                                Nothing ->
+                                    (model, Cmd.none)
+                                Just userVal ->
+                                    let
+                                        newDataKind = Global Data.Global.empty (Internal.Types.RankingId "") userVal
+                                        newDataState = StateFetched sUsers newDataKind
+   
+                                        _ = Debug.log "toGlobal now" "now"
+                    
+                                    in
+                                    ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription accountState emptyTxRecord, gotGlobal )
                         
                         StateUpdated sUsers dKind ->
-                            let
-                                newDataKind = Global Data.Global.empty (Internal.Types.RankingId "") appInfo.user
-                                newDataState = StateFetched sUsers newDataKind
+                            case appInfo.m_user of
+                                Nothing ->
+                                    (model, Cmd.none)
+                                Just userVal ->
+                                    let
+                                        newDataKind = Global Data.Global.empty (Internal.Types.RankingId "") userVal
+                                        newDataState = StateFetched sUsers newDataKind
 
-                                _ = Debug.log "toGlobal now" "stateupdated"
-                            in
-                            ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, gotGlobal )
+                                        _ = Debug.log "toGlobal now" "stateupdated"
+                                    in
+                                    ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, gotGlobal )
                         
                         
                         AllEmpty -> 
@@ -925,7 +949,12 @@ update msg model =
                                 _ = Debug.log "14.1" dataState
                                 newDataState = StateUpdated sUsers user
                     in
-                    ( AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription SR.Types.Registered txRec, updateExistingUser (Data.Users.asList sUsers) appInfo.user )
+                    case appInfo.m_user of
+                        Nothing ->
+                            (model, Cmd.none)
+                        Just userVal ->
+                            ( AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription SR.Types.Registered txRec, updateExistingUser (Data.Users.asList sUsers) userVal )
+                    
                 _ -> 
                             let 
                                 _ = Debug.log "14.3 - dataState" dataState
@@ -939,14 +968,16 @@ update msg model =
 
         (ClickedChallengeOpponent opponentAsPlayer, AppOps walletState dataState appInfo uiState subState accountState  txRec )  ->
             case dataState of
-                StateFetched sUsers dKind -> 
-                    
+                StateFetched sUsers dKind ->                   
                     case dKind of 
-                            Selected sSelected rnkId user status rankings ->
-                                ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer appInfo.user, Cmd.none )
-                
-                            _ ->
-                                (model, Cmd.none)
+                        Selected sSelected rnkId user status rankings ->
+                            case appInfo.m_user of
+                                Nothing ->
+                                    (model, Cmd.none)
+                                Just userVal ->
+                                    ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer userVal, Cmd.none )
+                        _ ->
+                            (model, Cmd.none)
                 _ ->
                     (model, Cmd.none)
 
@@ -1184,17 +1215,21 @@ update msg model =
                             StateFetched sUsers dKind ->
                                 case dKind of 
                                     Global sGlobal rnkId user ->
-                                        let
-                                            extractedRankingId = Data.Global.gotNewRankingIdFromWebData idValueFromDecoder
-                                            newSGlobal = Data.Global.addUserRanking sGlobal extractedRankingId appInfo.selectedRanking appInfo.user
-                                            newGlobalAsList = Data.Global.rankingsAsList newSGlobal
-                                            newGlobalUpdated = Global newSGlobal rnkId user
-                                            newDataState = StateUpdated sUsers newGlobalUpdated
-                                        in
-                                            ( AppOps SR.Types.WalletOperational newDataState appInfo SR.Types.UICreateNewLadder SR.Types.StopSubscription SR.Types.Registered emptyTxRecord
-                                            ,
-                                            httpPutRequestForAddGlobal (Data.Global.newJsonEncodedList (newGlobalAsList)) newGlobalAsList
-                                            )
+                                        case appInfo.m_user of
+                                            Nothing ->
+                                                (model, Cmd.none)
+                                            Just userVal ->
+                                                let
+                                                    extractedRankingId = Data.Global.gotNewRankingIdFromWebData idValueFromDecoder
+                                                    newSGlobal = Data.Global.addUserRanking sGlobal extractedRankingId appInfo.selectedRanking userVal
+                                                    newGlobalAsList = Data.Global.rankingsAsList newSGlobal
+                                                    newGlobalUpdated = Global newSGlobal rnkId user
+                                                    newDataState = StateUpdated sUsers newGlobalUpdated
+                                                in
+                                                    ( AppOps SR.Types.WalletOperational newDataState appInfo SR.Types.UICreateNewLadder SR.Types.StopSubscription SR.Types.Registered emptyTxRecord
+                                                    ,
+                                                    httpPutRequestForAddGlobal (Data.Global.newJsonEncodedList (newGlobalAsList)) newGlobalAsList
+                                                    )
                                     _ -> 
                                         let 
                                             _ = Debug.log "dataState should be Global" dataState
@@ -1219,7 +1254,7 @@ update msg model =
 
         (ResetRejectedNewUserToShowGlobal,  AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
             let 
-                newAppInfo = {appInfo | user = SR.Defaults.emptyUser}
+                newAppInfo = {appInfo | m_user = Just SR.Defaults.emptyUser}
             in 
             case walletState of 
                 SR.Types.WalletOperational ->
@@ -1235,7 +1270,7 @@ update msg model =
                         StateFetched sUsers dKind ->
                                 case dKind of 
                                     Global sGlobal rnkId user ->
-                                        --if Data.Users.isRegistered (Data.Users.asList sUsers) appInfo.user then
+                                        --if Data.Users.isRegistered (Data.Users.asList sUsers) appInfo.m_user then
                                         if user.ethaddress /= "" then
                                             let
                                                 txParams =
@@ -1264,7 +1299,7 @@ update msg model =
                                                 
                                             in
                                             ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIRenderAllRankings SR.Types.Subscribe SR.Types.Registered { txRec | txSentry = newSentry }
-                                            --Cmd.batch [ sentryCmd, addedUserAsFirstPlayerInNewList appInfo.user ] )
+                                            --Cmd.batch [ sentryCmd, addedUserAsFirstPlayerInNewList appInfo.m_user ] )
                                             ,sentryCmd)
 
                                         else
@@ -1329,32 +1364,36 @@ update msg model =
                     case dataState of
                         StateFetched sUsers dKind -> 
                             case dKind of 
-                                    Selected sSelected rnkId user status rankings ->
-                                        case accountState of 
-                                            SR.Types.Guest -> 
-                                                ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
-                                            SR.Types.Registered ->
-                                                ( AppOps walletState dataState appInfo SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription accountState txRec, Cmd.none )
+                                Selected sSelected rnkId user status rankings ->
+                                    case accountState of
+                                        SR.Types.Guest -> 
+                                            ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
+                                        SR.Types.Registered ->
+                                            ( AppOps walletState dataState appInfo SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription accountState txRec, Cmd.none )
 
-                                            SR.Types.EthEnabled ->
-                                                ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
+                                        SR.Types.EthEnabled ->
+                                            ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
 
-                                            SR.Types.EthEnabledAndRegistered ->
-                                                let
-                                                    newLUPlayer = Data.Selected.userAdded sUsers appInfo.selectedRanking.id (Data.Selected.asList sSelected) appInfo.user
-                                                    newSelected = Data.Selected.asSelected (EverySet.fromList newLUPlayer) sUsers rnkId
-                                                    
-                                                    newDataKind = Selected newSelected  rnkId user SR.Types.UserIsMember rankings
-                                                    newDataState = StateUpdated sUsers newDataKind
-                                                    updatedModel = AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription accountState txRec
-                                                in
-                                                    ( updatedModel, httpPlayerList (newDataState))
+                                        SR.Types.EthEnabledAndRegistered ->
+                                            case appInfo.m_user of
+                                                Nothing ->
+                                                    (model, Cmd.none)
+                                                Just userVal ->
+                                                    let
+                                                        newLUPlayer = Data.Selected.userAdded sUsers appInfo.selectedRanking.id (Data.Selected.asList sSelected) userVal
+                                                        newSelected = Data.Selected.asSelected (EverySet.fromList newLUPlayer) sUsers rnkId
+                                                        
+                                                        newDataKind = Selected newSelected  rnkId user SR.Types.UserIsMember rankings
+                                                        newDataState = StateUpdated sUsers newDataKind
+                                                        updatedModel = AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription accountState txRec
+                                                    in
+                                                        ( updatedModel, httpPlayerList (newDataState))
 
-                                    _ -> 
-                                        let 
-                                            _ = Debug.log "12 - dataState should be Selected" dataState
-                                        in
-                                            (model, Cmd.none)
+                                _ -> 
+                                    let 
+                                        _ = Debug.log "12 - dataState should be Selected" dataState
+                                    in
+                                        (model, Cmd.none)
 
                         _ -> 
                                     let 
@@ -1474,50 +1513,57 @@ update msg model =
         
 
         (ClickedCreateNewUserToWallet userInfo,  AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
-            let
-
-                _ = Debug.log "userInfo address in ClickedCreateNewUserToWallet" appInfo.user.ethaddress
-                accountNo = (Utils.MyUtils.maybeAddressToString txRec.account )
-                
-                _ = Debug.log "txRec.account in ClickedCreateNewUserToWallet" accountNo
-
-                _ =
-                    Debug.log "ClickedCreateNewUserToWallet walletState" walletState
-            in
-            case walletState of 
-                SR.Types.WalletOperational ->
+            case appInfo.m_user of 
+                Nothing ->
                     let
-                        txParams =
-                            { to = txRec.account
-                            , from = txRec.account
-                            , gas = Nothing
-                            , gasPrice = Just <| Eth.Units.gwei 4
-                            , value = Just <| Eth.Units.gwei 1
-                            , data = Nothing
-                            , nonce = Nothing
-                            }
-
-                        ( newSentry, sentryCmd ) =
-                            Eth.Sentry.Tx.customSend
-                                txRec.txSentry
-                                { onSign = Just WatchTxHash
-                                , onBroadcast = Just WatchTx
-                                , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
-                                }
-                                txParams
-
-                        -- we need to send a user obj to createNewUser, not just the addr
-                        -- because it will update the other input details on the obj
-                        userWithUpdatedAddr =
-                            { userInfo | ethaddress =  accountNo }
-
-                        newAppInfo =
-                            { appInfo | user = userWithUpdatedAddr, appState = SR.Types.AppStateCreateNewUser }
+                        _ = Debug.log "No user!" "!"
                     in
-                    ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription SR.Types.Registered { txRec | txSentry = newSentry }
-                    , sentryCmd)
-                _ -> 
                     (model, Cmd.none)
+                Just userVal ->
+                    let
+
+                        _ = Debug.log "userInfo address in ClickedCreateNewUserToWallet" userVal.ethaddress
+                        accountNo = (Utils.MyUtils.maybeAddressToString txRec.account )
+                        
+                        _ = Debug.log "txRec.account in ClickedCreateNewUserToWallet" accountNo
+
+                        _ =
+                            Debug.log "ClickedCreateNewUserToWallet walletState" walletState
+                    in
+                    case walletState of 
+                        SR.Types.WalletOperational ->
+                            let
+                                txParams =
+                                    { to = txRec.account
+                                    , from = txRec.account
+                                    , gas = Nothing
+                                    , gasPrice = Just <| Eth.Units.gwei 4
+                                    , value = Just <| Eth.Units.gwei 1
+                                    , data = Nothing
+                                    , nonce = Nothing
+                                    }
+
+                                ( newSentry, sentryCmd ) =
+                                    Eth.Sentry.Tx.customSend
+                                        txRec.txSentry
+                                        { onSign = Just WatchTxHash
+                                        , onBroadcast = Just WatchTx
+                                        , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                                        }
+                                        txParams
+
+                                -- we need to send a user obj to createNewUser, not just the addr
+                                -- because it will update the other input details on the obj
+                                userWithUpdatedAddr =
+                                    { userInfo | ethaddress =  accountNo }
+
+                                newAppInfo =
+                                    { appInfo | m_user = Just userWithUpdatedAddr, appState = SR.Types.AppStateCreateNewUser }
+                            in
+                            ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription SR.Types.Registered { txRec | txSentry = newSentry }
+                            , sentryCmd)
+                        _ -> 
+                            (model, Cmd.none)
 
         -- TxSentryMsg updates when user clicks 'Confirm' in the wallet
         (TxSentryMsg subMsg,  AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
@@ -1531,29 +1577,39 @@ update msg model =
             in
             if handleTxSubMsg subMsg then
                 case appInfo.appState of
-                    SR.Types.AppStateCreateNewLadder -> 
-                        let
-                           _ =
-                                Debug.log "in CreateNewLadder" "yes"
-                        in
-                        ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription SR.Types.Registered { txRec | txSentry = subModel }
-                        , Cmd.batch [subCmd, addedUserAsFirstPlayerInNewList appInfo.user] )
-                    
-                    SR.Types.AppStateCreateNewUser -> 
-                        let 
-                            _ =
-                                Debug.log "in CreateNewUser" "yes"
+                    SR.Types.AppStateCreateNewLadder ->
+                        case appInfo.m_user of 
+                            Nothing ->
+                                let
+                                    _ =
+                                            Debug.log "No User" "!"
+                                in
+                                (model, Cmd.none)
 
-                            userSet = case dataState of 
-                                        StateFetched users dKind -> 
-                                            users 
-                                        StateUpdated users user ->
-                                            users 
-                                        _ -> 
-                                            Data.Users.emptyUsers
-                        in
-                        ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription SR.Types.Registered { txRec | txSentry = subModel }
-                        , Cmd.batch [subCmd,  createNewUser ( Data.Users.asList userSet) appInfo.user] )
+                            Just userVal ->
+                                ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription SR.Types.Registered { txRec | txSentry = subModel }
+                                , Cmd.batch [subCmd, addedUserAsFirstPlayerInNewList userVal] )
+                    
+                    SR.Types.AppStateCreateNewUser ->
+                        case appInfo.m_user of 
+                            Nothing ->
+                                (model, Cmd.none)
+
+                            Just userVal ->
+                                let 
+                                    _ =
+                                        Debug.log "in CreateNewUser" "yes"
+
+                                    userSet = case dataState of 
+                                                StateFetched users dKind -> 
+                                                    users 
+                                                StateUpdated users user ->
+                                                    users 
+                                                _ -> 
+                                                    Data.Users.emptyUsers
+                                in
+                                ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription SR.Types.Registered { txRec | txSentry = subModel }
+                                , Cmd.batch [subCmd,  createNewUser ( Data.Users.asList userSet) userVal] )
 
                     SR.Types.AppStateEnterWon -> 
                         let 
@@ -1761,15 +1817,18 @@ handleTxSubMsg subMsg =
 
 gotWalletAddrApplyToUser : SR.Types.AppInfo -> Eth.Types.Address ->  SR.Types.AppInfo
 gotWalletAddrApplyToUser appInfo uaddr =
+    case appInfo.m_user of
+        Nothing ->
+            appInfo
+        Just userVal ->
             let
-                newAppInfoUser =
-                    appInfo.user
+                newAppInfoUser = userVal
 
                 newUserWithAddr =
                     { newAppInfoUser | ethaddress = Eth.Utils.maybeAddressToString uaddr }
 
                 newAppInfo =
-                    { appInfo | user = newUserWithAddr }
+                    { appInfo | m_user = Just newUserWithAddr }
             in
             newAppInfo
 
@@ -1781,56 +1840,68 @@ handleNewUserInputs model msg =
         AppOps walletState dataState appInfo uiState subState accountState  txRec ->
             case msg of
                 NewUserNameInputChg namefield ->
-                    let
-                        newUser =
-                            appInfo.user
+                    case appInfo.m_user of
+                        Nothing ->
+                            model
+                        Just userVal ->
+                            let
+                                newUser = userVal
 
-                        updatedNewUser =
-                            { newUser | username = namefield }
+                                updatedNewUser =
+                                    { newUser | username = namefield }
 
-                        newAppInfo =
-                            { appInfo | user = updatedNewUser }
-                    in
-                    AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered txRec
+                                newAppInfo =
+                                    { appInfo | m_user = Just updatedNewUser }
+                            in
+                            AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered txRec
 
                 NewUserDescInputChg descfield ->
-                    let
-                        newUser =
-                            appInfo.user
+                   case appInfo.m_user of
+                        Nothing ->
+                            model
+                        Just userVal ->
+                            let
+                                newUser = userVal
 
-                        updatedNewUser =
-                            { newUser | description = descfield }
+                                updatedNewUser =
+                                    { newUser | description = descfield }
 
-                        newAppInfo =
-                            { appInfo | user = updatedNewUser }
-                    in
-                    AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered txRec
+                                newAppInfo =
+                                    { appInfo | m_user = Just updatedNewUser }
+                            in
+                            AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered txRec
 
                 NewUserEmailInputChg emailfield ->
-                    let
-                        newUser =
-                            appInfo.user
+                    case appInfo.m_user of
+                        Nothing ->
+                            model
+                        Just userVal ->
+                            let
+                                newUser = userVal
 
-                        updatedNewUser =
-                            { newUser | email = emailfield }
+                                updatedNewUser =
+                                    { newUser | email = emailfield }
 
-                        newAppInfo =
-                            { appInfo | user = updatedNewUser }
-                    in
-                    AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered txRec
+                                newAppInfo =
+                                    { appInfo | m_user = Just updatedNewUser }
+                            in
+                            AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered txRec
 
                 NewUserMobileInputChg mobilefield ->
-                    let
-                        newUser =
-                            appInfo.user
+                    case appInfo.m_user of
+                        Nothing ->
+                            model
+                        Just userVal ->
+                            let
+                                newUser = userVal
 
-                        updatedNewUser =
-                            { newUser | mobile = mobilefield }
+                                updatedNewUser =
+                                    { newUser | mobile = mobilefield }
 
-                        newAppInfo =
-                            { appInfo | user = updatedNewUser }
-                    in
-                    AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered txRec
+                                newAppInfo =
+                                    { appInfo | m_user = Just updatedNewUser }
+                            in
+                            AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered txRec
 
                 _ ->
                     Failure "NewUserNameInputChg"
@@ -1848,43 +1919,52 @@ handleExistingUserInputs model msg =
                     model
 
                 ExistingUserDescInputChg descfield ->
-                    let
-                        newUser =
-                            appInfo.user
+                    case appInfo.m_user of
+                        Nothing ->
+                            model
+                        Just userVal ->
+                            let
+                                newUser = userVal
 
-                        updatedNewUser =
-                            { newUser | description = descfield }
+                                updatedNewUser =
+                                    { newUser | description = descfield }
 
-                        newAppInfo =
-                            { appInfo | user = updatedNewUser }
-                    in
-                    AppOps walletState dataState newAppInfo SR.Types.UIUpdateExistingUser SR.Types.StopSubscription SR.Types.Registered txRec
+                                newAppInfo =
+                                    { appInfo | m_user = Just updatedNewUser }
+                            in
+                            AppOps walletState dataState newAppInfo SR.Types.UIUpdateExistingUser SR.Types.StopSubscription SR.Types.Registered txRec
 
                 ExistingUserEmailInputChg emailfield ->
-                    let
-                        newUser =
-                            appInfo.user
+                    case appInfo.m_user of
+                        Nothing ->
+                            model
+                        Just userVal ->
+                            let
+                                newUser = userVal
 
-                        updatedNewUser =
-                            { newUser | email = emailfield }
+                                updatedNewUser =
+                                    { newUser | email = emailfield }
 
-                        newAppInfo =
-                            { appInfo | user = updatedNewUser }
-                    in
-                    AppOps walletState dataState newAppInfo SR.Types.UIUpdateExistingUser SR.Types.StopSubscription SR.Types.Registered txRec
+                                newAppInfo =
+                                    { appInfo | m_user = Just updatedNewUser }
+                            in
+                            AppOps walletState dataState newAppInfo SR.Types.UIUpdateExistingUser SR.Types.StopSubscription SR.Types.Registered txRec
 
                 ExistingUserMobileInputChg mobilefield ->
-                    let
-                        newUser =
-                            appInfo.user
+                    case appInfo.m_user of
+                        Nothing ->
+                            model
+                        Just userVal ->
+                            let
+                                newUser = userVal
 
-                        updatedNewUser =
-                            { newUser | mobile = mobilefield }
+                                updatedNewUser =
+                                    { newUser | mobile = mobilefield }
 
-                        newAppInfo =
-                            { appInfo | user = updatedNewUser }
-                    in
-                    AppOps walletState dataState newAppInfo SR.Types.UIUpdateExistingUser SR.Types.StopSubscription SR.Types.Registered txRec
+                                newAppInfo =
+                                    { appInfo | m_user = Just updatedNewUser }
+                            in
+                            AppOps walletState dataState newAppInfo SR.Types.UIUpdateExistingUser SR.Types.StopSubscription SR.Types.Registered txRec
 
                 _ ->
                     Failure "ExistingUserNameInputChg"
@@ -1976,7 +2056,7 @@ updateSelectedRankingPlayerList model luplayers =
 
 --                         stateToSelected = Selected newSSelected sUsers (Internal.Types.RankingId appInfo.selectedRanking.id)
                         
---                         newAppPlayer = { appInfo | player = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer appInfo.user.ethaddress }
+--                         newAppPlayer = { appInfo | player = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer appInfo.m_user.ethaddress }
 
 --                         newAppChallengerAndPlayer = { newAppPlayer | challenger = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer newAppPlayer.player.player.challengeraddress }
 
@@ -2085,26 +2165,30 @@ in the home view"""
                             greetingView <| "View error"
 
                 SR.Types.UIRenderAllRankings ->
-                    case dataState of 
-                        StateFetched sUsers dKind ->
-                             case dKind of 
-                                Global sGlobal rnkId user ->
-                                    let 
-                                        _ = Debug.log "accountState " accountState
-                                    in
-                                    globalResponsiveview walletState sGlobal appInfo.user "" accountState
-                                _ ->
-                                    greetingView <| "Should be Global 1"
-                        
-                        StateUpdated sUsers dKind ->
-                             case dKind of
-                                Global sGlobal rnkId user  -> 
-                                    globalResponsiveview walletState sGlobal appInfo.user "Your Settings Have Been Updated" SR.Types.Registered
+                    case appInfo.m_user of 
+                        Nothing ->
+                            greetingView <| "No user ..."
+                        Just m_user -> 
+                            case dataState of 
+                                StateFetched sUsers dKind ->
+                                    case dKind of 
+                                        Global sGlobal rnkId user ->
+                                            let 
+                                                _ = Debug.log "accountState " accountState
+                                            in
+                                            globalResponsiveview walletState sGlobal m_user "" accountState
+                                        _ ->
+                                            greetingView <| "Should be Global 1"
+                                
+                                StateUpdated sUsers dKind ->
+                                    case dKind of
+                                        Global sGlobal rnkId user  -> 
+                                            globalResponsiveview walletState sGlobal m_user "Your Settings Have Been Updated" SR.Types.Registered
 
-                                _ ->
-                                    greetingView <| "Should be updated Global"
-                        AllEmpty ->
-                            greetingView <| "No rankings to display ..."
+                                        _ ->
+                                            greetingView <| "Should be updated Global"
+                                AllEmpty ->
+                                    greetingView <| "No rankings to display ..."
 
 
                 SR.Types.UIEnterResult ->
@@ -2392,13 +2476,17 @@ playerbuttons dataState appInfo =
 configureThenAddPlayerRankingBtns : Data.Selected.Selected -> SR.Types.AppInfo -> SR.Types.UserPlayer -> Element Msg
 configureThenAddPlayerRankingBtns sSelected appInfo uplayer =
    -- nb. 'uplayer' is the player that's being mapped cf. appInfo.player which is current user as player (single instance)
-                let
-                    _ = Debug.log "configureThenAddPlayerRankingBtns" uplayer
-                    printChallengerNameOrAvailable = Data.Selected.printChallengerNameOrAvailable sSelected uplayer
-                in
-                if Data.Selected.isUserPlayerMemberOfSelectedRanking (Data.Selected.asList sSelected) appInfo.user then
+    let
+        _ = Debug.log "configureThenAddPlayerRankingBtns" uplayer
+        printChallengerNameOrAvailable = Data.Selected.printChallengerNameOrAvailable sSelected uplayer
+    in
+        case appInfo.m_user of
+            Nothing ->
+                Element.text "No User!"
+            Just userVal ->
+                if Data.Selected.isUserPlayerMemberOfSelectedRanking (Data.Selected.asList sSelected) userVal then
                     
-                    if Data.Selected.isPlayerCurrentUser appInfo.user uplayer then
+                    if Data.Selected.isPlayerCurrentUser userVal uplayer then
                         --if isCurrentUserInAChallenge then
                         if Data.Selected.isChallenged sSelected uplayer then
                             Element.column Grid.simple <|
@@ -2461,8 +2549,8 @@ configureThenAddPlayerRankingBtns sSelected appInfo uplayer =
                             , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ uplayer.user.username ++ " vs " ++ printChallengerNameOrAvailable
                             }
                         ]
-            -- _ ->
-            --     Element.text "Config Btns Failed"
+    -- _ ->
+    --     Element.text "Config Btns Failed"
 
 insertPlayerList : DataState -> SR.Types.AppInfo -> List (Element Msg)
 insertPlayerList dataState appInfo =
@@ -2689,33 +2777,36 @@ confirmChallengebutton : Model -> Element Msg
 confirmChallengebutton model =
     case model of
         AppOps walletState dataState appInfo uiState subState accountState  txRec ->
-            
-            Element.column Grid.section <|
-                [ Element.el Heading.h6 <| Element.text <| " Your opponent's details: "
-                , Element.paragraph (Card.fill ++ Color.info) <|
-                    [ Element.el [] <| Element.text <| appInfo.user.username ++ " you are challenging " ++ appInfo.challenger.user.username
-                    ]
-                , Element.el [] <| Element.text <| "Email: "
-                , Element.paragraph (Card.fill ++ Color.info) <|
-                    [ Element.el [] <| Element.text <| appInfo.challenger.user.email
-                    ]
-                , Element.el [] <| Element.text <| "Mobile: "
-                , Element.paragraph (Card.fill ++ Color.info) <|
-                    [ Element.el [] <| Element.text <| appInfo.challenger.user.mobile
-                    ]
-                , Element.column (Card.simple ++ Grid.simple) <|
-                    [ Element.wrappedRow Grid.simple <|
-                        [ Input.button (Button.simple ++ Color.simple) <|
-                            { onPress = Just <| ResetToShowSelected
-                            , label = Element.text "Cancel"
-                            }
-                        , Input.button (Button.simple ++ Color.info) <|
-                            { onPress = Just <| ClickedNewChallengeConfirm
-                            , label = Element.text "Confirm"
-                            }
+            case appInfo.m_user of
+                Nothing ->
+                    Element.text <| " No User!"
+                Just userVal ->
+                    Element.column Grid.section <|
+                        [ Element.el Heading.h6 <| Element.text <| " Your opponent's details: "
+                        , Element.paragraph (Card.fill ++ Color.info) <|
+                            [ Element.el [] <| Element.text <| userVal.username ++ " you are challenging " ++ appInfo.challenger.user.username
+                            ]
+                        , Element.el [] <| Element.text <| "Email: "
+                        , Element.paragraph (Card.fill ++ Color.info) <|
+                            [ Element.el [] <| Element.text <| appInfo.challenger.user.email
+                            ]
+                        , Element.el [] <| Element.text <| "Mobile: "
+                        , Element.paragraph (Card.fill ++ Color.info) <|
+                            [ Element.el [] <| Element.text <| appInfo.challenger.user.mobile
+                            ]
+                        , Element.column (Card.simple ++ Grid.simple) <|
+                            [ Element.wrappedRow Grid.simple <|
+                                [ Input.button (Button.simple ++ Color.simple) <|
+                                    { onPress = Just <| ResetToShowSelected
+                                    , label = Element.text "Cancel"
+                                    }
+                                , Input.button (Button.simple ++ Color.info) <|
+                                    { onPress = Just <| ClickedNewChallengeConfirm
+                                    , label = Element.text "Confirm"
+                                    }
+                                ]
+                            ]
                         ]
-                    ]
-                ]
 
         _ ->
             Element.text "Fail confirmChallengebutton"
@@ -3036,142 +3127,154 @@ inputNewUser walletState dataState appInfo =
             StateFetched sUsers dKind -> 
                 case walletState of 
                     SR.Types.WalletOpened -> 
-                            Element.column Grid.section <|
-                                [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-                                , Element.wrappedRow (Card.fill ++ Grid.simple)
-                                    [ Element.column
-                                        Grid.simple
-                                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                                            { onChange = NewUserNameInputChg
-                                            , text = appInfo.user.username
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
-                                            }
-                                        , nameValidationErr appInfo sUsers
-                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                            { onChange = NewUserDescInputChg
-                                            , text = appInfo.user.description
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                                            }
-                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
-                                            { onChange = NewUserDescInputChg
-                                            , text = appInfo.user.description
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
-                                            }
-                                        , userDescValidationErr appInfo.user
-                                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
-                                            { onChange = NewUserEmailInputChg
-                                            , text = appInfo.user.email
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
-                                            }
-                                        , emailValidationErr appInfo.user
-                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
-                                            { onChange = NewUserMobileInputChg
-                                            , text = Utils.Validation.Validate.validatedMaxTextLength appInfo.user.mobile 25
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
-                                            }
-                                        , mobileValidationErr appInfo.user
+                        case appInfo.m_user of
+                            Nothing ->
+                                Element.text "No User"
+                            Just userVal ->
+                                Element.column Grid.section <|
+                                    [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                                    , Element.wrappedRow (Card.fill ++ Grid.simple)
+                                        [ Element.column
+                                            Grid.simple
+                                            [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                                                { onChange = NewUserNameInputChg
+                                                , text = userVal.username
+                                                , placeholder = Nothing
+                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+                                                }
+                                            , nameValidationErr appInfo sUsers
+                                            , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                                                { onChange = NewUserDescInputChg
+                                                , text = userVal.description
+                                                , placeholder = Nothing
+                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                                                }
+                                            , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+                                                { onChange = NewUserDescInputChg
+                                                , text = userVal.description
+                                                , placeholder = Nothing
+                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+                                                }
+                                            , userDescValidationErr userVal
+                                            , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+                                                { onChange = NewUserEmailInputChg
+                                                , text = userVal.email
+                                                , placeholder = Nothing
+                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+                                                }
+                                            , emailValidationErr userVal
+                                            , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+                                                { onChange = NewUserMobileInputChg
+                                                , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
+                                                , placeholder = Nothing
+                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+                                                }
+                                            , mobileValidationErr userVal
+                                            ]
                                         ]
+                                    , Element.text "* required and CANNOT be changed \nunder current ETH account"
+                                    , SR.Elements.justParasimpleUserInfoText
                                     ]
-                                , Element.text "* required and CANNOT be changed \nunder current ETH account"
-                                , SR.Elements.justParasimpleUserInfoText
-                                ]
 
                     SR.Types.WalletStateLocked ->
-                        Element.column Grid.section <|
-                                [ Element.el (Heading.h5 ++ [ Font.color SR.Types.colors.red ]) <| Element.text "Please Enable Ethereum to Register "
-                                , Element.wrappedRow (Card.fill ++ Grid.simple)
-                                    [ Element.column
-                                        Grid.simple
-                                        [ Input.text (Color.disabled ++ Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                                            { onChange = NewUserNameInputChg
-                                            , text = appInfo.user.username
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
-                                            }
-                                        , nameValidationErr appInfo sUsers
-                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                            { onChange = NewUserDescInputChg
-                                            , text = appInfo.user.description
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                                            }
-                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
-                                            { onChange = NewUserDescInputChg
-                                            , text = appInfo.user.description
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
-                                            }
-                                        , userDescValidationErr appInfo.user
-                                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
-                                            { onChange = NewUserEmailInputChg
-                                            , text = appInfo.user.email
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
-                                            }
-                                        , emailValidationErr appInfo.user
-                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
-                                            { onChange = NewUserMobileInputChg
-                                            , text = Utils.Validation.Validate.validatedMaxTextLength appInfo.user.mobile 25
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
-                                            }
-                                        , mobileValidationErr appInfo.user
+                        case appInfo.m_user of
+                        Nothing ->
+                            Element.text "No User"
+                        Just userVal ->
+                            Element.column Grid.section <|
+                                    [ Element.el (Heading.h5 ++ [ Font.color SR.Types.colors.red ]) <| Element.text "Please Enable Ethereum to Register "
+                                    , Element.wrappedRow (Card.fill ++ Grid.simple)
+                                        [ Element.column
+                                            Grid.simple
+                                            [ Input.text (Color.disabled ++ Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                                                { onChange = NewUserNameInputChg
+                                                , text = userVal.username
+                                                , placeholder = Nothing
+                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+                                                }
+                                            , nameValidationErr appInfo sUsers
+                                            , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                                                { onChange = NewUserDescInputChg
+                                                , text = userVal.description
+                                                , placeholder = Nothing
+                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                                                }
+                                            , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+                                                { onChange = NewUserDescInputChg
+                                                , text = userVal.description
+                                                , placeholder = Nothing
+                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+                                                }
+                                            , userDescValidationErr userVal
+                                            , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+                                                { onChange = NewUserEmailInputChg
+                                                , text = userVal.email
+                                                , placeholder = Nothing
+                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+                                                }
+                                            , emailValidationErr userVal
+                                            , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+                                                { onChange = NewUserMobileInputChg
+                                                , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
+                                                , placeholder = Nothing
+                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+                                                }
+                                            , mobileValidationErr userVal
+                                            ]
                                         ]
+                                    , Element.text "* required and CANNOT be changed \nunder current ETH account"
+                                    , SR.Elements.justParasimpleUserInfoText
                                     ]
-                                , Element.text "* required and CANNOT be changed \nunder current ETH account"
-                                , SR.Elements.justParasimpleUserInfoText
-                                ]
 
                     SR.Types.WalletOpenedNoUserAccount ->
-                        Element.column Grid.section <|
-                                [ Element.el (Heading.h5 ++ [ Font.color SR.Types.colors.red ])  <| Element.text "Please Enable Ethereum to Register "
-                                , Element.wrappedRow (Card.fill ++ Grid.simple)
-                                    [ Element.column
-                                        Grid.simple
-                                        [ Input.text (Color.disabled ++ Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                                            { onChange = NewUserNameInputChg
-                                            , text = appInfo.user.username
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
-                                            }
-                                        , nameValidationErr appInfo sUsers
-                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                            { onChange = NewUserDescInputChg
-                                            , text = appInfo.user.description
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                                            }
-                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
-                                            { onChange = NewUserDescInputChg
-                                            , text = appInfo.user.description
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
-                                            }
-                                        , userDescValidationErr appInfo.user
-                                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
-                                            { onChange = NewUserEmailInputChg
-                                            , text = appInfo.user.email
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
-                                            }
-                                        , emailValidationErr appInfo.user
-                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
-                                            { onChange = NewUserMobileInputChg
-                                            , text = Utils.Validation.Validate.validatedMaxTextLength appInfo.user.mobile 25
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
-                                            }
-                                        , mobileValidationErr appInfo.user
+                        case appInfo.m_user of
+                            Nothing ->
+                                Element.text "No User"
+                            Just userVal ->
+                                Element.column Grid.section <|
+                                        [ Element.el (Heading.h5 ++ [ Font.color SR.Types.colors.red ])  <| Element.text "Please Enable Ethereum to Register "
+                                        , Element.wrappedRow (Card.fill ++ Grid.simple)
+                                            [ Element.column
+                                                Grid.simple
+                                                [ Input.text (Color.disabled ++ Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                                                    { onChange = NewUserNameInputChg
+                                                    , text = userVal.username
+                                                    , placeholder = Nothing
+                                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+                                                    }
+                                                , nameValidationErr appInfo sUsers
+                                                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                                                    { onChange = NewUserDescInputChg
+                                                    , text = userVal.description
+                                                    , placeholder = Nothing
+                                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                                                    }
+                                                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+                                                    { onChange = NewUserDescInputChg
+                                                    , text = userVal.description
+                                                    , placeholder = Nothing
+                                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+                                                    }
+                                                , userDescValidationErr userVal
+                                                , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+                                                    { onChange = NewUserEmailInputChg
+                                                    , text = userVal.email
+                                                    , placeholder = Nothing
+                                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+                                                    }
+                                                , emailValidationErr userVal
+                                                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+                                                    { onChange = NewUserMobileInputChg
+                                                    , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
+                                                    , placeholder = Nothing
+                                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+                                                    }
+                                                , mobileValidationErr userVal
+                                                ]
+                                            ]
+                                        , Element.text "* required and CANNOT be changed \nunder current ETH account"
+                                        , SR.Elements.justParasimpleUserInfoText
                                         ]
-                                    ]
-                                , Element.text "* required and CANNOT be changed \nunder current ETH account"
-                                , SR.Elements.justParasimpleUserInfoText
-                                ]
 
                     _ ->
                         Element.text "WalletSate fell through in inputNewUser"   
@@ -3184,43 +3287,47 @@ inputUpdateExistingUser : Model -> Element Msg
 inputUpdateExistingUser model =
     case model of
         AppOps walletState dataState appInfo uiState subState accountState  txRec ->
-            Element.column Grid.section <|
-                [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-                , Element.wrappedRow (Card.fill ++ Grid.simple)
-                    [ Element.column
-                        Grid.simple
-                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ Color.disabled)
-                            { onChange = ExistingUserNameInputChg
-                            , text = appInfo.user.username
-                            , placeholder = Just <| Input.placeholder [] <| Element.text "yah placeholder"
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
-                            }
-                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
-                            { onChange = ExistingUserDescInputChg
-                            , text = appInfo.user.description
-                            , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
-                            }
-                        , userDescValidationErr appInfo.user
-                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
-                            { onChange = ExistingUserEmailInputChg
-                            , text = appInfo.user.email
-                            , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
-                            }
-                        , emailValidationErr appInfo.user
-                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
-                            { onChange = ExistingUserMobileInputChg
-                            , text = Utils.Validation.Validate.validatedMaxTextLength appInfo.user.mobile 25
-                            , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
-                            }
-                        , mobileValidationErr appInfo.user
-                        ]
-                    ]
+            case appInfo.m_user of
+                Nothing ->
+                    Element.text "No User"
+                Just userVal ->
+                    Element.column Grid.section <|
+                        [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                        , Element.wrappedRow (Card.fill ++ Grid.simple)
+                            [ Element.column
+                                Grid.simple
+                                [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ Color.disabled)
+                                    { onChange = ExistingUserNameInputChg
+                                    , text = userVal.username
+                                    , placeholder = Just <| Input.placeholder [] <| Element.text "yah placeholder"
+                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
+                                    }
+                                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+                                    { onChange = ExistingUserDescInputChg
+                                    , text = userVal.description
+                                    , placeholder = Nothing
+                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+                                    }
+                                , userDescValidationErr userVal
+                                , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+                                    { onChange = ExistingUserEmailInputChg
+                                    , text = userVal.email
+                                    , placeholder = Nothing
+                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+                                    }
+                                , emailValidationErr userVal
+                                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+                                    { onChange = ExistingUserMobileInputChg
+                                    , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
+                                    , placeholder = Nothing
+                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+                                    }
+                                , mobileValidationErr userVal
+                                ]
+                            ]
 
-                --, Element.text "* required"
-                ]
+                        --, Element.text "* required"
+                        ]
 
         _ ->
             Element.text "Fail on inputNewUser"
@@ -3228,15 +3335,23 @@ inputUpdateExistingUser model =
 
 nameValidationErr : SR.Types.AppInfo -> Data.Users.Users -> Element Msg
 nameValidationErr appInfo sUsers =
-    if Data.Users.isNameValidationErr appInfo.user.username sUsers then 
-        Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
+    case appInfo.m_user of
+        Nothing ->
+            Element.el
+                    (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
+                        ++ [ Element.moveLeft 0.0 ]
+                    )
+                    (Element.text """Must be unique (4-8 chars) - No User!""")
+        Just userVal ->
+            if Data.Users.isNameValidationErr userVal.username sUsers then 
+                Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
 
-    else
-        Element.el
-            (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
-                ++ [ Element.moveLeft 0.0 ]
-            )
-            (Element.text """Must be unique (4-8 chars)""")
+            else
+                Element.el
+                    (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
+                        ++ [ Element.moveLeft 0.0 ]
+                    )
+                    (Element.text """Must be unique (4-8 chars)""")
 
 
 ladderNameValidationErr : SR.Types.AppInfo -> DataState -> Element Msg
@@ -3606,17 +3721,27 @@ selectedUserIsOwnerView dataState appInfo =
     case dataState of
         StateFetched sUsers dKind -> 
             case dKind of 
-                    Selected sSelected rnkId user status rankings ->
-                        Framework.responsiveLayout [] <|
-                            Element.column
-                                Framework.container
-                                [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ appInfo.user.username
-                                , selecteduserIsOwnerhomebutton appInfo.user
-                                , playerbuttons dataState appInfo
-                                ]
+                Selected sSelected rnkId user status rankings ->
+                    case appInfo.m_user of
+                        Nothing ->
+                            Framework.responsiveLayout [] <|
+                                Element.column
+                                    Framework.container
+                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - No User!"
+                                    , selecteduserIsOwnerhomebutton SR.Defaults.emptyUser
+                                    , playerbuttons dataState appInfo
+                                    ]
+                        Just userVal ->
+                            Framework.responsiveLayout [] <|
+                                Element.column
+                                    Framework.container
+                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userVal.username
+                                    , selecteduserIsOwnerhomebutton userVal
+                                    , playerbuttons dataState appInfo
+                                    ]
 
-                    _ ->
-                        Html.text "Fail selectedUserIsOwnerView"
+                _ ->
+                    Html.text "Fail selectedUserIsOwnerView"
         _ ->
             Html.text "Fail selectedUserIsOwnerView"
 
@@ -3625,31 +3750,49 @@ selectedUserIsPlayerView dataState appInfo =
     case dataState of
         StateFetched sUsers dKind -> 
             case dKind of 
-                    Selected sSelected rnkId user status rankings ->
-                        Framework.responsiveLayout [] <|
-                            Element.column
-                                Framework.container
-                                [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ appInfo.user.username
-                                , selecteduserIsPlayerHomebutton appInfo.user
-                                , playerbuttons dataState appInfo
-                                ]
+                Selected sSelected rnkId user status rankings ->
+                    case appInfo.m_user of
+                        Nothing ->
+                            Framework.responsiveLayout [] <|
+                                Element.column
+                                    Framework.container
+                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - No User!"
+                                    
+                                    ]
+                        Just userVal ->
+                            Framework.responsiveLayout [] <|
+                                Element.column
+                                    Framework.container
+                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userVal.username
+                                    , selecteduserIsPlayerHomebutton userVal
+                                    , playerbuttons dataState appInfo
+                                    ]
 
-                    _ ->
-                        Html.text "Error3"
+                _ ->
+                    Html.text "Error3"
 
         StateUpdated sUsers dKind -> 
             case dKind of 
-                    Selected sSelected rnkId user status rankings ->
-                        Framework.responsiveLayout [] <|
-                            Element.column
-                                Framework.container
-                                [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ appInfo.user.username
-                                , Element.text <| "Challenge is On! Good luck!"
-                                , selecteduserIsPlayerHomebutton appInfo.user
-                                , playerbuttons dataState appInfo
-                                ]
-                    _ ->
-                        Html.text "Error4"
+                Selected sSelected rnkId user status rankings ->
+                    case appInfo.m_user of
+                        Nothing ->
+                             Framework.responsiveLayout [] <|
+                                Element.column
+                                    Framework.container
+                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - No User!" 
+                                    , Element.text <| "No User!"
+                                    ]
+                        Just userVal ->
+                            Framework.responsiveLayout [] <|
+                                Element.column
+                                    Framework.container
+                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userVal.username
+                                    , Element.text <| "Challenge is On! Good luck!"
+                                    , selecteduserIsPlayerHomebutton userVal
+                                    , playerbuttons dataState appInfo
+                                    ]
+                _ ->
+                    Html.text "Error4"
 
         AllEmpty ->
                     Html.text "Please refresh your browser"
@@ -3661,13 +3804,23 @@ selectedUserIsNeitherOwnerNorPlayerView  dataState appInfo accountState =
         StateFetched sUsers dKind -> 
             case dKind of 
                 Selected sSelected rnkId user status rankings ->
-                        Framework.responsiveLayout [] <|
-                            Element.column
-                                Framework.container
-                                [ newOrExistingUserNameDisplay appInfo.user accountState
-                                , selecteduserIsNeitherPlayerNorOwnerHomebutton appInfo.user accountState
-                                , playerbuttons  dataState appInfo
-                                ]
+                    case appInfo.m_user of
+                        Nothing ->
+                            Framework.responsiveLayout [] <|
+                                Element.column
+                                    Framework.container
+                                    [ newOrExistingUserNameDisplay SR.Defaults.emptyUser accountState
+                                    , selecteduserIsNeitherPlayerNorOwnerHomebutton SR.Defaults.emptyUser accountState
+                                    , playerbuttons  dataState appInfo
+                                    ]
+                        Just userVal ->
+                            Framework.responsiveLayout [] <|
+                                Element.column
+                                    Framework.container
+                                    [ newOrExistingUserNameDisplay userVal accountState
+                                    , selecteduserIsNeitherPlayerNorOwnerHomebutton userVal accountState
+                                    , playerbuttons  dataState appInfo
+                                    ]
 
                 _ ->
                     Html.text "Error4"
@@ -3690,18 +3843,26 @@ newOrExistingUserNameDisplay user accountState =
 
 inputNewUserview : SR.Types.WalletState -> DataState -> SR.Types.AppInfo -> Html Msg
 inputNewUserview walletState dataState appInfo =
-            case dataState of 
-                StateFetched sUsers dKind ->
-                    case walletState of 
-                        SR.Types.WalletOpened ->
+    case dataState of 
+        StateFetched sUsers dKind ->
+            case walletState of 
+                SR.Types.WalletOpened ->
+                    case appInfo.m_user of
+                        Nothing ->
+                            Html.text "No User"
+                        Just userVal ->
                             Framework.responsiveLayout [] <|
                                 Element.column
                                     Framework.container
                                     [ Element.el Heading.h4 <| Element.text "Create New User"
                                     , inputNewUser walletState dataState appInfo
-                                    , newuserConfirmPanel walletState appInfo.user (Data.Users.asList sUsers)
+                                    , newuserConfirmPanel walletState userVal (Data.Users.asList sUsers)
                                     ]
-                        SR.Types.WalletStateLocked ->
+                SR.Types.WalletStateLocked ->
+                    case appInfo.m_user of
+                        Nothing ->
+                            Html.text "No User"
+                        Just userVal ->
                             Framework.responsiveLayout [] <|
                                 Element.column
                                     Framework.container
@@ -3709,10 +3870,14 @@ inputNewUserview walletState dataState appInfo =
                                     , Element.text "\n"
                                     , Element.el Heading.h4 <| Element.text "Create New User"
                                     , inputNewUser walletState dataState appInfo
-                                    , newuserConfirmPanel walletState appInfo.user (Data.Users.asList sUsers)
+                                    , newuserConfirmPanel walletState userVal (Data.Users.asList sUsers)
                                     ]
-                        
-                        SR.Types.WalletOperational ->
+                
+                SR.Types.WalletOperational ->
+                    case appInfo.m_user of
+                        Nothing ->
+                            Html.text "No User"
+                        Just userVal ->
                             Framework.responsiveLayout [] <|
                                 Element.column
                                     Framework.container
@@ -3720,10 +3885,14 @@ inputNewUserview walletState dataState appInfo =
                                     , Element.text "\n"
                                     , Element.el Heading.h4 <| Element.text "Create New User"
                                     , inputNewUser walletState dataState appInfo
-                                    , newuserConfirmPanel walletState appInfo.user (Data.Users.asList sUsers)
+                                    , newuserConfirmPanel walletState userVal (Data.Users.asList sUsers)
                                     ]
 
-                        SR.Types.WalletOpenedNoUserAccount ->
+                SR.Types.WalletOpenedNoUserAccount ->
+                    case appInfo.m_user of
+                        Nothing ->
+                            Html.text "No User"
+                        Just userVal ->
                             Framework.responsiveLayout [] <|
                                 Element.column
                                     Framework.container
@@ -3731,13 +3900,13 @@ inputNewUserview walletState dataState appInfo =
                                     , Element.text "\n"
                                     , Element.el Heading.h4 <| Element.text "Create New User"
                                     , inputNewUser walletState dataState appInfo
-                                    , newuserConfirmPanel walletState appInfo.user (Data.Users.asList sUsers)
+                                    , newuserConfirmPanel walletState userVal (Data.Users.asList sUsers)
                                     ]
-                        _ ->
-                            Html.text "fell thru in inputNewUserview"
-                            
                 _ ->
-                    Html.text "Fail inputNewUserview"
+                    Html.text "fell thru in inputNewUserview"
+                    
+        _ ->
+            Html.text "Fail inputNewUserview"
 
 
 
@@ -3748,13 +3917,17 @@ updateExistingUserView model =
         AppOps walletState dataState appInfo uiState subState accountState  txRec ->
             case dataState of 
                 StateFetched sUsers dKind -> 
-                    Framework.responsiveLayout [] <|
-                        Element.column
-                            Framework.container
-                            [ Element.el Heading.h4 <| Element.text "Update User Profile"
-                            , inputUpdateExistingUser model
-                            , existingUserConfirmPanel appInfo.user (Data.Users.asList sUsers)
-                            ]
+                    case appInfo.m_user of
+                        Nothing ->
+                            Html.text "No User"
+                        Just userVal ->
+                            Framework.responsiveLayout [] <|
+                                Element.column
+                                    Framework.container
+                                    [ Element.el Heading.h4 <| Element.text "Update User Profile"
+                                    , inputUpdateExistingUser model
+                                    , existingUserConfirmPanel userVal (Data.Users.asList sUsers)
+                                    ]
                 _ ->
                     Html.text "Fail updateExistingUserView"
         _ ->
@@ -3799,13 +3972,16 @@ displayChallengeBeforeConfirmView : Model -> Html Msg
 displayChallengeBeforeConfirmView model =
     case model of
         AppOps walletState dataState appInfo uiState subState accountState  txRec ->
-            
-            Framework.responsiveLayout [] <|
-                Element.column
-                    Framework.container
-                    [ Element.el Heading.h4 <| Element.text <| appInfo.user.username ++ " - Confirm Challenge"
-                    , confirmChallengebutton model
-                    ]
+            case appInfo.m_user of
+                Nothing ->
+                    Html.text "No User!"
+                Just userVal ->
+                    Framework.responsiveLayout [] <|
+                        Element.column
+                            Framework.container
+                            [ Element.el Heading.h4 <| Element.text <| userVal.username ++ " - Confirm Challenge"
+                            , confirmChallengebutton model
+                            ]
 
         _ ->
             Html.text "Error5"

@@ -108,7 +108,7 @@ emptyRankingInfo =
 emptyAppInfo =
     { selectedRanking = emptyRankingInfo
     , player = emptyUserPlayer
-    , user = emptyUser
+    , m_user = Just emptyUser
     , challenger = emptyUserPlayer
     , appState = AppStateGeneral
     }

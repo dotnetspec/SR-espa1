@@ -198,7 +198,7 @@ type alias UserRanking =
 type alias AppInfo =
     { selectedRanking : Ranking
     , player : UserPlayer
-    , user : User
+    , m_user : Maybe User
     , challenger : UserPlayer
     , appState : AppState
     }
