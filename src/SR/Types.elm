@@ -10,6 +10,7 @@ module SR.Types exposing
     , DeleteBinResponse
     , UpdateGlobalBinResponse
     , AccountState(..)
+    , Token
     )
 
 {-| Types
@@ -128,6 +129,7 @@ type UIState
     | UIOwnerDeletedRanking
     | UIUnableToFindGlobalRankings
     | UIEthAlreadyEnabled
+    | UILogIn
 
 type SubState 
     = Subscribe 

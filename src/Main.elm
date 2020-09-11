@@ -2,6 +2,7 @@ module  Main exposing (Model(..), Msg(..), emptyTxRecord, init, main, update, vi
 
 import Browser
 import Element exposing (Element)
+--import ElementAttributes exposing (ElementAttributes)
 import Element.Font as Font
 import Element.Input as Input
 import Eth.Net as Net exposing (NetworkId(..))
@@ -177,6 +178,8 @@ type Msg
     | ExistingUserEmailInputChg String
     | ExistingUserMobileInputChg String
     | ClickedCreateNewUserToWallet SR.Types.User
+    | ClickedLogInUser
+    | LoggedInUser SR.Types.Token
       -- App Only Ops
     | MissingWalletInstructions
     | OpenWalletInstructions
@@ -205,6 +208,7 @@ type Msg
     | TxSentryMsg Eth.Sentry.Tx.Msg
     | WalletStatus Eth.Sentry.Wallet.WalletSentry
     | Fail String
+
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -337,7 +341,24 @@ update msg model =
         ( UsersReceived userList, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
             case appInfo.m_user of
                 Nothing ->
-                    (model, Cmd.none)
+                -- user is Guest
+                    let 
+                        _ =
+                                            Debug.log "UsersReceived" "user nothing"
+                        --extractedList = Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList
+                        extractedList = [SR.Defaults.emptyUser]
+                        users = Data.Users.asUsers (EverySet.fromList (extractedList))
+                        -- newUser = Data.Users.gotUser users userVal.ethaddress
+                        -- userInAppInfo = { appInfo | m_user = Just newUser }
+                        newDataKind = Users SR.Defaults.emptyUser
+                        newDataState = StateFetched users newDataKind
+                    in
+                    if List.isEmpty extractedList then 
+                            (model, Cmd.none)
+                    else
+                            ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered  emptyTxRecord, gotGlobal )
+                        
+                
                 Just userVal ->
                     let 
                         _ =
@@ -350,7 +371,6 @@ update msg model =
                         newDataKind = Users newUser
                         newDataState = StateFetched users newDataKind
                     in
-                        --todo: copy createGlobal to handle this:
                         if List.isEmpty extractedList then 
                             (model, Cmd.none)
                         else if (Data.Users.isRegistered (Data.Users.asList users) newUser) then
@@ -1524,7 +1544,7 @@ update msg model =
             case appInfo.m_user of 
                 Nothing ->
                     let
-                        _ = Debug.log "No user!" "!"
+                        _ = Debug.log "No user " "18"
                     in
                     (model, Cmd.none)
                 Just userVal ->
@@ -1590,7 +1610,7 @@ update msg model =
                             Nothing ->
                                 let
                                     _ =
-                                            Debug.log "No User" "!"
+                                            Debug.log "No User" "16"
                                 in
                                 (model, Cmd.none)
 
@@ -1671,6 +1691,14 @@ update msg model =
                 ( AppOps walletState dataState appInfo SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription SR.Types.Registered txRec, Cmd.none )
 
                 
+        (ClickedLogInUser, AppOps walletState dataState appInfo uiState subState accountState txRec) ->
+                (AppOps walletState dataState appInfo SR.Types.UILogIn subState accountState txRec, Cmd.none)
+
+        (LoggedInUser  token, modelReDef) ->
+                ( updateFromLoggedInUser modelReDef token
+                    , Cmd.none
+                )
+        
         (NoOp, _) ->
             let
                 _ =
@@ -1689,7 +1717,27 @@ update msg model =
             )
         
        
+-- model handlers
 
+updateFromLoggedInUser: Model -> SR.Types.Token -> Model
+updateFromLoggedInUser model token =
+    case model of
+        AppOps walletState dataState appInfo uiState subState accountState  txRec ->
+            case appInfo.m_user of
+                Just user ->
+                    let
+                        updated_user =
+                            { user | m_token = Just token }
+
+                        newAppInfo = { appInfo | m_user = Just updated_user }
+                    in
+                    AppOps walletState dataState newAppInfo uiState subState accountState txRec
+
+                Nothing ->
+                    model
+        
+        Failure _ ->
+            model
 
 updateAppInfoOnRankingSelected : SR.Types.AppInfo -> Internal.Types.RankingId -> String -> String -> SR.Types.AppInfo
 updateAppInfoOnRankingSelected appInfo rnkid rnkownerstr rnknamestr =
@@ -1850,13 +1898,35 @@ handleNewUserInputs model msg =
                 NewUserNameInputChg namefield ->
                     case appInfo.m_user of
                         Nothing ->
-                            model
+                            let
+                                -- create a new empty user
+                                newAppInfo =
+                                        { appInfo | m_user = Just SR.Defaults.emptyUser }
+                            in
+                            AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription SR.Types.Registered txRec
+                        
                         Just userVal ->
                             let
                                 newUser = userVal
 
                                 updatedNewUser =
                                     { newUser | username = namefield }
+
+                                newAppInfo =
+                                    { appInfo | m_user = Just updatedNewUser }
+                            in
+                            AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription SR.Types.Registered txRec
+
+                NewUserPasswordInputChg passwordfield ->
+                    case appInfo.m_user of
+                        Nothing ->
+                            model
+                        Just userVal ->
+                            let
+                                newUser = userVal
+
+                                updatedNewUser =
+                                    { newUser | password = passwordfield }
 
                                 newAppInfo =
                                     { appInfo | m_user = Just updatedNewUser }
@@ -1924,6 +1994,10 @@ handleExistingUserInputs model msg =
         AppOps walletState dataState appInfo uiState subState accountState  txRec ->
             case msg of
                 ExistingUserNameInputChg namefield ->
+                    model
+
+                -- todo: determine how to handle this:
+                ExistingUserPasswordInputChg passwordfield ->
                     model
 
                 ExistingUserDescInputChg descfield ->
@@ -2087,6 +2161,10 @@ view model =
     case model of
         AppOps walletState dataState appInfo uiState subState accountState txRec ->
             case uiState of
+
+                SR.Types.UILogIn ->
+                    inputNewLadderview model
+
                 SR.Types.UICreateNewLadder ->
                     inputNewLadderview model
 
@@ -2175,8 +2253,30 @@ in the home view"""
                 SR.Types.UIRenderAllRankings ->
                     case appInfo.m_user of 
                         Nothing ->
-                            greetingView <| "No user ..."
-                        Just m_user -> 
+                        -- Guest
+                            case dataState of 
+                                StateFetched sUsers dKind ->
+                                    case dKind of 
+                                        Global sGlobal rnkId user ->
+                                            let 
+                                                _ = Debug.log "StateFetched " dataState
+                                                _ = Debug.log "accountState " accountState
+                                            in
+                                            globalResponsiveview walletState sGlobal appInfo.m_user "" accountState
+                                        _ ->
+                                            greetingView <| "Should be Global 1"
+                                
+                                StateUpdated sUsers dKind ->
+                                    -- case dKind of
+                                    --     Global sGlobal rnkId user  -> 
+                                    --         globalResponsiveview walletState sGlobal m_user "Your Settings Have Been Updated" SR.Types.Registered
+
+                                    --     _ ->
+                                            greetingView <| "Nothing should be updated if we're in Guest mode"
+                                AllEmpty ->
+                                    greetingView <| "Rankings is empty ..."
+
+                        Just userVal -> 
                             case dataState of 
                                 StateFetched sUsers dKind ->
                                     case dKind of 
@@ -2184,14 +2284,14 @@ in the home view"""
                                             let 
                                                 _ = Debug.log "accountState " accountState
                                             in
-                                            globalResponsiveview walletState sGlobal m_user "" accountState
+                                            globalResponsiveview walletState sGlobal appInfo.m_user "" accountState
                                         _ ->
                                             greetingView <| "Should be Global 1"
                                 
                                 StateUpdated sUsers dKind ->
                                     case dKind of
                                         Global sGlobal rnkId user  -> 
-                                            globalResponsiveview walletState sGlobal m_user "Your Settings Have Been Updated" SR.Types.Registered
+                                            globalResponsiveview walletState sGlobal appInfo.m_user "Your Settings Have Been Updated" SR.Types.Registered
 
                                         _ ->
                                             greetingView <| "Should be updated Global"
@@ -2490,7 +2590,7 @@ configureThenAddPlayerRankingBtns sSelected appInfo uplayer =
     in
         case appInfo.m_user of
             Nothing ->
-                Element.text "No User!"
+                Element.text "No User2"
             Just userVal ->
                 if Data.Selected.isUserPlayerMemberOfSelectedRanking (Data.Selected.asList sSelected) userVal then
                     
@@ -2787,7 +2887,7 @@ confirmChallengebutton model =
         AppOps walletState dataState appInfo uiState subState accountState  txRec ->
             case appInfo.m_user of
                 Nothing ->
-                    Element.text <| " No User!"
+                    Element.text <| " No User3"
                 Just userVal ->
                     Element.column Grid.section <|
                         [ Element.el Heading.h6 <| Element.text <| " Your opponent's details: "
@@ -2999,11 +3099,31 @@ mobileValidationErr user =
         Element.el [] <| Element.text ""
 
 
-newuserConfirmPanel : SR.Types.WalletState -> SR.Types.User -> List SR.Types.User -> Element Msg
-newuserConfirmPanel walletState user luser =
-    case walletState of 
-        SR.Types.WalletOpened -> 
-            Element.column Grid.section <|
+newuserConfirmPanel : SR.Types.WalletState -> Maybe SR.Types.User -> List SR.Types.User -> Element Msg
+newuserConfirmPanel walletState m_user luser =
+    -- case walletState of 
+    --     SR.Types.WalletOpened -> 
+        case m_user of
+            Nothing ->
+                Element.column Grid.section <|
+                    [ SR.Elements.warningParagraph
+                    , Element.el Heading.h6 <| Element.text "Click to continue ..."
+                    , Element.column (Card.simple ++ Grid.simple) <|
+                        [ Element.wrappedRow Grid.simple <|
+                            [ Input.button (Button.simple ++ Color.info) <|
+                                { onPress = Just <| ResetToShowGlobal
+                                , label = Element.text "Cancel"
+                                }
+                            -- , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput m_user luser False)) <|
+                            --     { onPress = Just <| ClickedCreateNewUserToWallet m_user
+                            --     , label = Element.text "Register"
+                            --     }
+                            ]
+                        ]
+                    ]
+
+            Just userVal ->
+                Element.column Grid.section <|
                 [ SR.Elements.warningParagraph
                 , Element.el Heading.h6 <| Element.text "Click to continue ..."
                 , Element.column (Card.simple ++ Grid.simple) <|
@@ -3012,57 +3132,58 @@ newuserConfirmPanel walletState user luser =
                             { onPress = Just <| ResetToShowGlobal
                             , label = Element.text "Cancel"
                             }
-                        , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput user luser False)) <|
-                            { onPress = Just <| ClickedCreateNewUserToWallet user
+                        , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput userVal luser False)) <|
+                            { onPress = Just <| ClickedCreateNewUserToWallet userVal
                             , label = Element.text "Register"
                             }
                         ]
                     ]
                 ]
 
-        SR.Types.WalletStateLocked ->
-            Element.column Grid.section <|
-                [ SR.Elements.ethereumNotEnabledPara
-                , Element.el Heading.h6 <| Element.text "Enable Ethereum to Register"
-                , Element.column (Card.simple ++ Grid.simple) <|
-                    [ Element.wrappedRow Grid.simple <|
-                        [ Input.button (Button.simple ++ Color.info) <|
-                            { onPress = Just <| ResetToShowGlobal
-                            , label = Element.text "Cancel"
-                            }
-                        ]
-                    ]
-                ]
-            
-        SR.Types.WalletStopSub ->
-            Element.column Grid.section <|
-                [ SR.Elements.ethereumNotEnabledPara
-                , Element.el Heading.h6 <| Element.text "Enable Ethereum to Register"
-                , Element.column (Card.simple ++ Grid.simple) <|
-                    [ Element.wrappedRow Grid.simple <|
-                        [ Input.button (Button.simple ++ Color.info) <|
-                            { onPress = Just <| ResetToShowGlobal
-                            , label = Element.text "Cancel"
-                            }
-                        ]
-                    ]
-                ]
 
-        SR.Types.WalletOpenedNoUserAccount ->
-            Element.column Grid.section <|
-                [ SR.Elements.ethereumNotEnabledPara
-                , Element.el Heading.h6 <| Element.text "Enable Ethereum to Register"
-                , Element.column (Card.simple ++ Grid.simple) <|
-                    [ Element.wrappedRow Grid.simple <|
-                        [ Input.button (Button.simple ++ Color.info) <|
-                            { onPress = Just <| ResetToShowGlobal
-                            , label = Element.text "Cancel"
-                            }
-                        ]
-                    ]
-                ]
-        _ ->
-            Element.text "wallet state fell through in newuserConfirmPanel"
+        -- SR.Types.WalletStateLocked ->
+        --     Element.column Grid.section <|
+        --         [ SR.Elements.ethereumNotEnabledPara
+        --         , Element.el Heading.h6 <| Element.text "Enable Ethereum to Register"
+        --         , Element.column (Card.simple ++ Grid.simple) <|
+        --             [ Element.wrappedRow Grid.simple <|
+        --                 [ Input.button (Button.simple ++ Color.info) <|
+        --                     { onPress = Just <| ResetToShowGlobal
+        --                     , label = Element.text "Cancel"
+        --                     }
+        --                 ]
+        --             ]
+        --         ]
+            
+        -- SR.Types.WalletStopSub ->
+        --     Element.column Grid.section <|
+        --         [ SR.Elements.ethereumNotEnabledPara
+        --         , Element.el Heading.h6 <| Element.text "Enable Ethereum to Register"
+        --         , Element.column (Card.simple ++ Grid.simple) <|
+        --             [ Element.wrappedRow Grid.simple <|
+        --                 [ Input.button (Button.simple ++ Color.info) <|
+        --                     { onPress = Just <| ResetToShowGlobal
+        --                     , label = Element.text "Cancel"
+        --                     }
+        --                 ]
+        --             ]
+        --         ]
+
+        -- SR.Types.WalletOpenedNoUserAccount ->
+        --     Element.column Grid.section <|
+        --         [ SR.Elements.ethereumNotEnabledPara
+        --         , Element.el Heading.h6 <| Element.text "Enable Ethereum to Register"
+        --         , Element.column (Card.simple ++ Grid.simple) <|
+        --             [ Element.wrappedRow Grid.simple <|
+        --                 [ Input.button (Button.simple ++ Color.info) <|
+        --                     { onPress = Just <| ResetToShowGlobal
+        --                     , label = Element.text "Cancel"
+        --                     }
+        --                 ]
+        --             ]
+        --         ]
+        -- _ ->
+        --     Element.text "wallet state fell through in newuserConfirmPanel"
 
 
 
@@ -3132,65 +3253,115 @@ enableButton enable =
 inputNewUser : SR.Types.WalletState -> DataState -> SR.Types.AppInfo -> Element Msg
 inputNewUser walletState dataState appInfo =
     case dataState of
-            StateFetched sUsers dKind -> 
-                case walletState of 
-                    SR.Types.WalletOpened -> 
-                        case appInfo.m_user of
-                            Nothing ->
-                                Element.text "No User"
-                            Just userVal ->
-                                Element.column Grid.section <|
-                                    [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-                                    , Element.wrappedRow (Card.fill ++ Grid.simple)
-                                        [ Element.column
-                                            Grid.simple
-                                            [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                                                { onChange = NewUserNameInputChg
-                                                , text = userVal.username
-                                                , placeholder = Nothing
-                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
-                                                }
-                                            , nameValidationErr appInfo sUsers
-                                            , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                                { onChange = NewUserDescInputChg
-                                                , text = userVal.password
-                                                , placeholder = Nothing
-                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                                                }
-                                            , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
-                                                { onChange = NewUserDescInputChg
-                                                , text = userVal.description
-                                                , placeholder = Nothing
-                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
-                                                }
-                                            , userDescValidationErr userVal
-                                            , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
-                                                { onChange = NewUserEmailInputChg
-                                                , text = userVal.email
-                                                , placeholder = Nothing
-                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
-                                                }
-                                            , emailValidationErr userVal
-                                            , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
-                                                { onChange = NewUserMobileInputChg
-                                                , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
-                                                , placeholder = Nothing
-                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
-                                                }
-                                            , mobileValidationErr userVal
-                                            ]
-                                        ]
-                                    , Element.text "* required and CANNOT be changed \nunder current ETH account"
-                                    , SR.Elements.justParasimpleUserInfoText
-                                    ]
-
-                    SR.Types.WalletStateLocked ->
-                        case appInfo.m_user of
+        StateFetched sUsers dKind -> 
+            case walletState of 
+                SR.Types.WalletOpened -> 
+                    case appInfo.m_user of
                         Nothing ->
-                            Element.text "No User"
+                            Element.text "No User4"
                         Just userVal ->
                             Element.column Grid.section <|
-                                    [ Element.el (Heading.h5 ++ [ Font.color SR.Types.colors.red ]) <| Element.text "Please Enable Ethereum to Register "
+                                [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                                    [ Element.column
+                                        Grid.simple
+                                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                                            { onChange = NewUserNameInputChg
+                                            , text = userVal.username
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+                                            }
+                                        , nameValidationErr appInfo sUsers
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                                            { onChange = NewUserDescInputChg
+                                            , text = userVal.password
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                                            }
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+                                            { onChange = NewUserDescInputChg
+                                            , text = userVal.description
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+                                            }
+                                        , userDescValidationErr userVal
+                                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+                                            { onChange = NewUserEmailInputChg
+                                            , text = userVal.email
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+                                            }
+                                        , emailValidationErr userVal
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+                                            { onChange = NewUserMobileInputChg
+                                            , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+                                            }
+                                        , mobileValidationErr userVal
+                                        ]
+                                    ]
+                                , Element.text "* required and CANNOT be changed \nunder current ETH account"
+                                , SR.Elements.justParasimpleUserInfoText
+                                ]
+
+                SR.Types.WalletStateLocked ->
+                    case appInfo.m_user of
+                    Nothing ->
+                        Element.text "No User7"
+                    Just userVal ->
+                        Element.column Grid.section <|
+                                [ Element.el (Heading.h5 ++ [ Font.color SR.Types.colors.red ]) <| Element.text "Please Enable Ethereum to Register "
+                                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                                    [ Element.column
+                                        Grid.simple
+                                        [ Input.text (Color.disabled ++ Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                                            { onChange = NewUserNameInputChg
+                                            , text = userVal.username
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+                                            }
+                                        , nameValidationErr appInfo sUsers
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                                            { onChange = NewUserDescInputChg
+                                            , text = userVal.password
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                                            }
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+                                            { onChange = NewUserDescInputChg
+                                            , text = userVal.description
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+                                            }
+                                        , userDescValidationErr userVal
+                                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+                                            { onChange = NewUserEmailInputChg
+                                            , text = userVal.email
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+                                            }
+                                        , emailValidationErr userVal
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+                                            { onChange = NewUserMobileInputChg
+                                            , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+                                            }
+                                        , mobileValidationErr userVal
+                                        ]
+                                    ]
+                                , Element.text "* required and CANNOT be changed \nunder current ETH account"
+                                , SR.Elements.justParasimpleUserInfoText
+                                ]
+
+                SR.Types.WalletOpenedNoUserAccount ->
+                    case appInfo.m_user of
+                        Nothing ->
+                            Element.text "No User8"
+                        Just userVal ->
+                            Element.column Grid.section <|
+                                    [ Element.el (Heading.h5 ++ [ Font.color SR.Types.colors.red ])  <| Element.text "Please Enable Ethereum to Register "
                                     , Element.wrappedRow (Card.fill ++ Grid.simple)
                                         [ Element.column
                                             Grid.simple
@@ -3234,61 +3405,11 @@ inputNewUser walletState dataState appInfo =
                                     , SR.Elements.justParasimpleUserInfoText
                                     ]
 
-                    SR.Types.WalletOpenedNoUserAccount ->
-                        case appInfo.m_user of
-                            Nothing ->
-                                Element.text "No User"
-                            Just userVal ->
-                                Element.column Grid.section <|
-                                        [ Element.el (Heading.h5 ++ [ Font.color SR.Types.colors.red ])  <| Element.text "Please Enable Ethereum to Register "
-                                        , Element.wrappedRow (Card.fill ++ Grid.simple)
-                                            [ Element.column
-                                                Grid.simple
-                                                [ Input.text (Color.disabled ++ Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                                                    { onChange = NewUserNameInputChg
-                                                    , text = userVal.username
-                                                    , placeholder = Nothing
-                                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
-                                                    }
-                                                , nameValidationErr appInfo sUsers
-                                                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                                    { onChange = NewUserDescInputChg
-                                                    , text = userVal.password
-                                                    , placeholder = Nothing
-                                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                                                    }
-                                                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
-                                                    { onChange = NewUserDescInputChg
-                                                    , text = userVal.description
-                                                    , placeholder = Nothing
-                                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
-                                                    }
-                                                , userDescValidationErr userVal
-                                                , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
-                                                    { onChange = NewUserEmailInputChg
-                                                    , text = userVal.email
-                                                    , placeholder = Nothing
-                                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
-                                                    }
-                                                , emailValidationErr userVal
-                                                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
-                                                    { onChange = NewUserMobileInputChg
-                                                    , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
-                                                    , placeholder = Nothing
-                                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
-                                                    }
-                                                , mobileValidationErr userVal
-                                                ]
-                                            ]
-                                        , Element.text "* required and CANNOT be changed \nunder current ETH account"
-                                        , SR.Elements.justParasimpleUserInfoText
-                                        ]
-
-                    _ ->
-                        Element.text "WalletSate fell through in inputNewUser"   
-                    
-            _ ->
-                        Element.text "Problem creating new user"
+                _ ->
+                    Element.text "WalletSate fell through in inputNewUser"   
+                
+        _ ->
+                    Element.text "Problem creating new user"
 
 
 inputUpdateExistingUser : Model -> Element Msg
@@ -3297,7 +3418,7 @@ inputUpdateExistingUser model =
         AppOps walletState dataState appInfo uiState subState accountState  txRec ->
             case appInfo.m_user of
                 Nothing ->
-                    Element.text "No User"
+                    Element.text "No User9"
                 Just userVal ->
                     Element.column Grid.section <|
                         [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
@@ -3355,7 +3476,7 @@ nameValidationErr appInfo sUsers =
                     (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
                         ++ [ Element.moveLeft 0.0 ]
                     )
-                    (Element.text """Must be unique (4-8 chars) - No User!""")
+                    (Element.text """Must be unique (4-8 chars) - No User10""")
         Just userVal ->
             if Data.Users.isNameValidationErr userVal.username sUsers then 
                 Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
@@ -3449,218 +3570,343 @@ inputNewLadder appInfo dataState =
 
 
 
-globalResponsiveview : SR.Types.WalletState -> Data.Global.Global -> SR.Types.User -> String -> SR.Types.AccountState -> Html Msg
-globalResponsiveview walletState sGlobal user updatedStr accountState =
-        case accountState of 
-            
-
-            SR.Types.Guest ->
+globalResponsiveview : SR.Types.WalletState -> Data.Global.Global -> Maybe SR.Types.User -> String -> SR.Types.AccountState -> Html Msg
+globalResponsiveview walletState sGlobal m_user updatedStr accountState =
+    let 
+        _ = Debug.log "globalResponsiveview" accountState
+    in
+        case m_user of 
+            Nothing -> 
+                let 
+                    _ = Debug.log "in" "guest"
+                in
                 Framework.responsiveLayout
                             []
                             <|
                                 Element.column
                                     Framework.container
-                                    [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-                                        Element.text ("SportRank - New User")
+                                    [ Element.el (Heading.h5) <|
+                                        Element.text ("SportRank - Welcome")
                                     , displayEnableEthereumBtn
                                     , Element.text ("\n")
-                                    , Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
+                                    --, Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
+                                    , Element.column Grid.section <|
+                                        [ Element.el [] <| Element.text ""
+                                        --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                                        , Element.wrappedRow (Card.fill ++ Grid.simple)
+                                            [ Element.column
+                                                Grid.simple
+                                                [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                                                    { onChange = NewUserNameInputChg
+                                                    , text = ""
+                                                    --, text = userVal.username
+                                                    --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
+                                                    , placeholder = Nothing
+                                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
+                                                    }
+                                                --, nameValidationErr appInfo sUsers
+                                                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                                                    { onChange = NewUserDescInputChg
+                                                    , text = ""
+                                                    --, text = userVal.password
+                                                    , placeholder = Nothing
+                                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                                                    }
+                                                ]
+                                            ]
+                                        ]
+                                    , infoBtn "Log In" ClickedLogInUser
+                                    , Element.text ("\n")
                                     , displayRegisterBtnIfNewUser
-                                        user.username
+                                        SR.Defaults.emptyUser.username
                                         ClickedRegister
-                                    , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
-                                    , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
-                                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
+                                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
                                     ]
+            Just userVal ->
+                    Framework.responsiveLayout
+                            []
+                            <|
+                                Element.column
+                                    Framework.container
+                                    [ Element.el (Heading.h5) <|
+                                        Element.text ("SportRank - Welcome")
+                                    , displayEnableEthereumBtn
+                                    , Element.text ("\n")
+                                    --, Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
+                                    , Element.column Grid.section <|
+                                        [ Element.el [] <| Element.text ""
+                                        --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                                        , Element.wrappedRow (Card.fill ++ Grid.simple)
+                                            [ Element.column
+                                                Grid.simple
+                                                [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                                                    { onChange = NewUserNameInputChg
+                                                    , text = userVal.username
+                                                    , placeholder = Nothing
+                                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
+                                                    }
+                                                --, nameValidationErr appInfo sUsers
+                                                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                                                    { onChange = NewUserDescInputChg
+                                                    , text = userVal.password
+                                                    , placeholder = Nothing
+                                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                                                    }
+                                                ]
+                                            ]
+                                        ]
+                                    , infoBtn "Log In" ClickedLogInUser
+                                    , Element.text ("\n")
+                                    , displayRegisterBtnIfNewUser
+                                        SR.Defaults.emptyUser.username
+                                        ClickedRegister
+                                    , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
+                                    , memberrankingbuttons (Data.Global.gotMember sGlobal userVal) userVal
+                                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal)) userVal
+                                    ]
+
+
+        -- case accountState of
+        --     SR.Types.Guest ->
+        --         let 
+        --             _ = Debug.log "in" "guest"
+        --         in
+        --         Framework.responsiveLayout
+        --                     []
+        --                     <|
+        --                         Element.column
+        --                             Framework.container
+        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+        --                                 Element.text ("SportRank - New User")
+        --                             , displayEnableEthereumBtn
+        --                             , Element.text ("\n")
+        --                             , Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
+        --                             , Element.column Grid.section <|
+        --                                 [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+        --                                 , Element.wrappedRow (Card.fill ++ Grid.simple)
+        --                                     [ Element.column
+        --                                         Grid.simple
+        --                                         [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+        --                                             { onChange = NewUserNameInputChg
+        --                                             , text = ""
+        --                                             --, text = userVal.username
+        --                                             , placeholder = Nothing
+        --                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+        --                                             }
+        --                                         --, nameValidationErr appInfo sUsers
+        --                                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+        --                                             { onChange = NewUserDescInputChg
+        --                                             , text = ""
+        --                                             --, text = userVal.password
+        --                                             , placeholder = Nothing
+        --                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+        --                                             }
+        --                                         ]
+        --                                     ]
+        --                                 ]
+        --                             , infoBtn "Log In" ClickedLogInUser
+        --                             , displayRegisterBtnIfNewUser
+        --                                 user.username
+        --                                 ClickedRegister
+        --                             , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
+        --                             , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
+        --                             , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
+        --                             ]
         
-            SR.Types.Registered -> 
-                case walletState of 
-                    SR.Types.WalletWaitingForTransactionReceipt ->
-                        Framework.responsiveLayout
-                            []
-                            <|
-                                Element.column
-                                    Framework.container
-                                    [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-                                        Element.text ("SportRank - " ++ user.username)
-                                    , Element.text ("\n Waiting for Transaction Receipt")
-                                    ]
+        --     SR.Types.Registered -> 
+        --         case walletState of 
+        --             SR.Types.WalletWaitingForTransactionReceipt ->
+        --                 Framework.responsiveLayout
+        --                     []
+        --                     <|
+        --                         Element.column
+        --                             Framework.container
+        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+        --                                 Element.text ("SportRank - " ++ user.username)
+        --                             , Element.text ("\n Waiting for Transaction Receipt")
+        --                             ]
 
-                    SR.Types.WalletOperational ->
-                        Framework.responsiveLayout
-                            []
-                            <|
-                                Element.column
-                                    Framework.container
-                                    [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-                                        Element.text ("SportRank - " ++ user.username)
-                                    , Element.text ("\n Your wallet is performing a transaction")
-                                    ]
+        --             SR.Types.WalletOperational ->
+        --                 Framework.responsiveLayout
+        --                     []
+        --                     <|
+        --                         Element.column
+        --                             Framework.container
+        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+        --                                 Element.text ("SportRank - " ++ user.username)
+        --                             , Element.text ("\n Your wallet is performing a transaction")
+        --                             ]
 
-                    SR.Types.WalletStateLocked ->
-                        Framework.responsiveLayout
-                            []
-                            <|
-                                Element.column
-                                    Framework.container
-                                    [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-                                        Element.text ("SportRank - " ++ user.username)
-                                    , displayEnableEthereumBtn
-                                    , Element.text ("\n" ++ updatedStr)
-                                    , displayRegisterBtnIfNewUser
-                                        user.username
-                                        ClickedRegister
-                                    , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
-                                    , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
-                                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
-                                    ]
+        --             SR.Types.WalletStateLocked ->
+        --                 Framework.responsiveLayout
+        --                     []
+        --                     <|
+        --                         Element.column
+        --                             Framework.container
+        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+        --                                 Element.text ("SportRank - " ++ user.username)
+        --                             , displayEnableEthereumBtn
+        --                             , Element.text ("\n" ++ updatedStr)
+        --                             , infoBtn "Log In" ClickedLogInUser
+        --                             , displayRegisterBtnIfNewUser
+        --                                 user.username
+        --                                 ClickedRegister
+        --                             , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
+        --                             , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
+        --                             , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
+        --                             ]
 
-                    SR.Types.WalletOpened ->
-                        Framework.responsiveLayout
-                            []
-                            <|
-                                Element.column
-                                    Framework.container
-                                    [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-                                        Element.text ("SportRank - " ++ user.username)
-                                    , displayUpdateProfileBtnIfExistingUser user.username
-                                    , displayCreateNewLadderBtnIfExistingUser user.username (Data.Global.asList (Data.Global.gotOwned sGlobal user)) ClickedCreateNewLadder
-                                    , Element.el [ Font.color SR.Types.colors.red ] <| Element.text ("\n" ++ updatedStr)
-                                    , displayRegisterBtnIfNewUser
-                                        user.username
-                                        ClickedRegister
-                                    , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
-                                    , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
-                                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
-                                    ]
-                    _ ->
-                        Html.text "Fell through globalResponsiveview"
+        --             SR.Types.WalletOpened ->
+        --                 Framework.responsiveLayout
+        --                     []
+        --                     <|
+        --                         Element.column
+        --                             Framework.container
+        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+        --                                 Element.text ("SportRank - " ++ user.username)
+        --                             , displayUpdateProfileBtnIfExistingUser user.username
+        --                             , displayCreateNewLadderBtnIfExistingUser user.username (Data.Global.asList (Data.Global.gotOwned sGlobal user)) ClickedCreateNewLadder
+        --                             , Element.el [ Font.color SR.Types.colors.red ] <| Element.text ("\n" ++ updatedStr)
+        --                             , infoBtn "Log In" ClickedLogInUser
+        --                             , displayRegisterBtnIfNewUser
+        --                                 user.username
+        --                                 ClickedRegister
+        --                             , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
+        --                             , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
+        --                             , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
+        --                             ]
+        --             _ ->
+        --                 Html.text "Fell through globalResponsiveview"
 
-            SR.Types.EthEnabled -> 
-                case walletState of 
-                    SR.Types.WalletWaitingForTransactionReceipt ->
-                        Framework.responsiveLayout
-                            []
-                            <|
-                                Element.column
-                                    Framework.container
-                                    [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-                                        Element.text ("SportRank - " ++ user.username)
-                                    , Element.text ("\n Waiting for Transaction Receipt")
-                                    ]
+        --     SR.Types.EthEnabled -> 
+        --         case walletState of 
+        --             SR.Types.WalletWaitingForTransactionReceipt ->
+        --                 Framework.responsiveLayout
+        --                     []
+        --                     <|
+        --                         Element.column
+        --                             Framework.container
+        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+        --                                 Element.text ("SportRank - " ++ user.username)
+        --                             , Element.text ("\n Waiting for Transaction Receipt")
+        --                             ]
 
-                    SR.Types.WalletOperational ->
-                        Framework.responsiveLayout
-                            []
-                            <|
-                                Element.column
-                                    Framework.container
-                                    [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-                                        Element.text ("SportRank - " ++ user.username)
-                                    , Element.text ("\n Your wallet is performing a transaction")
-                                    ]
+        --             SR.Types.WalletOperational ->
+        --                 Framework.responsiveLayout
+        --                     []
+        --                     <|
+        --                         Element.column
+        --                             Framework.container
+        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+        --                                 Element.text ("SportRank - " ++ user.username)
+        --                             , Element.text ("\n Your wallet is performing a transaction")
+        --                             ]
 
-                    SR.Types.WalletStateLocked ->
-                        Framework.responsiveLayout
-                            []
-                            <|
-                                Element.column
-                                    Framework.container
-                                    [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-                                        Element.text ("SportRank - " ++ user.username)
-                                    , displayEnableEthereumBtn
-                                    , Element.text ("\n" ++ updatedStr)
-                                    , displayRegisterBtnIfNewUser
-                                        user.username
-                                        ClickedRegister
-                                    , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
-                                    , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
-                                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
-                                    ]
+        --             SR.Types.WalletStateLocked ->
+        --                 Framework.responsiveLayout
+        --                     []
+        --                     <|
+        --                         Element.column
+        --                             Framework.container
+        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+        --                                 Element.text ("SportRank - " ++ user.username)
+        --                             , displayEnableEthereumBtn
+        --                             , Element.text ("\n" ++ updatedStr)
+        --                             , infoBtn "Log In" ClickedLogInUser
+        --                             , displayRegisterBtnIfNewUser
+        --                                 user.username
+        --                                 ClickedRegister
+        --                             , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
+        --                             , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
+        --                             , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
+        --                             ]
 
-                    SR.Types.WalletOpened ->
-                        Framework.responsiveLayout
-                            []
-                            <|
-                                Element.column
-                                    Framework.container
-                                    [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-                                        Element.text ("SportRank - " ++ user.username)
-                                    , displayUpdateProfileBtnIfExistingUser user.username
-                                    , displayCreateNewLadderBtnIfExistingUser user.username (Data.Global.asList (Data.Global.gotOwned sGlobal user)) ClickedCreateNewLadder
-                                    , Element.el [ Font.color SR.Types.colors.red ] <| Element.text ("\n" ++ updatedStr)
-                                    , displayRegisterBtnIfNewUser
-                                        user.username
-                                        ClickedRegister
-                                    , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
-                                    , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
-                                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
-                                    ]
-                    _ ->
-                        Html.text "Fell through globalResponsiveview"
+        --             SR.Types.WalletOpened ->
+        --                 Framework.responsiveLayout
+        --                     []
+        --                     <|
+        --                         Element.column
+        --                             Framework.container
+        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+        --                                 Element.text ("SportRank - " ++ user.username)
+        --                             , displayUpdateProfileBtnIfExistingUser user.username
+        --                             , displayCreateNewLadderBtnIfExistingUser user.username (Data.Global.asList (Data.Global.gotOwned sGlobal user)) ClickedCreateNewLadder
+        --                             , Element.el [ Font.color SR.Types.colors.red ] <| Element.text ("\n" ++ updatedStr)
+        --                             , infoBtn "Log In" ClickedLogInUser
+        --                             , displayRegisterBtnIfNewUser
+        --                                 user.username
+        --                                 ClickedRegister
+        --                             , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
+        --                             , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
+        --                             , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
+        --                             ]
+        --             _ ->
+        --                 Html.text "Fell through globalResponsiveview"
             
-            SR.Types.EthEnabledAndRegistered -> 
-                case walletState of 
-                    SR.Types.WalletWaitingForTransactionReceipt ->
-                        Framework.responsiveLayout
-                            []
-                            <|
-                                Element.column
-                                    Framework.container
-                                    [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-                                        Element.text ("SportRank - " ++ user.username)
-                                    , Element.text ("\n Waiting for Transaction Receipt")
-                                    ]
+        --     SR.Types.EthEnabledAndRegistered -> 
+        --         case walletState of 
+        --             SR.Types.WalletWaitingForTransactionReceipt ->
+        --                 Framework.responsiveLayout
+        --                     []
+        --                     <|
+        --                         Element.column
+        --                             Framework.container
+        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+        --                                 Element.text ("SportRank - " ++ user.username)
+        --                             , Element.text ("\n Waiting for Transaction Receipt")
+        --                             ]
 
-                    SR.Types.WalletOperational ->
-                        Framework.responsiveLayout
-                            []
-                            <|
-                                Element.column
-                                    Framework.container
-                                    [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-                                        Element.text ("SportRank - " ++ user.username)
-                                    , Element.text ("\n Your wallet is performing a transaction")
-                                    ]
+        --             SR.Types.WalletOperational ->
+        --                 Framework.responsiveLayout
+        --                     []
+        --                     <|
+        --                         Element.column
+        --                             Framework.container
+        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+        --                                 Element.text ("SportRank - " ++ user.username)
+        --                             , Element.text ("\n Your wallet is performing a transaction")
+        --                             ]
 
-                    SR.Types.WalletStateLocked ->
-                        Framework.responsiveLayout
-                            []
-                            <|
-                                Element.column
-                                    Framework.container
-                                    [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-                                        Element.text ("SportRank - " ++ user.username)
-                                    , displayEnableEthereumBtn
-                                    , Element.text ("\n" ++ updatedStr)
-                                    , displayRegisterBtnIfNewUser
-                                        user.username
-                                        ClickedRegister
-                                    , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
-                                    , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
-                                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
-                                    ]
+        --             SR.Types.WalletStateLocked ->
+        --                 Framework.responsiveLayout
+        --                     []
+        --                     <|
+        --                         Element.column
+        --                             Framework.container
+        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+        --                                 Element.text ("SportRank - " ++ user.username)
+        --                             , displayEnableEthereumBtn
+        --                             , Element.text ("\n" ++ updatedStr)
+        --                             , infoBtn "Log In" ClickedLogInUser
+        --                             , displayRegisterBtnIfNewUser
+        --                                 user.username
+        --                                 ClickedRegister
+        --                             , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
+        --                             , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
+        --                             , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
+        --                             ]
 
-                    SR.Types.WalletOpened ->
-                        Framework.responsiveLayout
-                            []
-                            <|
-                                Element.column
-                                    Framework.container
-                                    [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-                                        Element.text ("SportRank - " ++ user.username)
-                                    , displayUpdateProfileBtnIfExistingUser user.username
-                                    , displayCreateNewLadderBtnIfExistingUser user.username (Data.Global.asList (Data.Global.gotOwned sGlobal user)) ClickedCreateNewLadder
-                                    , Element.el [ Font.color SR.Types.colors.red ] <| Element.text ("\n" ++ updatedStr)
-                                    , displayRegisterBtnIfNewUser
-                                        user.username
-                                        ClickedRegister
-                                    , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
-                                    , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
-                                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
-                                    ]
-                    _ ->
-                        Html.text "Fell through globalResponsiveview"
+        --             SR.Types.WalletOpened ->
+        --                 Framework.responsiveLayout
+        --                     []
+        --                     <|
+        --                         Element.column
+        --                             Framework.container
+        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
+        --                                 Element.text ("SportRank - " ++ user.username)
+        --                             , displayUpdateProfileBtnIfExistingUser user.username
+        --                             , displayCreateNewLadderBtnIfExistingUser user.username (Data.Global.asList (Data.Global.gotOwned sGlobal user)) ClickedCreateNewLadder
+        --                             , Element.el [ Font.color SR.Types.colors.red ] <| Element.text ("\n" ++ updatedStr)
+        --                             , infoBtn "Log In" ClickedLogInUser
+        --                             , displayRegisterBtnIfNewUser
+        --                                 user.username
+        --                                 ClickedRegister
+        --                             , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
+        --                             , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
+        --                             , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
+        --                             ]
+        --             _ ->
+        --                 Html.text "Fell through globalResponsiveview"
 
 
 displayUpdateProfileBtnIfExistingUser : String -> Element Msg
@@ -3707,6 +3953,15 @@ displayCreateNewLadderBtnIfExistingUser uname luserRanking msg =
         ]
 
 
+infoBtn : String -> Msg -> Element Msg
+infoBtn label msg =
+        Input.button
+            (Button.simple ++ Button.fill ++ Color.info)
+        <|
+            { onPress = Just <| msg
+            , label = Element.text label
+            }
+
 displayRegisterBtnIfNewUser : String -> Msg -> Element Msg
 displayRegisterBtnIfNewUser uname msg =
     if uname /= "" then
@@ -3741,7 +3996,7 @@ selectedUserIsOwnerView dataState appInfo =
                             Framework.responsiveLayout [] <|
                                 Element.column
                                     Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - No User!"
+                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - No User11"
                                     , selecteduserIsOwnerhomebutton SR.Defaults.emptyUser
                                     , playerbuttons dataState appInfo
                                     ]
@@ -3770,7 +4025,7 @@ selectedUserIsPlayerView dataState appInfo =
                             Framework.responsiveLayout [] <|
                                 Element.column
                                     Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - No User!"
+                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - No User12"
                                     
                                     ]
                         Just userVal ->
@@ -3793,8 +4048,8 @@ selectedUserIsPlayerView dataState appInfo =
                              Framework.responsiveLayout [] <|
                                 Element.column
                                     Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - No User!" 
-                                    , Element.text <| "No User!"
+                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - No User13" 
+                                    , Element.text <| "No User17"
                                     ]
                         Just userVal ->
                             Framework.responsiveLayout [] <|
@@ -3861,22 +4116,22 @@ inputNewUserview walletState dataState appInfo =
         StateFetched sUsers dKind ->
             case walletState of 
                 SR.Types.WalletOpened ->
-                    case appInfo.m_user of
-                        Nothing ->
-                            Html.text "No User"
-                        Just userVal ->
+                    -- case appInfo.m_user of
+                    --     Nothing ->
+                    --         Html.text "No User14"
+                    --     Just userVal ->
                             Framework.responsiveLayout [] <|
                                 Element.column
                                     Framework.container
                                     [ Element.el Heading.h4 <| Element.text "Create New User"
                                     , inputNewUser walletState dataState appInfo
-                                    , newuserConfirmPanel walletState userVal (Data.Users.asList sUsers)
+                                    , newuserConfirmPanel walletState appInfo.m_user (Data.Users.asList sUsers)
                                     ]
                 SR.Types.WalletStateLocked ->
-                    case appInfo.m_user of
-                        Nothing ->
-                            Html.text "No User"
-                        Just userVal ->
+                    -- case appInfo.m_user of
+                    --     Nothing ->
+                    --         Html.text "No User15"
+                    --     Just userVal ->
                             Framework.responsiveLayout [] <|
                                 Element.column
                                     Framework.container
@@ -3884,14 +4139,14 @@ inputNewUserview walletState dataState appInfo =
                                     , Element.text "\n"
                                     , Element.el Heading.h4 <| Element.text "Create New User"
                                     , inputNewUser walletState dataState appInfo
-                                    , newuserConfirmPanel walletState userVal (Data.Users.asList sUsers)
+                                    , newuserConfirmPanel walletState appInfo.m_user (Data.Users.asList sUsers)
                                     ]
                 
                 SR.Types.WalletOperational ->
-                    case appInfo.m_user of
-                        Nothing ->
-                            Html.text "No User"
-                        Just userVal ->
+                    -- case appInfo.m_user of
+                    --     Nothing ->
+                    --         Html.text "No User16"
+                    --     Just userVal ->
                             Framework.responsiveLayout [] <|
                                 Element.column
                                     Framework.container
@@ -3899,14 +4154,14 @@ inputNewUserview walletState dataState appInfo =
                                     , Element.text "\n"
                                     , Element.el Heading.h4 <| Element.text "Create New User"
                                     , inputNewUser walletState dataState appInfo
-                                    , newuserConfirmPanel walletState userVal (Data.Users.asList sUsers)
+                                    , newuserConfirmPanel walletState appInfo.m_user (Data.Users.asList sUsers)
                                     ]
 
                 SR.Types.WalletOpenedNoUserAccount ->
-                    case appInfo.m_user of
-                        Nothing ->
-                            Html.text "No User"
-                        Just userVal ->
+                    -- case appInfo.m_user of
+                    --     Nothing ->
+                    --         Html.text "No User17"
+                    --     Just userVal ->
                             Framework.responsiveLayout [] <|
                                 Element.column
                                     Framework.container
@@ -3914,7 +4169,7 @@ inputNewUserview walletState dataState appInfo =
                                     , Element.text "\n"
                                     , Element.el Heading.h4 <| Element.text "Create New User"
                                     , inputNewUser walletState dataState appInfo
-                                    , newuserConfirmPanel walletState userVal (Data.Users.asList sUsers)
+                                    , newuserConfirmPanel walletState appInfo.m_user (Data.Users.asList sUsers)
                                     ]
                 _ ->
                     Html.text "fell thru in inputNewUserview"
@@ -3933,7 +4188,7 @@ updateExistingUserView model =
                 StateFetched sUsers dKind -> 
                     case appInfo.m_user of
                         Nothing ->
-                            Html.text "No User"
+                            Html.text "No User18"
                         Just userVal ->
                             Framework.responsiveLayout [] <|
                                 Element.column
@@ -3988,7 +4243,7 @@ displayChallengeBeforeConfirmView model =
         AppOps walletState dataState appInfo uiState subState accountState  txRec ->
             case appInfo.m_user of
                 Nothing ->
-                    Html.text "No User!"
+                    Html.text "No User19"
                 Just userVal ->
                     Framework.responsiveLayout [] <|
                         Element.column
