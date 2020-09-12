@@ -38,6 +38,7 @@ type Mutation {
   createAndOrLoginUser(active: Boolean!, username: String!, password: String!, ethaddress: String!, description: String, email: String, mobile: String): String! @resolver(name: "create_andor_login_user")
   createNewPlayer(active: Boolean!, address: String!, rank: Int!, challengeraddress: String): Player! @resolver(name: "create_new_player")
   createNewRanking(active: Boolean!, rankingname : String!, rankingdesc : String, rankingowneraddr : String!): Ranking! @resolver(name: "create_new_ranking")
+  createNewUser(active: Boolean!, username : String!, password : String!, ethaddress: String!, description: String, email: String, mobile: String): String! @resolver(name: "create_new_user")
   createNewUserJoinedRanking(active: Boolean!, rankingid : String!, rankingname : String!, useraddr: String!, rankingowneraddr : String!): UserJoinedRanking! @resolver(name: "create_new_userjoinedranking")
 }
 
