@@ -52,4 +52,5 @@ type Query {
   allUserJoinedRanking: [UserJoinedRanking] @resolver(name: "all_userjoinedranking")
   allUsers: [User] @resolver(name: "all_users")
   usernameFromEthaddress(ethaddress: String!): [String!]! @resolver(name: "usernameFromEthaddress")
+  loginUser(username: String!, password: String!): [String!]! @resolver(name: "login_user")
 }

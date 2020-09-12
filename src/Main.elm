@@ -356,7 +356,7 @@ update msg model =
                     if List.isEmpty extractedList then 
                             (model, Cmd.none)
                     else
-                            ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered  emptyTxRecord, gotGlobal )
+                            ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription accountState  emptyTxRecord, gotGlobal )
                         
                 
                 Just userVal ->
@@ -387,10 +387,10 @@ update msg model =
 
 
         (GlobalReceived rmtrnkingdata, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
-            let
-                --_ = Debug.log "glob rec 1" uiState
-                _ = Debug.log "glob rec datastate" dataState
-            in
+            -- let
+            --     --_ = Debug.log "glob rec 1" uiState
+            --     _ = Debug.log "glob rec datastate" dataState
+            -- in
                     case dataState of
                         StateFetched sUsers dKind -> 
                             case dKind of
@@ -1692,7 +1692,16 @@ update msg model =
 
                 
         (ClickedLogInUser, AppOps walletState dataState appInfo uiState subState accountState txRec) ->
-                (AppOps walletState dataState appInfo SR.Types.UILogIn subState accountState txRec, Cmd.none)
+            case appInfo.m_user of
+                Nothing ->
+                    (AppOps walletState dataState appInfo SR.Types.UILogIn subState accountState txRec, Cmd.none)
+
+                Just user ->
+                    let
+                        _ = Debug.log "uname : " user.username
+                        _ = Debug.log "pword : " user.password
+                    in
+                        (AppOps walletState dataState appInfo SR.Types.UILogIn subState accountState txRec, Cmd.none)
 
         (LoggedInUser  token, modelReDef) ->
                 ( updateFromLoggedInUser modelReDef token
@@ -1900,10 +1909,13 @@ handleNewUserInputs model msg =
                         Nothing ->
                             let
                                 -- create a new empty user
+                                newUser = SR.Defaults.emptyUser
+                                newUserWithUpdatedNameField = 
+                                    { newUser | username = namefield }
                                 newAppInfo =
-                                        { appInfo | m_user = Just SR.Defaults.emptyUser }
+                                    { appInfo | m_user = Just newUserWithUpdatedNameField}
                             in
-                            AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription SR.Types.Registered txRec
+                            AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec
                         
                         Just userVal ->
                             let
@@ -1915,7 +1927,7 @@ handleNewUserInputs model msg =
                                 newAppInfo =
                                     { appInfo | m_user = Just updatedNewUser }
                             in
-                            AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription SR.Types.Registered txRec
+                            AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec
 
                 NewUserPasswordInputChg passwordfield ->
                     case appInfo.m_user of
@@ -1931,7 +1943,7 @@ handleNewUserInputs model msg =
                                 newAppInfo =
                                     { appInfo | m_user = Just updatedNewUser }
                             in
-                            AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered txRec
+                            AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec
 
                 NewUserDescInputChg descfield ->
                    case appInfo.m_user of
@@ -1947,7 +1959,7 @@ handleNewUserInputs model msg =
                                 newAppInfo =
                                     { appInfo | m_user = Just updatedNewUser }
                             in
-                            AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered txRec
+                            AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec
 
                 NewUserEmailInputChg emailfield ->
                     case appInfo.m_user of
@@ -1963,7 +1975,7 @@ handleNewUserInputs model msg =
                                 newAppInfo =
                                     { appInfo | m_user = Just updatedNewUser }
                             in
-                            AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered txRec
+                            AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec
 
                 NewUserMobileInputChg mobilefield ->
                     case appInfo.m_user of
@@ -1979,7 +1991,7 @@ handleNewUserInputs model msg =
                                 newAppInfo =
                                     { appInfo | m_user = Just updatedNewUser }
                             in
-                            AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered txRec
+                            AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec
 
                 _ ->
                     Failure "NewUserNameInputChg"
@@ -2258,10 +2270,10 @@ in the home view"""
                                 StateFetched sUsers dKind ->
                                     case dKind of 
                                         Global sGlobal rnkId user ->
-                                            let 
-                                                _ = Debug.log "StateFetched " dataState
-                                                _ = Debug.log "accountState " accountState
-                                            in
+                                            -- let 
+                                            --     _ = Debug.log "StateFetched " dataState
+                                            --     _ = Debug.log "accountState " accountState
+                                            -- in
                                             globalResponsiveview walletState sGlobal appInfo.m_user "" accountState
                                         _ ->
                                             greetingView <| "Should be Global 1"
@@ -2281,9 +2293,9 @@ in the home view"""
                                 StateFetched sUsers dKind ->
                                     case dKind of 
                                         Global sGlobal rnkId user ->
-                                            let 
-                                                _ = Debug.log "accountState " accountState
-                                            in
+                                            -- let 
+                                            --     _ = Debug.log "accountState " accountState
+                                            -- in
                                             globalResponsiveview walletState sGlobal appInfo.m_user "" accountState
                                         _ ->
                                             greetingView <| "Should be Global 1"
@@ -3579,87 +3591,107 @@ globalResponsiveview walletState sGlobal m_user updatedStr accountState =
             Nothing -> 
                 let 
                     _ = Debug.log "in" "guest"
+                    userVal = SR.Defaults.emptyUser
                 in
                 Framework.responsiveLayout
-                            []
-                            <|
-                                Element.column
-                                    Framework.container
-                                    [ Element.el (Heading.h5) <|
-                                        Element.text ("SportRank - Welcome")
-                                    , displayEnableEthereumBtn
-                                    , Element.text ("\n")
-                                    --, Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
-                                    , Element.column Grid.section <|
-                                        [ Element.el [] <| Element.text ""
-                                        --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-                                        , Element.wrappedRow (Card.fill ++ Grid.simple)
-                                            [ Element.column
-                                                Grid.simple
-                                                [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                                                    { onChange = NewUserNameInputChg
-                                                    , text = ""
-                                                    --, text = userVal.username
-                                                    --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
-                                                    , placeholder = Nothing
-                                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
-                                                    }
-                                                --, nameValidationErr appInfo sUsers
-                                                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                                    { onChange = NewUserDescInputChg
-                                                    , text = ""
-                                                    --, text = userVal.password
-                                                    , placeholder = Nothing
-                                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                                                    }
-                                                ]
-                                            ]
+                    []
+                    <|
+                        Element.column
+                            Framework.container
+                            [ Element.el (Heading.h5) <|
+                                Element.text ("SportRank - Welcome")
+                            , displayEnableEthereumBtn
+                            , Element.text ("\n")
+                            --, Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
+                            , Element.column Grid.section <|
+                                [ Element.el [] <| Element.text ""
+                                --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                                    [ Element.column
+                                        Grid.simple
+                                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                                            { onChange = NewUserNameInputChg
+                                            --, text = ""
+                                            , text = userVal.username
+                                            --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
+                                            }
+                                        --, nameValidationErr appInfo sUsers
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                                            { onChange = NewUserDescInputChg
+                                            --, text = ""
+                                            , text = userVal.password
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                                            }
                                         ]
-                                    , infoBtn "Log In" ClickedLogInUser
-                                    , Element.text ("\n")
-                                    , displayRegisterBtnIfNewUser
-                                        SR.Defaults.emptyUser.username
-                                        ClickedRegister
-                                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
                                     ]
+                                ]
+                            , infoBtn "Log In" ClickedLogInUser
+                            , Element.text ("\n")
+                            , displayRegisterBtnIfNewUser
+                                SR.Defaults.emptyUser.username
+                                ClickedRegister
+                            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
+                            ]
+            
             Just userVal ->
-                    Framework.responsiveLayout
+                case userVal.m_token of
+                    Nothing ->
+                        Framework.responsiveLayout
+                        []
+                        <|
+                        Element.column
+                            Framework.container
+                            [ Element.el (Heading.h5) <|
+                                Element.text ("SportRank - Welcome")
+                            , displayEnableEthereumBtn
+                            , Element.text ("\n")
+                            --, Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
+                            , Element.column Grid.section <|
+                                [ Element.el [] <| Element.text ""
+                                --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                                    [ Element.column
+                                        Grid.simple
+                                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                                            { onChange = NewUserNameInputChg
+                                            
+                                            , text = userVal.username
+                                            --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
+                                            }
+                                        --, nameValidationErr appInfo sUsers
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                                            { onChange = NewUserDescInputChg
+                                            
+                                            , text = userVal.password
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                                            }
+                                        ]
+                                    ]
+                                ]
+                            , infoBtn "Log In" ClickedLogInUser
+                            , Element.text ("\n")
+                            , displayRegisterBtnIfNewUser
+                                SR.Defaults.emptyUser.username
+                                ClickedRegister
+                            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
+                            ]
+
+                    Just _ ->
+                        Framework.responsiveLayout
                             []
                             <|
                                 Element.column
                                     Framework.container
                                     [ Element.el (Heading.h5) <|
-                                        Element.text ("SportRank - Welcome")
+                                        Element.text ("SportRank - Welcome " ++ userVal.username)
                                     , displayEnableEthereumBtn
                                     , Element.text ("\n")
-                                    --, Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
-                                    , Element.column Grid.section <|
-                                        [ Element.el [] <| Element.text ""
-                                        --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-                                        , Element.wrappedRow (Card.fill ++ Grid.simple)
-                                            [ Element.column
-                                                Grid.simple
-                                                [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                                                    { onChange = NewUserNameInputChg
-                                                    , text = userVal.username
-                                                    , placeholder = Nothing
-                                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
-                                                    }
-                                                --, nameValidationErr appInfo sUsers
-                                                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                                    { onChange = NewUserDescInputChg
-                                                    , text = userVal.password
-                                                    , placeholder = Nothing
-                                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                                                    }
-                                                ]
-                                            ]
-                                        ]
-                                    , infoBtn "Log In" ClickedLogInUser
-                                    , Element.text ("\n")
-                                    , displayRegisterBtnIfNewUser
-                                        SR.Defaults.emptyUser.username
-                                        ClickedRegister
                                     , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
                                     , memberrankingbuttons (Data.Global.gotMember sGlobal userVal) userVal
                                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal)) userVal
@@ -4366,11 +4398,11 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
         AppOps walletState dataState appInfo uiState  subState accountState txRec ->
-            let 
-                _ = Debug.log "walletState in subs" walletState
+            -- let 
+            --     _ = Debug.log "walletState in subs" walletState
 
-                _ = Debug.log "subState in subs" subState
-            in
+            --     _ = Debug.log "subState in subs" subState
+            -- in
 
             case subState of 
                 SR.Types.Subscribe ->
