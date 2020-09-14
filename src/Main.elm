@@ -1943,7 +1943,7 @@ handleNewUserInputs model msg =
                                 newAppInfo =
                                     { appInfo | m_user = Just updatedNewUser }
                             in
-                            AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec
+                            AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec
 
                 NewUserDescInputChg descfield ->
                    case appInfo.m_user of
@@ -3285,7 +3285,7 @@ inputNewUser walletState dataState appInfo =
                                             }
                                         , nameValidationErr appInfo sUsers
                                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                            { onChange = NewUserDescInputChg
+                                            { onChange = NewUserPasswordInputChg
                                             , text = userVal.password
                                             , placeholder = Nothing
                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
@@ -3335,7 +3335,7 @@ inputNewUser walletState dataState appInfo =
                                             }
                                         , nameValidationErr appInfo sUsers
                                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                            { onChange = NewUserDescInputChg
+                                            { onChange = NewUserPasswordInputChg
                                             , text = userVal.password
                                             , placeholder = Nothing
                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
@@ -3385,7 +3385,7 @@ inputNewUser walletState dataState appInfo =
                                                 }
                                             , nameValidationErr appInfo sUsers
                                             , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                                { onChange = NewUserDescInputChg
+                                                { onChange = NewUserPasswordInputChg
                                                 , text = userVal.password
                                                 , placeholder = Nothing
                                                 , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
@@ -3584,9 +3584,6 @@ inputNewLadder appInfo dataState =
 
 globalResponsiveview : SR.Types.WalletState -> Data.Global.Global -> Maybe SR.Types.User -> String -> SR.Types.AccountState -> Html Msg
 globalResponsiveview walletState sGlobal m_user updatedStr accountState =
-    let 
-        _ = Debug.log "globalResponsiveview" accountState
-    in
         case m_user of 
             Nothing -> 
                 let 
@@ -3611,7 +3608,6 @@ globalResponsiveview walletState sGlobal m_user updatedStr accountState =
                                         Grid.simple
                                         [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
                                             { onChange = NewUserNameInputChg
-                                            --, text = ""
                                             , text = userVal.username
                                             --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
                                             , placeholder = Nothing
@@ -3619,8 +3615,7 @@ globalResponsiveview walletState sGlobal m_user updatedStr accountState =
                                             }
                                         --, nameValidationErr appInfo sUsers
                                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                            { onChange = NewUserDescInputChg
-                                            --, text = ""
+                                            { onChange = NewUserPasswordInputChg
                                             , text = userVal.password
                                             , placeholder = Nothing
                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
@@ -3665,7 +3660,7 @@ globalResponsiveview walletState sGlobal m_user updatedStr accountState =
                                             }
                                         --, nameValidationErr appInfo sUsers
                                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                            { onChange = NewUserDescInputChg
+                                            { onChange = NewUserPasswordInputChg
                                             
                                             , text = userVal.password
                                             , placeholder = Nothing
@@ -3696,249 +3691,6 @@ globalResponsiveview walletState sGlobal m_user updatedStr accountState =
                                     , memberrankingbuttons (Data.Global.gotMember sGlobal userVal) userVal
                                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal)) userVal
                                     ]
-
-
-        -- case accountState of
-        --     SR.Types.Guest ->
-        --         let 
-        --             _ = Debug.log "in" "guest"
-        --         in
-        --         Framework.responsiveLayout
-        --                     []
-        --                     <|
-        --                         Element.column
-        --                             Framework.container
-        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-        --                                 Element.text ("SportRank - New User")
-        --                             , displayEnableEthereumBtn
-        --                             , Element.text ("\n")
-        --                             , Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
-        --                             , Element.column Grid.section <|
-        --                                 [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-        --                                 , Element.wrappedRow (Card.fill ++ Grid.simple)
-        --                                     [ Element.column
-        --                                         Grid.simple
-        --                                         [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-        --                                             { onChange = NewUserNameInputChg
-        --                                             , text = ""
-        --                                             --, text = userVal.username
-        --                                             , placeholder = Nothing
-        --                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
-        --                                             }
-        --                                         --, nameValidationErr appInfo sUsers
-        --                                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-        --                                             { onChange = NewUserDescInputChg
-        --                                             , text = ""
-        --                                             --, text = userVal.password
-        --                                             , placeholder = Nothing
-        --                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-        --                                             }
-        --                                         ]
-        --                                     ]
-        --                                 ]
-        --                             , infoBtn "Log In" ClickedLogInUser
-        --                             , displayRegisterBtnIfNewUser
-        --                                 user.username
-        --                                 ClickedRegister
-        --                             , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
-        --                             , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
-        --                             , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
-        --                             ]
-        
-        --     SR.Types.Registered -> 
-        --         case walletState of 
-        --             SR.Types.WalletWaitingForTransactionReceipt ->
-        --                 Framework.responsiveLayout
-        --                     []
-        --                     <|
-        --                         Element.column
-        --                             Framework.container
-        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-        --                                 Element.text ("SportRank - " ++ user.username)
-        --                             , Element.text ("\n Waiting for Transaction Receipt")
-        --                             ]
-
-        --             SR.Types.WalletOperational ->
-        --                 Framework.responsiveLayout
-        --                     []
-        --                     <|
-        --                         Element.column
-        --                             Framework.container
-        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-        --                                 Element.text ("SportRank - " ++ user.username)
-        --                             , Element.text ("\n Your wallet is performing a transaction")
-        --                             ]
-
-        --             SR.Types.WalletStateLocked ->
-        --                 Framework.responsiveLayout
-        --                     []
-        --                     <|
-        --                         Element.column
-        --                             Framework.container
-        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-        --                                 Element.text ("SportRank - " ++ user.username)
-        --                             , displayEnableEthereumBtn
-        --                             , Element.text ("\n" ++ updatedStr)
-        --                             , infoBtn "Log In" ClickedLogInUser
-        --                             , displayRegisterBtnIfNewUser
-        --                                 user.username
-        --                                 ClickedRegister
-        --                             , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
-        --                             , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
-        --                             , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
-        --                             ]
-
-        --             SR.Types.WalletOpened ->
-        --                 Framework.responsiveLayout
-        --                     []
-        --                     <|
-        --                         Element.column
-        --                             Framework.container
-        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-        --                                 Element.text ("SportRank - " ++ user.username)
-        --                             , displayUpdateProfileBtnIfExistingUser user.username
-        --                             , displayCreateNewLadderBtnIfExistingUser user.username (Data.Global.asList (Data.Global.gotOwned sGlobal user)) ClickedCreateNewLadder
-        --                             , Element.el [ Font.color SR.Types.colors.red ] <| Element.text ("\n" ++ updatedStr)
-        --                             , infoBtn "Log In" ClickedLogInUser
-        --                             , displayRegisterBtnIfNewUser
-        --                                 user.username
-        --                                 ClickedRegister
-        --                             , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
-        --                             , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
-        --                             , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
-        --                             ]
-        --             _ ->
-        --                 Html.text "Fell through globalResponsiveview"
-
-        --     SR.Types.EthEnabled -> 
-        --         case walletState of 
-        --             SR.Types.WalletWaitingForTransactionReceipt ->
-        --                 Framework.responsiveLayout
-        --                     []
-        --                     <|
-        --                         Element.column
-        --                             Framework.container
-        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-        --                                 Element.text ("SportRank - " ++ user.username)
-        --                             , Element.text ("\n Waiting for Transaction Receipt")
-        --                             ]
-
-        --             SR.Types.WalletOperational ->
-        --                 Framework.responsiveLayout
-        --                     []
-        --                     <|
-        --                         Element.column
-        --                             Framework.container
-        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-        --                                 Element.text ("SportRank - " ++ user.username)
-        --                             , Element.text ("\n Your wallet is performing a transaction")
-        --                             ]
-
-        --             SR.Types.WalletStateLocked ->
-        --                 Framework.responsiveLayout
-        --                     []
-        --                     <|
-        --                         Element.column
-        --                             Framework.container
-        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-        --                                 Element.text ("SportRank - " ++ user.username)
-        --                             , displayEnableEthereumBtn
-        --                             , Element.text ("\n" ++ updatedStr)
-        --                             , infoBtn "Log In" ClickedLogInUser
-        --                             , displayRegisterBtnIfNewUser
-        --                                 user.username
-        --                                 ClickedRegister
-        --                             , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
-        --                             , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
-        --                             , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
-        --                             ]
-
-        --             SR.Types.WalletOpened ->
-        --                 Framework.responsiveLayout
-        --                     []
-        --                     <|
-        --                         Element.column
-        --                             Framework.container
-        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-        --                                 Element.text ("SportRank - " ++ user.username)
-        --                             , displayUpdateProfileBtnIfExistingUser user.username
-        --                             , displayCreateNewLadderBtnIfExistingUser user.username (Data.Global.asList (Data.Global.gotOwned sGlobal user)) ClickedCreateNewLadder
-        --                             , Element.el [ Font.color SR.Types.colors.red ] <| Element.text ("\n" ++ updatedStr)
-        --                             , infoBtn "Log In" ClickedLogInUser
-        --                             , displayRegisterBtnIfNewUser
-        --                                 user.username
-        --                                 ClickedRegister
-        --                             , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
-        --                             , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
-        --                             , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
-        --                             ]
-        --             _ ->
-        --                 Html.text "Fell through globalResponsiveview"
-            
-        --     SR.Types.EthEnabledAndRegistered -> 
-        --         case walletState of 
-        --             SR.Types.WalletWaitingForTransactionReceipt ->
-        --                 Framework.responsiveLayout
-        --                     []
-        --                     <|
-        --                         Element.column
-        --                             Framework.container
-        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-        --                                 Element.text ("SportRank - " ++ user.username)
-        --                             , Element.text ("\n Waiting for Transaction Receipt")
-        --                             ]
-
-        --             SR.Types.WalletOperational ->
-        --                 Framework.responsiveLayout
-        --                     []
-        --                     <|
-        --                         Element.column
-        --                             Framework.container
-        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-        --                                 Element.text ("SportRank - " ++ user.username)
-        --                             , Element.text ("\n Your wallet is performing a transaction")
-        --                             ]
-
-        --             SR.Types.WalletStateLocked ->
-        --                 Framework.responsiveLayout
-        --                     []
-        --                     <|
-        --                         Element.column
-        --                             Framework.container
-        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-        --                                 Element.text ("SportRank - " ++ user.username)
-        --                             , displayEnableEthereumBtn
-        --                             , Element.text ("\n" ++ updatedStr)
-        --                             , infoBtn "Log In" ClickedLogInUser
-        --                             , displayRegisterBtnIfNewUser
-        --                                 user.username
-        --                                 ClickedRegister
-        --                             , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
-        --                             , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
-        --                             , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
-        --                             ]
-
-        --             SR.Types.WalletOpened ->
-        --                 Framework.responsiveLayout
-        --                     []
-        --                     <|
-        --                         Element.column
-        --                             Framework.container
-        --                             [ Element.el (Heading.h5 ++ [ Element.htmlAttribute (Html.Attributes.id "globalHeader") ]) <|
-        --                                 Element.text ("SportRank - " ++ user.username)
-        --                             , displayUpdateProfileBtnIfExistingUser user.username
-        --                             , displayCreateNewLadderBtnIfExistingUser user.username (Data.Global.asList (Data.Global.gotOwned sGlobal user)) ClickedCreateNewLadder
-        --                             , Element.el [ Font.color SR.Types.colors.red ] <| Element.text ("\n" ++ updatedStr)
-        --                             , infoBtn "Log In" ClickedLogInUser
-        --                             , displayRegisterBtnIfNewUser
-        --                                 user.username
-        --                                 ClickedRegister
-        --                             , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal user)) user
-        --                             , memberrankingbuttons (Data.Global.gotMember sGlobal user) user
-        --                             , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal user)) user
-        --                             ]
-        --             _ ->
-        --                 Html.text "Fell through globalResponsiveview"
 
 
 displayUpdateProfileBtnIfExistingUser : String -> Element Msg
