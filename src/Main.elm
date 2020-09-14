@@ -1691,17 +1691,8 @@ update msg model =
                 ( AppOps walletState dataState appInfo SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription SR.Types.Registered txRec, Cmd.none )
 
                 
-        (ClickedLogInUser, AppOps walletState dataState appInfo uiState subState accountState txRec) ->
-            case appInfo.m_user of
-                Nothing ->
-                    (AppOps walletState dataState appInfo SR.Types.UILogIn subState accountState txRec, Cmd.none)
-
-                Just user ->
-                    let
-                        _ = Debug.log "uname : " user.username
-                        _ = Debug.log "pword : " user.password
-                    in
-                        (AppOps walletState dataState appInfo SR.Types.UILogIn subState accountState txRec, Cmd.none)
+        (ClickedLogInUser, model_) ->
+            (updateModelFromEnteredUserNameAndPassword model_, Cmd.none)
 
         (LoggedInUser  token, modelReDef) ->
                 ( updateFromLoggedInUser modelReDef token
@@ -1727,6 +1718,25 @@ update msg model =
         
        
 -- model handlers
+
+updateModelFromEnteredUserNameAndPassword : Model -> Model 
+updateModelFromEnteredUserNameAndPassword model = 
+    case model of
+        AppOps walletState dataState appInfo uiState subState accountState  txRec ->
+            case appInfo.m_user of
+                Nothing ->
+                    model
+
+                Just user ->
+                    let
+                        updated_user =
+                            { user | username = user.username, password = user.password }
+
+                        newAppInfo = { appInfo | m_user = Just updated_user }
+                    in
+                        AppOps walletState dataState newAppInfo uiState subState accountState  txRec
+        Failure _ ->
+            model
 
 updateFromLoggedInUser: Model -> SR.Types.Token -> Model
 updateFromLoggedInUser model token =
