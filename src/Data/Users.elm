@@ -1,5 +1,7 @@
 -- Users will be mainly used to communicate externally to the jsonbin server
 module Data.Users exposing (Users
+    , newUser
+    , updatedUserInSet
     , validatedUserList
     , addedNewJoinedRankingId
     , removedRankingIdFromAll
@@ -8,13 +10,13 @@ module Data.Users exposing (Users
     , removedDuplicateUserFromUserList
     , isRegistered
     , isUniqueUserName
+    , isEmpty
     , gotUserListFromRemData
     , isNameValidationErr
     , extractUsersFromWebData
     , gotUserFromUserList
     , emptyUsers
     , updateAddr
-    , updatedUser
     , addUser
     , removeUser
     , asList
@@ -39,12 +41,26 @@ import List.Unique
 import Utils.Validation.Validate
 
 
+-- Users (EverySet SR.Types.User) is not the same type as (EverySet SR.Types.User)
+-- Peter Damoc
+-- You can think about the tag ('Users') as a box containing a type.
 type Users = Users (EverySet SR.Types.User)
 type UserNames = UserNames (EverySet String)
+
+
+newUser : String -> String -> String -> String -> String -> String -> SR.Types.User
+newUser username password ethaddr desc email mobile =
+    SR.Types.User 12345 True username password ethaddr desc email mobile [""] 0 Nothing
 
 emptyUsers : Users 
 emptyUsers = 
     Users (EverySet.empty)
+
+isEmpty : Users -> Bool
+-- 'Users' is a tag containing a box (of EverySet)
+-- using the tag here you can open the box
+isEmpty (Users sUsers) =
+    EverySet.isEmpty sUsers
 
 asUsers : EverySet SR.Types.User -> Users 
 asUsers esUser  = 
@@ -53,10 +69,10 @@ asUsers esUser  =
 isRegistered : List SR.Types.User -> SR.Types.User -> Bool
 isRegistered luser user =
     let
-        newUser =
+        userTocheck =
             gotUserFromUserList luser user.ethaddress
     in
-    if newUser.username == "" then
+    if userTocheck.username == "" then
         False
 
     else
@@ -143,12 +159,12 @@ addedNewJoinedRankingId rankingId user lUser =
         validatedUserJoinRankings =
             List.Unique.filterDuplicates (List.filterMap removedInvalidRankingId validatedRankingAdded)
 
-        newUser =
+        userUpdated =
             --{ user | userjoinrankings =  validatedRankingAdded}
             { user | userjoinrankings =  validatedUserJoinRankings}
 
         newUserList =
-            newUser :: lUser
+            userUpdated :: lUser
     in
     newUserList
 
@@ -182,9 +198,9 @@ removedRankindIdFromUser  rnkId user =
 
         --_ = Debug.log "filteredOutRanking" filteredOutRanking
 
-        newUser = {user | userjoinrankings = filteredOutRanking}
+        userUpdated = {user | userjoinrankings = filteredOutRanking}
     in
-        newUser
+        userUpdated
 
 filterRankingIds : String -> String -> Maybe String 
 filterRankingIds rnkIdToFilter currentRnkId =
@@ -239,16 +255,16 @@ updateAddr susers addr =
             in 
                 addUser updatedUserAddr userRemoved
 
-updatedUser : Users -> SR.Types.User -> Users
-updatedUser susers newUser =
+updatedUserInSet : Users -> SR.Types.User -> Users
+updatedUserInSet susers userToUpdate =
             let 
                 -- use the address to get the existing user entry to remove
-                user = gotUser susers newUser.ethaddress
+                user = gotUser susers userToUpdate.ethaddress
                 userRemoved = removeUser user susers
                 -- updatedUserAddr =
                 --         { user | ethaddress = addr }
             in 
-                addUser newUser userRemoved
+                addUser userToUpdate userRemoved
 
 
 -- todo: remove?

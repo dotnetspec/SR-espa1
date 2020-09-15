@@ -284,7 +284,7 @@ update msg model =
                                 _ = Debug.log "User: " user
                                 newUser = Data.Rankings.removedDeletedRankingsFromUserJoined user rankings
                                 _ = Debug.log "newUser: " newUser
-                                updatedsUsers = Data.Users.updatedUser sUsers newUser
+                                updatedsUsers = Data.Users.updatedUserInSet sUsers newUser
                                 -- userInAppInfo = { appInfo | m_user = Just newUser }
                                 -- newDataKind = Users newUser
                                 -- newDataState = StateFetched users newDataKind
@@ -1016,7 +1016,7 @@ update msg model =
                     case dKind of 
                         Selected sSelected rnkId user status sRanking ->
                             let 
-                                newsUsers = Data.Users.updatedUser sUsers (Data.Users.removedRankindIdFromUser (Utils.MyUtils.stringFromRankingId rnkId) user)
+                                newsUsers = Data.Users.updatedUserInSet sUsers (Data.Users.removedRankindIdFromUser (Utils.MyUtils.stringFromRankingId rnkId) user)
                                 removedRanking = Data.Rankings.removedById rnkId sRanking
                                 newDataKind = Global (Data.Global.created removedRanking sUsers) rnkId user
                                 _ = Debug.log "rnkId in ClickedDeleteRanking " rnkId
@@ -1637,7 +1637,8 @@ update msg model =
                                                     Data.Users.emptyUsers
                                 in
                                 ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription SR.Types.Registered { txRec | txSentry = subModel }
-                                , Cmd.batch [subCmd,  createNewUser ( Data.Users.asList userSet) userVal] )
+                                --, Cmd.batch [subCmd,  createNewUser ( Data.Users.asList userSet) userVal] )
+                                , Cmd.batch [subCmd,  createNewUser userSet userVal])
 
                     SR.Types.AppStateEnterWon -> 
                         let 
@@ -1692,7 +1693,8 @@ update msg model =
 
                 
         (ClickedLogInUser, model_) ->
-            (updateModelFromEnteredUserNameAndPassword model_, Cmd.none)
+            --(updateModelFromEnteredUserNameAndPassword model_, Cmd.none)
+            (model, Cmd.none)
 
         (LoggedInUser  token, modelReDef) ->
                 ( updateFromLoggedInUser modelReDef token
@@ -1719,24 +1721,24 @@ update msg model =
        
 -- model handlers
 
-updateModelFromEnteredUserNameAndPassword : Model -> Model 
-updateModelFromEnteredUserNameAndPassword model = 
-    case model of
-        AppOps walletState dataState appInfo uiState subState accountState  txRec ->
-            case appInfo.m_user of
-                Nothing ->
-                    model
+-- updateModelFromEnteredUserNameAndPassword : Model -> Model 
+-- updateModelFromEnteredUserNameAndPassword model = 
+--     case model of
+--         AppOps walletState dataState appInfo uiState subState accountState  txRec ->
+--             case appInfo.m_user of
+--                 Nothing ->
+--                     model
 
-                Just user ->
-                    let
-                        updated_user =
-                            { user | username = user.username, password = user.password }
+--                 Just user ->
+--                     let
+--                         updated_user =
+--                             { user | username = user.username, password = user.password }
 
-                        newAppInfo = { appInfo | m_user = Just updated_user }
-                    in
-                        AppOps walletState dataState newAppInfo uiState subState accountState  txRec
-        Failure _ ->
-            model
+--                         newAppInfo = { appInfo | m_user = Just updated_user }
+--                     in
+--                         AppOps walletState dataState newAppInfo uiState subState accountState  txRec
+--         Failure _ ->
+--             model
 
 updateFromLoggedInUser: Model -> SR.Types.Token -> Model
 updateFromLoggedInUser model token =
@@ -1977,10 +1979,8 @@ handleNewUserInputs model msg =
                             model
                         Just userVal ->
                             let
-                                newUser = userVal
-
                                 updatedNewUser =
-                                    { newUser | email = emailfield }
+                                    { userVal | email = emailfield }
 
                                 newAppInfo =
                                     { appInfo | m_user = Just updatedNewUser }
@@ -4345,31 +4345,24 @@ addedUserAsFirstPlayerInNewList user =
         }
 
 
-createNewUser : List SR.Types.User -> SR.Types.User -> Cmd Msg
-createNewUser originaluserlist newuserinfo =
+createNewUser : Data.Users.Users -> SR.Types.User -> Cmd Msg
+createNewUser sUsers newuserinfo =
     let
-        newUser =
-            { datestamp = 123456789
-            , active = True
-            , username = newuserinfo.username
-            , password = newuserinfo.password
-            , ethaddress = newuserinfo.ethaddress
-            , description = newuserinfo.description
-            , email = newuserinfo.email
-            , mobile = newuserinfo.mobile
-            , userjoinrankings = []
-            , member_since = 1
-            , m_token = Nothing
-            }
-
-        newUserAddedToList =
-            newUser :: originaluserlist
-
-        ensuredListHasNoDuplicates =
-            Data.Users.removedDuplicateUserFromUserList newUserAddedToList
-
+        newUserToAdd : SR.Types.User
+        newUserToAdd =
+            Data.Users.newUser  
+                newuserinfo.username 
+                newuserinfo.password 
+                newuserinfo.ethaddress 
+                newuserinfo.description
+                newuserinfo.email
+                newuserinfo.mobile
         _ =
-            Debug.log "originaluserlist " originaluserlist
+            Debug.log "sUsers " sUsers
+
+        listForHttpRequest = 
+                Data.Users.addUser newUserToAdd sUsers
+                |> Data.Users.asList
             
     in
     --SentUserInfoAndDecodedResponseToNewUser is the Msg handled by update whenever a request is made by buttuser clicked
@@ -4377,10 +4370,10 @@ createNewUser originaluserlist newuserinfo =
     -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
     -- decoder relates to what comes back from server. Nothing to do with above.
     -- we mustn't submit a new user if the original list is empty for some reason ...
-    if List.isEmpty originaluserlist then
+    if Data.Users.isEmpty sUsers then
         Http.request
             { body =
-                Http.jsonBody <| jsonEncodeNewUsersList ensuredListHasNoDuplicates
+                Http.jsonBody <| jsonEncodeNewUsersList listForHttpRequest
             , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
             , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
             , method = "PUT"
@@ -4394,7 +4387,7 @@ createNewUser originaluserlist newuserinfo =
     else
         Http.request
             { body =
-                Http.jsonBody <| jsonEncodeNewUsersList ensuredListHasNoDuplicates
+                Http.jsonBody <| jsonEncodeNewUsersList listForHttpRequest
             , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
             , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
             , method = "PUT"
