@@ -1692,10 +1692,20 @@ update msg model =
 
                 
         (ClickedLogInUser, model_) ->
-            --(updateModelFromEnteredUserNameAndPassword model_, Cmd.none)
-            (model, Cmd.none)
+            case model of 
+                AppOps walletState dataState appInfo uiState subState accountState txRec ->
+                    case appInfo.m_user of 
+                        Nothing ->
+                            (model, Cmd.none)
+                        Just userVal ->
+                            (model, createAndOrLoginUser userVal.username userVal.password)
+                            
+                    
+                Failure _ ->
+                    (model, Cmd.none)
+           
 
-        (LoggedInUser  token, modelReDef) ->
+        (LoggedInUser token, modelReDef) ->
                 ( updateFromLoggedInUser modelReDef token
                     , Cmd.none
                 )
@@ -1716,28 +1726,13 @@ update msg model =
             ( Failure "handledWalletStateOpened2"
             , Cmd.none
             )
+
+createAndOrLoginUser : String -> String -> Cmd Msg
+createAndOrLoginUser user_name password =
+    Task.perform LoggedInUser (Task.succeed "abcdefgHIJKLMNOP1234560987")
         
        
 -- model handlers
-
--- updateModelFromEnteredUserNameAndPassword : Model -> Model 
--- updateModelFromEnteredUserNameAndPassword model = 
---     case model of
---         AppOps walletState dataState appInfo uiState subState accountState  txRec ->
---             case appInfo.m_user of
---                 Nothing ->
---                     model
-
---                 Just user ->
---                     let
---                         updated_user =
---                             { user | username = user.username, password = user.password }
-
---                         newAppInfo = { appInfo | m_user = Just updated_user }
---                     in
---                         AppOps walletState dataState newAppInfo uiState subState accountState  txRec
---         Failure _ ->
---             model
 
 updateFromLoggedInUser: Model -> SR.Types.Token -> Model
 updateFromLoggedInUser model token =
@@ -1772,8 +1767,6 @@ updateAppInfoOnRankingSelected appInfo rnkid rnkownerstr rnknamestr =
             { appInfo | selectedRanking = newRnkInfo }
     in
     newAppInfo
-
-
 
 
 
@@ -2207,206 +2200,189 @@ view model =
                                 
                                 
                         Just tokenVal ->
+                            case dataState of
+                                AllEmpty ->
+                                    greetingView <| "No Global Rankings"
+                                StateFetched sUsers dkind ->
+                                    case dkind of 
+                                        Global sGlobal _ _ ->
+                                            handleGlobalWithTokenView sGlobal userValue ""
 
-                                    case uiState of
+                                        Selected _ _ _ _ _ ->
+                                            greetingView <| "ToDo: Select w/o a token should be possible"
 
-                                        SR.Types.UILogIn ->
-                                            inputNewLadderview model
-
-                                        SR.Types.UICreateNewLadder ->
-                                            inputNewLadderview model
-
-                                        SR.Types.UISelectedRankingUserIsOwner ->
-                                            case dataState of
-                                                StateFetched sUsers dKind -> 
-                                                    case dKind of 
-                                                            Selected sSelected rnkId user status rankings ->
-                                                                let 
-                                                                    _ = Debug.log "in Selected ready for view1" (Data.Selected.asList sSelected)
-                                                                in
-                                                                    selectedUserIsOwnerView dataState appInfo
-                                                            _ -> 
-                                                                greetingView <| "Should be Selected"
-                                                _ -> 
-                                                    greetingView <| "Owner View error"
-                                            
-
-                                        SR.Types.UISelectedRankingUserIsPlayer ->
-                                            selectedUserIsPlayerView dataState appInfo
-                                            -- case dataState of 
-                                            --     StateFetched sUsers dKind ->
-                                            --         case dKind of 
-                                            --             Selected sSelected _ user status -> 
-                                            --                 selectedUserIsPlayerView dataState appInfo
-                                                        
-                                            --             _ -> 
-                                            --                 greetingView <| "View error - should be Selected"
-
-                                            --     StateUpdated sUsers dKind ->
-                                            --         case dKind of 
-                                            --             Selected sSelected _ user status -> 
-                                            --                 selectedUserIsPlayerView dataState appInfo
-                                                        
-                                            --             _ -> 
-                                            --                 greetingView <| "View error - should be Selected"
-                                                
-                                                -- _ -> 
-                                                --     greetingView <| "View error"
-                                        SR.Types.UIEnableEthereum ->
-                                            greetingView <| "Please use the 'Enable Ethereum' button to join a ranking"
-
-                                        SR.Types.UIOwnerDeletedRanking ->
-                                            case dataState of
-                                                StateFetched sUsers dKind -> 
-                                                    case dKind of 
-                                                            Selected sSelected rnkId user status rankings ->
-                                                                let 
-                                                                    _ = Debug.log "in Selected ready for view1" (Data.Selected.asList sSelected)
-                                                                in
-                                                                    --selectedUserIsOwnerView dataState appInfo
-                                                                    continueWithRemoveDeletedRankingView <| """Unfortunately this 
-                        ladder has 
-                        been DELETED by the owner
-                        and will be removed from
-                        your listings.
-                        Please contact the owner
-                        for more details.
-                        If you would like to      
-                        create a new one 
-                        please click 
-                        'Create New Ladder'
-                        in the home view"""
-                                                            _ -> 
-                                                                greetingView <| "Should be Selected"
-                                                _ -> 
-                                                    greetingView <| "Owner View error"
-                                            
-                                            
-
-                                        SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer ->
-                                            let 
-                                                _ = Debug.log "UISelectedRankingUserIsNeitherOwnerNorPlayer" "here"
-                                            in
-                                            case dataState of
-                                                StateFetched sUsers dKind -> 
-                                                    case dKind of 
-                                                            Selected sSelected rnkId user status rankings ->
-                                                                
-                                                                selectedUserIsNeitherOwnerNorPlayerView dataState appInfo accountState
-                                                            _ -> 
-                                                                greetingView <| "shuld be Selected"
-                                                _ -> 
-                                                    greetingView <| "View error"
-
-                                        SR.Types.UIRenderAllRankings ->
-                                            greetingView <| "UIRenderAllRankings should be handled properly in view ..."
-                                            -- case appInfo.m_user of 
-                                            --     Nothing ->
-                                            --     -- Guest
-                                            --         case dataState of 
-                                            --             StateFetched sUsers dKind ->
-                                            --                 case dKind of 
-                                            --                     Global sGlobal rnkId user ->
-                                            --                         handleGlobalWithTokenView sGlobal
-                                            --                     _ ->
-                                            --                         greetingView <| "Should be Global 1"
-                                                        
-                                            --             StateUpdated sUsers dKind ->
-                                            --                 greetingView <| "Nothing should be updated if we're in Guest mode"
-                                            --             AllEmpty ->
-                                            --                 greetingView <| "Rankings is empty ..."
-
-                                            --     Just userVal -> 
-                                            --         case dataState of 
-                                            --             StateFetched sUsers dKind ->
-                                            --                 case dKind of 
-                                            --                     Global sGlobal rnkId user ->
-                                            --                         handleGlobalWithTokenView sGlobal ""
-                                            --                     _ ->
-                                            --                         greetingView <| "Should be Global 1"
-                                                        
-                                            --             StateUpdated sUsers dKind ->
-                                            --                 case dKind of
-                                            --                     Global sGlobal rnkId user  ->
-                                            --                         handleGlobalWithTokenView sGlobal "Your Settings Have Been Updated"
-                                            --                     _ ->
-                                            --                         greetingView <| "Should be updated Global"
-                                            --             AllEmpty ->
-                                            --                 greetingView <| "No rankings to display ..."
-
-
-                                        SR.Types.UIEnterResult ->
-                                            displayResultBeforeConfirmView model
-
-                                        SR.Types.UIEnterResultTxProblem ->
-                                            txErrorView model
-
-                                        SR.Types.UIChallenge ->
-                                            displayChallengeBeforeConfirmView model
-
-                                        SR.Types.UILoading ->
-                                            greetingView <| "Loading ..."
-
-                                        SR.Types.UIEthAlreadyEnabled ->
-                                            greetingView <|
-                                                """Your Ethereum  
-                        wallet is ALREADY enabled!
-                        """
-
-                                        SR.Types.UIWalletMissingInstructions ->
+                                        Users _ ->
+                                            greetingView <| "Users not used here"
                                         
-                                            greetingView <|
-                                                """Your Ethereum  
-                        wallet browser
-                        extension is MISSING. Please 
-                        install Metamask (or similar)     
-                        in Chrome extensions 
-                        before continuing and
-                        refresh the browser"""
+                                StateUpdated _ _ ->
+                                    greetingView <| "Cannot update w/o a token"
+                            
+                        --             case uiState of
 
-                                        SR.Types.UIDisplayWalletLockedInstructions ->
-                                            continueView <|
-                                                """Your Ethereum  
-                        wallet browser
-                        extension is LOCKED. Please 
-                        use your wallet      
-                        password to open it 
-                        before continuing and
-                        refresh the browser"""
+                        --                 SR.Types.UILogIn ->
+                        --                     inputNewLadderview model
 
-                                        SR.Types.UIUnableToFindGlobalRankings ->
-                                            continueView <|
-                                                """Server Error.
-                        Unable to find
-                        global ranking list.
-                        Please inform the
-                        developer. Thank
-                        you...  
-                        """
+                        --                 SR.Types.UICreateNewLadder ->
+                        --                     inputNewLadderview model
 
-                                        SR.Types.UIDeleteRankingConfirm ->
-                                            deleteRankingview model
+                        --                 SR.Types.UISelectedRankingUserIsOwner ->
+                        --                     case dataState of
+                        --                         StateFetched sUsers dKind -> 
+                        --                             case dKind of 
+                        --                                     Selected sSelected rnkId user status rankings ->
+                        --                                         let 
+                        --                                             _ = Debug.log "in Selected ready for view1" (Data.Selected.asList sSelected)
+                        --                                         in
+                        --                                             selectedUserIsOwnerView dataState appInfo
+                        --                                     _ -> 
+                        --                                         greetingView <| "Should be Selected"
+                        --                         _ -> 
+                        --                             greetingView <| "Owner View error"
+                                            
 
-                                        -- SR.Types.UIDeleteRankingInform ->
-                                        --     deletedRankingInformView model
+                        --                 SR.Types.UISelectedRankingUserIsPlayer ->
+                        --                     selectedUserIsPlayerView dataState appInfo
+                        --                     -- case dataState of 
+                        --                     --     StateFetched sUsers dKind ->
+                        --                     --         case dKind of 
+                        --                     --             Selected sSelected _ user status -> 
+                        --                     --                 selectedUserIsPlayerView dataState appInfo
+                                                        
+                        --                     --             _ -> 
+                        --                     --                 greetingView <| "View error - should be Selected"
 
+                        --                     --     StateUpdated sUsers dKind ->
+                        --                     --         case dKind of 
+                        --                     --             Selected sSelected _ user status -> 
+                        --                     --                 selectedUserIsPlayerView dataState appInfo
+                                                        
+                        --                     --             _ -> 
+                        --                     --                 greetingView <| "View error - should be Selected"
+                                                
+                        --                         -- _ -> 
+                        --                         --     greetingView <| "View error"
+                        --                 SR.Types.UIEnableEthereum ->
+                        --                     greetingView <| "Please use the 'Enable Ethereum' button to join a ranking"
 
-                                        SR.Types.UIRegisterNewUser ->
-                                            let 
-                                                _ = Debug.log "UIregister new " walletState
-                                            in 
-                                                    inputNewUserview walletState dataState appInfo
+                        --                 SR.Types.UIOwnerDeletedRanking ->
+                        --                     case dataState of
+                        --                         StateFetched sUsers dKind -> 
+                        --                             case dKind of 
+                        --                                     Selected sSelected rnkId user status rankings ->
+                        --                                         let 
+                        --                                             _ = Debug.log "in Selected ready for view1" (Data.Selected.asList sSelected)
+                        --                                         in
+                        --                                             --selectedUserIsOwnerView dataState appInfo
+                        --                                             continueWithRemoveDeletedRankingView <| """Unfortunately this 
+                        -- ladder has 
+                        -- been DELETED by the owner
+                        -- and will be removed from
+                        -- your listings.
+                        -- Please contact the owner
+                        -- for more details.
+                        -- If you would like to      
+                        -- create a new one 
+                        -- please click 
+                        -- 'Create New Ladder'
+                        -- in the home view"""
+                        --                                     _ -> 
+                        --                                         greetingView <| "Should be Selected"
+                        --                         _ -> 
+                        --                             greetingView <| "Owner View error"
                                             
                                             
 
-                                        SR.Types.UIUpdateExistingUser ->
-                                            let 
-                                                _ = Debug.log "UIUpdateExistingUser new " walletState
-                                            in 
-                                            updateExistingUserView model
+                        --                 SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer ->
+                        --                     let 
+                        --                         _ = Debug.log "UISelectedRankingUserIsNeitherOwnerNorPlayer" "here"
+                        --                     in
+                        --                     case dataState of
+                        --                         StateFetched sUsers dKind -> 
+                        --                             case dKind of 
+                        --                                     Selected sSelected rnkId user status rankings ->
+                                                                
+                        --                                         selectedUserIsNeitherOwnerNorPlayerView dataState appInfo accountState
+                        --                                     _ -> 
+                        --                                         greetingView <| "shuld be Selected"
+                        --                         _ -> 
+                        --                             greetingView <| "View error"
 
-                                        _ ->
-                                            greetingView <| "Loading ... "
+                        --                 SR.Types.UIRenderAllRankings ->
+                        --                     greetingView <| "UIRenderAllRankings should be handled properly in view ..."
+
+
+                        --                 SR.Types.UIEnterResult ->
+                        --                     displayResultBeforeConfirmView model
+
+                        --                 SR.Types.UIEnterResultTxProblem ->
+                        --                     txErrorView model
+
+                        --                 SR.Types.UIChallenge ->
+                        --                     displayChallengeBeforeConfirmView model
+
+                        --                 SR.Types.UILoading ->
+                        --                     greetingView <| "Loading ..."
+
+                        --                 SR.Types.UIEthAlreadyEnabled ->
+                        --                     greetingView <|
+                        --                         """Your Ethereum  
+                        -- wallet is ALREADY enabled!
+                        -- """
+
+                        --                 SR.Types.UIWalletMissingInstructions ->
+                                        
+                        --                     greetingView <|
+                        --                         """Your Ethereum  
+                        -- wallet browser
+                        -- extension is MISSING. Please 
+                        -- install Metamask (or similar)     
+                        -- in Chrome extensions 
+                        -- before continuing and
+                        -- refresh the browser"""
+
+                        --                 SR.Types.UIDisplayWalletLockedInstructions ->
+                        --                     continueView <|
+                        --                         """Your Ethereum  
+                        -- wallet browser
+                        -- extension is LOCKED. Please 
+                        -- use your wallet      
+                        -- password to open it 
+                        -- before continuing and
+                        -- refresh the browser"""
+
+                        --                 SR.Types.UIUnableToFindGlobalRankings ->
+                        --                     continueView <|
+                        --                         """Server Error.
+                        -- Unable to find
+                        -- global ranking list.
+                        -- Please inform the
+                        -- developer. Thank
+                        -- you...  
+                        -- """
+
+                        --                 SR.Types.UIDeleteRankingConfirm ->
+                        --                     deleteRankingview model
+
+                        --                 -- SR.Types.UIDeleteRankingInform ->
+                        --                 --     deletedRankingInformView model
+
+
+                        --                 SR.Types.UIRegisterNewUser ->
+                        --                     let 
+                        --                         _ = Debug.log "UIregister new " walletState
+                        --                     in 
+                        --                             inputNewUserview walletState dataState appInfo
+                                            
+                                            
+
+                        --                 SR.Types.UIUpdateExistingUser ->
+                        --                     let 
+                        --                         _ = Debug.log "UIUpdateExistingUser new " walletState
+                        --                     in 
+                        --                     updateExistingUserView model
+
+                        --                 _ ->
+                        --                     greetingView <| "Loading ... "
 
         Failure str ->
             greetingView <| "Model failure in view: " ++ str
