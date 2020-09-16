@@ -2181,22 +2181,24 @@ view model =
                 -- want to remove uiState over time probably - should just be the state of the model determines
                     case userValue.m_token of 
                         Nothing ->
-                            case dataState of
-                                AllEmpty ->
-                                    greetingView <| "No Global Rankings"
-                                StateFetched sUsers dkind ->
-                                    case dkind of 
-                                        Global sGlobal _ _ ->
-                                            handleGlobalNoTokenView sGlobal userValue
+                            handleGlobalNoTokenView dataState userValue
+                            -- case dataState of
+                            --     AllEmpty ->
+                            --         greetingView <| "No Global Rankings"
 
-                                        Selected _ _ _ _ _ ->
-                                            greetingView <| "ToDo: Select w/o a token should be possible"
+                            --     StateFetched sUsers dkind ->
+                            --         case dkind of 
+                            --             Global sGlobal _ _ ->
+                            --                 handleGlobalNoTokenView sGlobal userValue
 
-                                        Users _ ->
-                                            greetingView <| "Users not used here"
+                            --             Selected _ _ _ _ _ ->
+                            --                 greetingView <| "ToDo: Select w/o a token should be possible"
+
+                            --             Users _ ->
+                            --                 greetingView <| "Users not used here"
                                         
-                                StateUpdated _ _ ->
-                                    greetingView <| "Cannot update w/o a token"
+                            --     StateUpdated _ _ ->
+                            --         greetingView <| "Cannot update w/o a token"
                                 
                                 
                         Just tokenVal ->
@@ -3581,38 +3583,6 @@ inputNewLadder appInfo dataState =
         ]
 
 
-globalResponsiveview : Model -> String -> Html Msg
-globalResponsiveview model updatedStr =
-    case model of
-        AppOps walletState dataState appInfo uiState subState accountState txRec ->
-            case appInfo.m_user of 
-                Nothing -> 
-                    Html.text("Should already be handled in no user view")
-                                    
-                        
-                Just userVal ->
-                    case dataState of
-                        AllEmpty -> 
-                            Html.text ("No Data")
-                        StateUpdated _ _ ->
-                            Html.text ("User - No Update")
-                        StateFetched sUsers dkind ->
-                            case dkind of
-                                Users _ ->
-                                    Html.text ("Got Users - No Global")
-                                Selected _ _ _ _ _->
-                                    Html.text ("Nothing should have been selected yet")
-                                Global sGlobal rnkId _ ->
-                                    case userVal.m_token of
-                                        Nothing ->
-                                            handleGlobalNoTokenView sGlobal userVal
-
-                                        Just tokenVal ->
-                                            handleGlobalWithTokenView sGlobal userVal ""
-
-        Failure str ->
-                    greetingView <| "Model failure in view: globalResponsiveview" ++ str
-
 handleGlobalNoUserView : DataState -> Html Msg
 handleGlobalNoUserView dataState =   
     let 
@@ -3673,50 +3643,62 @@ handleGlobalNoUserView dataState =
                                 ]
 
 
-handleGlobalNoTokenView : Data.Global.Global -> SR.Types.User -> Html Msg
-handleGlobalNoTokenView sGlobal userVal = 
-            Framework.responsiveLayout
-            []
-            <|
-            Element.column
-                Framework.container
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome")
-                , displayEnableEthereumBtn
-                , Element.text ("\n")
-                --, Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
-                , Element.column Grid.section <|
-                    [ Element.el [] <| Element.text ""
-                    --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-                    , Element.wrappedRow (Card.fill ++ Grid.simple)
-                        [ Element.column
-                            Grid.simple
-                            [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                                { onChange = NewUserNameInputChg
-                                
-                                , text = userVal.username
-                                --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
-                                , placeholder = Nothing
-                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
-                                }
-                            --, nameValidationErr appInfo sUsers
-                            , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                { onChange = NewUserPasswordInputChg
-                                
-                                , text = userVal.password
-                                , placeholder = Nothing
-                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                                }
+handleGlobalNoTokenView : DataState -> SR.Types.User -> Html Msg
+handleGlobalNoTokenView dataState userVal =
+        case dataState of
+            AllEmpty -> 
+                Html.text ("No Data")
+            StateUpdated _ _ ->
+                Html.text ("No User - No Update")
+            StateFetched sUsers dkind ->
+                case dkind of
+                    Users _ ->
+                        Html.text ("Got Users - No Global")
+                    Selected _ _ _ _ _->
+                        Html.text ("Nothing should have been selected yet")
+                    Global sGlobal rnkId _ -> 
+                        Framework.responsiveLayout
+                        []
+                        <|
+                        Element.column
+                            Framework.container
+                            [ Element.el (Heading.h5) <|
+                                Element.text ("SportRank - Welcome")
+                            , displayEnableEthereumBtn
+                            , Element.text ("\n")
+                            --, Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
+                            , Element.column Grid.section <|
+                                [ Element.el [] <| Element.text ""
+                                --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                                    [ Element.column
+                                        Grid.simple
+                                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                                            { onChange = NewUserNameInputChg
+                                            
+                                            , text = userVal.username
+                                            --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
+                                            }
+                                        --, nameValidationErr appInfo sUsers
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                                            { onChange = NewUserPasswordInputChg
+                                            
+                                            , text = userVal.password
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                                            }
+                                        ]
+                                    ]
+                                ]
+                            , infoBtn "Log In" ClickedLogInUser
+                            , Element.text ("\n")
+                            , displayRegisterBtnIfNewUser
+                                SR.Defaults.emptyUser.username
+                                ClickedRegister
+                            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
                             ]
-                        ]
-                    ]
-                , infoBtn "Log In" ClickedLogInUser
-                , Element.text ("\n")
-                , displayRegisterBtnIfNewUser
-                    SR.Defaults.emptyUser.username
-                    ClickedRegister
-                , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
-                ]
 
 handleGlobalWithTokenView : Data.Global.Global -> SR.Types.User -> String -> Html Msg
 handleGlobalWithTokenView sGlobal userVal updatedStr = 
