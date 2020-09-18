@@ -48,6 +48,8 @@ import Widget exposing (..)
 import SR.Types
 import SR.Types
 import SR.Types
+import Bridge exposing (requestCreateAndOrLoginUser)
+import Graphql.Http as GQLHttp
 
 main =
     Browser.element

@@ -11,6 +11,8 @@ module SR.Types exposing
     , UpdateGlobalBinResponse
     , AccountState(..)
     , Token
+    , UserName
+    , Password
     )
 
 {-| Types
@@ -221,6 +223,12 @@ type alias User =
     }
 
 type alias Token =
+    String
+
+type alias UserName =
+    String
+
+type alias Password =
     String
 
 

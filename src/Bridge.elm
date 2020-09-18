@@ -1,10 +1,12 @@
-module Bridge exposing (requestCreateAndOrLoginPlayer)
+module Bridge exposing (requestCreateAndOrLoginUser)
 
-import DataModel exposing (Password, Token, UserName)
+--import DataModel exposing (Password, Token, UserName)
 import Graphql.Http as Http
 import Graphql.Operation exposing (RootMutation)
 import Graphql.SelectionSet exposing (SelectionSet)
+import Graphql.OptionalArgument exposing (OptionalArgument(..))
 import SRdb.Mutation as Mutation
+import SR.Types
 
 -- constants
 endpointURL : String
@@ -15,16 +17,21 @@ customKeyBearerToken : String
 customKeyBearerToken =
     "Bearer fnADz_OrVEACDOQU5b_WC-fOgnXuPZG4zrrLvYOW"
 
-mutationCreateAndOrLoginPlayer : UserName -> Password -> SelectionSet Token RootMutation
-mutationCreateAndOrLoginPlayer user_name password =
+mutationCreateAndOrLoginUser : (Mutation.CreateAndOrLoginUserOptionalArguments -> Mutation.CreateAndOrLoginUserOptionalArguments) -> SR.Types.UserName -> SR.Types.Password -> String -> SelectionSet SR.Types.Token RootMutation
+mutationCreateAndOrLoginUser fillInOptionals user_name password ethaddress =
     let
+        
+        -- filledInOptionals =
+        --     fillInOptionals { description = Absent, email = Absent, mobile = Absent }
+
         required_arguments =
-            Mutation.CreateAndOrLoginPlayerRequiredArguments user_name password
+            Mutation.CreateAndOrLoginUserRequiredArguments True user_name password ethaddress
+
     in
-    Mutation.createAndOrLoginPlayer required_arguments
+    Mutation.createAndOrLoginUser fillInOptionals required_arguments
 
 
-requestCreateAndOrLoginPlayer : UserName -> Password -> Http.Request Token
-requestCreateAndOrLoginPlayer user_name password =
-    Http.mutationRequest endpointURL (mutationCreateAndOrLoginPlayer user_name password)
+requestCreateAndOrLoginUser : (Mutation.CreateAndOrLoginUserOptionalArguments -> Mutation.CreateAndOrLoginUserOptionalArguments) -> SR.Types.UserName -> SR.Types.Password -> String -> Http.Request SR.Types.Token
+requestCreateAndOrLoginUser fillInOptionals user_name password ethaddress =
+    Http.mutationRequest endpointURL (mutationCreateAndOrLoginUser fillInOptionals user_name password ethaddress)
         |> Http.withHeader "authorization" customKeyBearerToken
