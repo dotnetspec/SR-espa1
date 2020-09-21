@@ -48,7 +48,7 @@ import Widget exposing (..)
 import SR.Types
 import SR.Types
 import SR.Types
-import Bridge exposing (requestCreateAndOrLoginUser, handleCreateAndOrLoginUserOptionalArguments)
+import Bridge exposing (requestAllUserNames, requestCreateAndOrLoginUser, handleCreateAndOrLoginUserOptionalArguments)
 import Graphql.Http as GQLHttp
 
 main =
@@ -182,6 +182,7 @@ type Msg
     | ClickedCreateNewUserToWallet SR.Types.User
     | ClickedLogInUser
     | LoggedInUser (Result (GQLHttp.Error SR.Types.Token) SR.Types.Token)
+    | ReceivedUserNames (Result (GQLHttp.Error (List String)) (List String))
       -- App Only Ops
     | MissingWalletInstructions
     | OpenWalletInstructions
@@ -1709,6 +1710,11 @@ update msg model =
 
         (LoggedInUser response, modelReDef) ->
             ( updateFromLoggedInUser modelReDef response
+               , commandFromLoggedInUser response
+            )
+
+        (ReceivedUserNames response, modelReDef) ->
+            ( updateModelFromReceivedUserNames modelReDef response
             , Cmd.none
             )
         
@@ -1729,13 +1735,46 @@ update msg model =
             , Cmd.none
             )
 
+
+
+-- GQL commands
+
+commandFromLoggedInUser : Result (GQLHttp.Error SR.Types.Token) SR.Types.Token -> Cmd Msg
+commandFromLoggedInUser response =
+    case response of
+        Ok token ->
+            allUserNames token
+
+        Err _ ->
+            Cmd.none
+
 createAndOrLoginUser : String -> String -> String -> Cmd Msg
 createAndOrLoginUser user_name password ethaddress =
     GQLHttp.send LoggedInUser (requestCreateAndOrLoginUser handleCreateAndOrLoginUserOptionalArguments user_name password ethaddress)
 
-    
+
+
+allUserNames : SR.Types.Token -> Cmd Msg
+allUserNames token =
+    GQLHttp.send ReceivedUserNames (requestAllUserNames token)
+
        
 -- model handlers
+
+-- todo: change the name here as it's not actually updating the model - just testing faunadb
+updateModelFromReceivedUserNames : Model -> Result (GQLHttp.Error (List String)) (List String) -> Model
+updateModelFromReceivedUserNames model response =
+    case response of
+        Ok lusernames ->
+            let 
+                _ = Debug.log "lusernames : " lusernames
+            in
+                model
+            -- { model | players = lusernames }
+
+        Err _ ->
+            model
+
 
 updateFromLoggedInUser: Model -> Result (GQLHttp.Error SR.Types.Token) SR.Types.Token -> Model
 updateFromLoggedInUser model response =

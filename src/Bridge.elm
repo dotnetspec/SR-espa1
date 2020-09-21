@@ -1,12 +1,14 @@
-module Bridge exposing (requestCreateAndOrLoginUser, handleCreateAndOrLoginUserOptionalArguments)
+module Bridge exposing (requestCreateAndOrLoginUser, handleCreateAndOrLoginUserOptionalArguments, requestAllUserNames)
 
 --import DataModel exposing (Password, Token, UserName)
 import Graphql.Http as Http
-import Graphql.Operation exposing (RootMutation)
+import Graphql.Operation exposing (RootMutation, RootQuery)
 import Graphql.SelectionSet exposing (SelectionSet)
 import Graphql.OptionalArgument exposing (OptionalArgument(..))
 import SRdb.Mutation as Mutation
+import SRdb.Query as Query
 import SR.Types
+
 
 -- constants
 endpointURL : String
@@ -40,3 +42,14 @@ handleCreateAndOrLoginUserOptionalArguments : Mutation.CreateAndOrLoginUserOptio
 handleCreateAndOrLoginUserOptionalArguments fillInOptionals = 
     --todo: make it handle the optionals
         fillInOptionals
+
+requestAllUserNames : SR.Types.Token -> Http.Request (List String)
+requestAllUserNames token =
+    Http.queryRequest endpointURL queryAllUserNames
+        |> Http.withHeader "authorization" ("Bearer " ++ token)
+
+queryAllUserNames : SelectionSet (List String) RootQuery
+queryAllUserNames =
+    Query.allUserNames
+
+
