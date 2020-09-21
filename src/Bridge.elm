@@ -1,4 +1,4 @@
-module Bridge exposing (requestCreateAndOrLoginUser)
+module Bridge exposing (requestCreateAndOrLoginUser, handleCreateAndOrLoginUserOptionalArguments)
 
 --import DataModel exposing (Password, Token, UserName)
 import Graphql.Http as Http
@@ -35,3 +35,8 @@ requestCreateAndOrLoginUser : (Mutation.CreateAndOrLoginUserOptionalArguments ->
 requestCreateAndOrLoginUser fillInOptionals user_name password ethaddress =
     Http.mutationRequest endpointURL (mutationCreateAndOrLoginUser fillInOptionals user_name password ethaddress)
         |> Http.withHeader "authorization" customKeyBearerToken
+
+handleCreateAndOrLoginUserOptionalArguments : Mutation.CreateAndOrLoginUserOptionalArguments -> Mutation.CreateAndOrLoginUserOptionalArguments
+handleCreateAndOrLoginUserOptionalArguments fillInOptionals = 
+    --todo: make it handle the optionals
+        fillInOptionals

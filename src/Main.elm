@@ -48,7 +48,7 @@ import Widget exposing (..)
 import SR.Types
 import SR.Types
 import SR.Types
-import Bridge exposing (requestCreateAndOrLoginUser)
+import Bridge exposing (requestCreateAndOrLoginUser, handleCreateAndOrLoginUserOptionalArguments)
 import Graphql.Http as GQLHttp
 
 main =
@@ -181,7 +181,7 @@ type Msg
     | ExistingUserMobileInputChg String
     | ClickedCreateNewUserToWallet SR.Types.User
     | ClickedLogInUser
-    | LoggedInUser SR.Types.Token
+    | LoggedInUser (Result (GQLHttp.Error SR.Types.Token) SR.Types.Token)
       -- App Only Ops
     | MissingWalletInstructions
     | OpenWalletInstructions
@@ -1700,17 +1700,17 @@ update msg model =
                         Nothing ->
                             (model, Cmd.none)
                         Just userVal ->
-                            (model, createAndOrLoginUser userVal.username userVal.password)
+                            (model, createAndOrLoginUser userVal.username userVal.password userVal.ethaddress)
                             
                     
                 Failure _ ->
                     (model, Cmd.none)
            
 
-        (LoggedInUser token, modelReDef) ->
-                ( updateFromLoggedInUser modelReDef token
-                    , Cmd.none
-                )
+        (LoggedInUser response, modelReDef) ->
+            ( updateFromLoggedInUser modelReDef response
+            , Cmd.none
+            )
         
         (NoOp, _) ->
             let
@@ -1729,31 +1729,36 @@ update msg model =
             , Cmd.none
             )
 
-createAndOrLoginUser : String -> String -> Cmd Msg
-createAndOrLoginUser user_name password =
-    Task.perform LoggedInUser (Task.succeed "abcdefgHIJKLMNOP1234560987")
-        
+createAndOrLoginUser : String -> String -> String -> Cmd Msg
+createAndOrLoginUser user_name password ethaddress =
+    GQLHttp.send LoggedInUser (requestCreateAndOrLoginUser handleCreateAndOrLoginUserOptionalArguments user_name password ethaddress)
+
+    
        
 -- model handlers
 
-updateFromLoggedInUser: Model -> SR.Types.Token -> Model
-updateFromLoggedInUser model token =
-    case model of
-        AppOps walletState dataState appInfo uiState subState accountState  txRec ->
-            case appInfo.m_user of
-                Just user ->
-                    let
-                        updated_user =
-                            { user | m_token = Just token }
+updateFromLoggedInUser: Model -> Result (GQLHttp.Error SR.Types.Token) SR.Types.Token -> Model
+updateFromLoggedInUser model response =
+    case response of
+        Ok token ->
+            case model of
+                AppOps walletState dataState appInfo uiState subState accountState  txRec ->
+                    case appInfo.m_user of
+                        Just user ->
+                            let
+                                updated_user =
+                                    { user | m_token = Just token }
 
-                        newAppInfo = { appInfo | m_user = Just updated_user }
-                    in
-                    AppOps walletState dataState newAppInfo uiState subState accountState txRec
+                                newAppInfo = { appInfo | m_user = Just updated_user }
+                            in
+                            AppOps walletState dataState newAppInfo uiState subState accountState txRec
 
-                Nothing ->
+                        Nothing ->
+                            model
+                
+                Failure _ ->
                     model
-        
-        Failure _ ->
+        Err _ ->
             model
 
 updateAppInfoOnRankingSelected : SR.Types.AppInfo -> Internal.Types.RankingId -> String -> String -> SR.Types.AppInfo
