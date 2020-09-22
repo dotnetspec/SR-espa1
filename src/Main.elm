@@ -218,9 +218,6 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case ( msg, model ) of
         ( WalletStatus walletSentry_, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
-            let 
-                 _ = Debug.log "walletState in WalletStatus" walletState
-            in
             -- walletState might be unnecessary here, because WalletStatus is only relevant at time of unlocking i.e. one off
             case walletState of
                 SR.Types.WalletStateLocked ->
@@ -233,8 +230,7 @@ update msg model =
                                     )
 
                                 Just uaddr ->
-                                    let 
-                                        _ = Debug.log "got uaddre" uaddr
+                                    let
                                         newModel = AppOps SR.Types.WalletOpened dataState (gotWalletAddrApplyToUser appInfo uaddr) SR.Types.UIRenderAllRankings SR.Types.StopSubscription SR.Types.EthEnabled emptyTxRecord
                                     in
                                     (newModel, Cmd.none)
@@ -345,9 +341,7 @@ update msg model =
             case appInfo.m_user of
                 Nothing ->
                 -- user is Guest
-                    let 
-                        _ =
-                                            Debug.log "UsersReceived" "user nothing"
+                    let
                         --extractedList = Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList
                         extractedList = [SR.Defaults.emptyUser]
                         users = Data.Users.asUsers (EverySet.fromList (extractedList))
@@ -408,8 +402,6 @@ update msg model =
                                     let
                                         newDataKind = Global (Data.Global.createdFromRemote rmtrnkingdata sUsers) (Internal.Types.RankingId "") user
                                         newDataSet = StateFetched sUsers newDataKind
-
-                                        _ = Debug.log "glob rec, global datastate" walletState
                                     in
                                        -- We have to StopSubscription here for some reason currently unknown
                                        case accountState of 
@@ -3637,7 +3629,6 @@ inputNewLadder appInfo dataState =
 handleGlobalNoUserView : DataState -> Html Msg
 handleGlobalNoUserView dataState =   
     let 
-        _ = Debug.log "in" "guest"
         userVal = SR.Defaults.emptyUser
     in
         case dataState of
@@ -4334,11 +4325,6 @@ subscriptions model =
 
 gotUserList : Cmd Msg
 gotUserList =
-    let 
-        _ =
-            Debug.log "here in userList :" "here"
-            
-    in
     Http.request
         { body = Http.emptyBody
         , expect = Http.expectJson (RemoteData.fromResult >> UsersReceived) SR.Decode.listOfUsersDecoder
@@ -4368,9 +4354,6 @@ fetchedSingleRanking (Internal.Types.RankingId rankingId) =
 
 gotGlobal : Cmd Msg
 gotGlobal =
-    let 
-        _ = Debug.log "got Global " "here"
-    in
     Http.request
         { body = Http.emptyBody
         , expect = Http.expectJson (RemoteData.fromResult >> GlobalReceived) SR.Decode.rankingsDecoder
@@ -4422,8 +4405,6 @@ createNewUser sUsers newuserinfo =
                 newuserinfo.description
                 newuserinfo.email
                 newuserinfo.mobile
-        _ =
-            Debug.log "sUsers " sUsers
 
         listForHttpRequest = 
                 Data.Users.addUser newUserToAdd sUsers
