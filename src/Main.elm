@@ -48,7 +48,7 @@ import Widget exposing (..)
 import SR.Types
 import SR.Types
 import SR.Types
-import Bridge exposing (requestAllUserNames, requestCreateAndOrLoginUser, handleCreateAndOrLoginUserOptionalArguments)
+import Bridge exposing (requestLoginUser, requestAllUserNames, requestCreateAndOrLoginUser, handleCreateAndOrLoginUserOptionalArguments)
 import Graphql.Http as GQLHttp
 
 main =
@@ -1701,7 +1701,8 @@ update msg model =
                         Nothing ->
                             (model, Cmd.none)
                         Just userVal ->
-                            (model, createAndOrLoginUser userVal.username userVal.password userVal.ethaddress)
+                            --(model, createAndOrLoginUser userVal.username userVal.password userVal.ethaddress)
+                            (model, loginUser userVal.username userVal.password)
                             
                     
                 Failure _ ->
@@ -1710,7 +1711,8 @@ update msg model =
 
         (LoggedInUser response, modelReDef) ->
             ( updateFromLoggedInUser modelReDef response
-               , commandFromLoggedInUser response
+               --, commandFromLoggedInUser response
+               , Cmd.none
             )
 
         (ReceivedUserNames response, modelReDef) ->
@@ -1752,6 +1754,9 @@ createAndOrLoginUser : String -> String -> String -> Cmd Msg
 createAndOrLoginUser user_name password ethaddress =
     GQLHttp.send LoggedInUser (requestCreateAndOrLoginUser handleCreateAndOrLoginUserOptionalArguments user_name password ethaddress)
 
+loginUser : String -> String -> Cmd Msg
+loginUser user_name password =
+    GQLHttp.send LoggedInUser (requestLoginUser user_name password)
 
 
 allUserNames : SR.Types.Token -> Cmd Msg

@@ -97,9 +97,12 @@ type alias LoginUserRequiredArguments =
 
 loginUser :
     LoginUserRequiredArguments
-    -> SelectionSet (List String) RootQuery
+    ---> SelectionSet (List String) RootQuery
+    -> SelectionSet String RootQuery
 loginUser requiredArgs =
-    Object.selectionForField "(List String)" "loginUser" [ Argument.required "username" requiredArgs.username Encode.string, Argument.required "password" requiredArgs.password Encode.string ] (Decode.string |> Decode.list)
+    --Object.selectionForField "(List String)" "loginUser" [ Argument.required "username" requiredArgs.username Encode.string, Argument.required "password" requiredArgs.password Encode.string ] (Decode.string |> Decode.list)
+    Object.selectionForField "String" "loginUser" [ Argument.required "username" requiredArgs.username Encode.string, Argument.required "password" requiredArgs.password Encode.string ] Decode.string
+    --Object.selectionForField "String" "createAndOrLoginUser" (optionalArgs ++ [ Argument.required "active" requiredArgs.active Encode.bool, Argument.required "username" requiredArgs.username Encode.string, Argument.required "password" requiredArgs.password Encode.string, Argument.required "ethaddress" requiredArgs.ethaddress Encode.string ]) Decode.string
 
 
 allPlayers :
