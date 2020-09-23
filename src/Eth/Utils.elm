@@ -1,5 +1,5 @@
 module Eth.Utils exposing
-    ( toAddress, maybeAddressToString, addressToChecksumString, isAddress, isChecksumAddress
+    ( toAddress, addressToChecksumString, isAddress, isChecksumAddress
     , toHex, hexToString, isHex, hexToAscii, hexToUtf8, hexAppend, hexConcat
     , toTxHash, txHashToString, isTxHash
     , toBlockHash, blockHashToString, isBlockHash
@@ -7,6 +7,7 @@ module Eth.Utils exposing
     , unsafeToHex, unsafeToAddress, unsafeToTxHash, unsafeToBlockHash
     , Retry, retry, valueToMsg
     , add0x, remove0x, toByteLength, take64, drop64, leftPadTo64
+    , addressToString
     )
 
 {-| String/Type Conversion and Application Helpers
@@ -128,9 +129,18 @@ toAddress str =
 
 
 {-| Convert an Address to a String
--}
-maybeAddressToString : Address -> String
-maybeAddressToString (Internal.Address address) =
+-- -}
+-- maybeAddressToString : Maybe Address -> String
+-- maybeAddressToString (Internal.Address address) =
+--     case address of
+--         Nothing ->
+--             ""
+--         Just addr ->
+--             add0x addr
+    
+
+addressToString : Address -> String
+addressToString (Internal.Address address) =
     add0x address
 
 

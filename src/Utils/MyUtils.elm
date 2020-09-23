@@ -188,7 +188,7 @@ maybeAddressToString addr =
             "No address"
 
         Just a ->
-            Eth.Utils.maybeAddressToString a
+            Eth.Utils.addressToString a
 
 
 

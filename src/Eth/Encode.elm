@@ -20,7 +20,8 @@ import Json.Encode as Encode exposing (Value, int, list, null, object, string)
 {-| -}
 address : Address -> Value
 address =
-    maybeAddressToString >> string
+    --maybeAddressToString >> string
+    Eth.Utils.addressToString >> string
 
 
 {-| -}

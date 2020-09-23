@@ -19,6 +19,7 @@ import Json.Decode.Pipeline exposing (custom, optional, required)
 import SR.Types
 import Eth.Utils
 import Utils.Validation.Validate
+import Eth.Types exposing (Address)
 
 
 ladderOfPlayersDecoder : Json.Decode.Decoder (List SR.Types.Player)
@@ -63,7 +64,7 @@ listOfUsersDecoder : Json.Decode.Decoder (List SR.Types.User)
 listOfUsersDecoder =
     Json.Decode.list userDecoder
 
-
+-- ethaddress is hardcoded because we might not use this decoder anyway
 userDecoder : Json.Decode.Decoder SR.Types.User
 userDecoder =
     Json.Decode.succeed SR.Types.User
@@ -71,7 +72,8 @@ userDecoder =
         |> Json.Decode.Pipeline.required "active" Json.Decode.bool
         |> Json.Decode.Pipeline.required "username" Json.Decode.string
         |> Json.Decode.Pipeline.required "password" Json.Decode.string
-        |> Json.Decode.Pipeline.required "ethaddress" Json.Decode.string
+        --|> Json.Decode.Pipeline.optional "ethaddress" (Json.Decode.maybe Json.Decode.string) Nothing
+        |> Json.Decode.Pipeline.hardcoded Nothing
         |> Json.Decode.Pipeline.required "description" Json.Decode.string
         |> Json.Decode.Pipeline.required "email" Json.Decode.string
         |> Json.Decode.Pipeline.required "mobile" Json.Decode.string
@@ -80,10 +82,28 @@ userDecoder =
         |> Json.Decode.Pipeline.optional "m_token" (Json.Decode.maybe Json.Decode.string) Nothing
 
 
+-- decodeUserEthAddr : Decoder String
+-- decodeUserEthAddr =
+-- --     -- you can apply a function to any Decode.type with e.g. (Json.Decode.string |> Json.Decode.andThen isValidRankingId)
+-- --     (Json.Decode.maybe Json.Decode.string) Nothing
+--     Json.Decode.maybe (Json.Decode.string |> Json.Decode.andThen isValidAddr)
+
 decodeUserJoinRankingsList : Decoder (List String)
 decodeUserJoinRankingsList =
     -- you can apply a function to any Decode.type with e.g. (Json.Decode.string |> Json.Decode.andThen isValidRankingId)
     Json.Decode.list (Json.Decode.string |> Json.Decode.andThen isValidRankingId)
+
+isValidAddr :  Maybe Eth.Types.Address -> Decoder String
+isValidAddr addr = 
+    case addr of
+        Nothing ->
+            Json.Decode.fail ""
+        Just a ->
+            Json.Decode.succeed (Eth.Utils.addressToString a)
+    -- if Utils.Validation.Validate.isValidRankingId str  then
+    --     Json.Decode.succeed str
+    -- else 
+    --     Json.Decode.fail str
 
 
 isValidRankingId :  String -> Decoder String

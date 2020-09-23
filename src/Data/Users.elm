@@ -6,7 +6,7 @@ module Data.Users exposing (Users
     , addedNewJoinedRankingId
     , removedRankingIdFromAll
     , removedRankindIdFromUser
-    , removeCurrentUserEntryFromUserList
+    --, removeCurrentUserEntryFromUserList
     , removedDuplicateUserFromUserList
     , isRegistered
     , isUniqueUserName
@@ -16,7 +16,7 @@ module Data.Users exposing (Users
     , extractUsersFromWebData
     , gotUserFromUserList
     , emptyUsers
-    , updateAddr
+    --, updateAddr
     , addUser
     , removeUser
     , asList
@@ -39,6 +39,7 @@ import RemoteData
 import Http
 import List.Unique
 import Utils.Validation.Validate
+import Eth.Types
 
 
 -- Users (EverySet SR.Types.User) is not the same type as (EverySet SR.Types.User)
@@ -48,7 +49,7 @@ type Users = Users (EverySet SR.Types.User)
 type UserNames = UserNames (EverySet String)
 
 
-newUser : String -> String -> String -> String -> String -> String -> SR.Types.User
+newUser : String -> String -> Maybe Eth.Types.Address -> String -> String -> String -> SR.Types.User
 newUser username password ethaddr desc email mobile =
     SR.Types.User 12345 True username password ethaddr desc email mobile [""] 0 Nothing
 
@@ -68,15 +69,12 @@ asUsers esUser  =
 
 isRegistered : List SR.Types.User -> SR.Types.User -> Bool
 isRegistered luser user =
-    let
-        userTocheck =
-            gotUserFromUserList luser user.ethaddress
-    in
-    if userTocheck.username == "" then
-        False
+    case user.ethaddress of 
+        Nothing ->
+            False
 
-    else
-        True
+        Just addr ->
+            True
 
 isUserNameValidated : SR.Types.User -> List SR.Types.User -> Bool
 isUserNameValidated user luser =
@@ -120,19 +118,21 @@ userSetLength (Users susers) =
 
 gotUser : Users  -> String -> SR.Types.User
 gotUser (Users susers) uaddr =
-    let
-        existingUser =
-            List.head <|
-                 EverySet.toList (EverySet.filter (\r -> (String.toLower <| r.ethaddress) == (String.toLower <| uaddr))
-                    susers)
-    in
+    SR.Defaults.emptyUser
+    -- let
+    --     existingUser =
+    --         List.head <|
+    --              EverySet.toList (EverySet.filter (\r -> (String.toLower <| r.ethaddress) == (String.toLower <| uaddr))
+    --                 susers)
+    -- in
     
-    case existingUser of
-        Nothing ->
-            SR.Defaults.emptyUser
+    -- case existingUser of
+    --     Nothing ->
+    --         SR.Defaults.emptyUser
 
-        Just a ->
-            a
+    --     Just a ->
+    --         --a
+    --         SR.Defaults.emptyUser
 
 
 -- probably should be updated to return a set, not a list:
@@ -245,24 +245,31 @@ asList susers =
            |> EverySet.toList
 
 
-updateAddr : Users -> String -> Users
-updateAddr susers addr =
-            let 
-                user = gotUser susers addr
-                userRemoved = removeUser user susers
-                updatedUserAddr =
-                        { user | ethaddress = addr }
-            in 
-                addUser updatedUserAddr userRemoved
+-- updateAddr : Users -> String -> Users
+-- updateAddr susers addr =  
+--     case addr of
+--         Nothing ->
+--             susers
+--         Just address -> 
+--             let 
+--                 user = gotUser susers address
+--                 userRemoved = removeUser user susers
+--                 updatedUserAddr =
+--                         { user | ethaddress = address }
+--             in 
+--             addUser updatedUserAddr userRemoved
+
 
 updatedUserInSet : Users -> SR.Types.User -> Users
 updatedUserInSet susers userToUpdate =
+    case userToUpdate.ethaddress of 
+        Nothing ->
+            susers
+        Just address ->
             let 
                 -- use the address to get the existing user entry to remove
-                user = gotUser susers userToUpdate.ethaddress
+                user = gotUser susers (Eth.Utils.addressToString address)
                 userRemoved = removeUser user susers
-                -- updatedUserAddr =
-                --         { user | ethaddress = addr }
             in 
                 addUser userToUpdate userRemoved
 
@@ -270,18 +277,20 @@ updatedUserInSet susers userToUpdate =
 -- todo: remove?
 gotUserFromUserList : List SR.Types.User -> String -> SR.Types.User
 gotUserFromUserList userList uaddr =
-    let
-        existingUser =
-            List.head <|
-                List.filter (\r -> (String.toLower <| r.ethaddress) == (String.toLower <| uaddr))
-                    (validatedUserList userList)
-    in
-    case existingUser of
-        Nothing ->
-            SR.Defaults.emptyUser
+--todo: short term fix to get to compile, this won't currently get a user
+    SR.Defaults.emptyUser
+    -- let
+    --     existingUser =
+    --         List.head <|
+    --             List.filter (\r -> (String.toLower <| r.ethaddress) == (String.toLower <| uaddr))
+    --                 (validatedUserList userList)
+    -- in
+    -- case existingUser of
+    --     Nothing ->
+    --         SR.Defaults.emptyUser
 
-        Just a ->
-            a
+    --     Just a ->
+    --         a
 
 validatedUserList : List SR.Types.User -> List SR.Types.User
 validatedUserList luser =
@@ -292,11 +301,15 @@ validatedUserList luser =
 
 isValidUserAddrInList : SR.Types.User -> Maybe SR.Types.User
 isValidUserAddrInList user =
-    if Eth.Utils.isAddress user.ethaddress then
-        Just user
+    case user.ethaddress of 
+        Nothing ->
+            Nothing
+        Just addr ->
+            if Eth.Utils.isAddress (Eth.Utils.addressToString addr) then
+                Just user
 
-    else
-        Nothing
+            else
+                Nothing
 
 
 extractUsersFromWebData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
@@ -389,26 +402,30 @@ removedDuplicateUserFromUserList userList =
 
 gotAddressesFromUserList : SR.Types.User -> String
 gotAddressesFromUserList user =
-    user.ethaddress
+    case user.ethaddress of
+        Nothing ->
+            ""
+        Just addr ->
+            Eth.Utils.addressToString addr
 
-removeCurrentUserEntryFromUserList : List SR.Types.User -> String -> List SR.Types.User
-removeCurrentUserEntryFromUserList userList uaddr =
-    List.filter (\r -> (String.toLower <| r.ethaddress) /= (String.toLower <| uaddr))
-        (validatedUserList userList)
+-- removeCurrentUserEntryFromUserList : List SR.Types.User -> Eth.Types.Address -> List SR.Types.User
+-- removeCurrentUserEntryFromUserList userList uaddr =
+--     List.filter (\r -> (String.toLower <| r.ethaddress) /= (String.toLower <| (Eth.Utils.addressToString uaddr)))
+--         (validatedUserList userList)
 
 --private
 
-isUserInListStrAddr : List SR.Types.User -> String -> Bool
-isUserInListStrAddr userlist uaddr =
-    let
-        gotSingleUserFromList =
-            gotUserFromUserList userlist uaddr
-    in
-    if gotSingleUserFromList.ethaddress == "" then
-        False
+-- isUserInListStrAddr : List SR.Types.User -> String -> Bool
+-- isUserInListStrAddr userlist uaddr =
+--     let
+--         gotSingleUserFromList =
+--             gotUserFromUserList userlist uaddr
+--     in
+--     if gotSingleUserFromList.ethaddress == "" then
+--         False
 
-    else
-        True
+--     else
+--         True
 
 -- isRankingId : String -> Bool
 -- isRankingId =

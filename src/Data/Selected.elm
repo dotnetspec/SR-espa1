@@ -48,6 +48,8 @@ import Data.AppState
 import Data.Players
 import Json.Encode
 import EverySet
+import Eth.Utils
+import Eth.Types
 --import Data.Rankings
 
 
@@ -121,11 +123,13 @@ createdUserPlayer luser player =
     in
     newUserPlayer
 
-gotUserAsPlayer : Selected -> String -> SR.Types.UserPlayer 
+gotUserAsPlayer : Selected -> Eth.Types.Address -> SR.Types.UserPlayer 
 gotUserAsPlayer sSelected uaddr = 
-    case sSelected of 
-        Selected esUserPlayer sUsers rnkId -> 
-            gotUserPlayerFromPlayerListStrAddress (EverySet.toList esUserPlayer) uaddr 
+    --todo: fix
+    SR.Defaults.emptyUserPlayer
+    -- case sSelected of 
+    --     Selected esUserPlayer sUsers rnkId -> 
+    --         gotUserPlayerFromPlayerListStrAddress (EverySet.toList esUserPlayer) uaddr 
 
 addUserPlayer : SR.Types.UserPlayer -> Selected -> Selected
 addUserPlayer uplayer sSelected = 
@@ -189,11 +193,15 @@ isUserPlayerMemberOfSelectedRanking luplayer user =
             False
 
         Just a ->
-            if (String.toLower a.player.address) == (String.toLower user.ethaddress) then
-                True
+            case user.ethaddress of 
+                Nothing ->
+                    False 
+                Just addr ->
+                    if (String.toLower a.player.address) == (String.toLower (Eth.Utils.addressToString addr)) then
+                        True
 
-            else
-                False
+                    else
+                        False
 
 
 isUserOwnerOfSelectedUserRanking : SR.Types.Ranking -> List SR.Types.UserRanking -> SR.Types.User -> Bool
@@ -207,11 +215,15 @@ isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
             False
 
         Just a ->
-            if a.rankingInfo.rankingowneraddr == user.ethaddress then
-                True
+            case user.ethaddress of 
+                Nothing ->
+                    False 
+                Just addr ->
+                    if a.rankingInfo.rankingowneraddr == (Eth.Utils.addressToString addr) then
+                        True
 
-            else
-                False
+                    else
+                        False
 
 extractSelectedUserRankingFromGlobalList : List SR.Types.UserRanking -> String -> Maybe SR.Types.UserRanking
 extractSelectedUserRankingFromGlobalList luranking rankingid =
@@ -232,11 +244,13 @@ isUserRankingIdInList rankingid urnk =
 
 findPlayerInList : SR.Types.User -> List SR.Types.UserPlayer -> List SR.Types.UserPlayer
 findPlayerInList user luPlayer =
-    List.filterMap
-        (isThisPlayerAddr
-            (String.toLower user.ethaddress)
-        )
-        luPlayer
+    -- todo: fix
+    [SR.Defaults.emptyUserPlayer]
+    -- List.filterMap
+    --     (isThisPlayerAddr
+    --         (String.toLower user.ethaddress)
+    --     )
+    --     luPlayer
 
 isThisPlayerAddr : String -> SR.Types.UserPlayer -> Maybe SR.Types.UserPlayer
 isThisPlayerAddr playerAddr uplayer =
@@ -283,28 +297,35 @@ isChallenged (Selected sSelected sUsers rnkId) uplayer =
 
 userAdded : Data.Users.Users -> String -> List SR.Types.UserPlayer -> SR.Types.User -> List SR.Types.UserPlayer
 userAdded sUsers strrankingId luPlayer userRec =
-    let
-        newUserPlayer =
-            { player =
-                { address = userRec.ethaddress
-                , rank = List.length luPlayer + 1
-                , challengeraddress = ""
-                }
-            , user = userRec
-            }
-    in
-            Utils.MyUtils.stringToRankingId strrankingId 
-            |> asSelected (EverySet.fromList luPlayer) sUsers
-            |> addUserPlayer newUserPlayer
-            |> asList
+    -- todo: fix
+    [SR.Defaults.emptyUserPlayer]
+    -- let
+    --     newUserPlayer =
+    --         { player =
+    --             { address = userRec.ethaddress
+    --             , rank = List.length luPlayer + 1
+    --             , challengeraddress = ""
+    --             }
+    --         , user = userRec
+    --         }
+    -- in
+    --         Utils.MyUtils.stringToRankingId strrankingId 
+    --         |> asSelected (EverySet.fromList luPlayer) sUsers
+    --         |> addUserPlayer newUserPlayer
+    --         |> asList
     
 isPlayerCurrentUser : SR.Types.User -> SR.Types.UserPlayer -> Bool
 isPlayerCurrentUser user uplayer = 
-     if (String.toLower uplayer.player.address) == (String.toLower user.ethaddress) then
-                                True
+    case user.ethaddress of 
+        Nothing ->
+            False
 
-                            else
-                                False
+        Just addr ->
+            if (String.toLower uplayer.player.address) == (String.toLower (Eth.Utils.addressToString addr)) then
+                True
+
+            else
+                False
 
 printChallengerNameOrAvailable : Selected -> SR.Types.UserPlayer -> String 
 printChallengerNameOrAvailable sSelected uplayer = 
@@ -431,18 +452,20 @@ canPlayerBeInList uplayer =
 
 gotCurrentUserAsPlayerFromPlayerList : List SR.Types.UserPlayer -> SR.Types.User -> SR.Types.UserPlayer
 gotCurrentUserAsPlayerFromPlayerList luPlayer userRec =
-    let
-        existingPlayer =
-            List.head <|
-                List.filter (\r -> r.player.address == (String.toLower <| userRec.ethaddress))
-                    luPlayer
-    in
-    case existingPlayer of
-        Nothing ->
-            SR.Defaults.emptyUserPlayer
+    --todo: fix
+    SR.Defaults.emptyUserPlayer
+    -- let
+    --     existingPlayer =
+    --         List.head <|
+    --             List.filter (\r -> r.player.address == (String.toLower <| userRec.ethaddress))
+    --                 luPlayer
+    -- in
+    -- case existingPlayer of
+    --     Nothing ->
+    --         SR.Defaults.emptyUserPlayer
 
-        Just a ->
-            a
+    --     Just a ->
+    --         a
 
 
 

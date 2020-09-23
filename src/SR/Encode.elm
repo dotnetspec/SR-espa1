@@ -16,6 +16,7 @@ module SR.Encode exposing (encodeUserList)
 
 import Json.Encode as Encode exposing (Value, int, list, null, object, string)
 import SR.Types
+import Eth.Utils
 
 
 
@@ -29,23 +30,36 @@ import SR.Types
 encodeUserList : List SR.Types.User -> Encode.Value
 encodeUserList lusers =
     let
-        encodeUserObj : SR.Types.User -> Encode.Value
-        encodeUserObj user =
+        encodedList =
+            Encode.list encodeUserObj lusers
+    in
+    encodedList
+
+encodeUserObj : SR.Types.User -> Encode.Value
+encodeUserObj user =
+    case user.ethaddress of
+        Nothing ->
             Encode.object
                 [ ( "datestamp", Encode.int user.datestamp )
                 , ( "active", Encode.bool user.active )
                 , ( "username", Encode.string user.username )
-                , ( "ethaddress", Encode.string (String.toLower user.ethaddress) )
+                , ( "ethaddress", Encode.string "" )
                 , ( "description", Encode.string user.description )
                 , ( "email", Encode.string user.email )
                 , ( "mobile", Encode.string user.mobile )
                 , ( "userjoinrankings", encodeUserJoinRankingsList Encode.string user.userjoinrankings )
                 ]
-
-        encodedList =
-            Encode.list encodeUserObj lusers
-    in
-    encodedList
+        Just ethaddress ->
+            Encode.object
+                [ ( "datestamp", Encode.int user.datestamp )
+                , ( "active", Encode.bool user.active )
+                , ( "username", Encode.string user.username )
+                , ( "ethaddress", Encode.string (String.toLower (Eth.Utils.addressToString ethaddress)) )
+                , ( "description", Encode.string user.description )
+                , ( "email", Encode.string user.email )
+                , ( "mobile", Encode.string user.mobile )
+                , ( "userjoinrankings", encodeUserJoinRankingsList Encode.string user.userjoinrankings )
+                ]
 
 
 encodeUserJoinRankingsList : (a -> Value) -> List a -> Value

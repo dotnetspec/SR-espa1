@@ -58,8 +58,8 @@ validatedUserList luser =
 
 isValidUserAddrInList : SR.Types.User -> Maybe SR.Types.User
 isValidUserAddrInList user =
-    if Eth.Utils.isAddress user.ethaddress then
-        Just user
-
-    else
-        Nothing
+    case user.ethaddress of 
+        Nothing ->
+            Nothing
+        Just ethaddress ->
+            Just user

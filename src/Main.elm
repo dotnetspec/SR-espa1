@@ -160,7 +160,7 @@ type Msg
     | ClickedChallengeOpponent SR.Types.UserPlayer
     | ClickedJoinSelected
     | ClickedChangedUIStateToEnterResult SR.Types.UserPlayer
-    | ClickedDeleteRanking String
+    | ClickedDeleteRanking (Maybe Eth.Types.Address)
     | ClickedDeleteRankingConfirmed
     | ClickedRemoveFromUserMemberRankings
     | ClickedEnableEthereum
@@ -357,37 +357,38 @@ update msg model =
                         
                 
                 Just userVal ->
-                    let 
-                        _ =
-                                            Debug.log "UsersReceived" userList
-                        --extractedList = Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList
-                        extractedList = [SR.Defaults.emptyUser]
-                        users = Data.Users.asUsers (EverySet.fromList (extractedList))
-                        newUser = Data.Users.gotUser users userVal.ethaddress
-                        userInAppInfo = { appInfo | m_user = Just newUser }
-                        newDataKind = Users newUser
-                        newDataState = StateFetched users newDataKind
-                    in
-                        if List.isEmpty extractedList then 
-                            (model, Cmd.none)
-                        else if (Data.Users.isRegistered (Data.Users.asList users) newUser) then
-                                    let
-                                        _ = Debug.log "in isregistered " "here"
-                                        
-                                    in
-                            ( AppOps walletState newDataState userInAppInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered  emptyTxRecord, gotGlobal )
-                        else 
-                            ( AppOps walletState newDataState userInAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription  SR.Types.Guest emptyTxRecord, gotGlobal )
-                
+                    
+                        case userVal.ethaddress of 
+                            Nothing ->
+                                (model, Cmd.none)
+                            Just addr ->
+                                let 
+                                    _ =
+                                                        Debug.log "UsersReceived" userList
+                                    --extractedList = Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList
+                                    extractedList = [SR.Defaults.emptyUser]
+                                    users = Data.Users.asUsers (EverySet.fromList (extractedList))
+                                    newUser = Data.Users.gotUser users (Eth.Utils.addressToString addr)
+                                    userInAppInfo = { appInfo | m_user = Just newUser }
+                                    newDataKind = Users newUser
+                                    newDataState = StateFetched users newDataKind
+                                in
+                                    if List.isEmpty extractedList then 
+                                        (model, Cmd.none)
+                                    else if (Data.Users.isRegistered (Data.Users.asList users) newUser) then
+                                                let
+                                                    _ = Debug.log "in isregistered " "here"
+                                                    
+                                                in
+                                        ( AppOps walletState newDataState userInAppInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered  emptyTxRecord, gotGlobal )
+                                    else 
+                                        ( AppOps walletState newDataState userInAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription  SR.Types.Guest emptyTxRecord, gotGlobal )
+                            
         ( UsersReceived _, Failure _ ) ->
             (model, Cmd.none)
 
 
         (GlobalReceived rmtrnkingdata, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
-            -- let
-            --     --_ = Debug.log "glob rec 1" uiState
-            --     _ = Debug.log "glob rec datastate" dataState
-            -- in
                     case dataState of
                         StateFetched sUsers dKind -> 
                             case dKind of
@@ -443,49 +444,58 @@ update msg model =
                             StateFetched sUsers dKind -> 
                                 case dKind of 
                                         Selected sSelected rnkId user status rankings ->
-                                            let 
-                                                newSSelected = Data.Selected.createdSelected (Data.Players.asList sPlayers) sUsers rnkId
                                             
-                                                newAppPlayer = { appInfo | player = Data.Selected.gotUserAsPlayer newSSelected user.ethaddress }
+                                                case user.ethaddress of 
+                                                    Nothing ->
+                                                        (model, Cmd.none)
+                                                    Just addr ->
+                                                        let 
+                                                            newSSelected = Data.Selected.createdSelected (Data.Players.asList sPlayers) sUsers rnkId
+                                                        
+                                                            newAppPlayer = { appInfo | player = Data.Selected.gotUserAsPlayer newSSelected addr }
 
-                                                newAppChallengerAndPlayer = { newAppPlayer | challenger = Data.Selected.gotUserAsPlayer newSSelected newAppPlayer.player.player.challengeraddress }
+                                                            newAppChallengerAndPlayer = { newAppPlayer | challenger = Data.Selected.gotUserAsPlayer newSSelected (Eth.Utils.unsafeToAddress newAppPlayer.player.player.challengeraddress) }
 
-                                                newDataKind = Selected newSSelected rnkId user status rankings
-                                                newDataState = StateFetched sUsers newDataKind
+                                                            newDataKind = Selected newSSelected rnkId user status rankings
+                                                            newDataState = StateFetched sUsers newDataKind
 
-                                            in
-                                                case status of 
-                                                    SR.Types.UserIsOwner ->     
-                                                        (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
-                                                    SR.Types.UserIsMember  ->
-                                                        (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
-                                                    SR.Types.UserIsNeitherOwnerNorMember ->
-                                                        (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
- 
+                                                        in
+                                                            case status of 
+                                                                SR.Types.UserIsOwner ->     
+                                                                    (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
+                                                                SR.Types.UserIsMember  ->
+                                                                    (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
+                                                                SR.Types.UserIsNeitherOwnerNorMember ->
+                                                                    (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
+            
                                         _ ->
                                             (model, Cmd.none)
 
                             StateUpdated sUsers dKind -> 
                                 case dKind of 
                                         Selected sSelected rnkId user status rankings ->
-                                            let 
-                                                newSSelected = Data.Selected.createdSelected (Data.Players.asList sPlayers) sUsers rnkId
-                                       
-                                                newAppPlayer = { appInfo | player = Data.Selected.gotUserAsPlayer newSSelected user.ethaddress }
+                                            case user.ethaddress of 
+                                                Nothing -> 
+                                                    (model, Cmd.none)
+                                                Just addr ->
+                                                    let 
+                                                        newSSelected = Data.Selected.createdSelected (Data.Players.asList sPlayers) sUsers rnkId
+                                            
+                                                        newAppPlayer = { appInfo | player = Data.Selected.gotUserAsPlayer newSSelected addr }
 
-                                                newAppChallengerAndPlayer = { newAppPlayer | challenger = Data.Selected.gotUserAsPlayer newSSelected newAppPlayer.player.player.challengeraddress }
+                                                        newAppChallengerAndPlayer = { newAppPlayer | challenger = Data.Selected.gotUserAsPlayer newSSelected (Eth.Utils.unsafeToAddress newAppPlayer.player.player.challengeraddress) }
 
-                                                newDataKind = Selected newSSelected rnkId user status rankings
-                                                newDataState = StateFetched sUsers newDataKind
-                                            in
-                                                case status of 
-                                                    SR.Types.UserIsOwner ->     
-                                                        (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none)
-                                                    SR.Types.UserIsMember  ->
-                                                        (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none)
-                                                    SR.Types.UserIsNeitherOwnerNorMember ->
-                                                        (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
-                                                          
+                                                        newDataKind = Selected newSSelected rnkId user status rankings
+                                                        newDataState = StateFetched sUsers newDataKind
+                                                    in
+                                                        case status of 
+                                                            SR.Types.UserIsOwner ->     
+                                                                (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none)
+                                                            SR.Types.UserIsMember  ->
+                                                                (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none)
+                                                            SR.Types.UserIsNeitherOwnerNorMember ->
+                                                                (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
+                                                                
                                         _ ->
                                                 (model, Cmd.none)
                                 
@@ -976,7 +986,11 @@ update msg model =
                         Nothing ->
                             (model, Cmd.none)
                         Just userVal ->
-                            ( AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription SR.Types.Registered txRec, updateExistingUser (Data.Users.asList sUsers) userVal )
+                            --( AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription SR.Types.Registered txRec, updateExistingUser (Data.Users.asList sUsers) userVal )
+                            ( AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription SR.Types.Registered txRec, 
+                            --updateExistingUser (Data.Users.asList sUsers) userVal
+                            updateExistingUser <| Data.Users.updatedUserInSet sUsers userVal
+                            )
                     
                 _ -> 
                             let 
@@ -1294,39 +1308,44 @@ update msg model =
                                 case dKind of 
                                     Global sGlobal rnkId user ->
                                         --if Data.Users.isRegistered (Data.Users.asList sUsers) appInfo.m_user then
-                                        if user.ethaddress /= "" then
-                                            let
-                                                txParams =
-                                                    { to = txRec.account
-                                                    , from = txRec.account
-                                                    , gas = Nothing
-                                                    , gasPrice = Just <| Eth.Units.gwei 4
-                                                    , value = Just <| Eth.Units.gwei 1
-                                                    , data = Nothing
-                                                    , nonce = Nothing
-                                                    }
+                                        case user.ethaddress of 
+                                            Nothing ->
+                                                ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none )
+                                            Just addr ->
 
-                                                ( newSentry, sentryCmd ) =
-                                                    Eth.Sentry.Tx.customSend
-                                                        txRec.txSentry
-                                                        { onSign = Just WatchTxHash
-                                                        , onBroadcast = Just WatchTx
-                                                        , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                                        --if user.ethaddress /= "" then
+                                                let
+                                                    txParams =
+                                                        { to = txRec.account
+                                                        , from = txRec.account
+                                                        , gas = Nothing
+                                                        , gasPrice = Just <| Eth.Units.gwei 4
+                                                        , value = Just <| Eth.Units.gwei 1
+                                                        , data = Nothing
+                                                        , nonce = Nothing
                                                         }
-                                                        txParams
 
-                                                newAppInfo =
-                                                        { appInfo | appState = SR.Types.AppStateCreateNewLadder }
-                                                
-                                                _ = Debug.log "global with useradd" user.ethaddress
-                                                
-                                            in
-                                            ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIRenderAllRankings SR.Types.Subscribe SR.Types.Registered { txRec | txSentry = newSentry }
-                                            --Cmd.batch [ sentryCmd, addedUserAsFirstPlayerInNewList appInfo.m_user ] )
-                                            ,sentryCmd)
+                                                    ( newSentry, sentryCmd ) =
+                                                        Eth.Sentry.Tx.customSend
+                                                            txRec.txSentry
+                                                            { onSign = Just WatchTxHash
+                                                            , onBroadcast = Just WatchTx
+                                                            , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                                                            }
+                                                            txParams
 
-                                        else
-                                            ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none )
+                                                    newAppInfo =
+                                                            { appInfo | appState = SR.Types.AppStateCreateNewLadder }
+                                                    
+                                                    _ = Debug.log "global with useradd" user.ethaddress
+                                                    
+                                                in
+                                                ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIRenderAllRankings SR.Types.Subscribe SR.Types.Registered { txRec | txSentry = newSentry }
+                                                --Cmd.batch [ sentryCmd, addedUserAsFirstPlayerInNewList appInfo.m_user ] )
+                                                ,sentryCmd)
+
+                                        -- else
+                                        --     ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none )
 
                                     _ -> 
                                         let 
@@ -1546,9 +1565,9 @@ update msg model =
                     let
 
                         _ = Debug.log "userInfo address in ClickedCreateNewUserToWallet" userVal.ethaddress
-                        accountNo = (Utils.MyUtils.maybeAddressToString txRec.account )
+                        --accountNo = (Utils.MyUtils.maybeAddressToString txRec.account )
                         
-                        _ = Debug.log "txRec.account in ClickedCreateNewUserToWallet" accountNo
+                        --_ = Debug.log "txRec.account in ClickedCreateNewUserToWallet" accountNo
 
                         _ =
                             Debug.log "ClickedCreateNewUserToWallet walletState" walletState
@@ -1578,7 +1597,7 @@ update msg model =
                                 -- we need to send a user obj to createNewUser, not just the addr
                                 -- because it will update the other input details on the obj
                                 userWithUpdatedAddr =
-                                    { userInfo | ethaddress =  accountNo }
+                                    { userInfo | ethaddress =  txRec.account }
 
                                 newAppInfo =
                                     { appInfo | m_user = Just userWithUpdatedAddr, appState = SR.Types.AppStateCreateNewUser }
@@ -1935,15 +1954,12 @@ gotWalletAddrApplyToUser appInfo uaddr =
         Just userVal ->
             let
                 newAppInfoUser = userVal
-
                 newUserWithAddr =
-                    { newAppInfoUser | ethaddress = Eth.Utils.maybeAddressToString uaddr }
-
+                    { newAppInfoUser | ethaddress =  Just uaddr }
                 newAppInfo =
                     { appInfo | m_user = Just newUserWithAddr }
             in
             newAppInfo
-
 
 
 handleNewUserInputs : Model -> Msg -> Model
@@ -4367,30 +4383,32 @@ gotGlobal =
 
 addedUserAsFirstPlayerInNewList : SR.Types.User -> Cmd Msg
 addedUserAsFirstPlayerInNewList user =
-    let
-        playerEncoder : Json.Encode.Value
-        playerEncoder =
-            Json.Encode.list
-                Json.Encode.object
-                [ [ ( "address", Json.Encode.string (String.toLower user.ethaddress) )
-                  , ( "rank", Json.Encode.int 1 )
-                  , ( "challengeraddress", Json.Encode.string "" )
-                  ]
-                ]
-    in
-    --SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId is the Msg handled by update whenever a request is made
-    -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
-    -- decoder relates to what comes back from server. Nothing to do with above.
-    Http.request
-        { body =
-            Http.jsonBody <| playerEncoder
-        , expect = Http.expectJson (RemoteData.fromResult >> SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId) SR.Decode.newRankingIdDecoder
-        , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
-        , method = "POST"
-        , timeout = Nothing
-        , tracker = Nothing
-        , url = SR.Constants.jsonbinUrlForCreateNewBinAndRespond
-        }
+    -- todo: fix
+    Cmd.none
+    -- let
+    --     playerEncoder : Json.Encode.Value
+    --     playerEncoder =
+    --         Json.Encode.list
+    --             Json.Encode.object
+    --             [ [ ( "address", Json.Encode.string (String.toLower user.ethaddress) )
+    --               , ( "rank", Json.Encode.int 1 )
+    --               , ( "challengeraddress", Json.Encode.string "" )
+    --               ]
+    --             ]
+    -- in
+    -- --SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId is the Msg handled by update whenever a request is made
+    -- -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
+    -- -- decoder relates to what comes back from server. Nothing to do with above.
+    -- Http.request
+    --     { body =
+    --         Http.jsonBody <| playerEncoder
+    --     , expect = Http.expectJson (RemoteData.fromResult >> SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId) SR.Decode.newRankingIdDecoder
+    --     , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
+    --     , method = "POST"
+    --     , timeout = Nothing
+    --     , tracker = Nothing
+    --     , url = SR.Constants.jsonbinUrlForCreateNewBinAndRespond
+    --     }
 
 
 createNewUser : Data.Users.Users -> SR.Types.User -> Cmd Msg
@@ -4442,63 +4460,10 @@ createNewUser sUsers newuserinfo =
             , url = SR.Constants.jsonbinUrlUpdateUserListAndRespond
             }
 
-
-updateExistingUser : List SR.Types.User -> SR.Types.User -> Cmd Msg
-updateExistingUser originaluserlist updatedUserInfo =
-    let
-        updatedUser =
-            { datestamp = 123456789
-            , active = True
-            , username = updatedUserInfo.username
-            , password = updatedUserInfo.password
-            , ethaddress = updatedUserInfo.ethaddress
-            , description = updatedUserInfo.description
-            , email = updatedUserInfo.email
-            , mobile = updatedUserInfo.mobile
-            , userjoinrankings = updatedUserInfo.userjoinrankings
-            , member_since = 1
-            , m_token = Nothing
-            }
-
-        newListWithCurrentUserRemoved =
-            Data.Users.removeCurrentUserEntryFromUserList originaluserlist updatedUserInfo.ethaddress
-
-        updatedUserList =
-            updatedUser :: newListWithCurrentUserRemoved
-
-        ensuredListHasNoDuplicates =
-            Data.Users.removedDuplicateUserFromUserList updatedUserList
-    in
-    --SentUserInfoAndDecodedResponseToNewUser is the Msg handled by update whenever a request is made by buttuser clicked
-    --RemoteData is used throughout the module, including update
-    -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
-    -- decoder relates to what comes back from server. Nothing to do with above.
-    -- we mustn't submit a new user if the original list is empty for some reason ...
-    if List.isEmpty originaluserlist then
-        Http.request
-            { body =
-                Http.jsonBody <| jsonEncodeNewUsersList ensuredListHasNoDuplicates
-            , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
-            , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
-            , method = "PUT"
-            , timeout = Nothing
-            , tracker = Nothing
-
-            -- this will fail the create new user, but won't upload an empty list at least
-            , url = ""
-            }
-
-    else
-        Http.request
-            { body =
-                Http.jsonBody <| jsonEncodeNewUsersList ensuredListHasNoDuplicates
-            , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
-            , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
-            , method = "PUT"
-            , timeout = Nothing
-            , tracker = Nothing
-            , url = SR.Constants.jsonbinUrlUpdateUserListAndRespond
-            }
+updateExistingUser : Data.Users.Users -> Cmd Msg
+updateExistingUser  updatedUserInfo =
+        -- todo: re-implement with fauna
+        Cmd.none
 
 httpUpdateUsers : Data.Users.Users -> Cmd Msg
 httpUpdateUsers  updatedUsers =
@@ -4516,6 +4481,7 @@ httpUpdateUsers  updatedUsers =
 
 jsonEncodeNewUsersList : List SR.Types.User -> Json.Encode.Value
 jsonEncodeNewUsersList luserInfo =
+    -- todo: fix
     let
         encodeNewUserObj : SR.Types.User -> Json.Encode.Value
         encodeNewUserObj userInfo =
@@ -4523,7 +4489,8 @@ jsonEncodeNewUsersList luserInfo =
                 [ ( "datestamp", Json.Encode.int 1569839363942 )
                 , ( "active", Json.Encode.bool True )
                 , ( "username", Json.Encode.string userInfo.username )
-                , ( "ethaddress", Json.Encode.string (String.toLower userInfo.ethaddress) )
+                --, ( "ethaddress", Json.Encode.string (String.toLower userInfo.ethaddress) )
+                , ( "ethaddress", Json.Encode.string "")
                 , ( "description", Json.Encode.string userInfo.description )
                 , ( "email", Json.Encode.string userInfo.email )
                 , ( "mobile", Json.Encode.string userInfo.mobile )

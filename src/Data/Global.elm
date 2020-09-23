@@ -267,24 +267,26 @@ gotUserRankingByRankingId sGlobal rnkId =
 --addUserRanking : Global -> RemoteData.WebData SR.Types.RankingId -> SR.Types.Ranking -> SR.Types.User -> Global
 addUserRanking : Global -> String -> SR.Types.Ranking -> SR.Types.User -> Global
 addUserRanking sGlobal newrnkId rnkInfo user = 
-    let
-        newRankingInfo =
-            { id =  newrnkId
-            , active = True
-            , rankingname = rnkInfo.rankingname
-            , rankingdesc = rnkInfo.rankingdesc
-            , rankingowneraddr = user.ethaddress
-            }
+    -- todo: fix
+        empty
+    -- let
+    --     newRankingInfo =
+    --         { id =  newrnkId
+    --         , active = True
+    --         , rankingname = rnkInfo.rankingname
+    --         , rankingdesc = rnkInfo.rankingdesc
+    --         , rankingowneraddr = user.ethaddress
+    --         }
 
-        newUserRanking =
-            { rankingInfo = newRankingInfo
-            , userInfo = user
-            }
+    --     newUserRanking =
+    --         { rankingInfo = newRankingInfo
+    --         , userInfo = user
+    --         }
 
-    in
-        case sGlobal of 
-            Global rankedUserRankings->
-                asGlobal (EverySet.insert newUserRanking rankedUserRankings)
+    -- in
+    --     case sGlobal of 
+    --         Global rankedUserRankings->
+    --             asGlobal (EverySet.insert newUserRanking rankedUserRankings)
 
 
 isUserRankingIdInList : String -> SR.Types.UserRanking -> Bool
@@ -447,31 +449,35 @@ newJsonEncodedList lotherrankingInfo =
 
 gotRankingOwner : SR.Types.Ranking -> List SR.Types.UserRanking -> List SR.Types.UserPlayer -> SR.Types.UserPlayer
 gotRankingOwner selectedRanking luranking luplayer =
-    let
-        rankingOwnerAsUser =
-            (gotUserRankingFromUserRankingList luranking (Internal.Types.RankingId selectedRanking.id)).userInfo
+    -- todo: fix
+        SR.Defaults.emptyUserPlayer
+    -- let
+    --     rankingOwnerAsUser =
+    --         (gotUserRankingFromUserRankingList luranking (Internal.Types.RankingId selectedRanking.id)).userInfo
 
-        rankingOwnerAsPlayer =
-            gotRankingOwnerAsPlayer rankingOwnerAsUser.ethaddress luplayer
-    in
-    { player = rankingOwnerAsPlayer
-    , user = rankingOwnerAsUser
-    }
+    --     rankingOwnerAsPlayer =
+    --         gotRankingOwnerAsPlayer rankingOwnerAsUser.ethaddress luplayer
+    -- in
+    -- { player = rankingOwnerAsPlayer
+    -- , user = rankingOwnerAsUser
+    -- }
 
 gotUserRankingFromUserRankingList : List SR.Types.UserRanking -> Internal.Types.RankingId -> SR.Types.UserRanking
 gotUserRankingFromUserRankingList urankingList (Internal.Types.RankingId rnkid) =
-    let
-        existingRanking =
-            List.head <|
-                List.filter (\r -> r.rankingInfo.id == String.toLower rnkid)
-                    urankingList
-    in
-    case existingRanking of
-        Nothing ->
-            SR.Defaults.emptyUserRanking
+    -- todo: fix
+        SR.Defaults.emptyUserRanking
+    -- let
+    --     existingRanking =
+    --         List.head <|
+    --             List.filter (\r -> r.rankingInfo.id == String.toLower rnkid)
+    --                 urankingList
+    -- in
+    -- case existingRanking of
+    --     Nothing ->
+    --         SR.Defaults.emptyUserRanking
 
-        Just a ->
-            a
+    --     Just a ->
+    --         a
 
 gotRankingOwnerAsPlayer : String -> List SR.Types.UserPlayer -> SR.Types.Player
 gotRankingOwnerAsPlayer selectedRanking luplayer =
