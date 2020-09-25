@@ -64,7 +64,7 @@ listOfUsersDecoder : Json.Decode.Decoder (List SR.Types.User)
 listOfUsersDecoder =
     Json.Decode.list userDecoder
 
--- ethaddress is hardcoded because we might not use this decoder anyway
+-- m_ethaddress is hardcoded because we might not use this decoder anyway
 userDecoder : Json.Decode.Decoder SR.Types.User
 userDecoder =
     Json.Decode.succeed SR.Types.User
@@ -72,7 +72,7 @@ userDecoder =
         |> Json.Decode.Pipeline.required "active" Json.Decode.bool
         |> Json.Decode.Pipeline.required "username" Json.Decode.string
         |> Json.Decode.Pipeline.required "password" Json.Decode.string
-        --|> Json.Decode.Pipeline.optional "ethaddress" (Json.Decode.maybe Json.Decode.string) Nothing
+        --|> Json.Decode.Pipeline.optional "m_ethaddress" (Json.Decode.maybe Json.Decode.string) Nothing
         |> Json.Decode.Pipeline.hardcoded Nothing
         |> Json.Decode.Pipeline.required "description" Json.Decode.string
         |> Json.Decode.Pipeline.required "email" Json.Decode.string

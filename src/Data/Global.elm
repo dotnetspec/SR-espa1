@@ -129,7 +129,7 @@ gotOwned global user =
         
 isOwned : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
 isOwned user ownedrnk =
-    if ownedrnk.userInfo.ethaddress == user.ethaddress then
+    if ownedrnk.userInfo.m_ethaddress == user.m_ethaddress then
         Just ownedrnk
 
     else
@@ -204,7 +204,7 @@ toUser uRanking =
 
 isGlobalRankingOwnedByUser : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
 isGlobalRankingOwnedByUser user ownedrnk =
-    if ownedrnk.userInfo.ethaddress == user.ethaddress then
+    if ownedrnk.userInfo.m_ethaddress == user.m_ethaddress then
         Just ownedrnk
 
     else
@@ -234,7 +234,7 @@ removedDeletedRankingsFromUserJoined user sGlobal =
 
 isUserInGlobalRankings : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
 isUserInGlobalRankings user ownedrnk =
-    if ownedrnk.userInfo.ethaddress == user.ethaddress then
+    if ownedrnk.userInfo.m_ethaddress == user.m_ethaddress then
         Just ownedrnk
 
     else
@@ -275,7 +275,7 @@ addUserRanking sGlobal newrnkId rnkInfo user =
     --         , active = True
     --         , rankingname = rnkInfo.rankingname
     --         , rankingdesc = rnkInfo.rankingdesc
-    --         , rankingowneraddr = user.ethaddress
+    --         , rankingowneraddr = user.m_ethaddress
     --         }
 
     --     newUserRanking =
@@ -456,7 +456,7 @@ gotRankingOwner selectedRanking luranking luplayer =
     --         (gotUserRankingFromUserRankingList luranking (Internal.Types.RankingId selectedRanking.id)).userInfo
 
     --     rankingOwnerAsPlayer =
-    --         gotRankingOwnerAsPlayer rankingOwnerAsUser.ethaddress luplayer
+    --         gotRankingOwnerAsPlayer rankingOwnerAsUser.m_ethaddress luplayer
     -- in
     -- { player = rankingOwnerAsPlayer
     -- , user = rankingOwnerAsUser

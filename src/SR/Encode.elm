@@ -37,24 +37,24 @@ encodeUserList lusers =
 
 encodeUserObj : SR.Types.User -> Encode.Value
 encodeUserObj user =
-    case user.ethaddress of
+    case user.m_ethaddress of
         Nothing ->
             Encode.object
                 [ ( "datestamp", Encode.int user.datestamp )
                 , ( "active", Encode.bool user.active )
                 , ( "username", Encode.string user.username )
-                , ( "ethaddress", Encode.string "" )
+                , ( "m_ethaddress", Encode.string "" )
                 , ( "description", Encode.string user.description )
                 , ( "email", Encode.string user.email )
                 , ( "mobile", Encode.string user.mobile )
                 , ( "userjoinrankings", encodeUserJoinRankingsList Encode.string user.userjoinrankings )
                 ]
-        Just ethaddress ->
+        Just m_ethaddress ->
             Encode.object
                 [ ( "datestamp", Encode.int user.datestamp )
                 , ( "active", Encode.bool user.active )
                 , ( "username", Encode.string user.username )
-                , ( "ethaddress", Encode.string (String.toLower (Eth.Utils.addressToString ethaddress)) )
+                , ( "m_ethaddress", Encode.string (String.toLower (Eth.Utils.addressToString m_ethaddress)) )
                 , ( "description", Encode.string user.description )
                 , ( "email", Encode.string user.email )
                 , ( "mobile", Encode.string user.mobile )

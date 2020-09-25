@@ -69,7 +69,7 @@ asUsers esUser  =
 
 isRegistered : List SR.Types.User -> SR.Types.User -> Bool
 isRegistered luser user =
-    case user.ethaddress of 
+    case user.m_ethaddress of 
         Nothing ->
             False
 
@@ -122,7 +122,7 @@ gotUser (Users susers) uaddr =
     -- let
     --     existingUser =
     --         List.head <|
-    --              EverySet.toList (EverySet.filter (\r -> (String.toLower <| r.ethaddress) == (String.toLower <| uaddr))
+    --              EverySet.toList (EverySet.filter (\r -> (String.toLower <| r.m_ethaddress) == (String.toLower <| uaddr))
     --                 susers)
     -- in
     
@@ -255,14 +255,14 @@ asList susers =
 --                 user = gotUser susers address
 --                 userRemoved = removeUser user susers
 --                 updatedUserAddr =
---                         { user | ethaddress = address }
+--                         { user | m_ethaddress = address }
 --             in 
 --             addUser updatedUserAddr userRemoved
 
 
 updatedUserInSet : Users -> SR.Types.User -> Users
 updatedUserInSet susers userToUpdate =
-    case userToUpdate.ethaddress of 
+    case userToUpdate.m_ethaddress of 
         Nothing ->
             susers
         Just address ->
@@ -282,7 +282,7 @@ gotUserFromUserList userList uaddr =
     -- let
     --     existingUser =
     --         List.head <|
-    --             List.filter (\r -> (String.toLower <| r.ethaddress) == (String.toLower <| uaddr))
+    --             List.filter (\r -> (String.toLower <| r.m_ethaddress) == (String.toLower <| uaddr))
     --                 (validatedUserList userList)
     -- in
     -- case existingUser of
@@ -301,7 +301,7 @@ validatedUserList luser =
 
 isValidUserAddrInList : SR.Types.User -> Maybe SR.Types.User
 isValidUserAddrInList user =
-    case user.ethaddress of 
+    case user.m_ethaddress of 
         Nothing ->
             Nothing
         Just addr ->
@@ -402,7 +402,7 @@ removedDuplicateUserFromUserList userList =
 
 gotAddressesFromUserList : SR.Types.User -> String
 gotAddressesFromUserList user =
-    case user.ethaddress of
+    case user.m_ethaddress of
         Nothing ->
             ""
         Just addr ->
@@ -410,7 +410,7 @@ gotAddressesFromUserList user =
 
 -- removeCurrentUserEntryFromUserList : List SR.Types.User -> Eth.Types.Address -> List SR.Types.User
 -- removeCurrentUserEntryFromUserList userList uaddr =
---     List.filter (\r -> (String.toLower <| r.ethaddress) /= (String.toLower <| (Eth.Utils.addressToString uaddr)))
+--     List.filter (\r -> (String.toLower <| r.m_ethaddress) /= (String.toLower <| (Eth.Utils.addressToString uaddr)))
 --         (validatedUserList userList)
 
 --private
@@ -421,7 +421,7 @@ gotAddressesFromUserList user =
 --         gotSingleUserFromList =
 --             gotUserFromUserList userlist uaddr
 --     in
---     if gotSingleUserFromList.ethaddress == "" then
+--     if gotSingleUserFromList.m_ethaddress == "" then
 --         False
 
 --     else

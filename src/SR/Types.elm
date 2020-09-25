@@ -213,7 +213,7 @@ type alias User =
     , active : Bool
     , username : String
     , password : String
-    , ethaddress : Maybe Eth.Types.Address
+    , m_ethaddress : Maybe Eth.Types.Address
     , description : String
     , email : String
     , mobile : String

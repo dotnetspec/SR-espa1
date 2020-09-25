@@ -319,9 +319,6 @@ update msg model =
                 
 
         (ClickedRegister, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
-            let
-                    _ = Debug.log "walletState in clickreg " walletState
-            in
             case walletState of
                 SR.Types.WalletStateLocked ->
                     ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
@@ -332,7 +329,15 @@ update msg model =
                 SR.Types.WalletStopSub ->
                     ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
                 SR.Types.WalletOpened ->
-                    ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
+                    case appInfo.m_user of
+                        Nothing ->
+                            ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
+                        Just user ->
+                            case user.m_ethaddress of
+                                Nothing ->
+                                    (model, Cmd.none)
+                                Just addr ->
+                                    ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
                 _ ->
                     (model, Cmd.none)
 
@@ -345,7 +350,7 @@ update msg model =
                         --extractedList = Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList
                         extractedList = [SR.Defaults.emptyUser]
                         users = Data.Users.asUsers (EverySet.fromList (extractedList))
-                        -- newUser = Data.Users.gotUser users userVal.ethaddress
+                        -- newUser = Data.Users.gotUser users userVal.m_ethaddress
                         -- userInAppInfo = { appInfo | m_user = Just newUser }
                         newDataKind = Users SR.Defaults.emptyUser
                         newDataState = StateFetched users newDataKind
@@ -358,7 +363,7 @@ update msg model =
                 
                 Just userVal ->
                     
-                        case userVal.ethaddress of 
+                        case userVal.m_ethaddress of 
                             Nothing ->
                                 (model, Cmd.none)
                             Just addr ->
@@ -445,7 +450,7 @@ update msg model =
                                 case dKind of 
                                         Selected sSelected rnkId user status rankings ->
                                             
-                                                case user.ethaddress of 
+                                                case user.m_ethaddress of 
                                                     Nothing ->
                                                         (model, Cmd.none)
                                                     Just addr ->
@@ -474,7 +479,7 @@ update msg model =
                             StateUpdated sUsers dKind -> 
                                 case dKind of 
                                         Selected sSelected rnkId user status rankings ->
-                                            case user.ethaddress of 
+                                            case user.m_ethaddress of 
                                                 Nothing -> 
                                                     (model, Cmd.none)
                                                 Just addr ->
@@ -1308,12 +1313,12 @@ update msg model =
                                 case dKind of 
                                     Global sGlobal rnkId user ->
                                         --if Data.Users.isRegistered (Data.Users.asList sUsers) appInfo.m_user then
-                                        case user.ethaddress of 
+                                        case user.m_ethaddress of 
                                             Nothing ->
                                                 ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none )
                                             Just addr ->
 
-                                        --if user.ethaddress /= "" then
+                                        --if user.m_ethaddress /= "" then
                                                 let
                                                     txParams =
                                                         { to = txRec.account
@@ -1337,7 +1342,7 @@ update msg model =
                                                     newAppInfo =
                                                             { appInfo | appState = SR.Types.AppStateCreateNewLadder }
                                                     
-                                                    _ = Debug.log "global with useradd" user.ethaddress
+                                                    _ = Debug.log "global with useradd" user.m_ethaddress
                                                     
                                                 in
                                                 ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIRenderAllRankings SR.Types.Subscribe SR.Types.Registered { txRec | txSentry = newSentry }
@@ -1564,7 +1569,7 @@ update msg model =
                 Just userVal ->
                     let
 
-                        _ = Debug.log "userInfo address in ClickedCreateNewUserToWallet" userVal.ethaddress
+                        _ = Debug.log "userInfo address in ClickedCreateNewUserToWallet" userVal.m_ethaddress
                         --accountNo = (Utils.MyUtils.maybeAddressToString txRec.account )
                         
                         --_ = Debug.log "txRec.account in ClickedCreateNewUserToWallet" accountNo
@@ -1597,7 +1602,7 @@ update msg model =
                                 -- we need to send a user obj to createNewUser, not just the addr
                                 -- because it will update the other input details on the obj
                                 userWithUpdatedAddr =
-                                    { userInfo | ethaddress =  txRec.account }
+                                    { userInfo | m_ethaddress =  txRec.account }
 
                                 newAppInfo =
                                     { appInfo | m_user = Just userWithUpdatedAddr, appState = SR.Types.AppStateCreateNewUser }
@@ -1712,7 +1717,7 @@ update msg model =
                         Nothing ->
                             (model, Cmd.none)
                         Just userVal ->
-                            --(model, createAndOrLoginUser userVal.username userVal.password userVal.ethaddress)
+                            --(model, createAndOrLoginUser userVal.username userVal.password userVal.m_ethaddress)
                             (model, loginUser userVal.username userVal.password)
                             
                     
@@ -1762,8 +1767,8 @@ commandFromLoggedInUser response =
             Cmd.none
 
 createAndOrLoginUser : String -> String -> String -> Cmd Msg
-createAndOrLoginUser user_name password ethaddress =
-    GQLHttp.send LoggedInUser (requestCreateAndOrLoginUser handleCreateAndOrLoginUserOptionalArguments user_name password ethaddress)
+createAndOrLoginUser user_name password m_ethaddress =
+    GQLHttp.send LoggedInUser (requestCreateAndOrLoginUser handleCreateAndOrLoginUserOptionalArguments user_name password m_ethaddress)
 
 loginUser : String -> String -> Cmd Msg
 loginUser user_name password =
@@ -1953,9 +1958,8 @@ gotWalletAddrApplyToUser appInfo uaddr =
             appInfo
         Just userVal ->
             let
-                newAppInfoUser = userVal
                 newUserWithAddr =
-                    { newAppInfoUser | ethaddress =  Just uaddr }
+                    { userVal | m_ethaddress =  Just uaddr }
                 newAppInfo =
                     { appInfo | m_user = Just newUserWithAddr }
             in
@@ -2211,7 +2215,7 @@ updateSelectedRankingPlayerList model luplayers =
 
 --                         stateToSelected = Selected newSSelected sUsers (Internal.Types.RankingId appInfo.selectedRanking.id)
                         
---                         newAppPlayer = { appInfo | player = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer appInfo.m_user.ethaddress }
+--                         newAppPlayer = { appInfo | player = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer appInfo.m_user.m_ethaddress }
 
 --                         newAppChallengerAndPlayer = { newAppPlayer | challenger = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer newAppPlayer.player.player.challengeraddress }
 
@@ -2234,7 +2238,11 @@ view model =
         AppOps walletState dataState appInfo uiState subState accountState txRec ->
             case appInfo.m_user of
                 Nothing ->
-                    handleGlobalNoUserView dataState
+                    case uiState of
+                        SR.Types.UIRegisterNewUser ->
+                            inputNewUserview walletState dataState appInfo
+                        _ ->
+                            handleGlobalNoUserView dataState
 
                 Just userValue ->
                 -- want to remove uiState over time probably - should just be the state of the model determines
@@ -2766,7 +2774,7 @@ selecteduserIsOwnerhomebutton user =
                     , label = Element.text "Home"
                     }
                 , Input.button (Button.simple ++ Color.danger) <|
-                    { onPress = Just <| ClickedDeleteRanking user.ethaddress
+                    { onPress = Just <| ClickedDeleteRanking user.m_ethaddress
                     , label = Element.text "Delete"
                     }
                 ]
@@ -3174,8 +3182,6 @@ mobileValidationErr user =
 
 newuserConfirmPanel : SR.Types.WalletState -> Maybe SR.Types.User -> List SR.Types.User -> Element Msg
 newuserConfirmPanel walletState m_user luser =
-    -- case walletState of 
-    --     SR.Types.WalletOpened -> 
         case m_user of
             Nothing ->
                 Element.column Grid.section <|
@@ -3331,7 +3337,7 @@ inputNewUser walletState dataState appInfo =
                 SR.Types.WalletOpened -> 
                     case appInfo.m_user of
                         Nothing ->
-                            Element.text "No User4"
+                            Element.text "No user"
                         Just userVal ->
                             Element.column Grid.section <|
                                 [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
@@ -3978,70 +3984,89 @@ newOrExistingUserNameDisplay user accountState =
 
 inputNewUserview : SR.Types.WalletState -> DataState -> SR.Types.AppInfo -> Html Msg
 inputNewUserview walletState dataState appInfo =
-    case dataState of 
-        StateFetched sUsers dKind ->
-            case walletState of 
-                SR.Types.WalletOpened ->
-                    -- case appInfo.m_user of
-                    --     Nothing ->
-                    --         Html.text "No User14"
-                    --     Just userVal ->
-                            Framework.responsiveLayout [] <|
-                                Element.column
-                                    Framework.container
-                                    [ Element.el Heading.h4 <| Element.text "Create New User"
-                                    , inputNewUser walletState dataState appInfo
-                                    , newuserConfirmPanel walletState appInfo.m_user (Data.Users.asList sUsers)
-                                    ]
-                SR.Types.WalletStateLocked ->
-                    -- case appInfo.m_user of
-                    --     Nothing ->
-                    --         Html.text "No User15"
-                    --     Just userVal ->
-                            Framework.responsiveLayout [] <|
-                                Element.column
-                                    Framework.container
-                                    [ displayEnableEthereumBtn
-                                    , Element.text "\n"
-                                    , Element.el Heading.h4 <| Element.text "Create New User"
-                                    , inputNewUser walletState dataState appInfo
-                                    , newuserConfirmPanel walletState appInfo.m_user (Data.Users.asList sUsers)
-                                    ]
-                
-                SR.Types.WalletOperational ->
-                    -- case appInfo.m_user of
-                    --     Nothing ->
-                    --         Html.text "No User16"
-                    --     Just userVal ->
-                            Framework.responsiveLayout [] <|
-                                Element.column
-                                    Framework.container
-                                    [ displayEnableEthereumBtn
-                                    , Element.text "\n"
-                                    , Element.el Heading.h4 <| Element.text "Create New User"
-                                    , inputNewUser walletState dataState appInfo
-                                    , newuserConfirmPanel walletState appInfo.m_user (Data.Users.asList sUsers)
-                                    ]
-
-                SR.Types.WalletOpenedNoUserAccount ->
-                    -- case appInfo.m_user of
-                    --     Nothing ->
-                    --         Html.text "No User17"
-                    --     Just userVal ->
-                            Framework.responsiveLayout [] <|
-                                Element.column
-                                    Framework.container
-                                    [ displayEnableEthereumBtn
-                                    , Element.text "\n"
-                                    , Element.el Heading.h4 <| Element.text "Create New User"
-                                    , inputNewUser walletState dataState appInfo
-                                    , newuserConfirmPanel walletState appInfo.m_user (Data.Users.asList sUsers)
-                                    ]
+    case appInfo.m_user of
+        Nothing ->
+            case dataState of
+                StateFetched sUsers dKind ->
+                    Framework.responsiveLayout [] <|
+                        Element.column
+                            Framework.container
+                            [ displayEnableEthereumBtn
+                            , Element.text "\n"
+                            , Element.el Heading.h4 <| Element.text "Create New User"
+                            , inputNewUser walletState dataState appInfo
+                            , newuserConfirmPanel walletState appInfo.m_user (Data.Users.asList sUsers)
+                            ]
                 _ ->
-                    Html.text "fell thru in inputNewUserview"
+                    Html.text "tbc"
+
+        Just userVal ->
+            Html.text "tbc"
+
+    -- case dataState of 
+    --     StateFetched sUsers dKind ->
+    --         case walletState of 
+    --             SR.Types.WalletOpened ->
+    --                 -- case appInfo.m_user of
+    --                 --     Nothing ->
+    --                 --         Html.text "No User14"
+    --                 --     Just userVal ->
+    --                         Framework.responsiveLayout [] <|
+    --                             Element.column
+    --                                 Framework.container
+    --                                 [ Element.el Heading.h4 <| Element.text "Create New User"
+    --                                 , inputNewUser walletState dataState appInfo
+    --                                 , newuserConfirmPanel walletState appInfo.m_user (Data.Users.asList sUsers)
+    --                                 ]
+    --             SR.Types.WalletStateLocked ->
+    --                 -- case appInfo.m_user of
+    --                 --     Nothing ->
+    --                 --         Html.text "No User15"
+    --                 --     Just userVal ->
+    --                         Framework.responsiveLayout [] <|
+    --                             Element.column
+    --                                 Framework.container
+    --                                 [ displayEnableEthereumBtn
+    --                                 , Element.text "\n"
+    --                                 , Element.el Heading.h4 <| Element.text "Create New User"
+    --                                 , inputNewUser walletState dataState appInfo
+    --                                 , newuserConfirmPanel walletState appInfo.m_user (Data.Users.asList sUsers)
+    --                                 ]
+                
+    --             SR.Types.WalletOperational ->
+    --                 -- case appInfo.m_user of
+    --                 --     Nothing ->
+    --                 --         Html.text "No User16"
+    --                 --     Just userVal ->
+    --                         Framework.responsiveLayout [] <|
+    --                             Element.column
+    --                                 Framework.container
+    --                                 [ displayEnableEthereumBtn
+    --                                 , Element.text "\n"
+    --                                 , Element.el Heading.h4 <| Element.text "Create New User"
+    --                                 , inputNewUser walletState dataState appInfo
+    --                                 , newuserConfirmPanel walletState appInfo.m_user (Data.Users.asList sUsers)
+    --                                 ]
+
+    --             SR.Types.WalletOpenedNoUserAccount ->
+    --                 -- case appInfo.m_user of
+    --                 --     Nothing ->
+    --                 --         Html.text "No User17"
+    --                 --     Just userVal ->
+    --                         Framework.responsiveLayout [] <|
+    --                             Element.column
+    --                                 Framework.container
+    --                                 [ displayEnableEthereumBtn
+    --                                 , Element.text "\n"
+    --                                 , Element.el Heading.h4 <| Element.text "Create New User"
+    --                                 , inputNewUser walletState dataState appInfo
+    --                                 , newuserConfirmPanel walletState appInfo.m_user (Data.Users.asList sUsers)
+    --                                 ]
+    --             _ ->
+    --                 Html.text "fell thru in inputNewUserview"
                     
-        _ ->
-            Html.text "Fail inputNewUserview"
+        -- _ ->
+        --     Html.text "Fail inputNewUserview"
 
 
 
@@ -4390,7 +4415,7 @@ addedUserAsFirstPlayerInNewList user =
     --     playerEncoder =
     --         Json.Encode.list
     --             Json.Encode.object
-    --             [ [ ( "address", Json.Encode.string (String.toLower user.ethaddress) )
+    --             [ [ ( "address", Json.Encode.string (String.toLower user.m_ethaddress) )
     --               , ( "rank", Json.Encode.int 1 )
     --               , ( "challengeraddress", Json.Encode.string "" )
     --               ]
@@ -4419,7 +4444,7 @@ createNewUser sUsers newuserinfo =
             Data.Users.newUser  
                 newuserinfo.username 
                 newuserinfo.password 
-                newuserinfo.ethaddress 
+                newuserinfo.m_ethaddress 
                 newuserinfo.description
                 newuserinfo.email
                 newuserinfo.mobile
@@ -4481,21 +4506,32 @@ httpUpdateUsers  updatedUsers =
 
 jsonEncodeNewUsersList : List SR.Types.User -> Json.Encode.Value
 jsonEncodeNewUsersList luserInfo =
-    -- todo: fix
     let
         encodeNewUserObj : SR.Types.User -> Json.Encode.Value
         encodeNewUserObj userInfo =
-            Json.Encode.object
-                [ ( "datestamp", Json.Encode.int 1569839363942 )
-                , ( "active", Json.Encode.bool True )
-                , ( "username", Json.Encode.string userInfo.username )
-                --, ( "ethaddress", Json.Encode.string (String.toLower userInfo.ethaddress) )
-                , ( "ethaddress", Json.Encode.string "")
-                , ( "description", Json.Encode.string userInfo.description )
-                , ( "email", Json.Encode.string userInfo.email )
-                , ( "mobile", Json.Encode.string userInfo.mobile )
-                , ( "userjoinrankings", Json.Encode.list encodeRankingIdList userInfo.userjoinrankings )
-                ]
+            case userInfo.m_ethaddress of
+                Nothing ->
+                    Json.Encode.object
+                        [ ( "datestamp", Json.Encode.int 1569839363942 )
+                        , ( "active", Json.Encode.bool True )
+                        , ( "username", Json.Encode.string userInfo.username )
+                        , ( "m_ethaddress", Json.Encode.string "")
+                        , ( "description", Json.Encode.string userInfo.description )
+                        , ( "email", Json.Encode.string userInfo.email )
+                        , ( "mobile", Json.Encode.string userInfo.mobile )
+                        , ( "userjoinrankings", Json.Encode.list encodeRankingIdList userInfo.userjoinrankings )
+                        ]
+                Just addr ->
+                    Json.Encode.object
+                        [ ( "datestamp", Json.Encode.int 1569839363942 )
+                        , ( "active", Json.Encode.bool True )
+                        , ( "username", Json.Encode.string userInfo.username )
+                        , ( "m_ethaddress", Json.Encode.string (String.toLower (Eth.Utils.addressToString addr)) )
+                        , ( "description", Json.Encode.string userInfo.description )
+                        , ( "email", Json.Encode.string userInfo.email )
+                        , ( "mobile", Json.Encode.string userInfo.mobile )
+                        , ( "userjoinrankings", Json.Encode.list encodeRankingIdList userInfo.userjoinrankings )
+                        ]
 
         encodeRankingIdList : String -> Json.Encode.Value
         encodeRankingIdList rankingIdstr =

@@ -193,7 +193,7 @@ isUserPlayerMemberOfSelectedRanking luplayer user =
             False
 
         Just a ->
-            case user.ethaddress of 
+            case user.m_ethaddress of 
                 Nothing ->
                     False 
                 Just addr ->
@@ -215,7 +215,7 @@ isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
             False
 
         Just a ->
-            case user.ethaddress of 
+            case user.m_ethaddress of 
                 Nothing ->
                     False 
                 Just addr ->
@@ -248,7 +248,7 @@ findPlayerInList user luPlayer =
     [SR.Defaults.emptyUserPlayer]
     -- List.filterMap
     --     (isThisPlayerAddr
-    --         (String.toLower user.ethaddress)
+    --         (String.toLower user.m_ethaddress)
     --     )
     --     luPlayer
 
@@ -302,7 +302,7 @@ userAdded sUsers strrankingId luPlayer userRec =
     -- let
     --     newUserPlayer =
     --         { player =
-    --             { address = userRec.ethaddress
+    --             { address = userRec.m_ethaddress
     --             , rank = List.length luPlayer + 1
     --             , challengeraddress = ""
     --             }
@@ -316,7 +316,7 @@ userAdded sUsers strrankingId luPlayer userRec =
     
 isPlayerCurrentUser : SR.Types.User -> SR.Types.UserPlayer -> Bool
 isPlayerCurrentUser user uplayer = 
-    case user.ethaddress of 
+    case user.m_ethaddress of 
         Nothing ->
             False
 
@@ -457,7 +457,7 @@ gotCurrentUserAsPlayerFromPlayerList luPlayer userRec =
     -- let
     --     existingPlayer =
     --         List.head <|
-    --             List.filter (\r -> r.player.address == (String.toLower <| userRec.ethaddress))
+    --             List.filter (\r -> r.player.address == (String.toLower <| userRec.m_ethaddress))
     --                 luPlayer
     -- in
     -- case existingPlayer of
@@ -793,7 +793,7 @@ extractAndSortPlayerList rdlPlayer luser =
 --             (gotUserRankingFromUserRankingList luranking (Internal.Types.RankingId selectedRanking.id)).userInfo
 
 --         rankingOwnerAsPlayer =
---             gotRankingOwnerAPlayer rankingOwnerAsUser.ethaddress luplayer
+--             gotRankingOwnerAPlayer rankingOwnerAsUser.m_ethaddress luplayer
 --     in
 --     { player = rankingOwnerAsPlayer
 --     , user = rankingOwnerAsUser
