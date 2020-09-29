@@ -345,7 +345,8 @@ update msg model =
                 -- user is Guest
                     let
                         --extractedList = Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList
-                        extractedList = [SR.Defaults.emptyUser]
+                        --waiting for a real list from Faunadb
+                        extractedList = []
                         users = Data.Users.asUsers (EverySet.fromList (extractedList))
                         -- newUser = Data.Users.gotUser users userVal.m_ethaddress
                         -- userInAppInfo = { appInfo | m_user = Just newUser }
@@ -390,7 +391,10 @@ update msg model =
             (model, Cmd.none)
 
 
-        (GlobalReceived rmtrnkingdata, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
+        (GlobalReceived rmtrnkingdata, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->      
+                if List.isEmpty <| Data.Rankings.extractRankingsFromWebData rmtrnkingdata then 
+                    (model, Cmd.none)
+                else 
                     case dataState of
                         StateFetched sUsers dKind -> 
                             case dKind of
@@ -419,9 +423,28 @@ update msg model =
 
                                             SR.Types.EthEnabledAndRegistered -> 
                                                 ( AppOps walletState newDataSet appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
+                                
+                                Selected _ _ _ _ _ ->
+                                    (model, Cmd.none)
 
-                                _ ->
-                                        (model, Cmd.none)
+                        AllEmpty ->
+                            let 
+                                sUsers = Data.Users.emptyUsers
+                            in
+                            case appInfo.m_user of 
+                                Nothing ->
+                                    let
+                                        newDataKind = Global (Data.Global.createdFromRemote rmtrnkingdata sUsers) (Internal.Types.RankingId "") SR.Defaults.emptyUser
+                                        newDataSet = StateFetched sUsers newDataKind
+                                    in
+                                        (AppOps walletState newDataSet appInfo uiState SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
+                                
+                                Just userVal ->
+                                    let
+                                        newDataKind = Global (Data.Global.createdFromRemote rmtrnkingdata sUsers) (Internal.Types.RankingId "") userVal
+                                        newDataSet = StateFetched sUsers newDataKind
+                                    in
+                                        (AppOps walletState newDataSet appInfo uiState SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
                         _ ->
                             (model, Cmd.none)
 
@@ -3169,22 +3192,36 @@ newuserConfirmPanel  m_user luser =
                     ]
 
             Just userVal ->
-                Element.column Grid.section <|
-                [ SR.Elements.warningParagraph
-                , Element.el Heading.h6 <| Element.text "Click to continue ..."
-                , Element.column (Card.simple ++ Grid.simple) <|
-                    [ Element.wrappedRow Grid.simple <|
-                        [ Input.button (Button.simple ++ Color.info) <|
-                            { onPress = Just <| ResetToShowGlobal
-                            , label = Element.text "Cancel"
-                            }
-                        , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput userVal luser False)) <|
-                            { onPress = Just <| ClickedConfirmedRegisterNewUser
-                            , label = Element.text "Register"
-                            }
+                if List.isEmpty luser then
+                    Element.column Grid.section <|
+                        [ SR.Elements.warningParagraph
+                        , Element.el Heading.h6 <| Element.text "Click to continue ..."
+                        , Element.column (Card.simple ++ Grid.simple) <|
+                            [ Element.wrappedRow Grid.simple <|
+                                [ Input.button (Button.simple ++ Color.info) <|
+                                    { onPress = Just <| ResetToShowGlobal
+                                    , label = Element.text "Cancel"
+                                    }
+                                ]
+                            ]
+                        ]
+                else
+                    Element.column Grid.section <|
+                    [ SR.Elements.warningParagraph
+                    , Element.el Heading.h6 <| Element.text "Click to continue ..."
+                    , Element.column (Card.simple ++ Grid.simple) <|
+                        [ Element.wrappedRow Grid.simple <|
+                            [ Input.button (Button.simple ++ Color.info) <|
+                                { onPress = Just <| ResetToShowGlobal
+                                , label = Element.text "Cancel"
+                                }
+                            , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput userVal luser False)) <|
+                                { onPress = Just <| ClickedConfirmedRegisterNewUser
+                                , label = Element.text "Register"
+                                }
+                            ]
                         ]
                     ]
-                ]
 
 
 
@@ -3776,30 +3813,48 @@ inputUserDetailsView dataState appInfo =
                     let 
                         userVal = SR.Defaults.emptyUser
                     in
-                    Framework.responsiveLayout [] <|
+                    if Data.Users.isEmpty sUsers then
+                        Framework.responsiveLayout [] <|
                         Element.column
                             Framework.container
-                            [ displayEnableEthereumBtn
-                            , Element.text "\n"
-                            , Element.el Heading.h4 <| Element.text "Create New User"
-                            , displayRegisterNewUser userVal sUsers
+                            [
+                            Element.el Heading.h4 <| Element.text "No Users"
                             , newuserConfirmPanel appInfo.m_user (Data.Users.asList sUsers)
                             ]
+                    else
+                        Framework.responsiveLayout [] <|
+                            Element.column
+                                Framework.container
+                                [ displayEnableEthereumBtn
+                                , Element.text "\n"
+                                , Element.el Heading.h4 <| Element.text "Create New User"
+                                , displayRegisterNewUser userVal sUsers
+                                , newuserConfirmPanel appInfo.m_user (Data.Users.asList sUsers)
+                                ]
                 _ ->
                     Html.text "tbc"
 
         Just userVal ->
             case dataState of
                 StateFetched sUsers dKind ->
-                    Framework.responsiveLayout [] <|
-                                Element.column
-                                    Framework.container
-                                    [ displayEnableEthereumBtn
-                                    , Element.text "\n"
-                                    , Element.el Heading.h4 <| Element.text "Create New User"
-                                    , displayRegisterNewUser userVal sUsers
-                                    , newuserConfirmPanel appInfo.m_user (Data.Users.asList sUsers)
-                                    ]
+                    if Data.Users.isEmpty sUsers then
+                        Framework.responsiveLayout [] <|
+                        Element.column
+                            Framework.container
+                            [
+                            Element.el Heading.h4 <| Element.text "No Users"
+                            , newuserConfirmPanel appInfo.m_user (Data.Users.asList sUsers)
+                            ]
+                    else
+                        Framework.responsiveLayout [] <|
+                            Element.column
+                                Framework.container
+                                [ displayEnableEthereumBtn
+                                , Element.text "\n"
+                                , Element.el Heading.h4 <| Element.text "Create New User"
+                                , displayRegisterNewUser userVal sUsers
+                                , newuserConfirmPanel appInfo.m_user (Data.Users.asList sUsers)
+                                ]
                 _ ->
                     Html.text "tbc"
 
