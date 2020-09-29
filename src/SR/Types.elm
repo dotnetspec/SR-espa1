@@ -172,13 +172,7 @@ type OpponentRelativeRank
     = OpponentRankHigher
     | OpponentRankLower
 
-type AppState
-    = AppStateGeneral
-    | AppStateCreateNewUser 
-    | AppStateCreateNewLadder 
-    | AppStateEnterWon 
-    | AppStateEnterLost 
-    | AppStateEnterUndecided
+
 
 type AccountState 
     = Guest 
@@ -206,6 +200,15 @@ type alias AppInfo =
     , challenger : UserPlayer
     , appState : AppState
     }
+
+type AppState
+    = AppStateGeneral
+    | AppStateCreateNewUser
+    | AppStateUpdateProfile
+    | AppStateCreateNewLadder 
+    | AppStateEnterWon 
+    | AppStateEnterLost 
+    | AppStateEnterUndecided
 
 
 type alias User =

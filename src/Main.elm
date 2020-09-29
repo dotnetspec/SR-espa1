@@ -179,7 +179,6 @@ type Msg
     | ExistingUserDescInputChg String
     | ExistingUserEmailInputChg String
     | ExistingUserMobileInputChg String
-    | ClickedCreateNewUserToWallet SR.Types.User
     | ClickedLogInUser
     | LoggedInUser (Result (GQLHttp.Error SR.Types.Token) SR.Types.Token)
     | ReceivedUserNames (Result (GQLHttp.Error (List String)) (List String))
@@ -298,9 +297,6 @@ update msg model =
 
 
         (ClickedConfirmedRegisterNewUser, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
-            let 
-                        _ = Debug.log "ClickedConfirmedRegisterNewUser: " "here"
-            in
             case walletState of 
                 SR.Types.WalletOperational ->
                     ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription SR.Types.Registered txRec, Cmd.none )
@@ -312,34 +308,35 @@ update msg model =
                     ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered txRec, Cmd.none )
 
                 _ ->
-                    let 
-                        _ = Debug.log "ClickedConfirmedRegisterNewUser fall thru walletState : " walletState
-                    in
                     ( AppOps walletState dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription SR.Types.Registered txRec, Cmd.none )
                 
 
         (ClickedRegister, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
-            case walletState of
-                SR.Types.WalletStateLocked ->
-                    ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
-                SR.Types.WalletOpenedNoUserAccount ->
-                    ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
-                SR.Types.WalletOperational ->
-                    ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
-                SR.Types.WalletStopSub ->
-                    ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
-                SR.Types.WalletOpened ->
-                    case appInfo.m_user of
-                        Nothing ->
-                            ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
-                        Just user ->
-                            case user.m_ethaddress of
-                                Nothing ->
-                                    (model, Cmd.none)
-                                Just addr ->
-                                    ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
-                _ ->
-                    (model, Cmd.none)
+            let 
+                newAppInfo = {appInfo | appState = SR.Types.AppStateCreateNewUser}
+            in
+                ( AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec, Cmd.none )
+            --case walletState of
+                -- SR.Types.WalletStateLocked ->
+                --     ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
+                -- SR.Types.WalletOpenedNoUserAccount ->
+                --     ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
+                -- SR.Types.WalletOperational ->
+                --     ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
+                -- SR.Types.WalletStopSub ->
+                --     ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
+                -- SR.Types.WalletOpened ->
+                --     case appInfo.m_user of
+                --         Nothing ->
+                --             ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
+                --         Just user ->
+                --             case user.m_ethaddress of
+                --                 Nothing ->
+                --                     (model, Cmd.none)
+                --                 Just addr ->
+                --                     ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
+                -- _ ->
+                --     (model, Cmd.none)
 
 
         ( UsersReceived userList, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
@@ -1557,60 +1554,6 @@ update msg model =
             in
             ( model, Cmd.none )
         
-        
-
-        (ClickedCreateNewUserToWallet userInfo,  AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
-            case appInfo.m_user of 
-                Nothing ->
-                    let
-                        _ = Debug.log "No user " "18"
-                    in
-                    (model, Cmd.none)
-                Just userVal ->
-                    let
-
-                        _ = Debug.log "userInfo address in ClickedCreateNewUserToWallet" userVal.m_ethaddress
-                        --accountNo = (Utils.MyUtils.maybeAddressToString txRec.account )
-                        
-                        --_ = Debug.log "txRec.account in ClickedCreateNewUserToWallet" accountNo
-
-                        _ =
-                            Debug.log "ClickedCreateNewUserToWallet walletState" walletState
-                    in
-                    case walletState of 
-                        SR.Types.WalletOperational ->
-                            let
-                                txParams =
-                                    { to = txRec.account
-                                    , from = txRec.account
-                                    , gas = Nothing
-                                    , gasPrice = Just <| Eth.Units.gwei 4
-                                    , value = Just <| Eth.Units.gwei 1
-                                    , data = Nothing
-                                    , nonce = Nothing
-                                    }
-
-                                ( newSentry, sentryCmd ) =
-                                    Eth.Sentry.Tx.customSend
-                                        txRec.txSentry
-                                        { onSign = Just WatchTxHash
-                                        , onBroadcast = Just WatchTx
-                                        , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
-                                        }
-                                        txParams
-
-                                -- we need to send a user obj to createNewUser, not just the addr
-                                -- because it will update the other input details on the obj
-                                userWithUpdatedAddr =
-                                    { userInfo | m_ethaddress =  txRec.account }
-
-                                newAppInfo =
-                                    { appInfo | m_user = Just userWithUpdatedAddr, appState = SR.Types.AppStateCreateNewUser }
-                            in
-                            ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription SR.Types.Registered { txRec | txSentry = newSentry }
-                            , sentryCmd)
-                        _ -> 
-                            (model, Cmd.none)
 
         -- TxSentryMsg updates when user clicks 'Confirm' in the wallet
         (TxSentryMsg subMsg,  AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
@@ -2238,9 +2181,12 @@ view model =
         AppOps walletState dataState appInfo uiState subState accountState txRec ->
             case appInfo.m_user of
                 Nothing ->
-                    case uiState of
-                        SR.Types.UIRegisterNewUser ->
-                            inputNewUserview walletState dataState appInfo
+                    case appInfo.appState of 
+                        SR.Types.AppStateGeneral ->
+                            handleGlobalNoUserView dataState
+
+                        SR.Types.AppStateCreateNewUser ->
+                            inputUserDetailsView dataState appInfo
                         _ ->
                             handleGlobalNoUserView dataState
 
@@ -2248,43 +2194,36 @@ view model =
                 -- want to remove uiState over time probably - should just be the state of the model determines
                     case userValue.m_token of 
                         Nothing ->
-                            handleGlobalNoTokenView dataState userValue
-                            -- case dataState of
-                            --     AllEmpty ->
-                            --         greetingView <| "No Global Rankings"
-
-                            --     StateFetched sUsers dkind ->
-                            --         case dkind of 
-                            --             Global sGlobal _ _ ->
-                            --                 handleGlobalNoTokenView sGlobal userValue
-
-                            --             Selected _ _ _ _ _ ->
-                            --                 greetingView <| "ToDo: Select w/o a token should be possible"
-
-                            --             Users _ ->
-                            --                 greetingView <| "Users not used here"
-                                        
-                            --     StateUpdated _ _ ->
-                            --         greetingView <| "Cannot update w/o a token"
+                            case appInfo.appState of 
+                                SR.Types.AppStateGeneral ->
+                                    handleGlobalNoTokenView dataState userValue
+                                SR.Types.AppStateCreateNewUser ->
+                                    inputUserDetailsView dataState appInfo
+                                _ ->
+                                    handleGlobalNoTokenView dataState userValue
                                 
                                 
                         Just tokenVal ->
-                            case dataState of
-                                AllEmpty ->
-                                    greetingView <| "No Global Rankings"
-                                StateFetched sUsers dkind ->
-                                    case dkind of 
-                                        Global sGlobal _ _ ->
-                                            handleGlobalWithTokenView sGlobal userValue ""
+                            case appInfo.appState of
+                                SR.Types.AppStateUpdateProfile ->
+                                    inputUserDetailsView dataState appInfo
+                                _ ->
+                                    case dataState of
+                                        AllEmpty ->
+                                            greetingView <| "No Global Rankings"
+                                        StateFetched sUsers dkind ->
+                                            case dkind of 
+                                                Global sGlobal _ _ ->
+                                                    handleGlobalWithTokenView sGlobal userValue ""
 
-                                        Selected _ _ _ _ _ ->
-                                            greetingView <| "ToDo: Select w/o a token should be possible"
+                                                Selected _ _ _ _ _ ->
+                                                    greetingView <| "ToDo: Select w/o a token should be possible"
 
-                                        Users _ ->
-                                            greetingView <| "Users not used here"
-                                        
-                                StateUpdated _ _ ->
-                                    greetingView <| "Cannot update w/o a token"
+                                                Users _ ->
+                                                    greetingView <| "Users not used here"
+                                                
+                                        StateUpdated _ _ ->
+                                            greetingView <| "Cannot update w/o a token"
                             
                         --             case uiState of
 
@@ -2440,7 +2379,7 @@ view model =
                         --                     let 
                         --                         _ = Debug.log "UIregister new " walletState
                         --                     in 
-                        --                             inputNewUserview walletState dataState appInfo
+                        --                             inputUserDetailsView walletState dataState appInfo
                                             
                                             
 
@@ -3180,8 +3119,43 @@ mobileValidationErr user =
         Element.el [] <| Element.text ""
 
 
-newuserConfirmPanel : SR.Types.WalletState -> Maybe SR.Types.User -> List SR.Types.User -> Element Msg
-newuserConfirmPanel walletState m_user luser =
+-- newuserConfirmPanel2  m_user  =
+--         case m_user of
+--             Nothing ->
+--                 Element.column Grid.section <|
+--                     [ SR.Elements.warningParagraph
+--                     , Element.el Heading.h6 <| Element.text "Click to continue ..."
+--                     , Element.column (Card.simple ++ Grid.simple) <|
+--                         [ Element.wrappedRow Grid.simple <|
+--                             [ Input.button (Button.simple ++ Color.info) <|
+--                                 { onPress = Just <| ResetToShowGlobal
+--                                 , label = Element.text "Cancel1"
+--                                 }
+--                             ]
+--                         ]
+--                     ]
+
+--             Just userVal ->
+--                 Element.column Grid.section <|
+--                     [ SR.Elements.warningParagraph
+--                     , Element.el Heading.h6 <| Element.text "Click to continue ..."
+--                     , Element.column (Card.simple ++ Grid.simple) <|
+--                         [ Element.wrappedRow Grid.simple <|
+--                             [ Input.button (Button.simple ++ Color.info) <|
+--                                 { onPress = Just <| ResetToShowGlobal
+--                                 , label = Element.text "Cancel"
+--                                 }
+--                             --, Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput userVal luser False)) <|
+--                             , Input.button (Button.simple ++ enableButton (True)) <|
+--                                 { onPress = Just <| ClickedConfirmedRegisterNewUser userVal
+--                                 , label = Element.text "Register"
+--                                 }
+--                             ]
+--                         ]
+--                     ]
+
+newuserConfirmPanel : Maybe SR.Types.User -> List SR.Types.User -> Element Msg
+newuserConfirmPanel  m_user luser =
         case m_user of
             Nothing ->
                 Element.column Grid.section <|
@@ -3193,10 +3167,6 @@ newuserConfirmPanel walletState m_user luser =
                                 { onPress = Just <| ResetToShowGlobal
                                 , label = Element.text "Cancel"
                                 }
-                            -- , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput m_user luser False)) <|
-                            --     { onPress = Just <| ClickedCreateNewUserToWallet m_user
-                            --     , label = Element.text "Register"
-                            --     }
                             ]
                         ]
                     ]
@@ -3212,57 +3182,12 @@ newuserConfirmPanel walletState m_user luser =
                             , label = Element.text "Cancel"
                             }
                         , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput userVal luser False)) <|
-                            { onPress = Just <| ClickedCreateNewUserToWallet userVal
+                            { onPress = Just <| ClickedConfirmedRegisterNewUser
                             , label = Element.text "Register"
                             }
                         ]
                     ]
                 ]
-
-
-        -- SR.Types.WalletStateLocked ->
-        --     Element.column Grid.section <|
-        --         [ SR.Elements.ethereumNotEnabledPara
-        --         , Element.el Heading.h6 <| Element.text "Enable Ethereum to Register"
-        --         , Element.column (Card.simple ++ Grid.simple) <|
-        --             [ Element.wrappedRow Grid.simple <|
-        --                 [ Input.button (Button.simple ++ Color.info) <|
-        --                     { onPress = Just <| ResetToShowGlobal
-        --                     , label = Element.text "Cancel"
-        --                     }
-        --                 ]
-        --             ]
-        --         ]
-            
-        -- SR.Types.WalletStopSub ->
-        --     Element.column Grid.section <|
-        --         [ SR.Elements.ethereumNotEnabledPara
-        --         , Element.el Heading.h6 <| Element.text "Enable Ethereum to Register"
-        --         , Element.column (Card.simple ++ Grid.simple) <|
-        --             [ Element.wrappedRow Grid.simple <|
-        --                 [ Input.button (Button.simple ++ Color.info) <|
-        --                     { onPress = Just <| ResetToShowGlobal
-        --                     , label = Element.text "Cancel"
-        --                     }
-        --                 ]
-        --             ]
-        --         ]
-
-        -- SR.Types.WalletOpenedNoUserAccount ->
-        --     Element.column Grid.section <|
-        --         [ SR.Elements.ethereumNotEnabledPara
-        --         , Element.el Heading.h6 <| Element.text "Enable Ethereum to Register"
-        --         , Element.column (Card.simple ++ Grid.simple) <|
-        --             [ Element.wrappedRow Grid.simple <|
-        --                 [ Input.button (Button.simple ++ Color.info) <|
-        --                     { onPress = Just <| ResetToShowGlobal
-        --                     , label = Element.text "Cancel"
-        --                     }
-        --                 ]
-        --             ]
-        --         ]
-        -- _ ->
-        --     Element.text "wallet state fell through in newuserConfirmPanel"
 
 
 
@@ -3350,7 +3275,7 @@ inputNewUser walletState dataState appInfo =
                                             , placeholder = Nothing
                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
                                             }
-                                        , nameValidationErr appInfo sUsers
+                                        , nameValidationErr userVal sUsers
                                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
                                             { onChange = NewUserPasswordInputChg
                                             , text = userVal.password
@@ -3400,7 +3325,7 @@ inputNewUser walletState dataState appInfo =
                                             , placeholder = Nothing
                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
                                             }
-                                        , nameValidationErr appInfo sUsers
+                                        , nameValidationErr userVal sUsers
                                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
                                             { onChange = NewUserPasswordInputChg
                                             , text = userVal.password
@@ -3450,7 +3375,7 @@ inputNewUser walletState dataState appInfo =
                                                 , placeholder = Nothing
                                                 , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
                                                 }
-                                            , nameValidationErr appInfo sUsers
+                                            , nameValidationErr userVal sUsers
                                             , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
                                                 { onChange = NewUserPasswordInputChg
                                                 , text = userVal.password
@@ -3547,16 +3472,17 @@ inputUpdateExistingUser model =
             Element.text "Fail on inputNewUser"
 
 
-nameValidationErr : SR.Types.AppInfo -> Data.Users.Users -> Element Msg
-nameValidationErr appInfo sUsers =
-    case appInfo.m_user of
-        Nothing ->
-            Element.el
-                    (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
-                        ++ [ Element.moveLeft 0.0 ]
-                    )
-                    (Element.text """Must be unique (4-8 chars) - No User10""")
-        Just userVal ->
+--nameValidationErr : SR.Types.AppInfo -> Data.Users.Users -> Element Msg
+nameValidationErr : SR.Types.User -> Data.Users.Users -> Element Msg
+nameValidationErr userVal sUsers =
+    -- case appInfo.m_user of
+    --     Nothing ->
+    --         Element.el
+    --                 (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
+    --                     ++ [ Element.moveLeft 0.0 ]
+    --                 )
+    --                 (Element.text """Must be unique (4-8 chars) - No User10""")
+        --Just userVal ->
             if Data.Users.isNameValidationErr userVal.username sUsers then 
                 Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
 
@@ -3709,60 +3635,30 @@ handleGlobalNoUserView dataState =
 
 handleGlobalNoTokenView : DataState -> SR.Types.User -> Html Msg
 handleGlobalNoTokenView dataState userVal =
-        case dataState of
-            AllEmpty -> 
-                Html.text ("No Data")
-            StateUpdated _ _ ->
-                Html.text ("No User - No Update")
-            StateFetched sUsers dkind ->
-                case dkind of
-                    Users _ ->
-                        Html.text ("Got Users - No Global")
-                    Selected _ _ _ _ _->
-                        Html.text ("Nothing should have been selected yet")
-                    Global sGlobal rnkId _ -> 
-                        Framework.responsiveLayout
-                        []
-                        <|
-                        Element.column
-                            Framework.container
-                            [ Element.el (Heading.h5) <|
-                                Element.text ("SportRank - Welcome")
-                            , displayEnableEthereumBtn
-                            , Element.text ("\n")
-                            --, Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
-                            , Element.column Grid.section <|
-                                [ Element.el [] <| Element.text ""
-                                --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-                                , Element.wrappedRow (Card.fill ++ Grid.simple)
-                                    [ Element.column
-                                        Grid.simple
-                                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                                            { onChange = NewUserNameInputChg
-                                            
-                                            , text = userVal.username
-                                            --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
-                                            }
-                                        --, nameValidationErr appInfo sUsers
-                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                            { onChange = NewUserPasswordInputChg
-                                            
-                                            , text = userVal.password
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                                            }
-                                        ]
-                                    ]
-                                ]
-                            , infoBtn "Log In" ClickedLogInUser
-                            , Element.text ("\n")
-                            , displayRegisterBtnIfNewUser
-                                SR.Defaults.emptyUser.username
-                                ClickedRegister
-                            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
-                            ]
+    case dataState of
+        AllEmpty -> 
+            Html.text ("No Data")
+        StateUpdated _ _ ->
+            Html.text ("No User - No Update")
+        StateFetched sUsers dkind ->
+            case dkind of
+                Users _ ->
+                    Html.text ("Got Users - No Global")
+                Selected _ _ _ _ _->
+                    Html.text ("Nothing should have been selected yet")
+                Global sGlobal rnkId _ -> 
+                    Framework.responsiveLayout
+                    []
+                    <|
+                    Element.column
+                        Framework.container
+                        [ Element.el (Heading.h5) <|
+                            Element.text ("SportRank - Welcome")
+                        , displayEnableEthereumBtn
+                        , infoBtn "Log In" ClickedLogInUser
+                        , Element.text ("\n")
+                        , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
+                        ]
 
 handleGlobalWithTokenView : Data.Global.Global -> SR.Types.User -> String -> Html Msg
 handleGlobalWithTokenView sGlobal userVal updatedStr = 
@@ -3982,26 +3878,118 @@ newOrExistingUserNameDisplay user accountState =
             Element.el Heading.h4 <| Element.text <| user.username ++ " - Join?"
 
 
-inputNewUserview : SR.Types.WalletState -> DataState -> SR.Types.AppInfo -> Html Msg
-inputNewUserview walletState dataState appInfo =
+inputUserDetailsView : DataState -> SR.Types.AppInfo -> Html Msg
+inputUserDetailsView dataState appInfo =
     case appInfo.m_user of
         Nothing ->
             case dataState of
                 StateFetched sUsers dKind ->
+                    let 
+                        userVal = SR.Defaults.emptyUser
+                    in
                     Framework.responsiveLayout [] <|
                         Element.column
                             Framework.container
                             [ displayEnableEthereumBtn
                             , Element.text "\n"
                             , Element.el Heading.h4 <| Element.text "Create New User"
-                            , inputNewUser walletState dataState appInfo
-                            , newuserConfirmPanel walletState appInfo.m_user (Data.Users.asList sUsers)
+                            , displayRegisterNewUser userVal sUsers
+                            , newuserConfirmPanel appInfo.m_user (Data.Users.asList sUsers)
                             ]
                 _ ->
                     Html.text "tbc"
 
         Just userVal ->
-            Html.text "tbc"
+            case dataState of
+                StateFetched sUsers dKind ->
+                    Framework.responsiveLayout [] <|
+                                Element.column
+                                    Framework.container
+                                    [ displayEnableEthereumBtn
+                                    , Element.text "\n"
+                                    , Element.el Heading.h4 <| Element.text "Create New User"
+                                    , displayRegisterNewUser userVal sUsers
+                                    , newuserConfirmPanel appInfo.m_user (Data.Users.asList sUsers)
+                                    ]
+                _ ->
+                    Html.text "tbc"
+
+            -- case userVal.m_ethaddress of
+            --     Nothing ->
+            --         case dataState of
+            --             StateFetched sUsers dKind ->
+            --                 Framework.responsiveLayout [] <|
+            --                     Element.column
+            --                         Framework.container
+            --                         [ displayEnableEthereumBtn
+            --                         , Element.text "\n"
+            --                         , Element.el Heading.h4 <| Element.text "Create New User"
+            --                         , inputNewUser walletState dataState appInfo
+            --                         , newuserConfirmPanel walletState appInfo.m_user (Data.Users.asList sUsers)
+            --                         ]
+            --             _ ->
+            --                 Html.text "tbc"
+
+            --     Just addr ->
+            --         case dataState of
+            --             StateFetched sUsers dKind ->
+            --                 Framework.responsiveLayout [] <|
+            --                     Element.column
+            --                         Framework.container
+            --                         [ Element.el Heading.h4 <| Element.text "Create New User"
+            --                         , inputNewUser walletState dataState appInfo
+            --                         , newuserConfirmPanel walletState appInfo.m_user (Data.Users.asList sUsers)
+            --                         ]
+            --             _ ->
+            --                 Html.text "tbc"
+                
+displayRegisterNewUser : SR.Types.User -> Data.Users.Users -> Element Msg 
+displayRegisterNewUser userVal sUsers =
+    Element.column Grid.section <|
+                                [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                                    [ Element.column
+                                        Grid.simple
+                                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                                            { onChange = NewUserNameInputChg
+                                            , text = userVal.username
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+                                            }
+                                        , nameValidationErr userVal sUsers
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                                            { onChange = NewUserPasswordInputChg
+                                            , text = userVal.password
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                                            }
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+                                            { onChange = NewUserDescInputChg
+                                            , text = userVal.description
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+                                            }
+                                        , userDescValidationErr userVal
+                                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+                                            { onChange = NewUserEmailInputChg
+                                            , text = userVal.email
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+                                            }
+                                        , emailValidationErr userVal
+                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+                                            { onChange = NewUserMobileInputChg
+                                            , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
+                                            , placeholder = Nothing
+                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+                                            }
+                                        , mobileValidationErr userVal
+                                        ]
+                                    ]
+                                , Element.text "* required and CANNOT be changed \nunder current ETH account"
+                                , SR.Elements.justParasimpleUserInfoText
+                                ]
+                
 
     -- case dataState of 
     --     StateFetched sUsers dKind ->
@@ -4063,10 +4051,10 @@ inputNewUserview walletState dataState appInfo =
     --                                 , newuserConfirmPanel walletState appInfo.m_user (Data.Users.asList sUsers)
     --                                 ]
     --             _ ->
-    --                 Html.text "fell thru in inputNewUserview"
+    --                 Html.text "fell thru in inputUserDetailsView"
                     
         -- _ ->
-        --     Html.text "Fail inputNewUserview"
+        --     Html.text "Fail inputUserDetailsView"
 
 
 

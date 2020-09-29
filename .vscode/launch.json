@@ -8,10 +8,10 @@
     "configurations": [
         {
             "name": "Attach to Chrome",
-            "port": 9222,
+            "port": 3000,
             "request": "attach",
             "runtimeExecutable": "/home/rossulbrecht/.nvm/versions/node/v11.10.0/bin/node",
-            "runtimeArgs": [" --remote-debugging-port=9222"],
+            "runtimeArgs": [" --remote-debugging-port=3000"],
             "type": "pwa-chrome",
             "webRoot": "${workspaceFolder}"
         }
