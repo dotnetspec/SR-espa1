@@ -3251,166 +3251,60 @@ enableButton enable =
         Color.disabled
 
 
-inputNewUser : SR.Types.WalletState -> DataState -> SR.Types.AppInfo -> Element Msg
-inputNewUser walletState dataState appInfo =
-    case dataState of
-        StateFetched sUsers dKind -> 
-            case walletState of 
-                SR.Types.WalletOpened -> 
-                    case appInfo.m_user of
-                        Nothing ->
-                            Element.text "No user"
-                        Just userVal ->
-                            Element.column Grid.section <|
-                                [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-                                , Element.wrappedRow (Card.fill ++ Grid.simple)
-                                    [ Element.column
-                                        Grid.simple
-                                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                                            { onChange = NewUserNameInputChg
-                                            , text = userVal.username
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
-                                            }
-                                        , nameValidationErr userVal sUsers
-                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                            { onChange = NewUserPasswordInputChg
-                                            , text = userVal.password
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                                            }
-                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
-                                            { onChange = NewUserDescInputChg
-                                            , text = userVal.description
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
-                                            }
-                                        , userDescValidationErr userVal
-                                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
-                                            { onChange = NewUserEmailInputChg
-                                            , text = userVal.email
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
-                                            }
-                                        , emailValidationErr userVal
-                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
-                                            { onChange = NewUserMobileInputChg
-                                            , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
-                                            }
-                                        , mobileValidationErr userVal
-                                        ]
-                                    ]
-                                , Element.text "* required and CANNOT be changed \nunder current ETH account"
-                                , SR.Elements.justParasimpleUserInfoText
-                                ]
-
-                SR.Types.WalletStateLocked ->
-                    case appInfo.m_user of
-                    Nothing ->
-                        Element.text "No User7"
-                    Just userVal ->
-                        Element.column Grid.section <|
-                                [ Element.el (Heading.h5 ++ [ Font.color SR.Types.colors.red ]) <| Element.text "Please Enable Ethereum to Register "
-                                , Element.wrappedRow (Card.fill ++ Grid.simple)
-                                    [ Element.column
-                                        Grid.simple
-                                        [ Input.text (Color.disabled ++ Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                                            { onChange = NewUserNameInputChg
-                                            , text = userVal.username
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
-                                            }
-                                        , nameValidationErr userVal sUsers
-                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                            { onChange = NewUserPasswordInputChg
-                                            , text = userVal.password
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                                            }
-                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
-                                            { onChange = NewUserDescInputChg
-                                            , text = userVal.description
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
-                                            }
-                                        , userDescValidationErr userVal
-                                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
-                                            { onChange = NewUserEmailInputChg
-                                            , text = userVal.email
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
-                                            }
-                                        , emailValidationErr userVal
-                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
-                                            { onChange = NewUserMobileInputChg
-                                            , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
-                                            }
-                                        , mobileValidationErr userVal
-                                        ]
-                                    ]
-                                , Element.text "* required and CANNOT be changed \nunder current ETH account"
-                                , SR.Elements.justParasimpleUserInfoText
-                                ]
-
-                SR.Types.WalletOpenedNoUserAccount ->
-                    case appInfo.m_user of
-                        Nothing ->
-                            Element.text "No User8"
-                        Just userVal ->
-                            Element.column Grid.section <|
-                                    [ Element.el (Heading.h5 ++ [ Font.color SR.Types.colors.red ])  <| Element.text "Please Enable Ethereum to Register "
-                                    , Element.wrappedRow (Card.fill ++ Grid.simple)
-                                        [ Element.column
-                                            Grid.simple
-                                            [ Input.text (Color.disabled ++ Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                                                { onChange = NewUserNameInputChg
-                                                , text = userVal.username
-                                                , placeholder = Nothing
-                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
-                                                }
-                                            , nameValidationErr userVal sUsers
-                                            , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                                { onChange = NewUserPasswordInputChg
-                                                , text = userVal.password
-                                                , placeholder = Nothing
-                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                                                }
-                                            , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
-                                                { onChange = NewUserDescInputChg
-                                                , text = userVal.description
-                                                , placeholder = Nothing
-                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
-                                                }
-                                            , userDescValidationErr userVal
-                                            , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
-                                                { onChange = NewUserEmailInputChg
-                                                , text = userVal.email
-                                                , placeholder = Nothing
-                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
-                                                }
-                                            , emailValidationErr userVal
-                                            , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
-                                                { onChange = NewUserMobileInputChg
-                                                , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
-                                                , placeholder = Nothing
-                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
-                                                }
-                                            , mobileValidationErr userVal
-                                            ]
-                                        ]
-                                    , Element.text "* required and CANNOT be changed \nunder current ETH account"
-                                    , SR.Elements.justParasimpleUserInfoText
-                                    ]
-
-                _ ->
-                    Element.text "WalletSate fell through in inputNewUser"   
-                
-        _ ->
-                    Element.text "Problem creating new user"
+-- inputNewUser : DataState -> SR.Types.AppInfo -> Element Msg
+-- inputNewUser dataState appInfo =
+--     case dataState of
+--         StateFetched sUsers dKind ->
+--                     case appInfo.m_user of
+--                         Nothing ->
+--                             Element.text "No user"
+--                         Just userVal ->
+--                             Element.column Grid.section <|
+--                                 [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+--                                 , Element.wrappedRow (Card.fill ++ Grid.simple)
+--                                     [ Element.column
+--                                         Grid.simple
+--                                         [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+--                                             { onChange = NewUserNameInputChg
+--                                             , text = userVal.username
+--                                             , placeholder = Nothing
+--                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+--                                             }
+--                                         , nameValidationErr userVal sUsers
+--                                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+--                                             { onChange = NewUserPasswordInputChg
+--                                             , text = userVal.password
+--                                             , placeholder = Nothing
+--                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+--                                             }
+--                                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+--                                             { onChange = NewUserDescInputChg
+--                                             , text = userVal.description
+--                                             , placeholder = Nothing
+--                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+--                                             }
+--                                         , userDescValidationErr userVal
+--                                         , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+--                                             { onChange = NewUserEmailInputChg
+--                                             , text = userVal.email
+--                                             , placeholder = Nothing
+--                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+--                                             }
+--                                         , emailValidationErr userVal
+--                                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+--                                             { onChange = NewUserMobileInputChg
+--                                             , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
+--                                             , placeholder = Nothing
+--                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+--                                             }
+--                                         , mobileValidationErr userVal
+--                                         ]
+--                                     ]
+--                                 , Element.text "* required and CANNOT be changed \nunder current ETH account"
+--                                 , SR.Elements.justParasimpleUserInfoText
+--                                 ]
+--         _ ->
+--                     Element.text "Problem creating new user"
 
 
 inputUpdateExistingUser : Model -> Element Msg
@@ -3469,17 +3363,15 @@ inputUpdateExistingUser model =
             Element.text "Fail on inputNewUser"
 
 
---nameValidationErr : SR.Types.AppInfo -> Data.Users.Users -> Element Msg
 nameValidationErr : SR.Types.User -> Data.Users.Users -> Element Msg
 nameValidationErr userVal sUsers =
-    -- case appInfo.m_user of
-    --     Nothing ->
-    --         Element.el
-    --                 (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
-    --                     ++ [ Element.moveLeft 0.0 ]
-    --                 )
-    --                 (Element.text """Must be unique (4-8 chars) - No User10""")
-        --Just userVal ->
+        if userVal.username == "" then
+            Element.el
+                    (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
+                        ++ [ Element.moveLeft 0.0 ]
+                    )
+                    (Element.text """Must be unique (4-8 chars)""")
+        else
             if Data.Users.isNameValidationErr userVal.username sUsers then 
                 Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
 
@@ -3940,52 +3832,52 @@ inputUserDetailsView dataState appInfo =
             --             _ ->
             --                 Html.text "tbc"
                 
-displayRegisterNewUser : SR.Types.User -> Data.Users.Users -> Element Msg 
+displayRegisterNewUser :  SR.Types.User -> Data.Users.Users -> Element Msg 
 displayRegisterNewUser userVal sUsers =
     Element.column Grid.section <|
-                                [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-                                , Element.wrappedRow (Card.fill ++ Grid.simple)
-                                    [ Element.column
-                                        Grid.simple
-                                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                                            { onChange = NewUserNameInputChg
-                                            , text = userVal.username
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
-                                            }
-                                        , nameValidationErr userVal sUsers
-                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                            { onChange = NewUserPasswordInputChg
-                                            , text = userVal.password
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                                            }
-                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
-                                            { onChange = NewUserDescInputChg
-                                            , text = userVal.description
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
-                                            }
-                                        , userDescValidationErr userVal
-                                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
-                                            { onChange = NewUserEmailInputChg
-                                            , text = userVal.email
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
-                                            }
-                                        , emailValidationErr userVal
-                                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
-                                            { onChange = NewUserMobileInputChg
-                                            , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
-                                            , placeholder = Nothing
-                                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
-                                            }
-                                        , mobileValidationErr userVal
-                                        ]
-                                    ]
-                                , Element.text "* required and CANNOT be changed \nunder current ETH account"
-                                , SR.Elements.justParasimpleUserInfoText
-                                ]
+        [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+        , Element.wrappedRow (Card.fill ++ Grid.simple)
+            [ Element.column
+                Grid.simple
+                [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                    { onChange = NewUserNameInputChg
+                    , text = userVal.username
+                    , placeholder = Nothing
+                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+                    }
+                , nameValidationErr userVal sUsers
+                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                    { onChange = NewUserPasswordInputChg
+                    , text = userVal.password
+                    , placeholder = Nothing
+                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                    }
+                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+                    { onChange = NewUserDescInputChg
+                    , text = userVal.description
+                    , placeholder = Nothing
+                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+                    }
+                , userDescValidationErr userVal
+                , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+                    { onChange = NewUserEmailInputChg
+                    , text = userVal.email
+                    , placeholder = Nothing
+                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+                    }
+                , emailValidationErr userVal
+                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+                    { onChange = NewUserMobileInputChg
+                    , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
+                    , placeholder = Nothing
+                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+                    }
+                , mobileValidationErr userVal
+                ]
+            ]
+        , Element.text "* required and CANNOT be changed \nunder current ETH account"
+        , SR.Elements.justParasimpleUserInfoText
+        ]
                 
 
     -- case dataState of 
