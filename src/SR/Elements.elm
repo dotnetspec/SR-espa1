@@ -2,7 +2,7 @@ module SR.Elements exposing (
     
     ethereumWalletWarning, footer, 
     justParasimpleUserInfoText, legalUserInfoText, placeholder, selectedRankingHeaderEl, 
-    simpleUserInfoText, warningParagraph, ethereumNotEnabledPara, permanentlyDeleteWarnPara)
+    simpleUserInfoText, warningParagraph, ethereumNotEnabledPara, permanentlyDeleteWarnPara, missingDataPara)
 
 --import RemoteData
 
@@ -34,6 +34,16 @@ warningParagraph =
         , Element.paragraph [] <|
             List.singleton <|
                 Element.text "Clicking 'Confirm' interacts with your Ethereum wallet."
+        ]
+
+
+missingDataPara : Element msg
+missingDataPara =
+    Element.paragraph (Card.fill ++ Color.warning) <|
+        [ Element.el [ Font.bold ] <| Element.text "Please note: "
+        , Element.paragraph [] <|
+            List.singleton <|
+                Element.text "Essential data is missing. Please click 'Cancel'"
         ]
 
 ethereumNotEnabledPara : Element msg

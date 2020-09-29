@@ -3178,8 +3178,9 @@ newuserConfirmPanel : Maybe SR.Types.User -> List SR.Types.User -> Element Msg
 newuserConfirmPanel  m_user luser =
         case m_user of
             Nothing ->
-                Element.column Grid.section <|
-                    [ SR.Elements.warningParagraph
+                if List.isEmpty luser then
+                    Element.column Grid.section <|
+                    [ SR.Elements.missingDataPara
                     , Element.el Heading.h6 <| Element.text "Click to continue ..."
                     , Element.column (Card.simple ++ Grid.simple) <|
                         [ Element.wrappedRow Grid.simple <|
@@ -3190,11 +3191,24 @@ newuserConfirmPanel  m_user luser =
                             ]
                         ]
                     ]
+                else
+                    Element.column Grid.section <|
+                        [ 
+                        Element.el Heading.h6 <| Element.text "Click to continue ..."
+                        , Element.column (Card.simple ++ Grid.simple) <|
+                            [ Element.wrappedRow Grid.simple <|
+                                [ Input.button (Button.simple ++ Color.info) <|
+                                    { onPress = Just <| ResetToShowGlobal
+                                    , label = Element.text "Cancel"
+                                    }
+                                ]
+                            ]
+                        ]
 
             Just userVal ->
                 if List.isEmpty luser then
                     Element.column Grid.section <|
-                        [ SR.Elements.warningParagraph
+                        [ SR.Elements.missingDataPara
                         , Element.el Heading.h6 <| Element.text "Click to continue ..."
                         , Element.column (Card.simple ++ Grid.simple) <|
                             [ Element.wrappedRow Grid.simple <|
