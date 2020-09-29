@@ -836,23 +836,20 @@ update msg model =
 
 
         (ResetToShowGlobal, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
-            let 
-                _ = Debug.log "reset to global wallet state" walletState
-            in
                     case dataState of 
                         StateFetched sUsers dKind ->
                             case appInfo.m_user of
                                 Nothing ->
-                                    (model, Cmd.none)
+                                    let
+                                        newAppInfo = {appInfo | appState = SR.Types.AppStateGeneral}
+                                    in
+                                        ( AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState emptyTxRecord, gotGlobal )
                                 Just userVal ->
                                     let
                                         newDataKind = Global Data.Global.empty (Internal.Types.RankingId "") userVal
                                         newDataState = StateFetched sUsers newDataKind
-   
-                                        _ = Debug.log "toGlobal now" "now"
-                    
                                     in
-                                    ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription accountState emptyTxRecord, gotGlobal )
+                                        ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription accountState emptyTxRecord, gotGlobal )
                         
                         StateUpdated sUsers dKind ->
                             case appInfo.m_user of
