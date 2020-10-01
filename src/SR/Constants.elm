@@ -6,7 +6,20 @@ module SR.Constants exposing
     , jsonbinUrlUpdateUserListAndRespond
     , jsonbinUsersReadBinLink
     , baseBinUrl
+    , endpointURL
+    , customKeyBearerToken
     )
+
+endpointURL : String
+endpointURL =
+    "https://graphql.fauna.com/graphql"
+
+customKeyBearerToken : String
+customKeyBearerToken =
+    -- Parent
+    --"Bearer fnADz_OrVEACDOQU5b_WC-fOgnXuPZG4zrrLvYOW"
+    -- Test Server
+    "Bearer fnAD243JhjACDOiDuITEP1PhNXAg8Sz0J8tIT1wI"
 
 baseBinUrl : String 
 baseBinUrl = 

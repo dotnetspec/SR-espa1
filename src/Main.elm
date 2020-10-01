@@ -1949,10 +1949,8 @@ handleNewUserInputs model msg =
                         
                         Just userVal ->
                             let
-                                newUser = userVal
-
                                 updatedNewUser =
-                                    { newUser | username = namefield }
+                                    { userVal | username = namefield }
 
                                 newAppInfo =
                                     { appInfo | m_user = Just updatedNewUser }
@@ -3139,41 +3137,6 @@ mobileValidationErr user =
         Element.el [] <| Element.text ""
 
 
--- newuserConfirmPanel2  m_user  =
---         case m_user of
---             Nothing ->
---                 Element.column Grid.section <|
---                     [ SR.Elements.warningParagraph
---                     , Element.el Heading.h6 <| Element.text "Click to continue ..."
---                     , Element.column (Card.simple ++ Grid.simple) <|
---                         [ Element.wrappedRow Grid.simple <|
---                             [ Input.button (Button.simple ++ Color.info) <|
---                                 { onPress = Just <| ResetToShowGlobal
---                                 , label = Element.text "Cancel1"
---                                 }
---                             ]
---                         ]
---                     ]
-
---             Just userVal ->
---                 Element.column Grid.section <|
---                     [ SR.Elements.warningParagraph
---                     , Element.el Heading.h6 <| Element.text "Click to continue ..."
---                     , Element.column (Card.simple ++ Grid.simple) <|
---                         [ Element.wrappedRow Grid.simple <|
---                             [ Input.button (Button.simple ++ Color.info) <|
---                                 { onPress = Just <| ResetToShowGlobal
---                                 , label = Element.text "Cancel"
---                                 }
---                             --, Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput userVal luser False)) <|
---                             , Input.button (Button.simple ++ enableButton (True)) <|
---                                 { onPress = Just <| ClickedConfirmedRegisterNewUser userVal
---                                 , label = Element.text "Register"
---                                 }
---                             ]
---                         ]
---                     ]
-
 newuserConfirmPanel : Maybe SR.Types.User -> List SR.Types.User -> Element Msg
 newuserConfirmPanel  m_user luser =
         case m_user of
@@ -3595,7 +3558,34 @@ handleGlobalNoTokenView dataState userVal =
                         [ Element.el (Heading.h5) <|
                             Element.text ("SportRank - Welcome")
                         , displayEnableEthereumBtn
+                        , Element.column Grid.section <|
+                            [ Element.el [] <| Element.text ""
+                            --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                            , Element.wrappedRow (Card.fill ++ Grid.simple)
+                                [ Element.column
+                                    Grid.simple
+                                    [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                                        { onChange = NewUserNameInputChg
+                                        , text = userVal.username
+                                        --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
+                                        , placeholder = Nothing
+                                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
+                                        }
+                                    --, nameValidationErr appInfo sUsers
+                                    , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                                        { onChange = NewUserPasswordInputChg
+                                        , text = userVal.password
+                                        , placeholder = Nothing
+                                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                                        }
+                                    ]
+                                ]
+                            ]
                         , infoBtn "Log In" ClickedLogInUser
+                        , Element.text ("\n")
+                                , displayRegisterBtnIfNewUser
+                                    SR.Defaults.emptyUser.username
+                                    ClickedRegister
                         , Element.text ("\n")
                         , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
                         ]

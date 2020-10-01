@@ -27,6 +27,7 @@ import SR.Types
 import Utils.MyUtils
 
 
+
 warningParagraph : Element msg
 warningParagraph =
     Element.paragraph (Card.fill ++ Color.warning) <|
