@@ -1690,8 +1690,8 @@ update msg model =
 
         (LoggedInUser response, modelReDef) ->
             ( updateFromLoggedInUser modelReDef response
-               --, commandFromLoggedInUser response
-               , Cmd.none
+               , commandFromLoggedInUser response
+               --, Cmd.none
             )
 
         (ReceivedUserNames response, modelReDef) ->
@@ -1750,11 +1750,7 @@ updateModelFromReceivedUserNames : Model -> Result (GQLHttp.Error (List String))
 updateModelFromReceivedUserNames model response =
     case response of
         Ok lusernames ->
-            let 
-                _ = Debug.log "lusernames : " lusernames
-            in
                 model
-            -- { model | players = lusernames }
 
         Err _ ->
             model
