@@ -48,7 +48,7 @@ import Widget exposing (..)
 import SR.Types
 import SR.Types
 import SR.Types
-import Bridge exposing (requestLoginUser, requestAllUserNames, requestCreateAndOrLoginUser, handleCreateAndOrLoginUserOptionalArguments)
+import Bridge exposing (requestLoginUser, requestAllUserNames, requestCreateAndOrLoginUser, handleCreateAndOrLoginUserOptionalArguments, requestAllUsers)
 import Graphql.Http as GQLHttp
 
 main =
@@ -90,8 +90,10 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( AppOps SR.Types.WalletStateLocked AllEmpty SR.Defaults.emptyAppInfo SR.Types.UILoading  SR.Types.Subscribe SR.Types.Guest emptyTxRecord
     , Cmd.batch
-        [ gotUserList
-        , gotGlobal
+        [ --gotUserList
+        --allUsers
+        --, 
+        gotGlobal
         , Ports.log
             "Sending out msg from init "
         ]
@@ -182,6 +184,7 @@ type Msg
     | ClickedLogInUser
     | LoggedInUser (Result (GQLHttp.Error SR.Types.Token) SR.Types.Token)
     | ReceivedUserNames (Result (GQLHttp.Error (List String)) (List String))
+    | ReceivedUsers (Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FUser)))) (Maybe (List (Maybe SR.Types.FUser))))
       -- App Only Ops
     | MissingWalletInstructions
     | OpenWalletInstructions
@@ -1741,6 +1744,10 @@ loginUser user_name password =
 allUserNames : SR.Types.Token -> Cmd Msg
 allUserNames token =
     GQLHttp.send ReceivedUserNames (requestAllUserNames token)
+
+allUsers : Cmd Msg
+allUsers  =
+    GQLHttp.send ReceivedUsers (requestAllUsers)
 
        
 -- model handlers

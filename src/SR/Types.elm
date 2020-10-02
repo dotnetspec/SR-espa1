@@ -13,6 +13,7 @@ module SR.Types exposing
     , Token
     , UserName
     , Password
+    , FUser
     )
 
 {-| Types
@@ -223,6 +224,17 @@ type alias User =
     , userjoinrankings : List String
     , member_since : Int
     , m_token : Maybe Token
+    }
+
+type alias FUser = {
+    active : Bool
+    , description : Maybe String
+    , email : Maybe String
+    , ethaddress : String
+    , member_since : Int
+    , mobile : Maybe String
+    , password : String
+    , username : String
     }
 
 type alias Token =

@@ -1,17 +1,20 @@
 module Bridge exposing (requestLoginUser, requestCreateAndOrLoginUser, handleCreateAndOrLoginUserOptionalArguments, requestAllUserNames
-    --, requestAllUsers
+    , requestAllUsers
     )
 
 --import DataModel exposing (Password, Token, UserName)
 import Graphql.Http as Http
 import Graphql.Operation exposing (RootMutation, RootQuery)
-import Graphql.SelectionSet exposing (SelectionSet)
+--import Graphql.SelectionSet exposing (SelectionSet)
 import Graphql.OptionalArgument exposing (OptionalArgument(..))
 import SRdb.Mutation as Mutation
 import SRdb.Query as Query
 import SRdb.Object
+import SRdb.Object.User
 import SR.Types
 import SR.Constants
+import Graphql.SelectionSet exposing (SelectionSet(..))
+import Eth.Types
 
 
 mutationCreateAndOrLoginUser : (Mutation.CreateAndOrLoginUserOptionalArguments -> Mutation.CreateAndOrLoginUserOptionalArguments) 
@@ -62,16 +65,34 @@ requestLoginUser user_name password =
 queryLoginUser : Query.LoginUserRequiredArguments -> SelectionSet SR.Types.Token RootQuery
 queryLoginUser requiredArgs =
         Query.loginUser requiredArgs
-       
--- requestAllUsers : Http.Request (List String)
--- requestAllUsers =
---     Http.queryRequest SR.Constants.endpointURL queryAllUsers
---        |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
 
--- queryAllUsers : 
---     SelectionSet decodesTo SRdb.Object.User
---     -> SelectionSet decodesTo RootQuery
---     ---> SelectionSet (Maybe (List (Maybe decodesTo))) RootQuery
--- queryAllUsers =
---     Query.allUsers
+
+
+userSelectionSet : SelectionSet SR.Types.FUser SRdb.Object.User
+userSelectionSet =
+    Graphql.SelectionSet.succeed SR.Types.FUser
+        |> Graphql.SelectionSet.with SRdb.Object.User.active
+        |> Graphql.SelectionSet.with SRdb.Object.User.description
+        |> Graphql.SelectionSet.with SRdb.Object.User.email
+        |> Graphql.SelectionSet.with SRdb.Object.User.ethaddress
+        |> Graphql.SelectionSet.with SRdb.Object.User.member_since
+        |> Graphql.SelectionSet.with SRdb.Object.User.mobile
+        |> Graphql.SelectionSet.with SRdb.Object.User.password
+        |> Graphql.SelectionSet.with SRdb.Object.User.username
+
+       
+requestAllUsers : Http.Request (Maybe (List (Maybe SR.Types.FUser)))
+requestAllUsers  =
+    Http.queryRequest SR.Constants.endpointURL (queryAllUsers userSelectionSet)
+       |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
+
+-- requestAllUsers : SR.Types.Token -> Http.Request (List String)
+-- requestAllUsers token =
+--     Http.queryRequest SR.Constants.endpointURL queryAllUsers
+--         |> Http.withHeader "authorization" ("Bearer " ++ token)
+
+queryAllUsers : SelectionSet decodesTo SRdb.Object.User
+    -> SelectionSet (Maybe (List (Maybe decodesTo))) RootQuery
+queryAllUsers =
+    Query.allUsers
        
