@@ -233,7 +233,6 @@ type alias FUser = {
     , ethaddress : String
     , member_since : Int
     , mobile : Maybe String
-    , password : String
     , username : String
     }
 

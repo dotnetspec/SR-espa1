@@ -91,8 +91,8 @@ init _ =
     ( AppOps SR.Types.WalletStateLocked AllEmpty SR.Defaults.emptyAppInfo SR.Types.UILoading  SR.Types.Subscribe SR.Types.Guest emptyTxRecord
     , Cmd.batch
         [ --gotUserList
-        --allUsers
-        --, 
+        allUsers
+        , 
         gotGlobal
         , Ports.log
             "Sending out msg from init "
@@ -1697,6 +1697,11 @@ update msg model =
                --, Cmd.none
             )
 
+        (ReceivedUsers response, modelReDef) ->
+            ( updateModelFromReceivedUsers modelReDef response
+            , Cmd.none
+            )
+
         (ReceivedUserNames response, modelReDef) ->
             ( updateModelFromReceivedUserNames modelReDef response
             , Cmd.none
@@ -1757,6 +1762,16 @@ updateModelFromReceivedUserNames : Model -> Result (GQLHttp.Error (List String))
 updateModelFromReceivedUserNames model response =
     case response of
         Ok lusernames ->
+                model
+
+        Err _ ->
+            model
+
+--GQLHttp.Error (Maybe (List (Maybe SR.Types.FUser)))) (Maybe (List (Maybe SR.Types.FUser))
+updateModelFromReceivedUsers : Model -> Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FUser)))) (Maybe (List (Maybe SR.Types.FUser))) -> Model
+updateModelFromReceivedUsers model response =
+    case response of
+        Ok lusers ->
                 model
 
         Err _ ->
@@ -4303,17 +4318,17 @@ subscriptions model =
 -- Http ops
 
 
-gotUserList : Cmd Msg
-gotUserList =
-    Http.request
-        { body = Http.emptyBody
-        , expect = Http.expectJson (RemoteData.fromResult >> UsersReceived) SR.Decode.listOfUsersDecoder
-        , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
-        , method = "GET"
-        , timeout = Nothing
-        , tracker = Nothing
-        , url = SR.Constants.jsonbinUsersReadBinLink
-        }
+-- gotUserList : Cmd Msg
+-- gotUserList =
+--     Http.request
+--         { body = Http.emptyBody
+--         , expect = Http.expectJson (RemoteData.fromResult >> UsersReceived) SR.Decode.listOfUsersDecoder
+--         , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
+--         , method = "GET"
+--         , timeout = Nothing
+--         , tracker = Nothing
+--         , url = SR.Constants.jsonbinUsersReadBinLink
+--         }
 
 
 fetchedSingleRanking : Internal.Types.RankingId -> Cmd Msg

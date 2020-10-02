@@ -77,7 +77,6 @@ userSelectionSet =
         |> Graphql.SelectionSet.with SRdb.Object.User.ethaddress
         |> Graphql.SelectionSet.with SRdb.Object.User.member_since
         |> Graphql.SelectionSet.with SRdb.Object.User.mobile
-        |> Graphql.SelectionSet.with SRdb.Object.User.password
         |> Graphql.SelectionSet.with SRdb.Object.User.username
 
        
