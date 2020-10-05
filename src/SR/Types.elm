@@ -14,6 +14,7 @@ module SR.Types exposing
     , UserName
     , Password
     , FUser
+    , FRanking
     )
 
 {-| Types
@@ -44,6 +45,7 @@ import Ports
 import RemoteData
 import EverySet exposing (EverySet)
 --import Data.Users
+import SRdb.ScalarCodecs
 
 
 
@@ -284,6 +286,15 @@ type alias Ranking =
     , active : Bool
     , rankingname : String
     , rankingdesc : String
+    , rankingowneraddr : String
+    }
+
+type alias FRanking =
+
+    { id_ : SRdb.ScalarCodecs.Id
+    , active : Bool
+    , rankingname : String
+    , rankingdesc : Maybe String
     , rankingowneraddr : String
     }
 

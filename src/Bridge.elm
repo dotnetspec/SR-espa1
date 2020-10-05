@@ -1,5 +1,6 @@
 module Bridge exposing (requestLoginUser, requestCreateAndOrLoginUser, handleCreateAndOrLoginUserOptionalArguments, requestAllUserNames
     , requestAllUsers
+    , requestAllRankings
     )
 
 --import DataModel exposing (Password, Token, UserName)
@@ -11,6 +12,7 @@ import SRdb.Mutation as Mutation
 import SRdb.Query as Query
 import SRdb.Object
 import SRdb.Object.User
+import SRdb.Object.Ranking
 import SR.Types
 import SR.Constants
 import Graphql.SelectionSet exposing (SelectionSet(..))
@@ -94,4 +96,35 @@ queryAllUsers : SelectionSet decodesTo SRdb.Object.User
     -> SelectionSet (Maybe (List (Maybe decodesTo))) RootQuery
 queryAllUsers =
     Query.allUsers
+
+-- mySelection : SelectionSet MyLocalType ObjectOnGraphqlSide
+-- mySelection =
+--   SelectionSet.succeed functionToConstructLocalType
+--     |> with fieldFromGraphql
+--     |> with otherFieldFromGraphql
+--     |> ...
+
+rankingSelectionSet : SelectionSet SR.Types.FRanking SRdb.Object.Ranking
+rankingSelectionSet =
+    --Graphql.SelectionSet.succeed SR.Types.FRanking
+    --SelectionSet a typeLock -> SelectionSet (a -> b) typeLock -> SelectionSet b typeLock
+    -- SelectionSet (SRdb.ScalarCodecs.Id -> b)
+        Graphql.SelectionSet.succeed SR.Types.FRanking
+            |> Graphql.SelectionSet.with SRdb.Object.Ranking.id_
+            |> Graphql.SelectionSet.with SRdb.Object.Ranking.active
+            |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingname
+            |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingdesc
+            |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingowneraddr
+       
+
+       
+requestAllRankings : Http.Request (Maybe (List (Maybe SR.Types.FRanking)))
+requestAllRankings  =
+    Http.queryRequest SR.Constants.endpointURL (queryAllRankings rankingSelectionSet)
+       |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
+
+queryAllRankings : SelectionSet decodesTo SRdb.Object.Ranking
+    -> SelectionSet (Maybe (List (Maybe decodesTo))) RootQuery
+queryAllRankings =
+    Query.allRankings
        

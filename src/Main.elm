@@ -48,7 +48,7 @@ import Widget exposing (..)
 import SR.Types
 import SR.Types
 import SR.Types
-import Bridge exposing (requestLoginUser, requestAllUserNames, requestCreateAndOrLoginUser, handleCreateAndOrLoginUserOptionalArguments, requestAllUsers)
+import Bridge exposing (requestLoginUser, requestAllUserNames, requestCreateAndOrLoginUser, handleCreateAndOrLoginUserOptionalArguments, requestAllUsers, requestAllRankings)
 import Graphql.Http as GQLHttp
 
 main =
@@ -92,8 +92,9 @@ init _ =
     , Cmd.batch
         [ --gotUserList
         allUsers
-        , 
-        gotGlobal
+        ,
+        allRankings
+        --gotGlobal
         , Ports.log
             "Sending out msg from init "
         ]
@@ -185,6 +186,7 @@ type Msg
     | LoggedInUser (Result (GQLHttp.Error SR.Types.Token) SR.Types.Token)
     | ReceivedUserNames (Result (GQLHttp.Error (List String)) (List String))
     | ReceivedUsers (Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FUser)))) (Maybe (List (Maybe SR.Types.FUser))))
+    | ReceivedGlobal (Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FRanking)))) (Maybe (List (Maybe SR.Types.FRanking))))
       -- App Only Ops
     | MissingWalletInstructions
     | OpenWalletInstructions
@@ -1702,6 +1704,11 @@ update msg model =
             , Cmd.none
             )
 
+        (ReceivedGlobal response, modelReDef) ->
+            ( updateModelFromReceivedGlobal modelReDef response
+            , Cmd.none
+            )
+
         (ReceivedUserNames response, modelReDef) ->
             ( updateModelFromReceivedUserNames modelReDef response
             , Cmd.none
@@ -1754,6 +1761,10 @@ allUsers : Cmd Msg
 allUsers  =
     GQLHttp.send ReceivedUsers (requestAllUsers)
 
+allRankings : Cmd Msg
+allRankings  =
+    GQLHttp.send ReceivedGlobal (requestAllRankings)
+
        
 -- model handlers
 
@@ -1772,6 +1783,16 @@ updateModelFromReceivedUsers : Model -> Result (GQLHttp.Error (Maybe (List (Mayb
 updateModelFromReceivedUsers model response =
     case response of
         Ok lusers ->
+                model
+
+        Err _ ->
+            model
+
+
+updateModelFromReceivedGlobal : Model -> Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FRanking)))) (Maybe (List (Maybe SR.Types.FRanking))) -> Model
+updateModelFromReceivedGlobal model response =
+    case response of
+        Ok lrankings ->
                 model
 
         Err _ ->
