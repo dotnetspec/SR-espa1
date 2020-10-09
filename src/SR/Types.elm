@@ -301,7 +301,7 @@ type alias Ranking =
 
 newRanking : FRanking -> Ranking 
 newRanking franking = 
-    Ranking (fromScalarCodecId franking.id_) True "" Nothing ""
+    Ranking (fromScalarCodecId franking.id_) True franking.rankingname franking.rankingdesc franking.rankingowneraddr
 
 -- type alias RankingScalarToString =
 --     ( UserName, Player )

@@ -1843,6 +1843,8 @@ updateModelFromReceivedGlobal model response =
                         filteredFRankingList = Utils.MyUtils.removeNothingFromList lm_FRanking
                         -- need to convert from FRanking to Ranking (id_ needs to be a String)
                         lFromFToRanking = List.map SR.Types.newRanking filteredFRankingList
+                        _ = Debug.log "lFromFToRanking : " lFromFToRanking
+    
                     in
                             case model of  
                                 AppOps walletState dataState appInfo uiState subState accountState txRec ->
@@ -3567,37 +3569,11 @@ isMobileValidated user =
 
     else
         False
+        
 
 
 inputNewLadder : SR.Types.AppInfo -> DataState -> Element Msg
 inputNewLadder appInfo dataState =
-    case appInfo.selectedRanking.rankingdesc of
-        Nothing ->
-            Element.column Grid.section <|
-                [ Element.el Heading.h6 <| Element.text "New Ladder Details"
-                , Element.wrappedRow (Card.fill ++ Grid.simple)
-                    [ Element.column Grid.simple
-                        [ Input.text Input.simple
-                            { onChange = LadderNameInputChg
-                            , text = ""
-                            , placeholder = Nothing
-                            , label = Input.labelLeft Input.label <| Element.text "Name*:"
-                            }
-                        , ladderNameValidationErr appInfo dataState
-                        , Input.multiline Input.simple
-                                {onChange = LadderDescInputChg
-                                , text =  ""
-                                , placeholder = Nothing
-                                , label = Input.labelLeft Input.label <| Element.text "Desc:"
-                                , spellcheck = False
-                                }
-                        , Element.text "* Required"
-                        , ladderDescValidationErr appInfo.selectedRanking
-                        ]
-                    ]
-                ]
-
-        Just rankingdesc ->
             Element.column Grid.section <|
                 [ Element.el Heading.h6 <| Element.text "New Ladder Details"
                 , Element.wrappedRow (Card.fill ++ Grid.simple)
@@ -3609,13 +3585,9 @@ inputNewLadder appInfo dataState =
                             , label = Input.labelLeft Input.label <| Element.text "Name*:"
                             }
                         , ladderNameValidationErr appInfo dataState
-                        , Input.multiline Input.simple
-                        -- Widget imported but not currently used
-                        -- , Widget.textInput
-                        --     { chips = [](Button msg)
-                        --     , 
+                            , Input.multiline Input.simple 
                                 {onChange = LadderDescInputChg
-                                , text =  Utils.Validation.Validate.validatedMaxTextLength rankingdesc 20
+                                , text =  Utils.Validation.Validate.validatedMaxTextLength (Maybe.withDefault "" appInfo.selectedRanking.rankingdesc) 20
                                 , placeholder = Nothing
                                 , label = Input.labelLeft Input.label <| Element.text "Desc:"
                                 , spellcheck = False
@@ -3686,7 +3658,43 @@ handleGlobalNoUserView dataState =
                                 ]
 
                     Rankings _ ->
-                        Html.text ("Handle rankings here")
+                        Framework.responsiveLayout [] <| Element.column
+                            Framework.container
+                                [ Element.el (Heading.h5) <|
+                                    Element.text ("SportRank - Welcome")
+                                , displayEnableEthereumBtn
+                                , Element.text ("\n")
+                                --, Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
+                                , Element.column Grid.section <|
+                                    [ Element.el [] <| Element.text ""
+                                    --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                                    , Element.wrappedRow (Card.fill ++ Grid.simple)
+                                        [ Element.column
+                                            Grid.simple
+                                            [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                                                { onChange = NewUserNameInputChg
+                                                , text = userVal.username
+                                                --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
+                                                , placeholder = Nothing
+                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
+                                                }
+                                            --, nameValidationErr appInfo sUsers
+                                            , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                                                { onChange = NewUserPasswordInputChg
+                                                , text = userVal.password
+                                                , placeholder = Nothing
+                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                                                }
+                                            ]
+                                        ]
+                                    ]
+                                , infoBtn "Log In" ClickedLogInUser
+                                , Element.text ("\n")
+                                , displayRegisterBtnIfNewUser
+                                    SR.Defaults.emptyUser.username
+                                    ClickedRegister
+                                --, otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
+                                ]
 
 
 handleGlobalNoTokenView : DataState -> SR.Types.User -> Html Msg
