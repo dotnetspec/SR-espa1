@@ -105,21 +105,17 @@ legalUserInfoText =
         ]
 
 
-selectedHeading : SR.Types.User -> SR.Types.Ranking -> Element msg
-selectedHeading user rnkInfo =
-    let
-        _ =
-            Debug.log "rank id " rnkInfo.id
-    in
-    Element.column Grid.section <|
-        [ Element.el Heading.h5 <|
-            Element.text (user.username ++ " you selected ranking")
-        , Element.column Card.fill
-            [ Element.el Heading.h4 <|
-                Element.text rnkInfo.rankingname
-            , Element.text rnkInfo.rankingdesc
-            ]
-        ]
+-- selectedHeading : SR.Types.User -> SR.Types.Ranking -> Element msg
+-- selectedHeading user rnkInfo =
+--     Element.column Grid.section <|
+--         [ Element.el Heading.h5 <|
+--             Element.text (user.username ++ " you selected ranking")
+--         , Element.column Card.fill
+--             [ Element.el Heading.h4 <|
+--                 Element.text rnkInfo.rankingname
+--             , Element.text rnkInfo.rankingdesc
+--             ]
+--         ]
 
 
 ethereumWalletWarning : Element msg

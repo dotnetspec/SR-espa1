@@ -16,7 +16,6 @@ import SR.Types
 import EverySet exposing (EverySet)
 import Internal.Types
 import Utils.MyUtils
-import SR.Defaults
 import Eth.Utils
 import RemoteData
 import Http
@@ -57,21 +56,21 @@ playersetLength (Players sPlayers) =
     EverySet.size sPlayers
 
 
-gotPlayer : Players  -> String -> SR.Types.Player
-gotPlayer (Players sPlayers) uaddr =
-    let
-        existingPlayer =
-            List.head <|
-                 EverySet.toList (EverySet.filter (\r -> (String.toLower <| r.address) == (String.toLower <| uaddr))
-                    sPlayers)
-    in
+-- gotPlayer : Players  -> String -> SR.Types.Player
+-- gotPlayer (Players sPlayers) uaddr =
+--     let
+--         existingPlayer =
+--             List.head <|
+--                  EverySet.toList (EverySet.filter (\r -> (String.toLower <| r.address) == (String.toLower <| uaddr))
+--                     sPlayers)
+--     in
     
-    case existingPlayer of
-        Nothing ->
-            SR.Defaults.emptyPlayer
+--     case existingPlayer of
+--         Nothing ->
+--             SR.Defaults.emptyPlayer
 
-        Just a ->
-            a
+--         Just a ->
+--             a
 
 
 
@@ -84,20 +83,20 @@ removePlayer player sPlayers =
 
 
 -- todo: remove?
-gotPlayerFromPlayerList : List SR.Types.Player -> String -> SR.Types.Player
-gotPlayerFromPlayerList lplayer uaddr =
-    let
-        existingPlayer =
-            List.head <|
-                List.filter (\r -> (String.toLower <| r.address) == (String.toLower <| uaddr))
-                    (validatedPlayerList lplayer)
-    in
-    case existingPlayer of
-        Nothing ->
-            SR.Defaults.emptyPlayer
+-- gotPlayerFromPlayerList : List SR.Types.Player -> String -> SR.Types.Player
+-- gotPlayerFromPlayerList lplayer uaddr =
+--     let
+--         existingPlayer =
+--             List.head <|
+--                 List.filter (\r -> (String.toLower <| r.address) == (String.toLower <| uaddr))
+--                     (validatedPlayerList lplayer)
+--     in
+--     case existingPlayer of
+--         Nothing ->
+--             SR.Defaults.emptyPlayer
 
-        Just a ->
-            a
+--         Just a ->
+--             a
 
 validatedPlayerList : List SR.Types.Player -> List SR.Types.Player
 validatedPlayerList lPlayer =
@@ -179,21 +178,21 @@ gotAddress : SR.Types.Player -> String
 gotAddress player =
     player.address
 
-removeCurrentPlayerEntryFromPlayerList : List SR.Types.Player -> String -> List SR.Types.Player
-removeCurrentPlayerEntryFromPlayerList lplayer uaddr =
-    List.filter (\r -> (String.toLower <| r.address) /= (String.toLower <| uaddr))
-        (validatedPlayerList lplayer)
+-- removeCurrentPlayerEntryFromPlayerList : List SR.Types.Player -> String -> List SR.Types.Player
+-- removeCurrentPlayerEntryFromPlayerList lplayer uaddr =
+--     List.filter (\r -> (String.toLower <| r.address) /= (String.toLower <| uaddr))
+--         (validatedPlayerList lplayer)
 
 --private
 
-isPlayerInListStrAddr : List SR.Types.Player -> String -> Bool
-isPlayerInListStrAddr lplayer uaddr =
-    let
-        gotSinglePlayerFromList =
-            gotPlayerFromPlayerList lplayer uaddr
-    in
-    if gotSinglePlayerFromList.address == "" then
-        False
+-- isPlayerInListStrAddr : List SR.Types.Player -> String -> Bool
+-- isPlayerInListStrAddr lplayer uaddr =
+--     let
+--         gotSinglePlayerFromList =
+--             gotPlayerFromPlayerList lplayer uaddr
+--     in
+--     if gotSinglePlayerFromList.address == "" then
+--         False
 
-    else
-        True
+--     else
+--         True

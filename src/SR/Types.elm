@@ -14,7 +14,10 @@ module SR.Types exposing
     , UserName
     , Password
     , FUser
+    , newUser
     , FRanking
+    , newRanking
+    ,fromScalarCodecId
     )
 
 {-| Types
@@ -228,6 +231,9 @@ type alias User =
     , m_token : Maybe Token
     }
 
+newUser username =
+    User 0 True username "" Nothing "" "" "" [""] 0 Nothing
+
 type alias FUser = {
     active : Bool
     , description : Maybe String
@@ -253,6 +259,8 @@ type alias Player =
     , rank : Int
     , challengeraddress : String
     }
+
+
 
 
 type alias FormValidations =
@@ -282,12 +290,21 @@ type alias UpdateGlobalBinResponse =
     
 
 type alias Ranking =
-    { id : String
+    { 
+        id_ : String
+     --id_ : SRdb.ScalarCodecs.Id
     , active : Bool
     , rankingname : String
-    , rankingdesc : String
+    , rankingdesc : Maybe String
     , rankingowneraddr : String
     }
+
+newRanking : FRanking -> Ranking 
+newRanking franking = 
+    Ranking (fromScalarCodecId franking.id_) True "" Nothing ""
+
+-- type alias RankingScalarToString =
+--     ( UserName, Player )
 
 type alias FRanking =
 
@@ -297,6 +314,14 @@ type alias FRanking =
     , rankingdesc : Maybe String
     , rankingowneraddr : String
     }
+
+fromScalarCodecId : SRdb.ScalarCodecs.Id -> String 
+fromScalarCodecId scid = 
+    let
+        _ = Debug.log "scid : " scid
+    in
+        "1234"
+
 
 
 type alias NewRankingListServerResponse =

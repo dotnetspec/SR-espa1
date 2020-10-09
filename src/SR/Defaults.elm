@@ -87,10 +87,10 @@ emptyUserPlayer =
 
 
 emptyRankingInfo =
-    { id = "0"
+    { id_ = "0"
     , active = False
     , rankingname = ""
-    , rankingdesc = ""
+    , rankingdesc = Nothing
     , rankingowneraddr = ""
     }
 

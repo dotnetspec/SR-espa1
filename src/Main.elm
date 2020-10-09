@@ -27,10 +27,10 @@ import Json.Encode
 import Ports
 import RemoteData
 import SR.Constants
-import SR.Decode
+--import SR.Decode
 import SR.Defaults
 import SR.Elements
-import SR.Encode
+--import SR.Encode
 import SR.Types
 import Task
 import Time exposing (Posix)
@@ -81,7 +81,8 @@ type DataState
 
 type DataKind
   = Users SR.Types.User
-  | Global Data.Global.Global Internal.Types.RankingId SR.Types.User
+  | Rankings Data.Rankings.Rankings
+  | Global Data.Global.Global Internal.Types.RankingId (Maybe SR.Types.User)
   | Selected Data.Selected.Selected Internal.Types.RankingId SR.Types.User SR.Types.SelectedStatus Data.Rankings.Rankings
 
 
@@ -345,55 +346,56 @@ update msg model =
 
 
         ( UsersReceived userList, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
-            case appInfo.m_user of
-                Nothing ->
-                -- user is Guest
-                    let
-                        --extractedList = Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList
-                        --waiting for a real list from Faunadb
-                        extractedList = []
-                        users = Data.Users.asUsers (EverySet.fromList (extractedList))
-                        -- newUser = Data.Users.gotUser users userVal.m_ethaddress
-                        -- userInAppInfo = { appInfo | m_user = Just newUser }
-                        newDataKind = Users SR.Defaults.emptyUser
-                        newDataState = StateFetched users newDataKind
-                    in
-                    if List.isEmpty extractedList then 
-                            (model, Cmd.none)
-                    else
-                            ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription accountState  emptyTxRecord, gotGlobal )
+            (model, Cmd.none)
+        --     case appInfo.m_user of
+        --         Nothing ->
+        --         -- user is Guest
+        --             let
+        --                 --extractedList = Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList
+        --                 --waiting for a real list from Faunadb
+        --                 extractedList = []
+        --                 users = Data.Users.asUsers (EverySet.fromList (extractedList))
+        --                 -- newUser = Data.Users.gotUser users userVal.m_ethaddress
+        --                 -- userInAppInfo = { appInfo | m_user = Just newUser }
+        --                 newDataKind = Users SR.Defaults.emptyUser
+        --                 newDataState = StateFetched users newDataKind
+        --             in
+        --             if List.isEmpty extractedList then 
+        --                     (model, Cmd.none)
+        --             else
+        --                     ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription accountState  emptyTxRecord, gotGlobal )
                         
                 
-                Just userVal ->
+        --         Just userVal ->
                     
-                        case userVal.m_ethaddress of 
-                            Nothing ->
-                                (model, Cmd.none)
-                            Just addr ->
-                                let 
-                                    _ =
-                                                        Debug.log "UsersReceived" userList
-                                    --extractedList = Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList
-                                    extractedList = [SR.Defaults.emptyUser]
-                                    users = Data.Users.asUsers (EverySet.fromList (extractedList))
-                                    newUser = Data.Users.gotUser users (Eth.Utils.addressToString addr)
-                                    userInAppInfo = { appInfo | m_user = Just newUser }
-                                    newDataKind = Users newUser
-                                    newDataState = StateFetched users newDataKind
-                                in
-                                    if List.isEmpty extractedList then 
-                                        (model, Cmd.none)
-                                    else if (Data.Users.isRegistered (Data.Users.asList users) newUser) then
-                                                let
-                                                    _ = Debug.log "in isregistered " "here"
+        --                 case userVal.m_ethaddress of 
+        --                     Nothing ->
+        --                         (model, Cmd.none)
+        --                     Just addr ->
+        --                         let 
+        --                             _ =
+        --                                                 Debug.log "UsersReceived" userList
+        --                             --extractedList = Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList
+        --                             extractedList = [SR.Defaults.emptyUser]
+        --                             users = Data.Users.asUsers (EverySet.fromList (extractedList))
+        --                             newUser = Data.Users.gotUser users (Eth.Utils.addressToString addr)
+        --                             userInAppInfo = { appInfo | m_user = Just newUser }
+        --                             newDataKind = Users (Just newUser)
+        --                             newDataState = StateFetched users newDataKind
+        --                         in
+        --                             if List.isEmpty extractedList then 
+        --                                 (model, Cmd.none)
+        --                             else if (Data.Users.isRegistered (Data.Users.asList users) newUser) then
+        --                                         let
+        --                                             _ = Debug.log "in isregistered " "here"
                                                     
-                                                in
-                                        ( AppOps walletState newDataState userInAppInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered  emptyTxRecord, gotGlobal )
-                                    else 
-                                        ( AppOps walletState newDataState userInAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription  SR.Types.Guest emptyTxRecord, gotGlobal )
+        --                                         in
+        --                                 ( AppOps walletState newDataState userInAppInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered  emptyTxRecord, gotGlobal )
+        --                             else 
+        --                                 ( AppOps walletState newDataState userInAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription  SR.Types.Guest emptyTxRecord, gotGlobal )
                             
-        ( UsersReceived _, Failure _ ) ->
-            (model, Cmd.none)
+        -- ( UsersReceived _, Failure _ ) ->
+        --     (model, Cmd.none)
 
 
         (GlobalReceived rmtrnkingdata, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->      
@@ -405,7 +407,7 @@ update msg model =
                             case dKind of
                                 Users user ->
                                     let
-                                        newDataKind = Global (Data.Global.createdFromRemote rmtrnkingdata sUsers) (Internal.Types.RankingId "") user
+                                        newDataKind = Global (Data.Global.createdFromRemote rmtrnkingdata sUsers) (Internal.Types.RankingId "") (Just user)
                                         newDataSet = StateFetched sUsers newDataKind
                                     in 
                                         (AppOps walletState newDataSet appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
@@ -432,6 +434,9 @@ update msg model =
                                 Selected _ _ _ _ _ ->
                                     (model, Cmd.none)
 
+                                Rankings _ ->
+                                    (model, Cmd.none)
+
                         AllEmpty ->
                             let 
                                 sUsers = Data.Users.emptyUsers
@@ -439,14 +444,14 @@ update msg model =
                             case appInfo.m_user of 
                                 Nothing ->
                                     let
-                                        newDataKind = Global (Data.Global.createdFromRemote rmtrnkingdata sUsers) (Internal.Types.RankingId "") SR.Defaults.emptyUser
+                                        newDataKind = Global (Data.Global.createdFromRemote rmtrnkingdata sUsers) (Internal.Types.RankingId "") (Just SR.Defaults.emptyUser)
                                         newDataSet = StateFetched sUsers newDataKind
                                     in
                                         (AppOps walletState newDataSet appInfo uiState SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
                                 
                                 Just userVal ->
                                     let
-                                        newDataKind = Global (Data.Global.createdFromRemote rmtrnkingdata sUsers) (Internal.Types.RankingId "") userVal
+                                        newDataKind = Global (Data.Global.createdFromRemote rmtrnkingdata sUsers) (Internal.Types.RankingId "") (Just userVal)
                                         newDataSet = StateFetched sUsers newDataKind
                                     in
                                         (AppOps walletState newDataSet appInfo uiState SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
@@ -460,109 +465,125 @@ update msg model =
             (model, Cmd.none)
 
         (PlayersReceived response, AppOps walletState dataState appInfo uiState subState accountState  txRec )  ->
-
-            let 
-                --_ = Debug.log "players received " (Tuple.second (Data.Players.handleFetchedPlayers response))
-                --_ = Debug.log "players received dataState " dataState
-                httpReponse = Tuple.second (Data.Players.handleFetchedPlayers response)
-                lplayer = Data.Players.asList (Tuple.first (Data.Players.handleFetchedPlayers response))
-                --_ = Debug.log "players received lplayer " lplayer
-            in
-                case (Data.Players.handleFetchedPlayers response) of
-                    (sPlayers, "Success") ->
-                        case dataState of
-                            StateFetched sUsers dKind -> 
-                                case dKind of 
-                                        Selected sSelected rnkId user status rankings ->
-                                            
-                                                case user.m_ethaddress of 
-                                                    Nothing ->
-                                                        (model, Cmd.none)
-                                                    Just addr ->
-                                                        let 
-                                                            newSSelected = Data.Selected.createdSelected (Data.Players.asList sPlayers) sUsers rnkId
+            (model, Cmd.none)
+            -- let 
+            --     --_ = Debug.log "players received " (Tuple.second (Data.Players.handleFetchedPlayers response))
+            --     --_ = Debug.log "players received dataState " dataState
+            --     httpReponse = Tuple.second (Data.Players.handleFetchedPlayers response)
+            --     lplayer = Data.Players.asList (Tuple.first (Data.Players.handleFetchedPlayers response))
+            --     --_ = Debug.log "players received lplayer " lplayer
+            -- in
+            --     case (Data.Players.handleFetchedPlayers response) of
+            --         (sPlayers, "Success") ->
+            --             case dataState of
+            --                 StateFetched sUsers dKind -> 
+            --                     case dKind of 
+            --                             Selected sSelected rnkId user status rankings ->
+            --                                     case user.m_ethaddress of 
+            --                                         Nothing ->
+            --                                             (model, Cmd.none)
+            --                                         Just addr ->
+            --                                             let 
+            --                                                 newSSelected = Data.Selected.createdSelected (Data.Players.asList sPlayers) sUsers rnkId
                                                         
-                                                            newAppPlayer = { appInfo | player = Data.Selected.gotUserAsPlayer newSSelected addr }
+            --                                                 m_newAppPlayer = { appInfo | player = Data.Selected.gotUserAsPlayer newSSelected addr }
+            --                                             in
+            --                                                 case m_newAppPlayer of
+            --                                                     Nothing ->
+            --                                                         (model, Cmd.none)
+            --                                                     Just newAppPlayer ->
+            --                                                         let
+            --                                                             m_userPlayer = Data.Selected.gotUserAsPlayer newSSelected (Eth.Utils.unsafeToAddress newAppPlayer.player.player.challengeraddress)
+            --                                                         in
+            --                                                         case m_userPlayer of
+            --                                                             Nothing ->
+            --                                                                 (model, Cmd.none)
+            --                                                             Just userPlayer ->
+            --                                                                 let
+            --                                                                     newAppChallengerAndPlayer = { newAppPlayer | challenger = userPlayer }
+            --                                                                     newDataKind = Selected newSSelected rnkId user status rankings
+            --                                                                     newDataState = StateFetched sUsers newDataKind
+            --                                                                 in
+            --                                                                     case status of 
+            --                                                                         SR.Types.UserIsOwner ->     
+            --                                                                             (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
+            --                                                                         SR.Types.UserIsMember  ->
+            --                                                                             (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
+            --                                                                         SR.Types.UserIsNeitherOwnerNorMember ->
+            --                                                                             (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
+                    
+            --                             _ ->
+            --                                 (model, Cmd.none)
 
-                                                            newAppChallengerAndPlayer = { newAppPlayer | challenger = Data.Selected.gotUserAsPlayer newSSelected (Eth.Utils.unsafeToAddress newAppPlayer.player.player.challengeraddress) }
-
-                                                            newDataKind = Selected newSSelected rnkId user status rankings
-                                                            newDataState = StateFetched sUsers newDataKind
-
-                                                        in
-                                                            case status of 
-                                                                SR.Types.UserIsOwner ->     
-                                                                    (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
-                                                                SR.Types.UserIsMember  ->
-                                                                    (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
-                                                                SR.Types.UserIsNeitherOwnerNorMember ->
-                                                                    (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
-            
-                                        _ ->
-                                            (model, Cmd.none)
-
-                            StateUpdated sUsers dKind -> 
-                                case dKind of 
-                                        Selected sSelected rnkId user status rankings ->
-                                            case user.m_ethaddress of 
-                                                Nothing -> 
-                                                    (model, Cmd.none)
-                                                Just addr ->
-                                                    let 
-                                                        newSSelected = Data.Selected.createdSelected (Data.Players.asList sPlayers) sUsers rnkId
+                            -- StateUpdated sUsers dKind -> 
+                            --     case dKind of 
+                            --             Selected sSelected rnkId user status rankings ->
+                            --                 case user.m_ethaddress of 
+                            --                     Nothing -> 
+                            --                         (model, Cmd.none)
+                            --                     Just addr ->
+                            --                         let 
+                            --                             newSSelected = Data.Selected.createdSelected (Data.Players.asList sPlayers) sUsers rnkId
                                             
-                                                        newAppPlayer = { appInfo | player = Data.Selected.gotUserAsPlayer newSSelected addr }
+                            --                             newAppPlayer = { appInfo | player = Data.Selected.gotUserAsPlayer newSSelected addr }
 
-                                                        newAppChallengerAndPlayer = { newAppPlayer | challenger = Data.Selected.gotUserAsPlayer newSSelected (Eth.Utils.unsafeToAddress newAppPlayer.player.player.challengeraddress) }
-
-                                                        newDataKind = Selected newSSelected rnkId user status rankings
-                                                        newDataState = StateFetched sUsers newDataKind
-                                                    in
-                                                        case status of 
-                                                            SR.Types.UserIsOwner ->     
-                                                                (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none)
-                                                            SR.Types.UserIsMember  ->
-                                                                (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none)
-                                                            SR.Types.UserIsNeitherOwnerNorMember ->
-                                                                (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
-                                                                
-                                        _ ->
-                                                (model, Cmd.none)
+                            --                             m_userPlayer = Data.Selected.gotUserAsPlayer newSSelected (Eth.Utils.unsafeToAddress newAppPlayer.player.player.challengeraddress)
+     
+                            --                         in
+                            --                             case m_userPlayer of 
+                            --                                 Nothing ->
+                            --                                     (model, Cmd.none)
+                            --                                 Just userPlayer ->
+                            --                                     let 
+                            --                                         newAppChallengerAndPlayer = { newAppPlayer | challenger = userPlayer }
+                            --                                         newDataKind = Selected newSSelected rnkId user status rankings
+                            --                                         newDataState = StateFetched sUsers newDataKind
+                            --                                     in
+                            --                                         case status of 
+                            --                                             SR.Types.UserIsOwner ->     
+                            --                                                 (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none)
+                            --                                             SR.Types.UserIsMember  ->
+                            --                                                 (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none)
+                            --                                             SR.Types.UserIsNeitherOwnerNorMember ->
+                            --                                                 (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
+                                                                            
+                            --             _ ->
+                            --                     (model, Cmd.none)
                                 
 
-                            AllEmpty ->
-                                (model, Cmd.none)
+                            -- AllEmpty ->
+                            --     (model, Cmd.none)
                     
-                    (sPlayers, "404") ->
-                        let 
-                            _ = Debug.log " 404" "here"
-                        in 
-                        case dataState of
-                            StateFetched sUsers dKind -> 
-                                case dKind of 
-                                        Selected sSelected rnkId user status rankings ->
-                                            (AppOps walletState dataState appInfo SR.Types.UIOwnerDeletedRanking SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none)
-                                        _ ->
-                                            (model, Cmd.none)
-                            _ ->
-                                (model, Cmd.none)
+                    -- (sPlayers, "404") ->
+                    --     let 
+                    --         _ = Debug.log " 404" "here"
+                    --     in 
+                    --     case dataState of
+                    --         StateFetched sUsers dKind -> 
+                    --             case dKind of 
+                    --                     Selected sSelected rnkId user status rankings ->
+                    --                         (AppOps walletState dataState appInfo SR.Types.UIOwnerDeletedRanking SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none)
+                    --                     _ ->
+                    --                         (model, Cmd.none)
+                    --         _ ->
+                    --             (model, Cmd.none)
 
-                    (sPlayers, "422") ->
-                        let 
-                            _ = Debug.log " 422" "here"
-                        in 
-                        case dataState of
-                            StateFetched sUsers dKind -> 
-                                case dKind of 
-                                        Selected sSelected rnkId user status rankings ->
-                                            (AppOps walletState dataState appInfo SR.Types.UIOwnerDeletedRanking SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none)
-                                        _ ->
-                                            (model, Cmd.none)
-                            _ ->
-                                (model, Cmd.none)
+                    -- (sPlayers, "422") ->
+                    --     let 
+                    --         _ = Debug.log " 422" "here"
+                    --     in 
+                    --     case dataState of
+                    --         StateFetched sUsers dKind -> 
+                    --             case dKind of 
+                    --                     Selected sSelected rnkId user status rankings ->
+                    --                         (AppOps walletState dataState appInfo SR.Types.UIOwnerDeletedRanking SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none)
+                    --                     _ ->
+                    --                         (model, Cmd.none)
+                    --         _ ->
+                    --             (model, Cmd.none)
 
-                    (_, _) ->
-                        (model, Cmd.none)
+                    -- (_, _) ->
+                    --     (model, Cmd.none)
 
         ( PlayersReceived _, Failure _ ) ->
             (model, Cmd.none)
@@ -574,17 +595,22 @@ update msg model =
             case dataState of 
                 StateFetched sUsers dKind ->
                         case dKind of 
-                            Global sGlobal rnkId user ->
-                                let                                                     
-                                    newAppInfo =
-                                        updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
+                            Global sGlobal rnkId m_user ->
+                                
+                                    case m_user of 
+                                        Nothing ->
+                                            (model, Cmd.none)
+                                        Just user ->
+                                            let                                                     
+                                                newAppInfo =
+                                                    updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
 
-                                    newDataKind = Selected Data.Selected.emptySelected rnkidstr user SR.Types.UserIsOwner (Data.Global.asRankings sGlobal)
-                                    newDataState = StateFetched sUsers newDataKind
-                            
-                                in
-                                    ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, 
-                                    fetchedSingleRanking rnkidstr )
+                                                newDataKind = Selected Data.Selected.emptySelected rnkidstr user SR.Types.UserIsOwner (Data.Global.asRankings sGlobal)
+                                                newDataState = StateFetched sUsers newDataKind
+                                        
+                                            in
+                                                ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, 
+                                                fetchedSingleRanking rnkidstr )
 
 
                             _ ->
@@ -609,7 +635,7 @@ update msg model =
                                                 appInfo.challenger (rnkidstr)
 
 
-                                            newDataKind = Selected Data.Selected.emptySelected rnkidstr user SR.Types.UserIsOwner (Data.Global.asRankings sGlobal)
+                                            newDataKind = Selected Data.Selected.emptySelected rnkidstr userVal SR.Types.UserIsOwner (Data.Global.asRankings sGlobal)
                                             newDataState = StateFetched sUsers newDataKind
                                     
                                         in
@@ -636,7 +662,7 @@ update msg model =
                                         _ =
                                             Debug.log "rnkid" (Utils.MyUtils.stringFromRankingId rnkId)
                                         _ =
-                                            Debug.log "user clicked member" user.userjoinrankings
+                                            Debug.log "user clicked member" userVal.userjoinrankings
 
 
                                         newAppInfo =
@@ -649,7 +675,7 @@ update msg model =
                                             appInfo.challenger ( rnkidstr)
 
 
-                                        newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") user SR.Types.UserIsMember (Data.Global.asRankings sGlobal)
+                                        newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") userVal SR.Types.UserIsMember (Data.Global.asRankings sGlobal)
                                         newDataState = StateFetched sUsers newDataKind
                                     in
                                         ( AppOps walletState newDataState newAppInfo SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, 
@@ -681,7 +707,7 @@ update msg model =
                                             Data.AppState.updateAppState userVal appInfo.player 
                                             appInfo.challenger ( rnkidstr)
                                         
-                                        newDataKind = Selected Data.Selected.emptySelected rnkidstr user SR.Types.UserIsNeitherOwnerNorMember (Data.Global.asRankings sGlobal)
+                                        newDataKind = Selected Data.Selected.emptySelected rnkidstr userVal SR.Types.UserIsNeitherOwnerNorMember (Data.Global.asRankings sGlobal)
                                         newDataState = StateFetched sUsers newDataKind
                                     in
                                         ( AppOps walletState newDataState newAppInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription accountState emptyTxRecord, 
@@ -874,7 +900,7 @@ update msg model =
                                         ( AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState emptyTxRecord, gotGlobal )
                                 Just userVal ->
                                     let
-                                        newDataKind = Global Data.Global.empty (Internal.Types.RankingId "") userVal
+                                        newDataKind = Global Data.Global.empty (Internal.Types.RankingId "") (Just userVal)
                                         newDataState = StateFetched sUsers newDataKind
                                     in
                                         ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription accountState emptyTxRecord, gotGlobal )
@@ -885,7 +911,7 @@ update msg model =
                                     (model, Cmd.none)
                                 Just userVal ->
                                     let
-                                        newDataKind = Global Data.Global.empty (Internal.Types.RankingId "") userVal
+                                        newDataKind = Global Data.Global.empty (Internal.Types.RankingId "") (Just userVal)
                                         newDataState = StateFetched sUsers newDataKind
 
                                         _ = Debug.log "toGlobal now" "stateupdated"
@@ -954,7 +980,7 @@ update msg model =
 
 
                 updatedSelectedRanking =
-                    { newSelectedRanking | rankingdesc = descfield }
+                    { newSelectedRanking | rankingdesc = (Just descfield) }
 
 
                 newAppInfo =
@@ -1051,22 +1077,22 @@ update msg model =
                 StateFetched sUsers dKind ->
                     case dKind of 
                         Selected sSelected rnkId user status sRanking ->
-                            let 
-                                newsUsers = Data.Users.updatedUserInSet sUsers (Data.Users.removedRankindIdFromUser (Utils.MyUtils.stringFromRankingId rnkId) user)
-                                removedRanking = Data.Rankings.removedById rnkId sRanking
-                                newDataKind = Global (Data.Global.created removedRanking sUsers) rnkId user
-                                _ = Debug.log "rnkId in ClickedDeleteRanking " rnkId
-                                newDataState = StateUpdated newsUsers newDataKind
-                                _ = Debug.log "ranking should have been removed from rankings" removedRanking
-                            in
-                                ( AppOps walletState
-                                    newDataState
-                                    appInfo
-                                    SR.Types.UIDeleteRankingConfirm
-                                    SR.Types.StopSubscription SR.Types.Registered
-                                    txRec
-                                , Cmd.none
-                                )
+                                    let 
+                                        newsUsers = Data.Users.updatedUserInSet sUsers (Data.Users.removedRankindIdFromUser (Utils.MyUtils.stringFromRankingId rnkId) user)
+                                        removedRanking = Data.Rankings.removedById rnkId sRanking
+                                        newDataKind = Global (Data.Global.created removedRanking sUsers) rnkId (Just user)
+                                        _ = Debug.log "rnkId in ClickedDeleteRanking " rnkId
+                                        newDataState = StateUpdated newsUsers newDataKind
+                                        _ = Debug.log "ranking should have been removed from rankings" removedRanking
+                                    in
+                                        ( AppOps walletState
+                                            newDataState
+                                            appInfo
+                                            SR.Types.UIDeleteRankingConfirm
+                                            SR.Types.StopSubscription SR.Types.Registered
+                                            txRec
+                                        , Cmd.none
+                                        )
                         _ -> 
                             let 
                                 _ = Debug.log "8 - dataState should be updated" dataState
@@ -1109,6 +1135,8 @@ update msg model =
                                 , 
                                     httpDeleteSelectedRankingFromJsonBin (Utils.MyUtils.stringFromRankingId rnkId)
                             )
+                        Rankings _ ->
+                            (model, Cmd.none)
                 _ ->
                     ( model, Cmd.none )
 
@@ -1333,43 +1361,48 @@ update msg model =
                     case dataState of 
                         StateFetched sUsers dKind ->
                                 case dKind of 
-                                    Global sGlobal rnkId user ->
+                                    Global sGlobal rnkId m_user ->
                                         --if Data.Users.isRegistered (Data.Users.asList sUsers) appInfo.m_user then
-                                        case user.m_ethaddress of 
+                                        case m_user of
                                             Nothing ->
-                                                ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none )
-                                            Just addr ->
+                                                (model, Cmd.none)
+                                            
+                                            Just user ->
+                                                case user.m_ethaddress of 
+                                                    Nothing ->
+                                                        ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none )
+                                                    Just addr ->
 
-                                        --if user.m_ethaddress /= "" then
-                                                let
-                                                    txParams =
-                                                        { to = txRec.account
-                                                        , from = txRec.account
-                                                        , gas = Nothing
-                                                        , gasPrice = Just <| Eth.Units.gwei 4
-                                                        , value = Just <| Eth.Units.gwei 1
-                                                        , data = Nothing
-                                                        , nonce = Nothing
-                                                        }
+                                                --if user.m_ethaddress /= "" then
+                                                        let
+                                                            txParams =
+                                                                { to = txRec.account
+                                                                , from = txRec.account
+                                                                , gas = Nothing
+                                                                , gasPrice = Just <| Eth.Units.gwei 4
+                                                                , value = Just <| Eth.Units.gwei 1
+                                                                , data = Nothing
+                                                                , nonce = Nothing
+                                                                }
 
-                                                    ( newSentry, sentryCmd ) =
-                                                        Eth.Sentry.Tx.customSend
-                                                            txRec.txSentry
-                                                            { onSign = Just WatchTxHash
-                                                            , onBroadcast = Just WatchTx
-                                                            , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
-                                                            }
-                                                            txParams
+                                                            ( newSentry, sentryCmd ) =
+                                                                Eth.Sentry.Tx.customSend
+                                                                    txRec.txSentry
+                                                                    { onSign = Just WatchTxHash
+                                                                    , onBroadcast = Just WatchTx
+                                                                    , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                                                                    }
+                                                                    txParams
 
-                                                    newAppInfo =
-                                                            { appInfo | appState = SR.Types.AppStateCreateNewLadder }
-                                                    
-                                                    _ = Debug.log "global with useradd" user.m_ethaddress
-                                                    
-                                                in
-                                                ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIRenderAllRankings SR.Types.Subscribe SR.Types.Registered { txRec | txSentry = newSentry }
-                                                --Cmd.batch [ sentryCmd, addedUserAsFirstPlayerInNewList appInfo.m_user ] )
-                                                ,sentryCmd)
+                                                            newAppInfo =
+                                                                    { appInfo | appState = SR.Types.AppStateCreateNewLadder }
+                                                            
+                                                            _ = Debug.log "global with useradd" user.m_ethaddress
+                                                            
+                                                        in
+                                                        ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIRenderAllRankings SR.Types.Subscribe SR.Types.Registered { txRec | txSentry = newSentry }
+                                                        --Cmd.batch [ sentryCmd, addedUserAsFirstPlayerInNewList appInfo.m_user ] )
+                                                        ,sentryCmd)
 
                                         -- else
                                         --     ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none )
@@ -1449,7 +1482,7 @@ update msg model =
                                                     (model, Cmd.none)
                                                 Just userVal ->
                                                     let
-                                                        newLUPlayer = Data.Selected.userAdded sUsers appInfo.selectedRanking.id (Data.Selected.asList sSelected) userVal
+                                                        newLUPlayer = Data.Selected.userAdded sUsers appInfo.selectedRanking.id_ (Data.Selected.asList sSelected) userVal
                                                         newSelected = Data.Selected.asSelected (EverySet.fromList newLUPlayer) sUsers rnkId
                                                         
                                                         newDataKind = Selected newSelected  rnkId user SR.Types.UserIsMember rankings
@@ -1793,11 +1826,46 @@ updateModelFromReceivedGlobal : Model -> Result (GQLHttp.Error (Maybe (List (May
 updateModelFromReceivedGlobal model response =
     case response of
         Ok lrankings ->
-                model
+            -- let 
+            --     newRankingList = List.map convertIdToStr lrankings
+            -- in
+            case lrankings of 
+                Nothing ->
+                    model
+                
+                Just lm_FRanking ->
+                    -- case lm_FRanking of 
+                    --     Nothing ->
+                    --         model 
+                        
+                    --     Just lFRankinig ->
+                    let
+                        filteredFRankingList = Utils.MyUtils.removeNothingFromList lm_FRanking
+                        -- need to convert from FRanking to Ranking (id_ needs to be a String)
+                        lFromFToRanking = List.map SR.Types.newRanking filteredFRankingList
+                    in
+                            case model of  
+                                AppOps walletState dataState appInfo uiState subState accountState txRec ->
+                                    case dataState of 
+                                        AllEmpty ->
+                                                    let
+                                                        newDataKind = Rankings (Data.Rankings.asRankings (EverySet.fromList lFromFToRanking))
+                                                        --newDataKind = Global (Data.Global.asGlobal (EverySet.fromList filteredRankingList)) (Internal.Types.RankingId "") appInfo.m_user
+                                                        newDataState = StateFetched Data.Users.emptyUsers newDataKind
+                                                    in
+                                                    AppOps walletState newDataState appInfo uiState subState accountState txRec
+                                        _ ->
+                                            model
+                                Failure _ ->
+                                    model
 
         Err _ ->
             model
 
+
+
+    
+     
 
 updateFromLoggedInUser: Model -> Result (GQLHttp.Error SR.Types.Token) SR.Types.Token -> Model
 updateFromLoggedInUser model response =
@@ -1830,7 +1898,7 @@ updateAppInfoOnRankingSelected appInfo rnkid rnkownerstr rnknamestr =
             appInfo.selectedRanking
 
         newRnkInfo =
-            { newSelectedRanking | id = Utils.MyUtils.stringFromRankingId rnkid, rankingowneraddr = rnkownerstr, rankingname = rnknamestr }
+            { newSelectedRanking | id_ = Utils.MyUtils.stringFromRankingId rnkid, rankingowneraddr = rnkownerstr, rankingname = rnknamestr }
 
         newAppInfo =
             { appInfo | selectedRanking = newRnkInfo }
@@ -2144,18 +2212,22 @@ updatedForChallenge model luplayer opponentAsPlayer userMaybeCanDelete =
                 StateFetched sUsers dKind -> 
                     case dKind of 
                             Selected sSelected rnkId user status rankings -> 
-                                let 
-
-                                    _ = Debug.log "updatedForChallenge - dataState" dataState
-
-                                    newAppInfoWithPlayer = { appInfo | player = Data.Selected.gotCurrentUserAsPlayerFromPlayerList luplayer user }
-                        
-                                    newAppInfoWithChallengerAndPlayer = { newAppInfoWithPlayer | challenger = opponentAsPlayer }
-                                  
-                                    newDataKind =  Selected (Data.Selected.updateSelectedRankingOnChallenge sSelected newAppInfoWithChallengerAndPlayer) rnkId user status rankings
-                                    newDataState = StateFetched sUsers newDataKind
+                                let
+                                    m_uplayer = Data.Selected.gotCurrentUserAsPlayerFromPlayerList luplayer user
                                 in
-                                    AppOps walletState newDataState newAppInfoWithChallengerAndPlayer SR.Types.UIChallenge SR.Types.StopSubscription SR.Types.Registered txRec
+                                    case m_uplayer of
+                                        Nothing -> 
+                                            model
+                                        Just uplayer ->
+                                            let
+                                                newAppInfoWithPlayer = { appInfo | player = uplayer }
+                        
+                                                newAppInfoWithChallengerAndPlayer = { newAppInfoWithPlayer | challenger = opponentAsPlayer }
+                                            
+                                                newDataKind =  Selected (Data.Selected.updateSelectedRankingOnChallenge sSelected newAppInfoWithChallengerAndPlayer) rnkId user status rankings
+                                                newDataState = StateFetched sUsers newDataKind
+                                            in
+                                                AppOps walletState newDataState newAppInfoWithChallengerAndPlayer SR.Types.UIChallenge SR.Types.StopSubscription SR.Types.Registered txRec
                             
                             _ -> 
                                 let 
@@ -2211,9 +2283,9 @@ updateSelectedRankingPlayerList model luplayers =
 --             case dataState of 
 --                 Selected sSelected sUsers _ ->
 --                     let
---                         newSSelected = Data.Selected.asSelected (EverySet.fromList luplayer ) sUsers (Internal.Types.RankingId appInfo.selectedRanking.id)
+--                         newSSelected = Data.Selected.asSelected (EverySet.fromList luplayer ) sUsers (Internal.Types.RankingId appInfo.selectedRanking.id_)
 
---                         stateToSelected = Selected newSSelected sUsers (Internal.Types.RankingId appInfo.selectedRanking.id)
+--                         stateToSelected = Selected newSSelected sUsers (Internal.Types.RankingId appInfo.selectedRanking.id_)
                         
 --                         newAppPlayer = { appInfo | player = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer appInfo.m_user.m_ethaddress }
 
@@ -2278,6 +2350,9 @@ view model =
 
                                                 Users _ ->
                                                     greetingView <| "Users not used here"
+
+                                                Rankings _ ->
+                                                    greetingView <| "Handle Rankings"
                                                 
                                         StateUpdated _ _ ->
                                             greetingView <| "Cannot update w/o a token"
@@ -2568,7 +2643,7 @@ ownedRankingInfoBtn : SR.Types.Ranking -> Element Msg
 ownedRankingInfoBtn rankingobj =
     Element.column Grid.simple <|
         [ Input.button (Button.fill ++ Color.primary) <|
-            { onPress = Just (ClickedSelectedOwnedRanking (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr rankingobj.rankingname)
+            { onPress = Just (ClickedSelectedOwnedRanking (Internal.Types.RankingId rankingobj.id_) rankingobj.rankingowneraddr rankingobj.rankingname)
             , label = Element.text rankingobj.rankingname
             }
         ]
@@ -2594,14 +2669,14 @@ memberRankingInfoBtn ranking =
     if ranking.rankingname /= "" then
         Element.column Grid.simple <|
             [ Input.button (Button.fill ++ Color.primary) <|
-                { onPress = Just (ClickedSelectedMemberRanking (Internal.Types.RankingId ranking.id) ranking.rankingowneraddr ranking.rankingname)
+                { onPress = Just (ClickedSelectedMemberRanking (Internal.Types.RankingId ranking.id_) ranking.rankingowneraddr ranking.rankingname)
                 , label = Element.text ranking.rankingname
                 }
             ]
     else 
         Element.column Grid.simple <|
             [ Input.button (Button.fill ++ Color.primary) <|
-                { onPress = Just (ClickedSelectedMemberRanking (Internal.Types.RankingId ranking.id) ranking.rankingowneraddr ranking.rankingname)
+                { onPress = Just (ClickedSelectedMemberRanking (Internal.Types.RankingId ranking.id_) ranking.rankingowneraddr ranking.rankingname)
                 , label = Element.el
                             [ Font.color (Element.rgb 1 0 0)
                             , Font.size 18
@@ -2631,7 +2706,7 @@ neitherOwnerNorMemberRankingInfoBtn : SR.Types.Ranking -> Element Msg
 neitherOwnerNorMemberRankingInfoBtn rankingobj =
     Element.column Grid.simple <|
         [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "otherrankingbtn") ] ++ Button.fill ++ Color.primary) <|
-            { onPress = Just (ClickedSelectedNeitherOwnerNorMember (Internal.Types.RankingId rankingobj.id) rankingobj.rankingowneraddr rankingobj.rankingname)
+            { onPress = Just (ClickedSelectedNeitherOwnerNorMember (Internal.Types.RankingId rankingobj.id_) rankingobj.rankingowneraddr rankingobj.rankingname)
             , label = Element.text rankingobj.rankingname
             }
         ]
@@ -2886,30 +2961,30 @@ confirmDelRankingBtn appInfo dataState =
                  case dKind of 
                     Global sGlobal rnkId user ->
                         let 
-                            --userRanking = Data.Global.gotUserRanking sGlobal (Utils.MyUtils.stringFromRankingId rnkId)
-                            _ = Debug.log "ranking id" (Utils.MyUtils.stringFromRankingId rnkId)
-                            userRanking = Data.Global.gotUserRankingByRankingId sGlobal appInfo.selectedRanking.id
-                            rankingName = userRanking.rankingInfo.rankingname
-                            _ = Debug.log "rankingname" rankingName
+                            m_userRanking = Data.Global.gotUserRankingByRankingId sGlobal appInfo.selectedRanking.id_
                         in
-                        Element.column Grid.section <|
-                            [ 
-                            Element.el Heading.h5 <| Element.text rankingName
-                            , Element.el Heading.h6 <| Element.text "Click to continue ..."
-                            , Element.column (Card.simple ++ Grid.simple) <|
-                                [ Element.wrappedRow Grid.simple <|
-                                    [ Input.button (Button.simple ++ Color.simple) <|
-                                        { onPress = Just <| ResetToShowGlobal
-                                        , label = Element.text "Cancel"
-                                        }
-                                        , Input.button Button.simple <|
-                                        { onPress = Just <| ClickedDeleteRankingConfirmed
-                                        , label = Element.text "Confirm"
-                                        }
-                                    ]
-                                ]
-                            , SR.Elements.permanentlyDeleteWarnPara
-                            ]
+                            case m_userRanking of
+                                Nothing ->
+                                    Element.text "Cannot find the ranking"
+                                Just userRanking ->
+                                    Element.column Grid.section <|
+                                        [ 
+                                        Element.el Heading.h5 <| Element.text userRanking.rankingInfo.rankingname
+                                        , Element.el Heading.h6 <| Element.text "Click to continue ..."
+                                        , Element.column (Card.simple ++ Grid.simple) <|
+                                            [ Element.wrappedRow Grid.simple <|
+                                                [ Input.button (Button.simple ++ Color.simple) <|
+                                                    { onPress = Just <| ResetToShowGlobal
+                                                    , label = Element.text "Cancel"
+                                                    }
+                                                    , Input.button Button.simple <|
+                                                    { onPress = Just <| ClickedDeleteRankingConfirmed
+                                                    , label = Element.text "Confirm"
+                                                    }
+                                                ]
+                                            ]
+                                        , SR.Elements.permanentlyDeleteWarnPara
+                                        ]
                     _ -> 
                         let 
                             _ = Debug.log "newrankingconfirmbutton - dataState should be global" dataState
@@ -3006,47 +3081,52 @@ confirmResultbutton model =
                     case dKind of 
                         Selected sSelected rnkId user status rankings ->
                             let
-                                playerAsUser =
-                                    
-                                    Data.Users.gotUser sUsers appInfo.player.player.address
-
-                                challengerAsUser =
-                                
-                                    Data.Users.gotUser sUsers appInfo.challenger.player.address
+                                m_playerAsUser = Data.Users.gotUser sUsers appInfo.player.player.address
                             in
-                            Element.column Grid.section <|
-                                [ Element.column (Card.simple ++ Grid.simple) <|
-                                    [ Element.wrappedRow Grid.simple <|
-                                        [ Input.button (Button.simple ++ Color.simple) <|
-                                            { onPress = Just <| ResetToShowSelected
-                                            , label = Element.text "Cancel"
-                                            }
-                                        ]
-                                    ]
-                                , Element.paragraph (Card.fill ++ Color.info) <|
-                                    [ Element.el [] <| Element.text <| playerAsUser.username ++ " you had a challenge match vs " ++ challengerAsUser.username
-                                    ]
-                                , Element.el Heading.h6 <| Element.text <| "Please confirm your result: "
-                                , Element.column (Card.simple ++ Grid.simple) <|
-                                    [ Element.column Grid.simple <|
-                                        [ Input.button (Button.simple  ++ Button.fill ++ Color.primary) <|
-                                            { 
-                                            onPress = Just <| SentResultToWallet SR.Types.Won
-                                            , label = Element.text "Won"
-                                            }
-                                        , Input.button (Button.simple  ++ Button.fill ++ Color.primary) <|
-                                            { onPress = Just <| SentResultToWallet SR.Types.Lost
-                                            , label = Element.text "Lost"
-                                            }
-                                        , Input.button (Button.simple  ++ Button.fill ++ Color.primary) <|
-                                            { onPress = Just <| ProcessResult SR.Types.Undecided
-                                            , label = Element.text "Undecided"
-                                            }
-                                        ]
-                                    ]
-                                , SR.Elements.ethereumWalletWarning
-                                , SR.Elements.footer
-                                ]
+                            case m_playerAsUser of
+                                Nothing ->
+                                    Element.text "No player"
+                                Just playerAsUser ->
+                                    let
+                                        m_challengerAsUser = Data.Users.gotUser sUsers appInfo.challenger.player.address
+                                    in
+                                    case m_challengerAsUser of
+                                        Nothing ->
+                                            Element.text "No challenger"
+                                        Just challengerAsUser ->
+                                            Element.column Grid.section <|
+                                                [ Element.column (Card.simple ++ Grid.simple) <|
+                                                    [ Element.wrappedRow Grid.simple <|
+                                                        [ Input.button (Button.simple ++ Color.simple) <|
+                                                            { onPress = Just <| ResetToShowSelected
+                                                            , label = Element.text "Cancel"
+                                                            }
+                                                        ]
+                                                    ]
+                                                , Element.paragraph (Card.fill ++ Color.info) <|
+                                                    [ Element.el [] <| Element.text <| playerAsUser.username ++ " you had a challenge match vs " ++ challengerAsUser.username
+                                                    ]
+                                                , Element.el Heading.h6 <| Element.text <| "Please confirm your result: "
+                                                , Element.column (Card.simple ++ Grid.simple) <|
+                                                    [ Element.column Grid.simple <|
+                                                        [ Input.button (Button.simple  ++ Button.fill ++ Color.primary) <|
+                                                            { 
+                                                            onPress = Just <| SentResultToWallet SR.Types.Won
+                                                            , label = Element.text "Won"
+                                                            }
+                                                        , Input.button (Button.simple  ++ Button.fill ++ Color.primary) <|
+                                                            { onPress = Just <| SentResultToWallet SR.Types.Lost
+                                                            , label = Element.text "Lost"
+                                                            }
+                                                        , Input.button (Button.simple  ++ Button.fill ++ Color.primary) <|
+                                                            { onPress = Just <| ProcessResult SR.Types.Undecided
+                                                            , label = Element.text "Undecided"
+                                                            }
+                                                        ]
+                                                    ]
+                                                , SR.Elements.ethereumWalletWarning
+                                                , SR.Elements.footer
+                                                ]
                         _ ->
                             Element.text "Fail confirmResultbutton"
                 _ ->
@@ -3124,11 +3204,15 @@ isUserDescValidated user =
 
 isLadderDescValidated : SR.Types.Ranking -> Bool
 isLadderDescValidated rankingInfo =
-    if String.length rankingInfo.rankingdesc <= 20 then
-        True
+    case rankingInfo.rankingdesc of
+        Nothing ->
+            True 
+        Just rnkDesc ->
+            if String.length rnkDesc <= 20 then
+                True
 
-    else
-        False
+            else
+                False
 
 
 isEmailValidated : SR.Types.User -> Bool
@@ -3487,33 +3571,60 @@ isMobileValidated user =
 
 inputNewLadder : SR.Types.AppInfo -> DataState -> Element Msg
 inputNewLadder appInfo dataState =
-    Element.column Grid.section <|
-        [ Element.el Heading.h6 <| Element.text "New Ladder Details"
-        , Element.wrappedRow (Card.fill ++ Grid.simple)
-            [ Element.column Grid.simple
-                [ Input.text Input.simple
-                    { onChange = LadderNameInputChg
-                    , text = appInfo.selectedRanking.rankingname
-                    , placeholder = Nothing
-                    , label = Input.labelLeft Input.label <| Element.text "Name*:"
-                    }
-                , ladderNameValidationErr appInfo dataState
-                , Input.multiline Input.simple
-                -- Widget imported but not currently used
-                -- , Widget.textInput
-                --     { chips = [](Button msg)
-                --     , 
-                        {onChange = LadderDescInputChg
-                        , text =  Utils.Validation.Validate.validatedMaxTextLength appInfo.selectedRanking.rankingdesc 20
-                        , placeholder = Nothing
-                        , label = Input.labelLeft Input.label <| Element.text "Desc:"
-                        , spellcheck = False
-                        }
-                , Element.text "* Required"
-                , ladderDescValidationErr appInfo.selectedRanking
+    case appInfo.selectedRanking.rankingdesc of
+        Nothing ->
+            Element.column Grid.section <|
+                [ Element.el Heading.h6 <| Element.text "New Ladder Details"
+                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                    [ Element.column Grid.simple
+                        [ Input.text Input.simple
+                            { onChange = LadderNameInputChg
+                            , text = ""
+                            , placeholder = Nothing
+                            , label = Input.labelLeft Input.label <| Element.text "Name*:"
+                            }
+                        , ladderNameValidationErr appInfo dataState
+                        , Input.multiline Input.simple
+                                {onChange = LadderDescInputChg
+                                , text =  ""
+                                , placeholder = Nothing
+                                , label = Input.labelLeft Input.label <| Element.text "Desc:"
+                                , spellcheck = False
+                                }
+                        , Element.text "* Required"
+                        , ladderDescValidationErr appInfo.selectedRanking
+                        ]
+                    ]
                 ]
-            ]
-        ]
+
+        Just rankingdesc ->
+            Element.column Grid.section <|
+                [ Element.el Heading.h6 <| Element.text "New Ladder Details"
+                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                    [ Element.column Grid.simple
+                        [ Input.text Input.simple
+                            { onChange = LadderNameInputChg
+                            , text = appInfo.selectedRanking.rankingname
+                            , placeholder = Nothing
+                            , label = Input.labelLeft Input.label <| Element.text "Name*:"
+                            }
+                        , ladderNameValidationErr appInfo dataState
+                        , Input.multiline Input.simple
+                        -- Widget imported but not currently used
+                        -- , Widget.textInput
+                        --     { chips = [](Button msg)
+                        --     , 
+                                {onChange = LadderDescInputChg
+                                , text =  Utils.Validation.Validate.validatedMaxTextLength rankingdesc 20
+                                , placeholder = Nothing
+                                , label = Input.labelLeft Input.label <| Element.text "Desc:"
+                                , spellcheck = False
+                                }
+                        , Element.text "* Required"
+                        , ladderDescValidationErr appInfo.selectedRanking
+                        ]
+                    ]
+                ]
 
 
 handleGlobalNoUserView : DataState -> Html Msg
@@ -3574,6 +3685,9 @@ handleGlobalNoUserView dataState =
                                 , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
                                 ]
 
+                    Rankings _ ->
+                        Html.text ("Handle rankings here")
+
 
 handleGlobalNoTokenView : DataState -> SR.Types.User -> Html Msg
 handleGlobalNoTokenView dataState userVal =
@@ -3628,6 +3742,8 @@ handleGlobalNoTokenView dataState userVal =
                         , Element.text ("\n")
                         , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
                         ]
+                Rankings _ ->
+                    Html.text "Handle Rankings View"
 
 handleGlobalWithTokenView : Data.Global.Global -> SR.Types.User -> String -> Html Msg
 handleGlobalWithTokenView sGlobal userVal updatedStr = 
@@ -4131,15 +4247,20 @@ displayResultBeforeConfirmView model =
                         case dKind of 
                                 Selected sSelected rnkId user status rankings ->
                                     let
-                                        playerAsUser =
+                                        m_playerAsUser =
                                             Data.Users.gotUser sUsers appInfo.player.player.address
                                     in
-                                        Framework.responsiveLayout [] <|
-                                            Element.column
-                                                Framework.container
-                                                [ Element.el Heading.h4 <| Element.text <| playerAsUser.username ++ " - Result"
-                                                , confirmResultbutton model
-                                                ]
+                                        case m_playerAsUser of 
+                                            Nothing ->
+                                                Html.text "No Player"
+
+                                            Just playerAsUser ->
+                                                Framework.responsiveLayout [] <|
+                                                    Element.column
+                                                        Framework.container
+                                                        [ Element.el Heading.h4 <| Element.text <| playerAsUser.username ++ " - Result"
+                                                        , confirmResultbutton model
+                                                        ]
                                 _ ->
                                     Html.text "Error6"
                     _ ->
@@ -4153,7 +4274,7 @@ txErrorView model =
     case model of
         AppOps walletState dataState appInfo uiState subState accountState  txRec ->
             let
-                playerAsUser =
+                m_playerAsUser =
                     --SR.ListOps.gotUserFromUserList (EverySet.fromList dataState) appInfo.player.player.address
                     case dataState of 
                         StateFetched users dKind ->
@@ -4162,12 +4283,22 @@ txErrorView model =
                             Data.Users.gotUser Data.Users.emptyUsers appInfo.player.player.address
 
             in
-            Framework.responsiveLayout [] <|
-                Element.column
-                    Framework.container
-                    [ Element.el Heading.h4 <| Element.text <| playerAsUser.username ++ " Transaction Error"
-                    , acknoweldgeTxErrorbtn model
-                    ]
+                case m_playerAsUser of 
+                    Nothing ->
+                        Framework.responsiveLayout [] <|
+                            Element.column
+                                Framework.container
+                                [ Element.el Heading.h4 <| Element.text " Transaction Error"
+                                , acknoweldgeTxErrorbtn model
+                                ]
+
+                    Just playerAsUser ->
+                        Framework.responsiveLayout [] <|
+                            Element.column
+                                Framework.container
+                                [ Element.el Heading.h4 <| Element.text <| playerAsUser.username ++ " Transaction Error"
+                                , acknoweldgeTxErrorbtn model
+                                ]
 
         _ ->
             Html.text "Error7"
@@ -4354,31 +4485,33 @@ subscriptions model =
 
 fetchedSingleRanking : Internal.Types.RankingId -> Cmd Msg
 fetchedSingleRanking (Internal.Types.RankingId rankingId) =
+    Cmd.none
     --PlayersReceived is the Msg handled by update whenever a request is made
-    Http.request
-        { body = Http.emptyBody
-        , expect =
-            SR.Decode.ladderOfPlayersDecoder
-                |> Http.expectJson (RemoteData.fromResult >> PlayersReceived)
-        , headers = [ SR.Defaults.secretKey ]
-        , method = "GET"
-        , timeout = Nothing
-        , tracker = Nothing
-        , url = SR.Constants.baseBinUrl ++ rankingId ++ "/latest"
-        }
+    -- Http.request
+    --     { body = Http.emptyBody
+    --     , expect =
+    --         SR.Decode.ladderOfPlayersDecoder
+    --             |> Http.expectJson (RemoteData.fromResult >> PlayersReceived)
+    --     , headers = [ SR.Defaults.secretKey ]
+    --     , method = "GET"
+    --     , timeout = Nothing
+    --     , tracker = Nothing
+    --     , url = SR.Constants.baseBinUrl ++ rankingId ++ "/latest"
+    --     }
 
 
 gotGlobal : Cmd Msg
 gotGlobal =
-    Http.request
-        { body = Http.emptyBody
-        , expect = Http.expectJson (RemoteData.fromResult >> GlobalReceived) SR.Decode.rankingsDecoder
-        , headers = [ SR.Defaults.secretKey, SR.Defaults.globalContainerId, SR.Defaults.globalContainerId ]
-        , method = "GET"
-        , timeout = Nothing
-        , tracker = Nothing
-        , url = SR.Constants.globalJsonbinRankingReadLink
-        }
+    Cmd.none
+    -- Http.request
+    --     { body = Http.emptyBody
+    --     , expect = Http.expectJson (RemoteData.fromResult >> GlobalReceived) SR.Decode.rankingsDecoder
+    --     , headers = [ SR.Defaults.secretKey, SR.Defaults.globalContainerId, SR.Defaults.globalContainerId ]
+    --     , method = "GET"
+    --     , timeout = Nothing
+    --     , tracker = Nothing
+    --     , url = SR.Constants.globalJsonbinRankingReadLink
+    --     }
 
 
 addedUserAsFirstPlayerInNewList : SR.Types.User -> Cmd Msg
@@ -4413,52 +4546,53 @@ addedUserAsFirstPlayerInNewList user =
 
 createNewUser : Data.Users.Users -> SR.Types.User -> Cmd Msg
 createNewUser sUsers newuserinfo =
-    let
-        newUserToAdd : SR.Types.User
-        newUserToAdd =
-            Data.Users.newUser  
-                newuserinfo.username 
-                newuserinfo.password 
-                newuserinfo.m_ethaddress 
-                newuserinfo.description
-                newuserinfo.email
-                newuserinfo.mobile
+    Cmd.none
+    -- let
+    --     newUserToAdd : SR.Types.User
+    --     newUserToAdd =
+    --         Data.Users.newUser  
+    --             newuserinfo.username 
+    --             newuserinfo.password 
+    --             newuserinfo.m_ethaddress 
+    --             newuserinfo.description
+    --             newuserinfo.email
+    --             newuserinfo.mobile
 
-        listForHttpRequest = 
-                Data.Users.addUser newUserToAdd sUsers
-                |> Data.Users.asList
+    --     listForHttpRequest = 
+    --             Data.Users.addUser newUserToAdd sUsers
+    --             |> Data.Users.asList
             
-    in
-    --SentUserInfoAndDecodedResponseToNewUser is the Msg handled by update whenever a request is made by buttuser clicked
-    --RemoteData is used throughout the module, including update
-    -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
-    -- decoder relates to what comes back from server. Nothing to do with above.
-    -- we mustn't submit a new user if the original list is empty for some reason ...
-    if Data.Users.isEmpty sUsers then
-        Http.request
-            { body =
-                Http.jsonBody <| jsonEncodeNewUsersList listForHttpRequest
-            , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
-            , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
-            , method = "PUT"
-            , timeout = Nothing
-            , tracker = Nothing
+    -- in
+    -- --SentUserInfoAndDecodedResponseToNewUser is the Msg handled by update whenever a request is made by buttuser clicked
+    -- --RemoteData is used throughout the module, including update
+    -- -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
+    -- -- decoder relates to what comes back from server. Nothing to do with above.
+    -- -- we mustn't submit a new user if the original list is empty for some reason ...
+    -- if Data.Users.isEmpty sUsers then
+    --     Http.request
+    --         { body =
+    --             Http.jsonBody <| jsonEncodeNewUsersList listForHttpRequest
+    --         , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
+    --         , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
+    --         , method = "PUT"
+    --         , timeout = Nothing
+    --         , tracker = Nothing
 
-            -- this will fail the create new user:
-            , url = ""
-            }
+    --         -- this will fail the create new user:
+    --         , url = ""
+    --         }
 
-    else
-        Http.request
-            { body =
-                Http.jsonBody <| jsonEncodeNewUsersList listForHttpRequest
-            , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
-            , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
-            , method = "PUT"
-            , timeout = Nothing
-            , tracker = Nothing
-            , url = SR.Constants.jsonbinUrlUpdateUserListAndRespond
-            }
+    -- else
+    --     Http.request
+    --         { body =
+    --             Http.jsonBody <| jsonEncodeNewUsersList listForHttpRequest
+    --         , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
+    --         , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
+    --         , method = "PUT"
+    --         , timeout = Nothing
+    --         , tracker = Nothing
+    --         , url = SR.Constants.jsonbinUrlUpdateUserListAndRespond
+    --         }
 
 updateExistingUser : Data.Users.Users -> Cmd Msg
 updateExistingUser  updatedUserInfo =
@@ -4467,16 +4601,17 @@ updateExistingUser  updatedUserInfo =
 
 httpUpdateUsers : Data.Users.Users -> Cmd Msg
 httpUpdateUsers  updatedUsers =
-    Http.request
-            { body =
-                Http.jsonBody <| jsonEncodeNewUsersList (Data.Users.asList updatedUsers)
-            , expect = Http.expectJson (RemoteData.fromResult >> UsersReceived) SR.Decode.decodeNewUserListServerResponse
-            , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
-            , method = "PUT"
-            , timeout = Nothing
-            , tracker = Nothing
-            , url = SR.Constants.jsonbinUrlUpdateUserListAndRespond
-            }
+    Cmd.none
+    -- Http.request
+    --         { body =
+    --             Http.jsonBody <| jsonEncodeNewUsersList (Data.Users.asList updatedUsers)
+    --         , expect = Http.expectJson (RemoteData.fromResult >> UsersReceived) SR.Decode.decodeNewUserListServerResponse
+    --         , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
+    --         , method = "PUT"
+    --         , timeout = Nothing
+    --         , tracker = Nothing
+    --         , url = SR.Constants.jsonbinUrlUpdateUserListAndRespond
+    --         }
 
 
 jsonEncodeNewUsersList : List SR.Types.User -> Json.Encode.Value
@@ -4521,35 +4656,36 @@ jsonEncodeNewUsersList luserInfo =
 
 httpAddCurrentUserToPlayerList : DataState -> SR.Types.User -> Cmd Msg
 httpAddCurrentUserToPlayerList dataState userRec =
-    case dataState of
-        StateUpdated sUsers dKind -> 
-            case dKind of 
-                    Selected sSelected rnkId user status rankings -> 
-                        --ReturnFromPlayerListUpdate is the Msg handled by update whenever a request is made
-                        --RemoteData is used throughout the module, including update
-                        -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
-                        -- the Decoder decodes what comes back in the response
-                        Http.request
-                            { body =
-                                Http.jsonBody <| Data.Selected.jsonEncodeNewSelectedRankingPlayerList (Data.Selected.userAdded sUsers (Utils.MyUtils.stringFromRankingId rnkId) (Data.Selected.asList sSelected) userRec)
-                            , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromPlayerListUpdate) SR.Decode.decodeNewPlayerListServerResponse
-                            , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
-                            , method = "PUT"
-                            , timeout = Nothing
-                            , tracker = Nothing
-                            , url = SR.Constants.jsonbinUrlStubForUpdateExistingBinAndRespond ++ (Utils.MyUtils.stringFromRankingId rnkId)
+    Cmd.none
+    -- case dataState of
+    --     StateUpdated sUsers dKind -> 
+    --         case dKind of 
+    --                 Selected sSelected rnkId user status rankings -> 
+    --                     --ReturnFromPlayerListUpdate is the Msg handled by update whenever a request is made
+    --                     --RemoteData is used throughout the module, including update
+    --                     -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
+    --                     -- the Decoder decodes what comes back in the response
+    --                     Http.request
+    --                         { body =
+    --                             Http.jsonBody <| Data.Selected.jsonEncodeNewSelectedRankingPlayerList (Data.Selected.userAdded sUsers (Utils.MyUtils.stringFromRankingId rnkId) (Data.Selected.asList sSelected) userRec)
+    --                         , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromPlayerListUpdate) SR.Decode.decodeNewPlayerListServerResponse
+    --                         , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
+    --                         , method = "PUT"
+    --                         , timeout = Nothing
+    --                         , tracker = Nothing
+    --                         , url = SR.Constants.jsonbinUrlStubForUpdateExistingBinAndRespond ++ (Utils.MyUtils.stringFromRankingId rnkId)
                             
-                            }
-                    _ -> 
-                        let 
-                            _ = Debug.log "httpAddCurrentUserToPlayerList - dataState" dataState
-                        in
-                            Cmd.none
-        _ -> 
-            let 
-                _ = Debug.log "httpAddCurrentUserToPlayerList - dataState" dataState
-            in
-                Cmd.none
+    --                         }
+    --                 _ -> 
+    --                     let 
+    --                         _ = Debug.log "httpAddCurrentUserToPlayerList - dataState" dataState
+    --                     in
+    --                         Cmd.none
+    --     _ -> 
+    --         let 
+    --             _ = Debug.log "httpAddCurrentUserToPlayerList - dataState" dataState
+    --         in
+    --             Cmd.none
 
 
 
@@ -4559,51 +4695,54 @@ httpPutRequestForAddGlobal newJsonEncodedList globalListWithJsonObjAdded =
     --RemoteData is used throughout the module, including update
     -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
     -- the Decoder decodes what comes back in the response
-    Http.request
-        { body =
-            Http.jsonBody <| Data.Global.newJsonEncodedList globalListWithJsonObjAdded
-        , expect = Http.expectJson (RemoteData.fromResult >> AddedNewRankingToGlobalList) SR.Decode.decodeNewRankingListServerResponse
-        , headers = [ SR.Defaults.secretKey, SR.Defaults.globalBinName, SR.Defaults.globalContainerId ]
-        , method = "PUT"
-        , timeout = Nothing
-        , tracker = Nothing
-        , url = SR.Constants.globalJsonbinRankingUpdateLink
-        }
+    -- Http.request
+    --     { body =
+    --         Http.jsonBody <| Data.Global.newJsonEncodedList globalListWithJsonObjAdded
+    --     , expect = Http.expectJson (RemoteData.fromResult >> AddedNewRankingToGlobalList) SR.Decode.decodeNewRankingListServerResponse
+    --     , headers = [ SR.Defaults.secretKey, SR.Defaults.globalBinName, SR.Defaults.globalContainerId ]
+    --     , method = "PUT"
+    --     , timeout = Nothing
+    --     , tracker = Nothing
+    --     , url = SR.Constants.globalJsonbinRankingUpdateLink
+    --     }
+    Cmd.none
 
 httpDeleteSelectedRankingFromGlobalList : Data.Global.Global -> Cmd Msg
 httpDeleteSelectedRankingFromGlobalList sGlobalWithRankingDeleted =
-    Http.request
-            { body =
-                Http.jsonBody <| Data.Global.newJsonEncodedList (Data.Global.rankingsAsList sGlobalWithRankingDeleted)
-            , expect = Http.expectJson (RemoteData.fromResult >> ReturnedFromDeletedRankingFromGlobalList) SR.Decode.decodeUpdateGlobalBinResponse
-            , headers = [ SR.Defaults.secretKey, SR.Defaults.globalBinName, SR.Defaults.globalContainerId ]
-            , method = "PUT"
-            , timeout = Nothing
-            , tracker = Nothing
-            -- nb. updating the 'global' list on the server actually means updating the Rankings set
-            -- the collection is called 'Global' on the server, but it isn't 'Global' in the app
-            -- until it's been turned into (EverySet UserRankings)
-            , url = SR.Constants.globalJsonbinRankingUpdateLink
-            }
+    Cmd.none
+    -- Http.request
+    --         { body =
+    --             Http.jsonBody <| Data.Global.newJsonEncodedList (Data.Global.rankingsAsList sGlobalWithRankingDeleted)
+    --         , expect = Http.expectJson (RemoteData.fromResult >> ReturnedFromDeletedRankingFromGlobalList) SR.Decode.decodeUpdateGlobalBinResponse
+    --         , headers = [ SR.Defaults.secretKey, SR.Defaults.globalBinName, SR.Defaults.globalContainerId ]
+    --         , method = "PUT"
+    --         , timeout = Nothing
+    --         , tracker = Nothing
+    --         -- nb. updating the 'global' list on the server actually means updating the Rankings set
+    --         -- the collection is called 'Global' on the server, but it isn't 'Global' in the app
+    --         -- until it's been turned into (EverySet UserRankings)
+    --         , url = SR.Constants.globalJsonbinRankingUpdateLink
+    --         }
 
 
 httpDeleteSelectedRankingFromJsonBin : String -> Cmd Msg
 httpDeleteSelectedRankingFromJsonBin rankingId =
+    Cmd.none
     -- the Decoder decodes what comes back in the response
-    let 
-        _ = Debug.log "bin id" rankingId
-    in
-    Http.request
-        { body =
-            Http.emptyBody
-        , expect = Http.expectJson (RemoteData.fromResult >> ReturnedFromDeletedSelectedRankingFromJsonBin) SR.Decode.decodeDeleteBinResponse
-        , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
-        , method = "DELETE"
-        , timeout = Nothing
-        , tracker = Nothing
-        , url = "https://api.jsonbin.io/b/" ++ rankingId
+    -- let 
+    --     _ = Debug.log "bin id" rankingId
+    -- in
+    -- Http.request
+    --     { body =
+    --         Http.emptyBody
+    --     , expect = Http.expectJson (RemoteData.fromResult >> ReturnedFromDeletedSelectedRankingFromJsonBin) SR.Decode.decodeDeleteBinResponse
+    --     , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
+    --     , method = "DELETE"
+    --     , timeout = Nothing
+    --     , tracker = Nothing
+    --     , url = "https://api.jsonbin.io/b/" ++ rankingId
         
-        }
+    --     }
 
 
 postResultToJsonbin : Internal.Types.RankingId -> Cmd Msg
@@ -4630,48 +4769,50 @@ postResultToJsonbin (Internal.Types.RankingId rankingId) =
 
 httpPlayerList : DataState -> Cmd Msg
 httpPlayerList dataState =
-  case dataState of
-    StateUpdated sUsers dKind -> 
-        case dKind of 
-                Selected sSelected rnkId user status rankings ->
-                    Http.request
-                        { body =
-                        Http.jsonBody <| Data.Selected.jsonEncodeNewSelectedRankingPlayerList (Data.Selected.asList sSelected)
-                        , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromPlayerListUpdate) SR.Decode.decodeNewPlayerListServerResponse
-                        , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
-                        , method = "PUT"
-                        , timeout = Nothing
-                        , tracker = Nothing
-                        , url = SR.Constants.jsonbinUrlStubForUpdateExistingBinAndRespond ++ (Utils.MyUtils.stringFromRankingId rnkId)
-                        }
-                _ -> 
-                    let 
-                        _ = Debug.log "dataState - httpPlayerList" dataState
-                    in
-                        Cmd.none
-    _ -> 
-        let 
-            _ = Debug.log "dataState - httpPlayerList" dataState
-        in
-            Cmd.none
+    Cmd.none
+--   case dataState of
+--     StateUpdated sUsers dKind -> 
+--         case dKind of 
+--                 Selected sSelected rnkId user status rankings ->
+--                     Http.request
+--                         { body =
+--                         Http.jsonBody <| Data.Selected.jsonEncodeNewSelectedRankingPlayerList (Data.Selected.asList sSelected)
+--                         , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromPlayerListUpdate) SR.Decode.decodeNewPlayerListServerResponse
+--                         , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
+--                         , method = "PUT"
+--                         , timeout = Nothing
+--                         , tracker = Nothing
+--                         , url = SR.Constants.jsonbinUrlStubForUpdateExistingBinAndRespond ++ (Utils.MyUtils.stringFromRankingId rnkId)
+--                         }
+--                 _ -> 
+--                     let 
+--                         _ = Debug.log "dataState - httpPlayerList" dataState
+--                     in
+--                         Cmd.none
+--     _ -> 
+--         let 
+--             _ = Debug.log "dataState - httpPlayerList" dataState
+--         in
+--             Cmd.none
     
 
 
 httpUpdateUsersJoinRankings : String -> SR.Types.User -> List SR.Types.User -> Cmd Msg
 httpUpdateUsersJoinRankings rankingId user lUser =
-    let 
-        newUserList =  Data.Users.addedNewJoinedRankingId rankingId user lUser
-        _ = Debug.log "newuserlist " newUserList
-    in
-    Http.request
-        { body =
-            Http.jsonBody <| SR.Encode.encodeUserList <| Data.Users.addedNewJoinedRankingId rankingId user lUser
-        , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromUserListUpdate) SR.Decode.decodeNewUserListServerResponse
-        , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
-        , method = "PUT"
-        , timeout = Nothing
-        , tracker = Nothing
-        --, url = SR.Constants.jsonbinUrlUpdateUserListAndRespond
-        , url = ""
-        }
+    Cmd.none
+    -- let 
+    --     newUserList =  Data.Users.addedNewJoinedRankingId rankingId user lUser
+    --     _ = Debug.log "newuserlist " newUserList
+    -- in
+    -- Http.request
+    --     { body =
+    --         Http.jsonBody <| SR.Encode.encodeUserList <| Data.Users.addedNewJoinedRankingId rankingId user lUser
+    --     , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromUserListUpdate) SR.Decode.decodeNewUserListServerResponse
+    --     , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
+    --     , method = "PUT"
+    --     , timeout = Nothing
+    --     , tracker = Nothing
+    --     --, url = SR.Constants.jsonbinUrlUpdateUserListAndRespond
+    --     , url = ""
+    --     }
 

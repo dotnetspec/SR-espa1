@@ -7,11 +7,11 @@ module Data.Users exposing (Users
     , removedRankingIdFromAll
     , removedRankindIdFromUser
     --, removeCurrentUserEntryFromUserList
-    , removedDuplicateUserFromUserList
+    --, removedDuplicateUserFromUserList
     , isRegistered
     , isUniqueUserName
     , isEmpty
-    , gotUserListFromRemData
+    --, gotUserListFromRemData
     , isNameValidationErr
     , extractUsersFromWebData
     , gotUserFromUserList
@@ -21,7 +21,6 @@ module Data.Users exposing (Users
     , removeUser
     , asList
     , asUsers
-    , getUser
     , gotUser
     , userSetLength
     , isUserNameValidated
@@ -33,13 +32,13 @@ import SR.Types
 import EverySet exposing (EverySet)
 import Internal.Types
 import Utils.MyUtils
-import SR.Defaults
 import Eth.Utils
 import RemoteData
 import Http
 import List.Unique
 import Utils.Validation.Validate
 import Eth.Types
+import SR.Defaults
 
 
 -- Users (EverySet SR.Types.User) is not the same type as (EverySet SR.Types.User)
@@ -116,23 +115,17 @@ userSetLength (Users susers) =
     EverySet.size susers
 
 
-gotUser : Users  -> String -> SR.Types.User
+gotUser : Users  -> String -> Maybe SR.Types.User
 gotUser (Users susers) uaddr =
-    SR.Defaults.emptyUser
+    --todo: not using currently
     -- let
-    --     existingUser =
+    --         existingUser =
     --         List.head <|
     --              EverySet.toList (EverySet.filter (\r -> (String.toLower <| r.m_ethaddress) == (String.toLower <| uaddr))
     --                 susers)
     -- in
-    
-    -- case existingUser of
-    --     Nothing ->
-    --         SR.Defaults.emptyUser
+        Just SR.Defaults.emptyUser
 
-    --     Just a ->
-    --         --a
-    --         SR.Defaults.emptyUser
 
 
 -- probably should be updated to return a set, not a list:
@@ -212,29 +205,16 @@ filterRankingIds rnkIdToFilter currentRnkId =
 
     
 
-removeUser : SR.Types.User -> Users -> Users
-removeUser user susers = 
+removeUser : Maybe SR.Types.User -> Users -> Users
+removeUser m_user susers = 
     case susers of 
         Users setOfUsers->
-           asUsers (EverySet.remove user setOfUsers) 
+            case m_user of 
+                Nothing ->
+                    susers
+                Just user ->
+                    asUsers (EverySet.remove user setOfUsers) 
 
---todo: remove
-getUser : List SR.Types.UserRanking -> String -> Maybe SR.Types.UserRanking
-getUser luranking rankingid =
-    List.filterMap
-        (isUserRankingIdInList
-            rankingid
-        )
-        luranking
-        |> List.head
-
-isUserRankingIdInList : String -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
-isUserRankingIdInList rankingid urnk =
-    if urnk.rankingInfo.id == rankingid then
-        Just urnk
-
-    else
-        Nothing
 
 
 asList : Users -> List SR.Types.User 
@@ -274,23 +254,18 @@ updatedUserInSet susers userToUpdate =
                 addUser userToUpdate userRemoved
 
 
--- todo: remove?
-gotUserFromUserList : List SR.Types.User -> String -> SR.Types.User
+gotUserFromUserList : List SR.Types.User -> String -> Maybe SR.Types.User
 gotUserFromUserList userList uaddr =
---todo: short term fix to get to compile, this won't currently get a user
-    SR.Defaults.emptyUser
-    -- let
-    --     existingUser =
-    --         List.head <|
-    --             List.filter (\r -> (String.toLower <| r.m_ethaddress) == (String.toLower <| uaddr))
-    --                 (validatedUserList userList)
-    -- in
-    -- case existingUser of
-    --     Nothing ->
-    --         SR.Defaults.emptyUser
-
-    --     Just a ->
-    --         a
+    let
+        existingUser =
+            List.head <|
+                --List.filter (\r -> (String.toLower <| r.m_ethaddress) == (String.toLower <| Just uaddr))
+                List.filter (\r -> (r.m_ethaddress) == (Result.toMaybe (Eth.Utils.toAddress uaddr)))
+                    (validatedUserList userList)
+        
+    in
+        existingUser
+ 
 
 validatedUserList : List SR.Types.User -> List SR.Types.User
 validatedUserList luser =
@@ -349,55 +324,55 @@ isNameValidationErr newName sUsers =
     else 
         False
 
-gotUserListFromRemData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
-gotUserListFromRemData userList =
-    case userList of
-        RemoteData.Success a ->
-            a
+-- gotUserListFromRemData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
+-- gotUserListFromRemData userList =
+--     case userList of
+--         RemoteData.Success a ->
+--             a
 
-        RemoteData.NotAsked ->
-            [ SR.Defaults.emptyUser
-            ]
+--         RemoteData.NotAsked ->
+--             [ SR.Defaults.emptyUser
+--             ]
 
-        RemoteData.Loading ->
-            [ SR.Defaults.emptyUser
-            ]
+--         RemoteData.Loading ->
+--             [ SR.Defaults.emptyUser
+--             ]
 
-        RemoteData.Failure err ->
-            case err of
-                Http.BadUrl s ->
-                    [ SR.Defaults.emptyUser
-                    ]
+--         RemoteData.Failure err ->
+--             case err of
+--                 Http.BadUrl s ->
+--                     [ SR.Defaults.emptyUser
+--                     ]
 
-                Http.Timeout ->
-                    [ SR.Defaults.emptyUser
-                    ]
+--                 Http.Timeout ->
+--                     [ SR.Defaults.emptyUser
+--                     ]
 
-                Http.NetworkError ->
-                    [ SR.Defaults.emptyUser
-                    ]
+--                 Http.NetworkError ->
+--                     [ SR.Defaults.emptyUser
+--                     ]
 
-                Http.BadStatus statuscode ->
-                    [ SR.Defaults.emptyUser
-                    ]
+--                 Http.BadStatus statuscode ->
+--                     [ SR.Defaults.emptyUser
+--                     ]
 
-                Http.BadBody s ->
-                    [ SR.Defaults.emptyUser
-                    ]
+--                 Http.BadBody s ->
+--                     [ SR.Defaults.emptyUser
+--                     ]
 
-removedDuplicateUserFromUserList : List SR.Types.User -> List SR.Types.User
-removedDuplicateUserFromUserList userList =
-    let
-        laddresses =
-            List.map gotAddressesFromUserList userList
+-- removedDuplicateUserFromUserList : List SR.Types.User -> List SR.Types.User
+-- removedDuplicateUserFromUserList userList =
+--     let
+--         laddresses =
+--             List.map gotAddressesFromUserList userList
 
-        lremovedDuplicateAddresses =
-            List.Unique.filterDuplicates laddresses
+--         lremovedDuplicateAddresses =
+--             List.Unique.filterDuplicates laddresses
 
-        lusersWithDuplicatesRemoved =
-            List.map (gotUserFromUserList userList) lremovedDuplicateAddresses
-    in
-    lusersWithDuplicatesRemoved
+--         lusersWithDuplicatesRemoved =
+--             List.map (gotUserFromUserList userList) lremovedDuplicateAddresses
+--     in
+--     lusersWithDuplicatesRemoved
 
 
 gotAddressesFromUserList : SR.Types.User -> String

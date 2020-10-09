@@ -4,8 +4,8 @@ module Utils.MyUtils exposing
     , convertListOfMaybeToList
     , convertMaybePlayerToPlayer
     , createdMaybePlayerFromPlayer
-    , extractRankinigInfoFromMaybe
-    , extractUserRankinigFromMaybe
+    --, extractRankinigInfoFromMaybe
+    --, extractUserRankinigFromMaybe
     , gotHttpErr
     , refEachPlayer
     , refEachUser
@@ -16,6 +16,8 @@ module Utils.MyUtils exposing
     , stringToRankingId
     , stringListToRankingIdList
     , rankingIdListToStringList
+    , removeNothingFromList
+    --, handleResult
     )
 
 import Eth.Types
@@ -27,24 +29,27 @@ import SR.Defaults
 import SR.Types
 
 
-extractUserRankinigFromMaybe : Maybe SR.Types.UserRanking -> SR.Types.UserRanking
-extractUserRankinigFromMaybe valtoextract =
-    case valtoextract of
-        Just a ->
-            a
+-- extractUserRankinigFromMaybe : Maybe SR.Types.UserRanking -> SR.Types.UserRanking
+-- extractUserRankinigFromMaybe valtoextract =
+--     case valtoextract of
+--         Just a ->
+--             a
 
-        Nothing ->
-            SR.Defaults.emptyUserRanking
+--         Nothing ->
+--             SR.Defaults.emptyUserRanking
 
+-- handleResult : Result err val -> a 
+-- handleResult result = 
+--     case result of 
+--         Ok val ->
+--             val
+--         Err str ->
+--             str
 
-extractRankinigInfoFromMaybe : Maybe SR.Types.Ranking -> SR.Types.Ranking
-extractRankinigInfoFromMaybe valtoextract =
-    case valtoextract of
-        Just a ->
-            a
+removeNothingFromList : List (Maybe a) -> List a 
+removeNothingFromList list =
+    List.filterMap identity list
 
-        Nothing ->
-            SR.Defaults.emptyRankingInfo
 
 convertListOfMaybeToList : List (Maybe a) -> List a
 convertListOfMaybeToList hasAnything =
@@ -149,22 +154,6 @@ convertMaybePlayerToPlayer mplayer =
         Just a ->
             a
 
-
-
--- { address = a.address
--- , rank = a.rank
--- , challengeraddress = a.challengeraddress
--- }
-
-
-convertMaybeUserRankingToUserRanking : Maybe SR.Types.UserRanking -> SR.Types.UserRanking
-convertMaybeUserRankingToUserRanking muranking =
-    case muranking of
-        Nothing ->
-            SR.Defaults.emptyUserRanking
-
-        Just a ->
-            a
 
 
 rankFromMaybeRank : Maybe Int -> Int

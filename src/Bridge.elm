@@ -103,28 +103,52 @@ queryAllUsers =
 --     |> with fieldFromGraphql
 --     |> with otherFieldFromGraphql
 --     |> ...
-
-rankingSelectionSet : SelectionSet SR.Types.FRanking SRdb.Object.Ranking
-rankingSelectionSet =
-    --Graphql.SelectionSet.succeed SR.Types.FRanking
-    --SelectionSet a typeLock -> SelectionSet (a -> b) typeLock -> SelectionSet b typeLock
-    -- SelectionSet (SRdb.ScalarCodecs.Id -> b)
-        Graphql.SelectionSet.succeed SR.Types.FRanking
-            |> Graphql.SelectionSet.with SRdb.Object.Ranking.id_
-            |> Graphql.SelectionSet.with SRdb.Object.Ranking.active
-            |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingname
-            |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingdesc
-            |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingowneraddr
-       
-
+-- MyLocalType is FRanking -> it can then be converted
        
 requestAllRankings : Http.Request (Maybe (List (Maybe SR.Types.FRanking)))
 requestAllRankings  =
     Http.queryRequest SR.Constants.endpointURL (queryAllRankings rankingSelectionSet)
        |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
 
-queryAllRankings : SelectionSet decodesTo SRdb.Object.Ranking
-    -> SelectionSet (Maybe (List (Maybe decodesTo))) RootQuery
-queryAllRankings =
-    Query.allRankings
-       
+rankingSelectionSet : SelectionSet SR.Types.FRanking SRdb.Object.Ranking
+rankingSelectionSet =
+    --Graphql.SelectionSet.succeed SR.Types.Ranking
+    --SelectionSet a typeLock -> SelectionSet (a -> b) typeLock -> SelectionSet b typeLock
+    -- SelectionSet (SRdb.ScalarCodecs.Id -> b)
+        Graphql.SelectionSet.succeed SR.Types.FRanking
+            |> Graphql.SelectionSet.with SRdb.Object.Ranking.id_
+            --|> Graphql.SelectionSet.with (Graphql.SelectionSet.map SR.Types.fromScalarCodecId SRdb.Object.Ranking.id_)
+            |> Graphql.SelectionSet.with SRdb.Object.Ranking.active
+            |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingname
+            |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingdesc
+            |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingowneraddr
+
+queryAllRankings : SelectionSet SR.Types.FRanking SRdb.Object.Ranking
+    ---> SelectionSet (List (Maybe decodesTo)) RootQuery
+    ---> SelectionSet (Maybe (List (Maybe decodesTo))) RootQuery
+    -> SelectionSet (Maybe (List (Maybe SR.Types.FRanking))) RootQuery
+queryAllRankings rankingSelectSet =
+        --Graphql.SelectionSet.map handleRankingList (Query.allRankings rankingSelectSet)
+        Query.allRankings rankingSelectSet
+      
+
+-- handleRankingList : Maybe (List (Maybe SR.Types.FRanking)) -> List (Maybe SR.Types.Ranking)
+-- handleRankingList m_lranking = 
+--     case m_lranking of
+--         Nothing ->
+--             [Nothing]
+
+--         Just lrnkings ->
+--             List.map convertToRanking lrnkings
+
+-- convertToRanking : Maybe SR.Types.FRanking -> Maybe SR.Types.Ranking
+-- convertToRanking m_franking =  
+--         case m_franking of
+--             Nothing ->
+--                 Nothing
+
+--             Just frnking ->
+--                 Just (SR.Types.newRanking (SR.Types.fromScalarCodecId frnking.id_))
+        
+
+
