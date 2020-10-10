@@ -187,7 +187,7 @@ type Msg
     | LoggedInUser (Result (GQLHttp.Error SR.Types.Token) SR.Types.Token)
     | ReceivedUserNames (Result (GQLHttp.Error (List String)) (List String))
     | ReceivedUsers (Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FUser)))) (Maybe (List (Maybe SR.Types.FUser))))
-    | ReceivedGlobal (Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FRanking)))) (Maybe (List (Maybe SR.Types.FRanking))))
+    | ReceivedRankings (Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FRanking)))) (Maybe (List (Maybe SR.Types.FRanking))))
       -- App Only Ops
     | MissingWalletInstructions
     | OpenWalletInstructions
@@ -1737,8 +1737,8 @@ update msg model =
             , Cmd.none
             )
 
-        (ReceivedGlobal response, modelReDef) ->
-            ( updateModelFromReceivedGlobal modelReDef response
+        (ReceivedRankings response, modelReDef) ->
+            ( updateModelFromReceivedRankings modelReDef response
             , Cmd.none
             )
 
@@ -1796,7 +1796,7 @@ allUsers  =
 
 allRankings : Cmd Msg
 allRankings  =
-    GQLHttp.send ReceivedGlobal (requestAllRankings)
+    GQLHttp.send ReceivedRankings (requestAllRankings)
 
        
 -- model handlers
@@ -1822,44 +1822,29 @@ updateModelFromReceivedUsers model response =
             model
 
 
-updateModelFromReceivedGlobal : Model -> Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FRanking)))) (Maybe (List (Maybe SR.Types.FRanking))) -> Model
-updateModelFromReceivedGlobal model response =
+updateModelFromReceivedRankings : Model -> Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FRanking)))) (Maybe (List (Maybe SR.Types.FRanking))) -> Model
+updateModelFromReceivedRankings model response =
     case response of
         Ok lrankings ->
-            -- let 
-            --     newRankingList = List.map convertIdToStr lrankings
-            -- in
-            case lrankings of 
-                Nothing ->
-                    model
-                
-                Just lm_FRanking ->
-                    -- case lm_FRanking of 
-                    --     Nothing ->
-                    --         model 
-                        
-                    --     Just lFRankinig ->
                     let
-                        filteredFRankingList = Utils.MyUtils.removeNothingFromList lm_FRanking
+                        filteredFRankingList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lrankings)
                         -- need to convert from FRanking to Ranking (id_ needs to be a String)
                         lFromFToRanking = List.map SR.Types.newRanking filteredFRankingList
                         _ = Debug.log "lFromFToRanking : " lFromFToRanking
-    
                     in
-                            case model of  
-                                AppOps walletState dataState appInfo uiState subState accountState txRec ->
-                                    case dataState of 
-                                        AllEmpty ->
-                                                    let
-                                                        newDataKind = Rankings (Data.Rankings.asRankings (EverySet.fromList lFromFToRanking))
-                                                        --newDataKind = Global (Data.Global.asGlobal (EverySet.fromList filteredRankingList)) (Internal.Types.RankingId "") appInfo.m_user
-                                                        newDataState = StateFetched Data.Users.emptyUsers newDataKind
-                                                    in
-                                                    AppOps walletState newDataState appInfo uiState subState accountState txRec
-                                        _ ->
-                                            model
-                                Failure _ ->
-                                    model
+                        case model of  
+                            AppOps walletState dataState appInfo uiState subState accountState txRec ->
+                                case dataState of 
+                                    AllEmpty ->
+                                        let
+                                            newDataKind = Rankings (Data.Rankings.asRankings (EverySet.fromList lFromFToRanking))
+                                            newDataState = StateFetched Data.Users.emptyUsers newDataKind
+                                        in
+                                        AppOps walletState newDataState appInfo uiState subState accountState txRec
+                                    _ ->
+                                        model
+                            Failure _ ->
+                                model
 
         Err _ ->
             model
