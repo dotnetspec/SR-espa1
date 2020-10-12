@@ -188,6 +188,7 @@ type Msg
     | ReceivedUserNames (Result (GQLHttp.Error (List String)) (List String))
     | ReceivedUsers (Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FUser)))) (Maybe (List (Maybe SR.Types.FUser))))
     | ReceivedRankings (Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FRanking)))) (Maybe (List (Maybe SR.Types.FRanking))))
+    | CreateGlobal
       -- App Only Ops
     | MissingWalletInstructions
     | OpenWalletInstructions
@@ -1612,6 +1613,9 @@ update msg model =
             , Cmd.none
             )
 
+        (CreateGlobal, _) ->
+            (updateGlobal model, Cmd.none)
+
         (ReceivedUserNames response, modelReDef) ->
             ( updateModelFromReceivedUserNames modelReDef response
             , Cmd.none
@@ -1670,6 +1674,15 @@ allRankings  =
 
        
 -- model handlers
+
+updateGlobal : Model -> Model 
+updateGlobal model = 
+    case model of 
+        AppOps walletState dataState appInfo uiState subState accountState txRec ->
+            model
+
+        Failure str ->
+            Failure "updateGlobal"
 
 -- todo: change the name here as it's not actually updating the model - just testing faunadb
 updateModelFromReceivedUserNames : Model -> Result (GQLHttp.Error (List String)) (List String) -> Model
