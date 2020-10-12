@@ -195,7 +195,6 @@ type Msg
     | SentResultToJsonbin (Result Http.Error ())
     | SentUserInfoAndDecodedResponseToNewUser (RemoteData.WebData (List SR.Types.User))
     | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
-    | GlobalReceived (RemoteData.WebData (List SR.Types.Ranking))
     | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
     | ReturnFromPlayerListUpdate (RemoteData.WebData (List SR.Types.Player))
     | ReturnFromUserListUpdate (RemoteData.WebData (List SR.Types.User))
@@ -343,72 +342,6 @@ update msg model =
                 -- _ ->
                 --     (model, Cmd.none)
 
-
-        (GlobalReceived rmtrnkingdata, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->      
-                if List.isEmpty <| Data.Rankings.extractRankingsFromWebData rmtrnkingdata then 
-                    (model, Cmd.none)
-                else 
-                    case dataState of
-                        StateFetched sUsers dKind -> 
-                            case dKind of
-                                Users user ->
-                                    let
-                                        newDataKind = Global (Data.Global.createdFromRemote rmtrnkingdata sUsers) (Internal.Types.RankingId "") appInfo.m_user
-                                        newDataSet = StateFetched sUsers newDataKind
-                                    in 
-                                        (AppOps walletState newDataSet appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
-                                
-                                Global sGlobal rnkId user ->
-                                    let
-                                        newDataKind = Global (Data.Global.createdFromRemote rmtrnkingdata sUsers) (Internal.Types.RankingId "") user
-                                        newDataSet = StateFetched sUsers newDataKind
-                                    in
-                                       -- We have to StopSubscription here for some reason currently unknown
-                                       case accountState of 
-                                            SR.Types.Guest ->
-                                                ( AppOps SR.Types.WalletOpenedNoUserAccount newDataSet appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
-
-                                            SR.Types.Registered -> 
-                                                ( AppOps walletState newDataSet appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
-
-                                            SR.Types.EthEnabled -> 
-                                                ( AppOps walletState newDataSet appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
-
-                                            SR.Types.EthEnabledAndRegistered -> 
-                                                ( AppOps walletState newDataSet appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
-                                
-                                Selected _ _ _ _ _ ->
-                                    (model, Cmd.none)
-
-                                Rankings _ ->
-                                    (model, Cmd.none)
-
-                        AllEmpty ->
-                            let 
-                                sUsers = Data.Users.emptyUsers
-                            in
-                            case appInfo.m_user of 
-                                Nothing ->
-                                    let
-                                        newDataKind = Global (Data.Global.createdFromRemote rmtrnkingdata sUsers) (Internal.Types.RankingId "") (Just SR.Defaults.emptyUser)
-                                        newDataSet = StateFetched sUsers newDataKind
-                                    in
-                                        (AppOps walletState newDataSet appInfo uiState SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
-                                
-                                Just userVal ->
-                                    let
-                                        newDataKind = Global (Data.Global.createdFromRemote rmtrnkingdata sUsers) (Internal.Types.RankingId "") (Just userVal)
-                                        newDataSet = StateFetched sUsers newDataKind
-                                    in
-                                        (AppOps walletState newDataSet appInfo uiState SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
-                        _ ->
-                            (model, Cmd.none)
-
-        ( GlobalReceived _, Failure _ ) ->
-            let 
-                _ = Debug.log "glob rec, global datastate" msg
-            in
-            (model, Cmd.none)
 
         (PlayersReceived response, AppOps walletState dataState appInfo uiState subState accountState  txRec )  ->
             (model, Cmd.none)
@@ -4453,15 +4386,6 @@ fetchedSingleRanking (Internal.Types.RankingId rankingId) =
 gotGlobal : Cmd Msg
 gotGlobal =
     Cmd.none
-    -- Http.request
-    --     { body = Http.emptyBody
-    --     , expect = Http.expectJson (RemoteData.fromResult >> GlobalReceived) SR.Decode.rankingsDecoder
-    --     , headers = [ SR.Defaults.secretKey, SR.Defaults.globalContainerId, SR.Defaults.globalContainerId ]
-    --     , method = "GET"
-    --     , timeout = Nothing
-    --     , tracker = Nothing
-    --     , url = SR.Constants.globalJsonbinRankingReadLink
-    --     }
 
 
 addedUserAsFirstPlayerInNewList : SR.Types.User -> Cmd Msg
