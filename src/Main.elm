@@ -80,8 +80,9 @@ type DataState
   | StateUpdated Data.Users.Users DataKind
 
 type DataKind
-  = Users Data.Users.Users
-  | Rankings Data.Rankings.Rankings
+  = 
+  --Users Data.Users.Users
+  Rankings Data.Rankings.Rankings
   | Global Data.Global.Global Internal.Types.RankingId (Maybe SR.Types.User)
   | Selected Data.Selected.Selected Internal.Types.RankingId SR.Types.User SR.Types.SelectedStatus Data.Rankings.Rankings
 
@@ -987,11 +988,11 @@ update msg model =
             case dataState of 
                 StateUpdated sUsers dKind ->
                     case dKind of 
-                        Users user ->
-                            let 
-                                _ = Debug.log "should be global " "here"
-                            in
-                            (model, Cmd.none)
+                        -- Users user ->
+                        --     let 
+                        --         _ = Debug.log "should be global " "here"
+                        --     in
+                        --     (model, Cmd.none)
 
                         Selected sSelected rnkId user status rankings ->
                             let 
@@ -1612,12 +1613,12 @@ update msg model =
             )
 
         (ReceivedUsers response, modelReDef) ->
-            ( updateModelFromReceivedUsers modelReDef response
+            ( updateWithReceivedUsers modelReDef response
             , Cmd.none
             )
 
         (ReceivedRankings response, modelReDef) ->
-            ( updateModelFromReceivedRankings modelReDef response
+            ( updateWithReceivedRankings modelReDef response
             , Cmd.none
             )
 
@@ -1691,8 +1692,8 @@ updateModelFromReceivedUserNames model response =
             model
 
 --GQLHttp.Error (Maybe (List (Maybe SR.Types.FUser)))) (Maybe (List (Maybe SR.Types.FUser))
-updateModelFromReceivedUsers : Model -> Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FUser)))) (Maybe (List (Maybe SR.Types.FUser))) -> Model
-updateModelFromReceivedUsers model response =
+updateWithReceivedUsers : Model -> Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FUser)))) (Maybe (List (Maybe SR.Types.FUser))) -> Model
+updateWithReceivedUsers model response =
     case response of
         Ok lusers ->
             let
@@ -1707,9 +1708,8 @@ updateModelFromReceivedUsers model response =
                             AllEmpty ->
                                 let
                                     sUsers = Data.Users.asUsers (EverySet.fromList lFromFToUser)
-                                    newDataKind = Users (Data.Users.asUsers (EverySet.fromList lFromFToUser))
 
-                                    newDataState = StateFetched sUsers newDataKind
+                                    newDataState = StateFetched sUsers (Rankings Data.Rankings.empty)
                                 in
                                 AppOps walletState newDataState appInfo uiState subState accountState txRec
                             _ ->
@@ -1722,8 +1722,8 @@ updateModelFromReceivedUsers model response =
             model
 
 
-updateModelFromReceivedRankings : Model -> Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FRanking)))) (Maybe (List (Maybe SR.Types.FRanking))) -> Model
-updateModelFromReceivedRankings model response =
+updateWithReceivedRankings : Model -> Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FRanking)))) (Maybe (List (Maybe SR.Types.FRanking))) -> Model
+updateWithReceivedRankings model response =
     case response of
         Ok lrankings ->
             let
@@ -1736,7 +1736,7 @@ updateModelFromReceivedRankings model response =
                     AppOps walletState dataState appInfo uiState subState accountState txRec ->
                         case dataState of 
                             AllEmpty ->
-                                Failure "in updateModelFromReceivedRankings"
+                                Failure "in updateWithReceivedRankings"
                             
                             StateFetched sUsers dKind ->
                                 let
@@ -2238,8 +2238,8 @@ view model =
                                                 Selected _ _ _ _ _ ->
                                                     greetingView <| "ToDo: Select w/o a token should be possible"
 
-                                                Users _ ->
-                                                    greetingView <| "Users not used here"
+                                                -- Users _ ->
+                                                --     greetingView <| "Users not used here"
 
                                                 Rankings _ ->
                                                     greetingView <| "Handle Rankings"
@@ -3499,8 +3499,8 @@ handleGlobalNoUserView dataState =
                 Html.text ("No User - No Update")
             StateFetched sUsers dkind ->
                 case dkind of
-                    Users _ ->
-                        Html.text ("Got Users - No Global")
+                    -- Users _ ->
+                    --     Html.text ("Got Users - No Global")
                     Selected _ _ _ _ _->
                         Html.text ("Nothing should have been selected yet")
                     Global sGlobal rnkId _ ->
@@ -3594,8 +3594,8 @@ handleGlobalNoTokenView dataState userVal =
             Html.text ("No User - No Update")
         StateFetched sUsers dkind ->
             case dkind of
-                Users _ ->
-                    Html.text ("Got Users - No Global")
+                -- Users _ ->
+                --     Html.text ("Got Users - No Global")
                 Selected _ _ _ _ _->
                     Html.text ("Nothing should have been selected yet")
                 Global sGlobal rnkId _ -> 
