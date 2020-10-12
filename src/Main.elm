@@ -197,7 +197,6 @@ type Msg
     | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
     | GlobalReceived (RemoteData.WebData (List SR.Types.Ranking))
     | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
-    | UsersReceived (RemoteData.WebData (List SR.Types.User))
     | ReturnFromPlayerListUpdate (RemoteData.WebData (List SR.Types.Player))
     | ReturnFromUserListUpdate (RemoteData.WebData (List SR.Types.User))
     | ReturnedFromDeletedSelectedRankingFromJsonBin (RemoteData.WebData ( SR.Types.DeleteBinResponse))
@@ -343,59 +342,6 @@ update msg model =
                 --                     ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
                 -- _ ->
                 --     (model, Cmd.none)
-
-
-        ( UsersReceived userList, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
-            (model, Cmd.none)
-        --     case appInfo.m_user of
-        --         Nothing ->
-        --         -- user is Guest
-        --             let
-        --                 --extractedList = Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList
-        --                 --waiting for a real list from Faunadb
-        --                 extractedList = []
-        --                 users = Data.Users.asUsers (EverySet.fromList (extractedList))
-        --                 -- newUser = Data.Users.gotUser users userVal.m_ethaddress
-        --                 -- userInAppInfo = { appInfo | m_user = Just newUser }
-        --                 newDataKind = Users SR.Defaults.emptyUser
-        --                 newDataState = StateFetched users newDataKind
-        --             in
-        --             if List.isEmpty extractedList then 
-        --                     (model, Cmd.none)
-        --             else
-        --                     ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription accountState  emptyTxRecord, gotGlobal )
-                        
-                
-        --         Just userVal ->
-                    
-        --                 case userVal.m_ethaddress of 
-        --                     Nothing ->
-        --                         (model, Cmd.none)
-        --                     Just addr ->
-        --                         let 
-        --                             _ =
-        --                                                 Debug.log "UsersReceived" userList
-        --                             --extractedList = Data.Users.validatedUserList <| Data.Users.extractUsersFromWebData userList
-        --                             extractedList = [SR.Defaults.emptyUser]
-        --                             users = Data.Users.asUsers (EverySet.fromList (extractedList))
-        --                             newUser = Data.Users.gotUser users (Eth.Utils.addressToString addr)
-        --                             userInAppInfo = { appInfo | m_user = Just newUser }
-        --                             newDataKind = Users (Just newUser)
-        --                             newDataState = StateFetched users newDataKind
-        --                         in
-        --                             if List.isEmpty extractedList then 
-        --                                 (model, Cmd.none)
-        --                             else if (Data.Users.isRegistered (Data.Users.asList users) newUser) then
-        --                                         let
-        --                                             _ = Debug.log "in isregistered " "here"
-                                                    
-        --                                         in
-        --                                 ( AppOps walletState newDataState userInAppInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered  emptyTxRecord, gotGlobal )
-        --                             else 
-        --                                 ( AppOps walletState newDataState userInAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription  SR.Types.Guest emptyTxRecord, gotGlobal )
-                            
-        -- ( UsersReceived _, Failure _ ) ->
-        --     (model, Cmd.none)
 
 
         (GlobalReceived rmtrnkingdata, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->      
@@ -4487,19 +4433,6 @@ subscriptions model =
 -- Http ops
 
 
--- gotUserList : Cmd Msg
--- gotUserList =
---     Http.request
---         { body = Http.emptyBody
---         , expect = Http.expectJson (RemoteData.fromResult >> UsersReceived) SR.Decode.listOfUsersDecoder
---         , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
---         , method = "GET"
---         , timeout = Nothing
---         , tracker = Nothing
---         , url = SR.Constants.jsonbinUsersReadBinLink
---         }
-
-
 fetchedSingleRanking : Internal.Types.RankingId -> Cmd Msg
 fetchedSingleRanking (Internal.Types.RankingId rankingId) =
     Cmd.none
@@ -4619,16 +4552,6 @@ updateExistingUser  updatedUserInfo =
 httpUpdateUsers : Data.Users.Users -> Cmd Msg
 httpUpdateUsers  updatedUsers =
     Cmd.none
-    -- Http.request
-    --         { body =
-    --             Http.jsonBody <| jsonEncodeNewUsersList (Data.Users.asList updatedUsers)
-    --         , expect = Http.expectJson (RemoteData.fromResult >> UsersReceived) SR.Decode.decodeNewUserListServerResponse
-    --         , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
-    --         , method = "PUT"
-    --         , timeout = Nothing
-    --         , tracker = Nothing
-    --         , url = SR.Constants.jsonbinUrlUpdateUserListAndRespond
-    --         }
 
 
 jsonEncodeNewUsersList : List SR.Types.User -> Json.Encode.Value
