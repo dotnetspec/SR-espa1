@@ -81,7 +81,6 @@ type DataState
 
 type DataKind
   = 
-  --Users Data.Users.Users
   Rankings Data.Rankings.Rankings
   | Global Data.Global.Global Internal.Types.RankingId (Maybe SR.Types.User)
   | Selected Data.Selected.Selected Internal.Types.RankingId SR.Types.User SR.Types.SelectedStatus Data.Rankings.Rankings
@@ -288,9 +287,6 @@ update msg model =
                                 newUser = Data.Rankings.removedDeletedRankingsFromUserJoined user rankings
                                 _ = Debug.log "newUser: " newUser
                                 updatedsUsers = Data.Users.updatedUserInSet sUsers newUser
-                                -- userInAppInfo = { appInfo | m_user = Just newUser }
-                                -- newDataKind = Users newUser
-                                -- newDataState = StateFetched users newDataKind
                             in 
                                 (AppOps walletState dataState appInfo uiState SR.Types.StopSubscription SR.Types.Registered txRec, httpUpdateUsers updatedsUsers)
                         
@@ -988,12 +984,6 @@ update msg model =
             case dataState of 
                 StateUpdated sUsers dKind ->
                     case dKind of 
-                        -- Users user ->
-                        --     let 
-                        --         _ = Debug.log "should be global " "here"
-                        --     in
-                        --     (model, Cmd.none)
-
                         Selected sSelected rnkId user status rankings ->
                             let 
                                 _ = Debug.log "should be global " "here"
@@ -1711,7 +1701,7 @@ updateWithReceivedUsers model response =
 
                                     newDataState = StateFetched sUsers (Rankings Data.Rankings.empty)
                                 in
-                                AppOps walletState newDataState appInfo uiState subState accountState txRec
+                                    AppOps walletState newDataState appInfo uiState subState accountState txRec
                             _ ->
                                 Failure "in ReceivedUsers"
 
@@ -2237,9 +2227,6 @@ view model =
 
                                                 Selected _ _ _ _ _ ->
                                                     greetingView <| "ToDo: Select w/o a token should be possible"
-
-                                                -- Users _ ->
-                                                --     greetingView <| "Users not used here"
 
                                                 Rankings _ ->
                                                     greetingView <| "Handle Rankings"
@@ -3499,8 +3486,6 @@ handleGlobalNoUserView dataState =
                 Html.text ("No User - No Update")
             StateFetched sUsers dkind ->
                 case dkind of
-                    -- Users _ ->
-                    --     Html.text ("Got Users - No Global")
                     Selected _ _ _ _ _->
                         Html.text ("Nothing should have been selected yet")
                     Global sGlobal rnkId _ ->
@@ -3594,8 +3579,6 @@ handleGlobalNoTokenView dataState userVal =
             Html.text ("No User - No Update")
         StateFetched sUsers dkind ->
             case dkind of
-                -- Users _ ->
-                --     Html.text ("Got Users - No Global")
                 Selected _ _ _ _ _->
                     Html.text ("Nothing should have been selected yet")
                 Global sGlobal rnkId _ -> 
@@ -3913,34 +3896,6 @@ inputUserDetailsView dataState appInfo =
                 _ ->
                     Html.text "tbc"
 
-            -- case userVal.m_ethaddress of
-            --     Nothing ->
-            --         case dataState of
-            --             StateFetched sUsers dKind ->
-            --                 Framework.responsiveLayout [] <|
-            --                     Element.column
-            --                         Framework.container
-            --                         [ displayEnableEthereumBtn
-            --                         , Element.text "\n"
-            --                         , Element.el Heading.h4 <| Element.text "Create New User"
-            --                         , inputNewUser walletState dataState appInfo
-            --                         , newuserConfirmPanel walletState appInfo.m_user (Data.Users.asList sUsers)
-            --                         ]
-            --             _ ->
-            --                 Html.text "tbc"
-
-            --     Just addr ->
-            --         case dataState of
-            --             StateFetched sUsers dKind ->
-            --                 Framework.responsiveLayout [] <|
-            --                     Element.column
-            --                         Framework.container
-            --                         [ Element.el Heading.h4 <| Element.text "Create New User"
-            --                         , inputNewUser walletState dataState appInfo
-            --                         , newuserConfirmPanel walletState appInfo.m_user (Data.Users.asList sUsers)
-            --                         ]
-            --             _ ->
-            --                 Html.text "tbc"
                 
 displayRegisterNewUser :  SR.Types.User -> Data.Users.Users -> Element Msg 
 displayRegisterNewUser userVal sUsers =
