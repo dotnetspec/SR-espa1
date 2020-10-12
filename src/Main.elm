@@ -80,7 +80,7 @@ type DataState
   | StateUpdated Data.Users.Users DataKind
 
 type DataKind
-  = Users SR.Types.User
+  = Users Data.Users.Users
   | Rankings Data.Rankings.Rankings
   | Global Data.Global.Global Internal.Types.RankingId (Maybe SR.Types.User)
   | Selected Data.Selected.Selected Internal.Types.RankingId SR.Types.User SR.Types.SelectedStatus Data.Rankings.Rankings
@@ -407,7 +407,7 @@ update msg model =
                             case dKind of
                                 Users user ->
                                     let
-                                        newDataKind = Global (Data.Global.createdFromRemote rmtrnkingdata sUsers) (Internal.Types.RankingId "") (Just user)
+                                        newDataKind = Global (Data.Global.createdFromRemote rmtrnkingdata sUsers) (Internal.Types.RankingId "") appInfo.m_user
                                         newDataSet = StateFetched sUsers newDataKind
                                     in 
                                         (AppOps walletState newDataSet appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none)
@@ -1829,12 +1829,10 @@ updateModelFromReceivedUsers model response =
                         case dataState of 
                             StateFetched _ dKind ->
                                 let
-                                    --sUsers = Data.Users.asUsers (EverySet.fromList lFromFToUser)
-                                    --newDataKind = Users (Data.Users.asUsers (EverySet.fromList lFromFToUser))
-                                    newDataKind = Users SR.Defaults.emptyUser
-                                    --newDataKind = Data.Users sUsers
-                                    --newDataState = StateFetched Data.Users.emptyUsers newDataKind
-                                    newDataState = StateFetched Data.Users.emptyUsers newDataKind
+                                    sUsers = Data.Users.asUsers (EverySet.fromList lFromFToUser)
+                                    newDataKind = Users (Data.Users.asUsers (EverySet.fromList lFromFToUser))
+
+                                    newDataState = StateFetched sUsers newDataKind
                                 in
                                 AppOps walletState newDataState appInfo uiState subState accountState txRec
                             _ ->

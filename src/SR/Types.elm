@@ -261,8 +261,6 @@ newUser fuser =
     in
         User 1234 True fuser.username "" (Maybe.withDefault Nothing (Just ethaddrResult)) (Maybe.withDefault "" fuser.description) (Maybe.withDefault "" fuser.email) (Maybe.withDefault "" fuser.mobile) [] fuser.member_since  Nothing
 
- 
-
 
 type alias FUser = {
     active : Bool
