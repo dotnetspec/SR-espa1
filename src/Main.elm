@@ -1816,7 +1816,31 @@ updateModelFromReceivedUsers : Model -> Result (GQLHttp.Error (Maybe (List (Mayb
 updateModelFromReceivedUsers model response =
     case response of
         Ok lusers ->
-                model
+            let
+                filteredFUserList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lusers)
+                -- need to convert from FRanking to Ranking (id_ needs to be a String)
+                lFromFToUser = List.map SR.Types.newUser filteredFUserList
+                _ = Debug.log "lFromFToUser : " lFromFToUser
+
+
+            in
+                case model of  
+                    AppOps walletState dataState appInfo uiState subState accountState txRec ->
+                        case dataState of 
+                            StateFetched _ dKind ->
+                                let
+                                    --sUsers = Data.Users.asUsers (EverySet.fromList lFromFToUser)
+                                    --newDataKind = Users (Data.Users.asUsers (EverySet.fromList lFromFToUser))
+                                    newDataKind = Users SR.Defaults.emptyUser
+                                    --newDataKind = Data.Users sUsers
+                                    --newDataState = StateFetched Data.Users.emptyUsers newDataKind
+                                    newDataState = StateFetched Data.Users.emptyUsers newDataKind
+                                in
+                                AppOps walletState newDataState appInfo uiState subState accountState txRec
+                            _ ->
+                                model
+                    Failure _ ->
+                        model
 
         Err _ ->
             model
@@ -1826,25 +1850,25 @@ updateModelFromReceivedRankings : Model -> Result (GQLHttp.Error (Maybe (List (M
 updateModelFromReceivedRankings model response =
     case response of
         Ok lrankings ->
-                    let
-                        filteredFRankingList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lrankings)
-                        -- need to convert from FRanking to Ranking (id_ needs to be a String)
-                        lFromFToRanking = List.map SR.Types.newRanking filteredFRankingList
-                        _ = Debug.log "lFromFToRanking : " lFromFToRanking
-                    in
-                        case model of  
-                            AppOps walletState dataState appInfo uiState subState accountState txRec ->
-                                case dataState of 
-                                    AllEmpty ->
-                                        let
-                                            newDataKind = Rankings (Data.Rankings.asRankings (EverySet.fromList lFromFToRanking))
-                                            newDataState = StateFetched Data.Users.emptyUsers newDataKind
-                                        in
-                                        AppOps walletState newDataState appInfo uiState subState accountState txRec
-                                    _ ->
-                                        model
-                            Failure _ ->
+            let
+                filteredFRankingList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lrankings)
+                -- need to convert from FRanking to Ranking (id_ needs to be a String)
+                lFromFToRanking = List.map SR.Types.newRanking filteredFRankingList
+                _ = Debug.log "lFromFToRanking : " lFromFToRanking
+            in
+                case model of  
+                    AppOps walletState dataState appInfo uiState subState accountState txRec ->
+                        case dataState of 
+                            AllEmpty ->
+                                let
+                                    newDataKind = Rankings (Data.Rankings.asRankings (EverySet.fromList lFromFToRanking))
+                                    newDataState = StateFetched Data.Users.emptyUsers newDataKind
+                                in
+                                AppOps walletState newDataState appInfo uiState subState accountState txRec
+                            _ ->
                                 model
+                    Failure _ ->
+                        model
 
         Err _ ->
             model

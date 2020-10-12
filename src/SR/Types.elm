@@ -49,6 +49,10 @@ import RemoteData
 import EverySet exposing (EverySet)
 --import Data.Users
 import SRdb.ScalarCodecs
+import Eth.Utils
+import Eth.Utils
+import Css exposing (em)
+--import SR.Defaults
 
 
 
@@ -231,8 +235,40 @@ type alias User =
     , m_token : Maybe Token
     }
 
-newUser username =
-    User 0 True username "" Nothing "" "" "" [""] 0 Nothing
+-- newUser username =
+--     User 0 True username "" Nothing "" "" "" [""] 0 Nothing
+
+emptyActiveUser : User
+emptyActiveUser =
+    { datestamp = 123456
+    , active = True
+    , username = ""
+    , password = ""
+    , m_ethaddress = Nothing
+    , description = ""
+    , email = ""
+    , mobile = ""
+    , userjoinrankings = []
+    , member_since = 1
+    , m_token = Nothing
+    }
+
+newUser : FUser -> User 
+newUser fuser = 
+    let 
+        ethaddrResult = (Eth.Utils.toAddress fuser.ethaddress)
+    in
+        --User 1234 True fuser.username "" (Result.withDefault Nothing (Ok ethaddrResult)) (Maybe.withDefault "" fuser.description) (Maybe.withDefault "" fuser.email) (Maybe.withDefault "" fuser.mobile) [] fuser.member_since  Nothing
+
+        case ethaddrResult of 
+            Ok result  ->
+                User 1234 True fuser.username "" (Just result) (Maybe.withDefault "" fuser.description) (Maybe.withDefault "" fuser.email) (Maybe.withDefault "" fuser.mobile) [] fuser.member_since  Nothing
+
+            Err str ->
+                User 1234 True fuser.username "" Nothing (Maybe.withDefault "" fuser.description) (Maybe.withDefault "" fuser.email) (Maybe.withDefault "" fuser.mobile) [] fuser.member_since  Nothing
+
+ 
+
 
 type alias FUser = {
     active : Bool
