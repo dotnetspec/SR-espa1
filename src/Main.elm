@@ -1820,14 +1820,12 @@ updateModelFromReceivedUsers model response =
                 filteredFUserList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lusers)
                 -- need to convert from FRanking to Ranking (id_ needs to be a String)
                 lFromFToUser = List.map SR.Types.newUser filteredFUserList
-                _ = Debug.log "lFromFToUser : " lFromFToUser
-
-
+                --_ = Debug.log "lFromFToUser : " lFromFToUser
             in
                 case model of  
                     AppOps walletState dataState appInfo uiState subState accountState txRec ->
                         case dataState of 
-                            StateFetched _ dKind ->
+                            AllEmpty ->
                                 let
                                     sUsers = Data.Users.asUsers (EverySet.fromList lFromFToUser)
                                     newDataKind = Users (Data.Users.asUsers (EverySet.fromList lFromFToUser))
@@ -1836,7 +1834,8 @@ updateModelFromReceivedUsers model response =
                                 in
                                 AppOps walletState newDataState appInfo uiState subState accountState txRec
                             _ ->
-                                model
+                                Failure "in ReceivedUsers"
+
                     Failure _ ->
                         model
 
@@ -1852,15 +1851,18 @@ updateModelFromReceivedRankings model response =
                 filteredFRankingList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lrankings)
                 -- need to convert from FRanking to Ranking (id_ needs to be a String)
                 lFromFToRanking = List.map SR.Types.newRanking filteredFRankingList
-                _ = Debug.log "lFromFToRanking : " lFromFToRanking
+               -- _ = Debug.log "lFromFToRanking : " lFromFToRanking
             in
                 case model of  
                     AppOps walletState dataState appInfo uiState subState accountState txRec ->
                         case dataState of 
                             AllEmpty ->
+                                Failure "in updateModelFromReceivedRankings"
+                            
+                            StateFetched sUsers dKind ->
                                 let
                                     newDataKind = Rankings (Data.Rankings.asRankings (EverySet.fromList lFromFToRanking))
-                                    newDataState = StateFetched Data.Users.emptyUsers newDataKind
+                                    newDataState = StateFetched sUsers newDataKind
                                 in
                                 AppOps walletState newDataState appInfo uiState subState accountState txRec
                             _ ->
