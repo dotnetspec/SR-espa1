@@ -17,6 +17,7 @@ module SR.Types exposing
     , newUser
     , FRanking
     , newRanking
+    , newUserRanking
     ,fromScalarCodecId
     )
 
@@ -202,6 +203,9 @@ type alias UserRanking =
     { rankingInfo : Ranking
     , userInfo : User
     }
+
+newUserRanking ranking user =
+    UserRanking ranking user
 
 
 type alias AppInfo =

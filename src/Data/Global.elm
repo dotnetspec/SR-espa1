@@ -11,7 +11,6 @@ module Data.Global exposing (Global, gotOthers
     , asRankings
     , newJsonEncodedList
     , created
-    , createdFromRemote
     , gotUserRankingByRankingId
     , empty
     , asGlobal
@@ -39,9 +38,7 @@ import SR.Defaults
 --import GlobalRankingsTests exposing (userOwner)
 -- Global came from Selected - there are many functions etc. not relevant to Global in here currently (even if renamed)
 
-type Global = Global (EverySet SR.Types.UserRanking) 
-
-
+type Global = Global (EverySet SR.Types.UserRanking)
 
 empty : Global 
 empty = 
@@ -56,40 +53,17 @@ asEverySet : Global -> EverySet SR.Types.UserRanking
 asEverySet (Global esGlobal)  = 
      esGlobal
 
-createdFromRemote : RemoteData.WebData (List SR.Types.Ranking) -> Data.Users.Users -> Global
-createdFromRemote rmtrnkingdata sUser =
-    -- let
-    --     lrankinginfo = Data.Rankings.extractRankingsFromWebData rmtrnkingdata
-    --     luser = Data.Users.asList sUser
-    -- in
-    
-    -- List.map (createdUserRanking luser) lrankinginfo
-    -- |> EverySet.fromList
-    -- |> asGlobal
-    -- todo: fix
-    empty
 
 created : Data.Rankings.Rankings -> Data.Users.Users -> Global
-created rankings sUser =
-    -- let
-    --     luser = Data.Users.asList sUser
-    --     m_newUserRanking = createdUserRanking luser SR.Defaults.emptyUserRanking
-    -- in
-    --     case m_newUserRanking of 
-    --         Nothing ->
-    --             empty
-    --         Just newUserRanking ->
-    --             let
-    --                 esUserRanking = 
-    --                     List.map newUserRanking (Data.Rankings.asList rankings)
-    --                     |> EverySet.fromList
-    --             in
-    --                 asGlobal esUserRanking
-    -- todo: fix
-    empty
-
-
-
+created sRankings sUser =
+    let
+        luser = Data.Users.asList sUser
+        esUserRanking = List.map (createdUserRanking luser) (Data.Rankings.asList sRankings)
+                        |> Utils.MyUtils.removeNothingFromList
+                        |> EverySet.fromList 
+    in
+        asGlobal esUserRanking
+    
 
 createdUserRanking : List SR.Types.User -> SR.Types.Ranking -> Maybe SR.Types.UserRanking
 createdUserRanking luser ranking =

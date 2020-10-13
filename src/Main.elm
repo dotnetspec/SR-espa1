@@ -187,7 +187,7 @@ type Msg
     | ReceivedUserNames (Result (GQLHttp.Error (List String)) (List String))
     | ReceivedUsers (Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FUser)))) (Maybe (List (Maybe SR.Types.FUser))))
     | ReceivedRankings (Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FRanking)))) (Maybe (List (Maybe SR.Types.FRanking))))
-    | CreateGlobal
+    | CreatedGlobal
       -- App Only Ops
     | MissingWalletInstructions
     | OpenWalletInstructions
@@ -1599,7 +1599,6 @@ update msg model =
         (LoggedInUser response, modelReDef) ->
             ( updateFromLoggedInUser modelReDef response
                , commandFromLoggedInUser response
-               --, Cmd.none
             )
 
         (ReceivedUsers response, modelReDef) ->
@@ -1612,7 +1611,7 @@ update msg model =
             , Cmd.none
             )
 
-        (CreateGlobal, _) ->
+        (CreatedGlobal, _) ->
             (updateGlobal model, Cmd.none)
 
         (ReceivedUserNames response, modelReDef) ->
@@ -1678,7 +1677,26 @@ updateGlobal : Model -> Model
 updateGlobal model = 
     case model of 
         AppOps walletState dataState appInfo uiState subState accountState txRec ->
-            model
+            case dataState of 
+                AllEmpty ->
+                    model
+                StateFetched sUsers dKind ->
+                    case dKind of 
+                        Rankings sRankings -> 
+                            let
+                                newDataKind = Global (Data.Global.created sRankings sUsers) (Internal.Types.RankingId "") appInfo.m_user
+                                newDataState = StateFetched sUsers newDataKind
+                            in
+                                AppOps walletState newDataState appInfo uiState subState accountState txRec
+
+                        Global _ _ _ ->
+                            Failure "updateGlobal"
+
+                        Selected _ _ _ _ _ ->
+                            Failure "updateGlobal"
+
+                StateUpdated _ _ ->
+                    model
 
         Failure str ->
             Failure "updateGlobal"
@@ -1747,8 +1765,13 @@ updateWithReceivedRankings model response =
                             
                             StateFetched sUsers dKind ->
                                 let
-                                    newDataKind = Rankings (Data.Rankings.asRankings (EverySet.fromList lFromFToRanking))
+                                    sRankings = Data.Rankings.asRankings (EverySet.fromList lFromFToRanking)
+                                    --(Internal.Types.RankingId "") appInfo.m_user
+                                    newDataKind = Rankings sRankings 
                                     newDataState = StateFetched sUsers newDataKind
+
+                                    userRankings = Data.Global.created sRankings sUsers
+                                    _ = Debug.log "userRankings" userRankings
                                 in
                                     AppOps walletState newDataState appInfo uiState subState accountState txRec
                             _ ->
