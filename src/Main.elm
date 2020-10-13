@@ -1732,6 +1732,13 @@ updateWithReceivedUsers model response =
                                     newDataState = StateFetched sUsers (Rankings Data.Rankings.empty)
                                 in
                                     AppOps walletState newDataState appInfo uiState subState accountState txRec
+
+                            StateFetched sUsers dKind ->
+                                let
+                                    newDataState = StateFetched sUsers dKind
+                                in
+                                    AppOps walletState newDataState appInfo uiState subState accountState txRec
+
                             _ ->
                                 Failure "in ReceivedUsers"
 
@@ -1769,13 +1776,14 @@ updateWithReceivedRankings model response =
                                     --(Internal.Types.RankingId "") appInfo.m_user
                                     newDataKind = Rankings sRankings 
                                     newDataState = StateFetched sUsers newDataKind
-
                                     userRankings = Data.Global.created sRankings sUsers
                                     _ = Debug.log "userRankings" userRankings
                                 in
                                     AppOps walletState newDataState appInfo uiState subState accountState txRec
-                            _ ->
+                            
+                            StateUpdated sUsers dKind ->
                                 model
+
                     Failure _ ->
                         model
 
@@ -3521,7 +3529,7 @@ handleGlobalNoUserView dataState =
     in
         case dataState of
             AllEmpty -> 
-                Html.text ("No Data")
+                Html.text ("Loading ...")
             StateUpdated _ _ ->
                 Html.text ("No User - No Update")
             StateFetched sUsers dkind ->
