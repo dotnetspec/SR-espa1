@@ -1714,39 +1714,43 @@ updateModelFromReceivedUserNames model response =
 --GQLHttp.Error (Maybe (List (Maybe SR.Types.FUser)))) (Maybe (List (Maybe SR.Types.FUser))
 updateWithReceivedUsers : Model -> Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FUser)))) (Maybe (List (Maybe SR.Types.FUser))) -> Model
 updateWithReceivedUsers model response =
-    case response of
-        Ok lusers ->
+    case (model, response) of 
+        (AppOps walletState AllEmpty appInfo uiState subState accountState txRec, Ok lusers)  ->
+                    let
+                        filteredFUserList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lusers)
+                        -- need to convert from FRanking to Ranking (id_ needs to be a String)
+                        lFromFToUser = List.map SR.Types.newUser filteredFUserList
+                        --_ = Debug.log "lFromFToUser : " lFromFToUser
+                        sUsers = Data.Users.asUsers (EverySet.fromList lFromFToUser)
+                        newDataState = StateFetched sUsers (Rankings Data.Rankings.empty)
+                    in
+                        AppOps walletState newDataState appInfo uiState subState accountState txRec
+        
+        (AppOps walletState (StateFetched sUsers dKind) appInfo uiState subState accountState txRec, Ok lusers) ->
             let
                 filteredFUserList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lusers)
-                -- need to convert from FRanking to Ranking (id_ needs to be a String)
                 lFromFToUser = List.map SR.Types.newUser filteredFUserList
-                --_ = Debug.log "lFromFToUser : " lFromFToUser
+                newDataState = StateFetched sUsers dKind
             in
-                case model of  
-                    AppOps walletState dataState appInfo uiState subState accountState txRec ->
-                        case dataState of 
-                            AllEmpty ->
-                                let
-                                    sUsers = Data.Users.asUsers (EverySet.fromList lFromFToUser)
+                AppOps walletState newDataState appInfo uiState subState accountState txRec
 
-                                    newDataState = StateFetched sUsers (Rankings Data.Rankings.empty)
-                                in
-                                    AppOps walletState newDataState appInfo uiState subState accountState txRec
-
-                            StateFetched sUsers dKind ->
-                                let
-                                    newDataState = StateFetched sUsers dKind
-                                in
-                                    AppOps walletState newDataState appInfo uiState subState accountState txRec
-
-                            _ ->
-                                Failure "in ReceivedUsers"
-
-                    Failure _ ->
-                        model
-
-        Err _ ->
+        (AppOps walletState (StateUpdated sUsers dKind) appInfo uiState subState accountState txRec, Ok lusers) ->
             model
+
+        (AppOps walletState AllEmpty appInfo uiState subState accountState txRec, Err _ )  ->
+            (Failure "updateWithReceivedUsers")
+
+        (AppOps walletState (StateFetched sUsers dKind) appInfo uiState subState accountState txRec, Err _)  ->
+            (Failure "updateWithReceivedUsers")
+
+        (AppOps walletState (StateUpdated sUsers dKind) appInfo uiState subState accountState txRec, Err _ ) ->
+            (Failure "updateWithReceivedUsers")
+
+        (Failure _, Ok lusers) ->
+            (Failure "updateWithReceivedUsers")
+
+        (Failure _, Err _) ->
+            (Failure "updateWithReceivedUsers")
 
 
 updateWithReceivedRankings : Model -> Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FRanking)))) (Maybe (List (Maybe SR.Types.FRanking))) -> Model
