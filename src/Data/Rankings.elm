@@ -7,6 +7,7 @@ module Data.Rankings exposing (Rankings
     , isUniqueRankingName
     , isIdInSet
     , isIdInList
+    , isEmpty
     , gotRankingInfo
     , extractRankingsFromWebData
     , empty
@@ -56,6 +57,11 @@ isRankingNameValidated rankingInfo luranking =
         False
 
 
+isEmpty : Rankings -> Bool
+-- 'Rankings' is a tag containing a box (of EverySet)
+-- using the tag here you can open the box
+isEmpty (Rankings sRankings) =
+    EverySet.isEmpty sRankings
 
 extractRankingList : List SR.Types.UserRanking -> List SR.Types.Ranking
 extractRankingList luserranking =

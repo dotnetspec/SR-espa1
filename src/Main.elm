@@ -1714,7 +1714,7 @@ updateModelFromReceivedUserNames model response =
 --GQLHttp.Error (Maybe (List (Maybe SR.Types.FUser)))) (Maybe (List (Maybe SR.Types.FUser))
 updateWithReceivedUsers : Model -> Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FUser)))) (Maybe (List (Maybe SR.Types.FUser))) -> Model
 updateWithReceivedUsers model response =
-    case (model, response) of 
+    case (model, response) of -- AllEmpty, so fill the User set
         (AppOps walletState AllEmpty appInfo uiState subState accountState txRec, Ok lusers)  ->
                     let
                         filteredFUserList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lusers)
@@ -1723,19 +1723,39 @@ updateWithReceivedUsers model response =
                         --_ = Debug.log "lFromFToUser : " lFromFToUser
                         sUsers = Data.Users.asUsers (EverySet.fromList lFromFToUser)
                         newDataState = StateFetched sUsers (Rankings Data.Rankings.empty)
+                        
                     in
                         AppOps walletState newDataState appInfo uiState subState accountState txRec
         
-        (AppOps walletState (StateFetched sUsers dKind) appInfo uiState subState accountState txRec, Ok lusers) ->
-            let
-                filteredFUserList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lusers)
-                lFromFToUser = List.map SR.Types.newUser filteredFUserList
-                newDataState = StateFetched sUsers dKind
-            in
-                AppOps walletState newDataState appInfo uiState subState accountState txRec
+        (AppOps walletState (StateFetched sUsers (Rankings sRankings)) appInfo uiState subState accountState txRec, Ok lusers) ->
+                if Data.Rankings.isEmpty sRankings then -- just fill the User set
+                    let
+                        filteredFUserList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lusers)
+                        lFromFToUser = List.map SR.Types.newUser filteredFUserList
+                        newsUsers = Data.Users.asUsers (EverySet.fromList lFromFToUser)
+                        newDataState = StateFetched sUsers (Rankings sRankings)
+                    in
+                        AppOps walletState newDataState appInfo uiState subState accountState txRec
+
+                else --if sRankings isn't empty we can populate Global now
+                    let
+                        filteredFUserList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lusers)
+                        lFromFToUser = List.map SR.Types.newUser filteredFUserList
+                        newsUsers = Data.Users.asUsers (EverySet.fromList lFromFToUser)
+                        newDataKind = Global (Data.Global.created sRankings newsUsers) (Internal.Types.RankingId "") appInfo.m_user
+                        newDataState = StateFetched sUsers newDataKind
+                    in
+                        AppOps walletState newDataState appInfo uiState subState accountState txRec
+
 
         (AppOps walletState (StateUpdated sUsers dKind) appInfo uiState subState accountState txRec, Ok lusers) ->
             model
+
+        ( AppOps _ (StateFetched _ (Global _ _ _)) _ _ _ _ _, Ok _ ) ->
+            (Failure "updateWithReceivedUsers")
+
+        ( AppOps _ (StateFetched _ (Selected _ _ _ _ _)) _ _ _ _ _, Ok _ ) ->
+            (Failure "updateWithReceivedUsers")
 
         (AppOps walletState AllEmpty appInfo uiState subState accountState txRec, Err _ )  ->
             (Failure "updateWithReceivedUsers")
