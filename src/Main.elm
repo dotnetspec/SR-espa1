@@ -91,11 +91,10 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( AppOps SR.Types.WalletStateLocked AllEmpty SR.Defaults.emptyAppInfo SR.Types.UILoading  SR.Types.Subscribe SR.Types.Guest emptyTxRecord
     , Cmd.batch
-        [ --gotUserList
+        [ 
         allUsers
         ,
         allRankings
-        --gotGlobal
         , Ports.log
             "Sending out msg from init "
         ]
@@ -1739,14 +1738,19 @@ updateWithReceivedRankings model response =
                     AppOps walletState dataState appInfo uiState subState accountState txRec ->
                         case dataState of 
                             AllEmpty ->
-                                Failure "in updateWithReceivedRankings"
+                                let
+                                    newDataKind = Rankings (Data.Rankings.asRankings (EverySet.fromList lFromFToRanking))
+                                    newDataState = StateFetched Data.Users.emptyUsers newDataKind
+                                in
+                                    AppOps walletState newDataState appInfo uiState subState accountState txRec
+                                
                             
                             StateFetched sUsers dKind ->
                                 let
                                     newDataKind = Rankings (Data.Rankings.asRankings (EverySet.fromList lFromFToRanking))
                                     newDataState = StateFetched sUsers newDataKind
                                 in
-                                AppOps walletState newDataState appInfo uiState subState accountState txRec
+                                    AppOps walletState newDataState appInfo uiState subState accountState txRec
                             _ ->
                                 model
                     Failure _ ->
