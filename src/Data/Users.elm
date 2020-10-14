@@ -15,7 +15,7 @@ module Data.Users exposing (Users
     , isNameValidationErr
     , extractUsersFromWebData
     , gotUserFromUserList
-    , emptyUsers
+    , empty
     --, updateAddr
     , addUser
     , removeUser
@@ -52,8 +52,8 @@ newUser : String -> String -> Maybe Eth.Types.Address -> String -> String -> Str
 newUser username password ethaddr desc email mobile =
     SR.Types.User 12345 True username password ethaddr desc email mobile [""] 0 Nothing
 
-emptyUsers : Users 
-emptyUsers = 
+empty : Users 
+empty = 
     Users (EverySet.empty)
 
 isEmpty : Users -> Bool

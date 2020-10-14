@@ -82,7 +82,7 @@ getRankingId selected =
 
 emptySelected : Selected 
 emptySelected = 
-    Selected (EverySet.empty) Data.Users.emptyUsers (Internal.Types.RankingId "")
+    Selected (EverySet.empty) Data.Users.empty (Internal.Types.RankingId "")
 
 -- createdSelected : RemoteData.WebData (List SR.Types.Player) -> Data.Users.Users -> Internal.Types.RankingId -> Selected
 -- createdSelected rdlplayer sUser rnkId =
