@@ -591,11 +591,6 @@ convertEachPlayerToUserPlayer luser player =
 
 handleWon : Selected -> SR.Types.AppInfo -> (Selected, SR.Types.AppInfo)
 handleWon (Selected esUPlayer sUsers rnkId) appInfo =
-    case appInfo.m_user of 
-        Nothing ->
-            (Selected esUPlayer sUsers rnkId, appInfo)
-
-        Just user -> 
             let
                 whoHigher =
                     isOpponentHigherRank appInfo.player appInfo.challenger
@@ -616,7 +611,7 @@ handleWon (Selected esUPlayer sUsers rnkId) appInfo =
                         -- handling with AppState then handing back to AppInfo for now ...
                         
                             
-                        updatedUserPlayer = Data.AppState.releasePlayerForUI (Data.AppState.updateAppState user 
+                        updatedUserPlayer = Data.AppState.releasePlayerForUI (Data.AppState.updateAppState appInfo.m_user 
                             appInfo.player appInfo.challenger (Utils.MyUtils.stringToRankingId appInfo.selectedRanking.id_))
 
                         newAppInfo =

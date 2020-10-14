@@ -6,11 +6,11 @@ import Internal.Types
 --import EverySet exposing (EverySet)
 
 -- First UserPlayer is current player, second is challenger
-type AppState = AppState SR.Types.User SR.Types.UserPlayer SR.Types.UserPlayer Internal.Types.RankingId
+type AppState = AppState (Maybe SR.Types.User) SR.Types.UserPlayer SR.Types.UserPlayer Internal.Types.RankingId
 
-updateAppState : SR.Types.User -> SR.Types.UserPlayer  -> SR.Types.UserPlayer ->  Internal.Types.RankingId -> AppState
-updateAppState user uplayer uplayerChallenger rnkId = 
-    AppState user uplayer uplayerChallenger rnkId
+updateAppState : (Maybe SR.Types.User) -> SR.Types.UserPlayer  -> SR.Types.UserPlayer ->  Internal.Types.RankingId -> AppState
+updateAppState m_user uplayer uplayerChallenger rnkId = 
+    AppState m_user uplayer uplayerChallenger rnkId
 
 -- updateAppInfo : AppState -> SR.Types.AppInfo 
 -- updateAppInfo appState = 

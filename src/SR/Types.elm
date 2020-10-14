@@ -335,9 +335,6 @@ newRanking : FRanking -> Ranking
 newRanking franking = 
     Ranking (fromScalarCodecId franking.id_) True franking.rankingname franking.rankingdesc franking.rankingowneraddr
 
--- type alias RankingScalarToString =
---     ( UserName, Player )
-
 type alias FRanking =
 
     { id_ : SRdb.ScalarCodecs.Id
@@ -352,7 +349,7 @@ fromScalarCodecId scid =
     let
         _ = Debug.log "scid : " scid
     in
-        "1234"
+        "279242482553717256"
 
 
 

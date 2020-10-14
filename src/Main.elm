@@ -83,7 +83,7 @@ type DataKind
   = 
   Rankings Data.Rankings.Rankings
   | Global Data.Global.Global Internal.Types.RankingId (Maybe SR.Types.User)
-  | Selected Data.Selected.Selected Internal.Types.RankingId SR.Types.User SR.Types.SelectedStatus Data.Rankings.Rankings
+  | Selected Data.Selected.Selected Internal.Types.RankingId (Maybe SR.Types.User) SR.Types.SelectedStatus Data.Rankings.Rankings
 
 
 
@@ -281,14 +281,19 @@ update msg model =
             case dataState of
                 StateFetched sUsers dKind ->
                     case dKind of
-                        Selected sSelected rnkId user status rankings ->
-                            let 
-                                _ = Debug.log "User: " user
-                                newUser = Data.Rankings.removedDeletedRankingsFromUserJoined user rankings
-                                _ = Debug.log "newUser: " newUser
-                                updatedsUsers = Data.Users.updatedUserInSet sUsers newUser
-                            in 
-                                (AppOps walletState dataState appInfo uiState SR.Types.StopSubscription SR.Types.Registered txRec, httpUpdateUsers updatedsUsers)
+                        Selected sSelected rnkId m_user status rankings ->
+                            case m_user of
+                                Nothing ->
+                                    (Failure "Err", Cmd.none)
+
+                                Just user ->
+                                    let 
+                                        _ = Debug.log "User: " m_user
+                                        newUser = Data.Rankings.removedDeletedRankingsFromUserJoined user rankings
+                                        _ = Debug.log "newUser: " newUser
+                                        updatedsUsers = Data.Users.updatedUserInSet sUsers newUser
+                                    in
+                                     (AppOps walletState dataState appInfo uiState SR.Types.StopSubscription SR.Types.Registered txRec, httpUpdateUsers updatedsUsers)
                         
                         _ ->
                             (model, Cmd.none)
@@ -472,22 +477,16 @@ update msg model =
                 StateFetched sUsers dKind ->
                         case dKind of 
                             Global sGlobal rnkId m_user ->
-                                
-                                    case m_user of 
-                                        Nothing ->
-                                            (model, Cmd.none)
-                                        Just user ->
-                                            let                                                     
-                                                newAppInfo =
-                                                    updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
+                                let                                                     
+                                    newAppInfo =
+                                        updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
 
-                                                newDataKind = Selected Data.Selected.emptySelected rnkidstr user SR.Types.UserIsOwner (Data.Global.asRankings sGlobal)
-                                                newDataState = StateFetched sUsers newDataKind
-                                        
-                                            in
-                                                ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, 
-                                                fetchedSingleRanking rnkidstr )
-
+                                    newDataKind = Selected Data.Selected.emptySelected rnkidstr appInfo.m_user  SR.Types.UserIsOwner (Data.Global.asRankings sGlobal)
+                                    newDataState = StateFetched sUsers newDataKind
+                            
+                                in
+                                    ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, 
+                                    fetchedSingleRanking rnkidstr )
 
                             _ ->
                                 (model, Cmd.none)
@@ -495,23 +494,18 @@ update msg model =
                 -- you may have just done an update, we can re-set to StateFetched here         
                 StateUpdated sUsers dKind ->
                         case dKind of 
-                            Global sGlobal rnkId user ->
-                                case appInfo.m_user of
-                                    Nothing ->
-                                        (model, Cmd.none)
-                                    Just userVal ->
+                            Global sGlobal rnkId m_user ->
                                         let
                                             newAppInfo =
                                                 updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
 
-
                                         -- re-factor from appInfo to AppState over time
                                             initAppState = 
-                                                Data.AppState.updateAppState userVal appInfo.player 
+                                                Data.AppState.updateAppState m_user appInfo.player 
                                                 appInfo.challenger (rnkidstr)
 
 
-                                            newDataKind = Selected Data.Selected.emptySelected rnkidstr userVal SR.Types.UserIsOwner (Data.Global.asRankings sGlobal)
+                                            newDataKind = Selected Data.Selected.emptySelected rnkidstr m_user SR.Types.UserIsOwner (Data.Global.asRankings sGlobal)
                                             newDataState = StateFetched sUsers newDataKind
                                     
                                         in
@@ -528,30 +522,21 @@ update msg model =
             case dataState of 
                 StateFetched sUsers dKind ->
                     case dKind of 
-                        Global sGlobal rnkId user ->
-                            case appInfo.m_user of
-                                Nothing ->
-                                    (model, Cmd.none)
-                                Just userVal ->
+                        Global sGlobal rnkId m_user ->
                                     let
-
                                         _ =
                                             Debug.log "rnkid" (Utils.MyUtils.stringFromRankingId rnkId)
-                                        _ =
-                                            Debug.log "user clicked member" userVal.userjoinrankings
-
-
+                            
                                         newAppInfo =
                                             updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
 
-
                                         -- re-factor from appInfo to AppState over time
                                         initAppState = 
-                                            Data.AppState.updateAppState userVal appInfo.player 
+                                            Data.AppState.updateAppState m_user appInfo.player 
                                             appInfo.challenger ( rnkidstr)
 
 
-                                        newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") userVal SR.Types.UserIsMember (Data.Global.asRankings sGlobal)
+                                        newDataKind = Selected Data.Selected.emptySelected (Internal.Types.RankingId "") m_user SR.Types.UserIsMember (Data.Global.asRankings sGlobal)
                                         newDataState = StateFetched sUsers newDataKind
                                     in
                                         ( AppOps walletState newDataState newAppInfo SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, 
@@ -564,34 +549,38 @@ update msg model =
 
         (ClickedSelectedNeitherOwnerNorMember rnkidstr rnkownerstr rnknamestr, AppOps walletState dataState appInfo uiState subState accountState  txRec)  ->
             let 
-                _ = Debug.log "rnkid" rnkidstr
+                _ = Debug.log "rnkid1" rnkidstr
             in
-            case dataState of 
-                StateFetched sUsers dKind ->
-                    case dKind of 
-                        Global sGlobal rnkId user ->
-                            case appInfo.m_user of
-                                Nothing ->
-                                    (model, Cmd.none)
-                                Just userVal ->
-                                    let
-                                        newAppInfo =
-                                            updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
+            -- don't think we need appInfo.m_user here:
+            -- case (dataState,  appInfo.m_user) of 
+            --     (StateFetched sUsers (Global sGlobal rnkId user), Nothing )->
+            --         (model, Cmd.none)
+            --     (StateFetched sUsers (Global sGlobal rnkId user), (Just userVal) )->
+            case dataState of
+                (StateFetched sUsers (Global sGlobal rnkId user)) ->
+                    let
+                        newAppInfo =
+                            updateAppInfoOnRankingSelected appInfo rnkidstr rnkownerstr rnknamestr
 
-                                        -- re-factor from appInfo to AppState over time
-                                        initAppState = 
-                                            Data.AppState.updateAppState userVal appInfo.player 
-                                            appInfo.challenger ( rnkidstr)
-                                        
-                                        newDataKind = Selected Data.Selected.emptySelected rnkidstr userVal SR.Types.UserIsNeitherOwnerNorMember (Data.Global.asRankings sGlobal)
-                                        newDataState = StateFetched sUsers newDataKind
-                                    in
-                                        ( AppOps walletState newDataState newAppInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription accountState emptyTxRecord, 
-                                        fetchedSingleRanking rnkidstr )
-                        _ -> 
-                            (model, Cmd.none)
-                _ -> 
-                    (model, Cmd.none)
+                        -- re-factor from appInfo to AppState over time
+                        initAppState = 
+                            Data.AppState.updateAppState appInfo.m_user appInfo.player 
+                            appInfo.challenger ( rnkidstr)
+                        
+                        newDataKind = Selected Data.Selected.emptySelected rnkidstr appInfo.m_user SR.Types.UserIsNeitherOwnerNorMember (Data.Global.asRankings sGlobal)
+                        newDataState = StateFetched sUsers newDataKind
+                    in
+                        ( AppOps walletState newDataState newAppInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription accountState emptyTxRecord, 
+                        fetchedSingleRanking rnkidstr )
+                
+                (StateFetched _ _ ) ->
+                    (Failure "err", Cmd.none)
+
+                ( AllEmpty)->
+                    (Failure "err", Cmd.none)
+
+                ( StateUpdated _ _ )->
+                    (Failure "err", Cmd.none)
         
         
 
@@ -952,7 +941,11 @@ update msg model =
             case dataState of 
                 StateFetched sUsers dKind ->
                     case dKind of 
-                        Selected sSelected rnkId user status sRanking ->
+                        Selected sSelected rnkId m_user status sRanking ->
+                            case m_user of 
+                                Nothing ->
+                                    (Failure "Err", Cmd.none)
+                                Just user ->
                                     let 
                                         newsUsers = Data.Users.updatedUserInSet sUsers (Data.Users.removedRankindIdFromUser (Utils.MyUtils.stringFromRankingId rnkId) user)
                                         removedRanking = Data.Rankings.removedById rnkId sRanking
@@ -1397,7 +1390,7 @@ update msg model =
                     case dataState of 
                         StateUpdated sUsers dKind ->
                             case dKind of 
-                                Selected sSelected rnkId user status rankings ->  
+                                Selected sSelected rnkId m_user status rankings ->  
                                     let
                                         lplayer =
                                             Data.Players.extractPlayersFromWebData response
@@ -1417,8 +1410,11 @@ update msg model =
                                         --httpUpdateUsersJoinRankings is the http cmd that we need to do here
                                         
                                     in
-                                    --String -> SR.Types.User -> List SR.Types.User -> 
-                                    ( updateSelectedRankingPlayerList model convertedToUserPlayers, httpUpdateUsersJoinRankings (Utils.MyUtils.stringFromRankingId rnkId) user newUserList )
+                                        case m_user of
+                                            Nothing ->
+                                                (model, Cmd.none)
+                                            Just user ->
+                                                ( updateSelectedRankingPlayerList model convertedToUserPlayers, httpUpdateUsersJoinRankings (Utils.MyUtils.stringFromRankingId rnkId) user newUserList )
                                 
                                 _ -> 
                                     let 
@@ -1832,49 +1828,6 @@ updateWithReceivedRankings model response =
         (Failure _, Err _) ->
             (Failure "updateWithReceivedUsers")
 
-
-    -- case response of
-    --     Ok lrankings ->
-    --         let
-    --             filteredFRankingList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lrankings)
-    --             -- need to convert from FRanking to Ranking (id_ needs to be a String)
-    --             lFromFToRanking = List.map SR.Types.newRanking filteredFRankingList
-    --            -- _ = Debug.log "lFromFToRanking : " lFromFToRanking
-    --         in
-    --             case model of  
-    --                 AppOps walletState dataState appInfo uiState subState accountState txRec ->
-    --                     case dataState of 
-    --                         -- AllEmpty ->
-    --                         --     let
-    --                         --         newDataKind = Rankings (Data.Rankings.asRankings (EverySet.fromList lFromFToRanking))
-    --                         --         newDataState = StateFetched Data.Users.emptyUsers newDataKind
-    --                         --     in
-    --                         --         AppOps walletState newDataState appInfo uiState subState accountState txRec
-                                
-                            
-    --                         StateFetched sUsers dKind ->
-    --                             let
-    --                                 sRankings = Data.Rankings.asRankings (EverySet.fromList lFromFToRanking)
-    --                                 --(Internal.Types.RankingId "") appInfo.m_user
-    --                                 newDataKind = Rankings sRankings 
-    --                                 newDataState = StateFetched sUsers newDataKind
-    --                                 userRankings = Data.Global.created sRankings sUsers
-    --                                 _ = Debug.log "userRankings" userRankings
-    --                             in
-    --                                 AppOps walletState newDataState appInfo uiState subState accountState txRec
-                            
-    --                         StateUpdated sUsers dKind ->
-    --                             model
-
-    --                 Failure _ ->
-    --                     model
-
-    --     Err _ ->
-    --         model
-
-
-
-    
      
 
 updateFromLoggedInUser: Model -> Result (GQLHttp.Error SR.Types.Token) SR.Types.Token -> Model
@@ -2221,24 +2174,28 @@ updatedForChallenge model luplayer opponentAsPlayer userMaybeCanDelete =
             case dataState of
                 StateFetched sUsers dKind -> 
                     case dKind of 
-                            Selected sSelected rnkId user status rankings -> 
-                                let
-                                    m_uplayer = Data.Selected.gotCurrentUserAsPlayerFromPlayerList luplayer user
-                                in
-                                    case m_uplayer of
-                                        Nothing -> 
-                                            model
-                                        Just uplayer ->
-                                            let
-                                                newAppInfoWithPlayer = { appInfo | player = uplayer }
-                        
-                                                newAppInfoWithChallengerAndPlayer = { newAppInfoWithPlayer | challenger = opponentAsPlayer }
-                                            
-                                                newDataKind =  Selected (Data.Selected.updateSelectedRankingOnChallenge sSelected newAppInfoWithChallengerAndPlayer) rnkId user status rankings
-                                                newDataState = StateFetched sUsers newDataKind
-                                            in
-                                                AppOps walletState newDataState newAppInfoWithChallengerAndPlayer SR.Types.UIChallenge SR.Types.StopSubscription SR.Types.Registered txRec
-                            
+                            Selected sSelected rnkId m_user status rankings ->
+                                case m_user of 
+                                    Nothing ->
+                                        Failure "updateChallenge" 
+                                    Just user ->
+                                        let
+                                            m_uplayer = Data.Selected.gotCurrentUserAsPlayerFromPlayerList luplayer user
+                                        in
+                                            case m_uplayer of
+                                                Nothing -> 
+                                                    model
+                                                Just uplayer ->
+                                                    let
+                                                        newAppInfoWithPlayer = { appInfo | player = uplayer }
+                                
+                                                        newAppInfoWithChallengerAndPlayer = { newAppInfoWithPlayer | challenger = opponentAsPlayer }
+                                                    
+                                                        newDataKind =  Selected (Data.Selected.updateSelectedRankingOnChallenge sSelected newAppInfoWithChallengerAndPlayer) rnkId (Just user) status rankings
+                                                        newDataState = StateFetched sUsers newDataKind
+                                                    in
+                                                        AppOps walletState newDataState newAppInfoWithChallengerAndPlayer SR.Types.UIChallenge SR.Types.StopSubscription SR.Types.Registered txRec
+                                    
                             _ -> 
                                 let 
                                     _ = Debug.log "updatedForChallenge - dataState" dataState
