@@ -2275,52 +2275,100 @@ view : Model -> Html Msg
 view model =
     case model of
         AppOps walletState dataState appInfo uiState subState accountState txRec ->
-            case appInfo.m_user of
-                Nothing ->
-                    case appInfo.appState of 
-                        SR.Types.AppStateGeneral ->
-                            handleGlobalNoUserView dataState
+            case (dataState, appInfo.m_user, appInfo.appState) of 
+                (AllEmpty, _, _) ->
+                    Html.text ("Loading ...")
 
-                        SR.Types.AppStateCreateNewUser ->
-                            inputUserDetailsView dataState appInfo
-                        _ ->
-                            handleGlobalNoUserView dataState
+                (StateFetched sUsers (Global sGlobal rnkId _), Nothing, SR.Types.AppStateGeneral) ->
+                    let 
+                            userVal = SR.Defaults.emptyUser
+                    in
+                    Framework.responsiveLayout [] <|
+                            Element.column
+                                Framework.container
+                                [ Element.el (Heading.h5) <|
+                                    Element.text ("SportRank - Welcome")
+                                , displayEnableEthereumBtn
+                                , Element.text ("\n")
+                                --, Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
+                                , Element.column Grid.section <|
+                                    [ Element.el [] <| Element.text ""
+                                    --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                                    , Element.wrappedRow (Card.fill ++ Grid.simple)
+                                        [ Element.column
+                                            Grid.simple
+                                            [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                                                { onChange = NewUserNameInputChg
+                                                , text = userVal.username
+                                                --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
+                                                , placeholder = Nothing
+                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
+                                                }
+                                            --, nameValidationErr appInfo sUsers
+                                            , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                                                { onChange = NewUserPasswordInputChg
+                                                , text = userVal.password
+                                                , placeholder = Nothing
+                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                                                }
+                                            ]
+                                        ]
+                                    ]
+                                , infoBtn "Log In" ClickedLogInUser
+                                , Element.text ("\n")
+                                , displayRegisterBtnIfNewUser
+                                    SR.Defaults.emptyUser.username
+                                    ClickedRegister
+                                , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
+                                ]
 
-                Just userValue ->
-                -- want to remove uiState over time probably - should just be the state of the model determines
-                    case userValue.m_token of 
+                (StateFetched sUsers (Global sGlobal rnkId _), Just userVal, SR.Types.AppStateGeneral) ->
+                    case userVal.m_token of 
                         Nothing ->
-                            case appInfo.appState of 
-                                SR.Types.AppStateGeneral ->
-                                    handleGlobalNoTokenView dataState userValue
-                                SR.Types.AppStateCreateNewUser ->
-                                    inputUserDetailsView dataState appInfo
-                                _ ->
-                                    handleGlobalNoTokenView dataState userValue
-                                
+                                    handleGlobalNoTokenView dataState userVal
                                 
                         Just tokenVal ->
-                            case appInfo.appState of
-                                SR.Types.AppStateUpdateProfile ->
-                                    inputUserDetailsView dataState appInfo
-                                _ ->
-                                    case dataState of
-                                        AllEmpty ->
-                                            greetingView <| "No Global Rankings"
-                                        StateFetched sUsers dkind ->
-                                            case dkind of 
-                                                Global sGlobal _ _ ->
-                                                    handleGlobalWithTokenView sGlobal userValue ""
-
-                                                Selected _ _ _ _ _ ->
-                                                    greetingView <| "ToDo: Select w/o a token should be possible"
-
-                                                Rankings _ ->
-                                                    greetingView <| "Handle Rankings"
-                                                
-                                        StateUpdated _ _ ->
-                                            greetingView <| "Cannot update w/o a token"
+                            Framework.responsiveLayout [] <|
+                                Element.column
+                                    Framework.container
+                                    [ Element.el (Heading.h5) <|
+                                        Element.text ("SportRank - Welcome " ++ userVal.username)
+                                    , displayEnableEthereumBtn
+                                    , Element.text ("\n")
+                                    , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
+                                    , memberrankingbuttons (Data.Global.gotMember sGlobal userVal) userVal
+                                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal)) userVal
+                                    ]
                             
+                (StateFetched sUsers (Selected _ _ _ _ _), Just userVal, SR.Types.AppStateGeneral) ->
+                     greetingView <| "ToDo: Select w/o a token should be possible"
+
+                (StateFetched sUsers (Rankings _), Just userVal, SR.Types.AppStateGeneral) ->
+                    greetingView <| "Handle Rankings"
+
+                (StateFetched sUsers _, Nothing, SR.Types.AppStateGeneral) ->
+                    Html.text ("dKind not specified")
+                
+                (StateFetched sUsers dkind, Just userVal, SR.Types.AppStateUpdateProfile) ->
+                    case userVal.m_token of 
+                        Nothing ->
+                                    handleGlobalNoTokenView dataState userVal
+                                
+                        Just tokenVal ->
+                                    inputUserDetailsView dataState appInfo
+
+                (StateFetched sUsers dkind, Just userVal, SR.Types.AppStateCreateNewUser) ->
+                            inputUserDetailsView dataState appInfo
+                            
+                (StateUpdated _ _, _, _) ->
+                    Html.text ("No User - No Update")
+                
+                (_, _, _) ->
+                            Html.text ("View fell thru")
+
+                --Just userValue ->
+                -- want to remove uiState over time probably - should just be the state of the model determines
+                    
                         --             case uiState of
 
                         --                 SR.Types.UILogIn ->
@@ -3561,8 +3609,8 @@ inputNewLadder appInfo dataState =
                 ]
 
 
-handleGlobalNoUserView : DataState -> Html Msg
-handleGlobalNoUserView dataState =   
+handleNoUserView : DataState -> Html Msg
+handleNoUserView dataState =   
     let 
         userVal = SR.Defaults.emptyUser
     in
@@ -3573,12 +3621,10 @@ handleGlobalNoUserView dataState =
                 Html.text ("No User - No Update")
             StateFetched sUsers dkind ->
                 case dkind of
-                    Selected _ _ _ _ _->
+                    Selected sSelected rnkId m_user status rankings ->
                         Html.text ("Nothing should have been selected yet")
                     Global sGlobal rnkId _ ->
-                        Framework.responsiveLayout
-                            []
-                            <|
+                        Framework.responsiveLayout [] <|
                             Element.column
                                 Framework.container
                                 [ Element.el (Heading.h5) <|
@@ -3710,22 +3756,6 @@ handleGlobalNoTokenView dataState userVal =
                         ]
                 Rankings _ ->
                     Html.text "Handle Rankings View"
-
-handleGlobalWithTokenView : Data.Global.Global -> SR.Types.User -> String -> Html Msg
-handleGlobalWithTokenView sGlobal userVal updatedStr = 
-    Framework.responsiveLayout
-        []
-        <|
-            Element.column
-                Framework.container
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome " ++ userVal.username)
-                , displayEnableEthereumBtn
-                , Element.text ("\n" ++ updatedStr)
-                , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
-                , memberrankingbuttons (Data.Global.gotMember sGlobal userVal) userVal
-                , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal)) userVal
-                ]
 
 
 displayUpdateProfileBtnIfExistingUser : String -> Element Msg
