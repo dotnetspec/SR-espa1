@@ -2323,22 +2323,24 @@ view model =
                                 ]
 
                 (StateFetched sUsers (Global sGlobal rnkId _), Just userVal, SR.Types.AppStateGeneral) ->
-                    case userVal.m_token of 
-                        Nothing ->
-                                    handleGlobalNoTokenView dataState userVal
-                                
-                        Just tokenVal ->
-                            Framework.responsiveLayout [] <|
-                                Element.column
-                                    Framework.container
-                                    [ Element.el (Heading.h5) <|
-                                        Element.text ("SportRank - Welcome " ++ userVal.username)
+                    Framework.responsiveLayout [] <|
+                        Element.column
+                            Framework.container 
+                                [ Element.el (Heading.h5) <|
+                                    Element.text ("SportRank - Welcome " ++ userVal.username)
                                     , displayEnableEthereumBtn
+                                    , displayForToken userVal sGlobal
+                                    -- if the UI following is an issue needing branching
+                                    -- do it in a separate function like dispalyForToken
+                                    , infoBtn "Log In" ClickedLogInUser
                                     , Element.text ("\n")
-                                    , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
-                                    , memberrankingbuttons (Data.Global.gotMember sGlobal userVal) userVal
-                                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal)) userVal
-                                    ]
+                                            , displayRegisterBtnIfNewUser
+                                                SR.Defaults.emptyUser.username
+                                                ClickedRegister
+                                    , Element.text ("\n")
+                                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
+                                    
+                                ]
                             
                 (StateFetched sUsers (Selected _ _ _ _ _), Just userVal, SR.Types.AppStateGeneral) ->
                      greetingView <| "ToDo: Select w/o a token should be possible"
@@ -2539,6 +2541,41 @@ view model =
         Failure str ->
             greetingView <| "Model failure in view: " ++ str
 
+displayForToken : SR.Types.User -> Data.Global.Global -> Element Msg 
+displayForToken userVal sGlobal = 
+    case userVal.m_token of 
+        Nothing ->
+            Element.column Grid.section <|
+                [ Element.el [] <| Element.text ""
+                --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                    [ Element.column
+                        Grid.simple
+                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                            { onChange = NewUserNameInputChg
+                            , text = userVal.username
+                            --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
+                            }
+                        --, nameValidationErr appInfo sUsers
+                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                            { onChange = NewUserPasswordInputChg
+                            , text = userVal.password
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                            }
+                        ]
+                    ]
+                ]
+                                    
+
+        Just tokenVal ->
+            Element.column Grid.section <|
+                [Element.text ("\n")
+                , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
+                , memberrankingbuttons (Data.Global.gotMember sGlobal userVal) userVal
+                ]
 
 greetingHeading : String -> Element Msg
 greetingHeading greetingStr =
