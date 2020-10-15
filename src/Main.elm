@@ -1785,7 +1785,7 @@ updateWithReceivedRankings model response =
                         AppOps walletState newDataState appInfo uiState subState accountState txRec
 
         (AppOps walletState (StateFetched sUsers (Rankings sRankings)) appInfo uiState subState accountState txRec, Ok lrankings) ->
-                if Data.Rankings.isEmpty sRankings then -- just fill the Ranking set
+                if Data.Users.isEmpty sUsers then -- just fill the Ranking set
                     let
                         filteredFRankingList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lrankings)
                         lFromFToRanking = List.map SR.Types.newRanking filteredFRankingList
@@ -1794,7 +1794,7 @@ updateWithReceivedRankings model response =
                     in
                         AppOps walletState newDataState appInfo uiState subState accountState txRec
 
-                else --if sRankings isn't empty we can populate Global now
+                else --if sUsers isn't empty we can populate Global now
                     let
                         filteredFRankingList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lrankings)
                         lFromFToRanking = List.map SR.Types.newRanking filteredFRankingList
@@ -2216,28 +2216,28 @@ updateSelectedRankingPlayerList : Model -> List SR.Types.UserPlayer -> Model
 updateSelectedRankingPlayerList model luplayers =
     case model of
         AppOps walletState dataState appInfo uiState subState accountState  txRec ->
-                case dataState of
-                    StateUpdated sUsers dKind -> 
-                        case dKind of 
-                                Selected sSelected rnkId user status rankings ->
-                                        let 
-                                            --todo: another way around this here? Problem is ensuredCorrectSelectedUI needs the global set:
-                                            --newUiState = ensuredCorrectSelectedUI appInfo dataState 
-                                            newDataKind = Selected (Data.Selected.asSelected (EverySet.fromList luplayers) sUsers rnkId) rnkId user status rankings
-                                            newDataState = StateUpdated sUsers newDataKind 
-                                        in
-                                            AppOps walletState newDataState appInfo uiState SR.Types.StopSubscription SR.Types.Registered txRec
+            case dataState of
+                StateUpdated sUsers dKind -> 
+                    case dKind of 
+                        Selected sSelected rnkId user status rankings ->
+                            let 
+                                --todo: another way around this here? Problem is ensuredCorrectSelectedUI needs the global set:
+                                --newUiState = ensuredCorrectSelectedUI appInfo dataState 
+                                newDataKind = Selected (Data.Selected.asSelected (EverySet.fromList luplayers) sUsers rnkId) rnkId user status rankings
+                                newDataState = StateUpdated sUsers newDataKind 
+                            in
+                                AppOps walletState newDataState appInfo uiState SR.Types.StopSubscription SR.Types.Registered txRec
 
-                                _ -> 
-                                    let 
-                                        _ = Debug.log "updateSelectedRankingPlayerList - dataState should be Selected (updated)" dataState
-                                    in
-                                        model
-                    _ -> 
-                        let 
-                            _ = Debug.log "updateSelectedRankingPlayerList - dataState" dataState
-                        in
-                            model
+                        _ -> 
+                            let
+                                _ = Debug.log "updateSelectedRankingPlayerList - dataState should be Selected (updated)" dataState
+                            in
+                                model
+                _ -> 
+                    let 
+                        _ = Debug.log "updateSelectedRankingPlayerList - dataState" dataState
+                    in
+                        model
 
         _ ->
             Failure <| "updateSelectedRankingPlayerList : "
@@ -2348,7 +2348,7 @@ view model =
                 (StateFetched sUsers (Rankings _), Just userVal, SR.Types.AppStateGeneral) ->
                     greetingView <| "Handle Rankings"
 
-                (StateFetched sUsers _, Nothing, SR.Types.AppStateGeneral) ->
+                (StateFetched sUsers _ , Nothing, SR.Types.AppStateGeneral) ->
                     Html.text ("dKind not specified")
                 
                 (StateFetched sUsers dkind, Just userVal, SR.Types.AppStateUpdateProfile) ->
