@@ -48,7 +48,7 @@ import Widget exposing (..)
 import SR.Types
 import SR.Types
 import SR.Types
-import Bridge exposing (requestLoginUser, requestAllUserNames, requestCreateAndOrLoginUser, handleCreateAndOrLoginUserOptionalArguments, requestAllUsers, requestAllRankings)
+import Bridge
 import Graphql.Http as GQLHttp
 
 main =
@@ -1647,24 +1647,24 @@ commandFromLoggedInUser response =
 
 createAndOrLoginUser : String -> String -> String -> Cmd Msg
 createAndOrLoginUser user_name password m_ethaddress =
-    GQLHttp.send LoggedInUser (requestCreateAndOrLoginUser handleCreateAndOrLoginUserOptionalArguments user_name password m_ethaddress)
+    GQLHttp.send LoggedInUser (Bridge.requestCreateAndOrLoginUser Bridge.handleCreateAndOrLoginUserOptionalArguments user_name password m_ethaddress)
 
 loginUser : String -> String -> Cmd Msg
 loginUser user_name password =
-    GQLHttp.send LoggedInUser (requestLoginUser user_name password)
+    GQLHttp.send LoggedInUser (Bridge.requestLoginUser user_name password)
 
 
 allUserNames : SR.Types.Token -> Cmd Msg
 allUserNames token =
-    GQLHttp.send ReceivedUserNames (requestAllUserNames token)
+    GQLHttp.send ReceivedUserNames (Bridge.requestAllUserNames token)
 
 allUsers : Cmd Msg
 allUsers  =
-    GQLHttp.send ReceivedUsers (requestAllUsers)
+    GQLHttp.send ReceivedUsers (Bridge.requestAllUsers)
 
 allRankings : Cmd Msg
 allRankings  =
-    GQLHttp.send ReceivedRankings (requestAllRankings)
+    GQLHttp.send ReceivedRankings (Bridge.requestAllRankings)
 
        
 -- model handlers

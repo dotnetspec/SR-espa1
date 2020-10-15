@@ -345,17 +345,9 @@ type alias FRanking =
     , rankingowneraddr : String
     }
 
--- fromScalarCodecId : SRdb.ScalarCodecs.Id -> String 
--- fromScalarCodecId scid = 
---     let
---         _ = Debug.log "scid : " scid
---     in
---         "279242482553717256"
-
 fromScalarCodecId : SRdb.ScalarCodecs.Id -> String
 fromScalarCodecId (Id id) =
     let
-        --_ = Debug.log "scid : " scid
         _ = Debug.log "id : " id
     in
         id
