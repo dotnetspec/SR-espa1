@@ -1759,25 +1759,25 @@ updateWithReceivedUsers model response =
             model
 
         ( AppOps _ (StateFetched _ (Global _ _ _)) _ _ _ _ _, Ok _ ) ->
-            (Failure "updateWithReceivedUsers")
+            (Failure "updateWithReceivedUsers7")
 
         ( AppOps _ (StateFetched _ (Selected _ _ _ _ _)) _ _ _ _ _, Ok _ ) ->
-            (Failure "updateWithReceivedUsers")
+            (Failure "updateWithReceivedUsers8")
 
         (AppOps walletState AllEmpty appInfo uiState subState accountState txRec, Err _ )  ->
-            (Failure "updateWithReceivedUsers")
+            (Failure "Unable to obtain User data. \nPlease check your network connection ...")
 
         (AppOps walletState (StateFetched sUsers dKind) appInfo uiState subState accountState txRec, Err _)  ->
-            (Failure "updateWithReceivedUsers")
+            (Failure "updateWithReceivedUsers10")
 
         (AppOps walletState (StateUpdated sUsers dKind) appInfo uiState subState accountState txRec, Err _ ) ->
-            (Failure "updateWithReceivedUsers")
+            (Failure "updateWithReceivedUsers11")
 
         (Failure _, Ok lusers) ->
-            (Failure "updateWithReceivedUsers")
+            (Failure "updateWithReceivedUsers20")
 
-        (Failure _, Err _) ->
-            (Failure "updateWithReceivedUsers")
+        (Failure _, Err str) ->
+            (Failure "Unable to obtain User data. \nPlease check your network connection ...")
 
 
 updateWithReceivedRankings : Model -> Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FRanking)))) (Maybe (List (Maybe SR.Types.FRanking))) -> Model
@@ -1819,25 +1819,25 @@ updateWithReceivedRankings model response =
             model
 
         ( AppOps _ (StateFetched _ (Global _ _ _)) _ _ _ _ _, Ok _ ) ->
-            (Failure "updateWithReceivedUsers")
+            (Failure "updateWithReceivedRankings12")
 
         ( AppOps _ (StateFetched _ (Selected _ _ _ _ _)) _ _ _ _ _, Ok _ ) ->
-            (Failure "updateWithReceivedUsers")
+            (Failure "updateWithReceivedRankings13")
 
         (AppOps walletState AllEmpty appInfo uiState subState accountState txRec, Err _ )  ->
-            (Failure "updateWithReceivedUsers")
+            (Failure "Unable to obtain Rankings data. Please check your network connection ...")
 
         (AppOps walletState (StateFetched sUsers dKind) appInfo uiState subState accountState txRec, Err _)  ->
-            (Failure "updateWithReceivedUsers")
+            (Failure "updateWithReceivedRankings15")
 
         (AppOps walletState (StateUpdated sUsers dKind) appInfo uiState subState accountState txRec, Err _ ) ->
-            (Failure "updateWithReceivedUsers")
+            (Failure "updateWithReceivedRankings16")
 
         (Failure _, Ok lusers) ->
-            (Failure "updateWithReceivedUsers")
+            (Failure "updateWithReceivedRankings17")
 
         (Failure _, Err _) ->
-            (Failure "updateWithReceivedUsers")
+            (Failure "updateWithReceivedRankings18")
 
  
 updateWithReceivedRankingById : Model -> Result (GQLHttp.Error (Maybe SR.Types.FRanking)) (Maybe SR.Types.FRanking) -> Model
@@ -1873,22 +1873,22 @@ updateWithReceivedRankingById model response =
                 AppOps walletState newDataState newAppInfo uiState subState accountState txRec
 
         ( AppOps _ (StateFetched _ (Selected _ _ _ _ _)) _ _ _ _ _, Ok _ ) ->
-            (Failure "updateWithReceivedUsers")
+            (Failure "updateWithReceivedUsers1")
 
         (AppOps walletState AllEmpty appInfo uiState subState accountState txRec, Err _ )  ->
-            (Failure "updateWithReceivedUsers")
+            (Failure "updateWithReceivedUsers2")
 
         (AppOps walletState (StateFetched sUsers dKind) appInfo uiState subState accountState txRec, Err _)  ->
-            (Failure "updateWithReceivedUsers")
+            (Failure "updateWithReceivedUsers3")
 
         (AppOps walletState (StateUpdated sUsers dKind) appInfo uiState subState accountState txRec, Err _ ) ->
-            (Failure "updateWithReceivedUsers")
+            (Failure "updateWithReceivedUsers4")
 
         (Failure _, Ok lusers) ->
-            (Failure "updateWithReceivedUsers")
+            (Failure "updateWithReceivedUsers5")
 
         (Failure _, Err _) ->
-            (Failure "updateWithReceivedUsers")
+            (Failure "updateWithReceivedUsers6")
 
 updateFromLoggedInUser: Model -> Result (GQLHttp.Error SR.Types.Token) SR.Types.Token -> Model
 updateFromLoggedInUser model response =
@@ -2429,7 +2429,24 @@ view model =
                             Html.text ("View fell thru")
 
         Failure str ->
-            greetingView <| "Model failure in view: " ++ str
+            Framework.responsiveLayout [] <|
+                Element.column
+                    Framework.container 
+                        [ Element.el (Heading.h5) <|
+                            Element.text ("SportRank - Welcome ")
+                            , displayEnableEthereumBtn
+                            , Element.text ("\n")
+                            , Element.el Color.danger <| Element.text str
+                            , Element.text ("\n")
+                            --, displayForToken userVal sGlobal
+                            -- if the UI following is an issue needing branching
+                            -- do it in a separate function like dispalyForToken
+                            , infoBtn "Log In" ClickedLogInUser
+                            , Element.text ("\n")
+                                    , displayRegisterBtnIfNewUser
+                                        SR.Defaults.emptyUser.username
+                                        ClickedRegister   
+                        ]
 
 displayForToken : SR.Types.User -> Data.Global.Global -> Element Msg 
 displayForToken userVal sGlobal = 
