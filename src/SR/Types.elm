@@ -288,7 +288,8 @@ type alias Password =
 
 
 type alias Player =
-    { address : String
+    { rankingid : String
+    , address : String
     , rank : Int
     , challengeraddress : String
     }

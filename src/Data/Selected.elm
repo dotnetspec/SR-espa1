@@ -320,7 +320,8 @@ userAdded sUsers strrankingId luPlayer userRec =
                 let
                     newUserPlayer =
                         { player =
-                            { address = Eth.Utils.addressToString ethaddress
+                            { rankingid =  strrankingId
+                            , address = Eth.Utils.addressToString ethaddress
                             , rank = List.length luPlayer + 1
                             , challengeraddress = ""
                             }

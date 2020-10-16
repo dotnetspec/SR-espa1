@@ -3,10 +3,8 @@ module Bridge exposing (requestLoginUser, requestCreateAndOrLoginUser, handleCre
     , requestAllRankings
     )
 
---import DataModel exposing (Password, Token, UserName)
 import Graphql.Http as Http
 import Graphql.Operation exposing (RootMutation, RootQuery)
---import Graphql.SelectionSet exposing (SelectionSet)
 import Graphql.OptionalArgument exposing (OptionalArgument(..))
 import SRdb.Mutation as Mutation
 import SRdb.Query as Query
@@ -23,10 +21,8 @@ mutationCreateAndOrLoginUser : (Mutation.CreateAndOrLoginUserOptionalArguments -
     -> SR.Types.UserName -> SR.Types.Password -> String -> SelectionSet SR.Types.Token RootMutation
 mutationCreateAndOrLoginUser fillInOptionals user_name password ethaddress =
     let
-        
         -- filledInOptionals =
         --     fillInOptionals { description = Absent, email = Absent, mobile = Absent }
-
         required_arguments =
             Mutation.CreateAndOrLoginUserRequiredArguments True user_name password ethaddress
 
@@ -67,8 +63,6 @@ requestLoginUser user_name password =
 queryLoginUser : Query.LoginUserRequiredArguments -> SelectionSet SR.Types.Token RootQuery
 queryLoginUser requiredArgs =
         Query.loginUser requiredArgs
-
-
 
 userSelectionSet : SelectionSet SR.Types.FUser SRdb.Object.User
 userSelectionSet =
@@ -112,43 +106,16 @@ requestAllRankings  =
 
 rankingSelectionSet : SelectionSet SR.Types.FRanking SRdb.Object.Ranking
 rankingSelectionSet =
-    --Graphql.SelectionSet.succeed SR.Types.Ranking
-    --SelectionSet a typeLock -> SelectionSet (a -> b) typeLock -> SelectionSet b typeLock
-    -- SelectionSet (SRdb.ScalarCodecs.Id -> b)
         Graphql.SelectionSet.succeed SR.Types.FRanking
             |> Graphql.SelectionSet.with SRdb.Object.Ranking.id_
-            --|> Graphql.SelectionSet.with (Graphql.SelectionSet.map SR.Types.fromScalarCodecId SRdb.Object.Ranking.id_)
             |> Graphql.SelectionSet.with SRdb.Object.Ranking.active
             |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingname
             |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingdesc
             |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingowneraddr
 
 queryAllRankings : SelectionSet SR.Types.FRanking SRdb.Object.Ranking
-    ---> SelectionSet (List (Maybe decodesTo)) RootQuery
-    ---> SelectionSet (Maybe (List (Maybe decodesTo))) RootQuery
     -> SelectionSet (Maybe (List (Maybe SR.Types.FRanking))) RootQuery
 queryAllRankings rankingSelectSet =
-        --Graphql.SelectionSet.map handleRankingList (Query.allRankings rankingSelectSet)
         Query.allRankings rankingSelectSet
       
-
--- handleRankingList : Maybe (List (Maybe SR.Types.FRanking)) -> List (Maybe SR.Types.Ranking)
--- handleRankingList m_lranking = 
---     case m_lranking of
---         Nothing ->
---             [Nothing]
-
---         Just lrnkings ->
---             List.map convertToRanking lrnkings
-
--- convertToRanking : Maybe SR.Types.FRanking -> Maybe SR.Types.Ranking
--- convertToRanking m_franking =  
---         case m_franking of
---             Nothing ->
---                 Nothing
-
---             Just frnking ->
---                 Just (SR.Types.newRanking (SR.Types.fromScalarCodecId frnking.id_))
-        
-
 

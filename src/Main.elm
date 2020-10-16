@@ -187,6 +187,7 @@ type Msg
     | ReceivedUserNames (Result (GQLHttp.Error (List String)) (List String))
     | ReceivedUsers (Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FUser)))) (Maybe (List (Maybe SR.Types.FUser))))
     | ReceivedRankings (Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FRanking)))) (Maybe (List (Maybe SR.Types.FRanking))))
+    --| ReceivedRankingById (Result (GQLHttp.Error ( SR.Types.FRanking)) ( SR.Types.FRanking))
     | CreatedGlobal
       -- App Only Ops
     | MissingWalletInstructions
@@ -1607,6 +1608,11 @@ update msg model =
             , Cmd.none
             )
 
+        -- (ReceivedRankingById response, modelReDef) ->
+        --     ( updateWithReceivedRankingById modelReDef response
+        --     , Cmd.none
+        --     )
+
         (CreatedGlobal, _) ->
             (updateGlobal model, Cmd.none)
 
@@ -1665,6 +1671,11 @@ allUsers  =
 allRankings : Cmd Msg
 allRankings  =
     GQLHttp.send ReceivedRankings (Bridge.requestAllRankings)
+
+
+-- gotRankingById : Cmd Msg 
+-- gotRankingById = 
+--     GQLHttp.send ReceivedRankingById (Bridge.findRankingById)
 
        
 -- model handlers
@@ -1828,7 +1839,56 @@ updateWithReceivedRankings model response =
         (Failure _, Err _) ->
             (Failure "updateWithReceivedUsers")
 
-     
+ 
+updateWithReceivedRankingById : Model -> Result (GQLHttp.Error (Maybe SR.Types.FRanking)) (Maybe SR.Types.FRanking) -> Model
+updateWithReceivedRankingById model response =
+     case (model, response) of -- AllEmpty, so fill the Ranking set
+        (AppOps walletState AllEmpty appInfo uiState subState accountState txRec, Ok _)  ->
+            Failure "Err"
+
+        (AppOps walletState (StateFetched sUsers (Rankings sRankings)) appInfo uiState subState accountState txRec, Ok franking) ->
+            (Failure "shuld b Global")
+
+        (AppOps walletState (StateUpdated sUsers dKind) appInfo uiState subState accountState txRec, Ok lrankings) ->
+            model
+
+        (AppOps walletState (StateFetched sUsers (Global sGlobal _ _)) appInfo uiState subState accountState txRec, Ok franking) ->
+            let
+                --filteredFRanking = Maybe.withDefault SR.Defaults.emptyFRanking franking
+                -- need to convert from FRanking to Ranking (id_ needs to be a String)
+                --user = Maybe.withDefault SR.Defaults.emptyUser appInfo.m_user
+
+                --ethaddr = Maybe.withDefault "" (Just (Eth.Utils.addressToString user.m_ethaddress))
+                --fromFToRanking = SR.Types.newRanking filteredFRanking
+                -- below just getting to compile
+                fromFToRanking = SR.Defaults.emptyRankingInfo
+                -- --_ = Debug.log "lFromFToRanking : " lFromFToRanking
+                newAppInfo = {appInfo | selectedRanking = fromFToRanking}
+                
+                --change dataKind to Selected (Rankings below is just to get it to compile)
+                --newDataKind = Selected ((Data.Selected.gotUserAsPlayer Data.Selected.emptySelected ethaddr) sUsers fromFToRanking.id_)
+                newDataKind = Rankings Data.Rankings.empty
+                newDataState = StateFetched sUsers newDataKind
+            in
+                AppOps walletState newDataState newAppInfo uiState subState accountState txRec
+
+        ( AppOps _ (StateFetched _ (Selected _ _ _ _ _)) _ _ _ _ _, Ok _ ) ->
+            (Failure "updateWithReceivedUsers")
+
+        (AppOps walletState AllEmpty appInfo uiState subState accountState txRec, Err _ )  ->
+            (Failure "updateWithReceivedUsers")
+
+        (AppOps walletState (StateFetched sUsers dKind) appInfo uiState subState accountState txRec, Err _)  ->
+            (Failure "updateWithReceivedUsers")
+
+        (AppOps walletState (StateUpdated sUsers dKind) appInfo uiState subState accountState txRec, Err _ ) ->
+            (Failure "updateWithReceivedUsers")
+
+        (Failure _, Ok lusers) ->
+            (Failure "updateWithReceivedUsers")
+
+        (Failure _, Err _) ->
+            (Failure "updateWithReceivedUsers")
 
 updateFromLoggedInUser: Model -> Result (GQLHttp.Error SR.Types.Token) SR.Types.Token -> Model
 updateFromLoggedInUser model response =

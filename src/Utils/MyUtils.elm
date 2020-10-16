@@ -139,7 +139,8 @@ splitPlayerFieldsToCreateMaybePlayer uplayer =
 createdMaybePlayerFromPlayer : SR.Types.Player -> Maybe SR.Types.Player
 createdMaybePlayerFromPlayer player =
     Just
-        { address = player.address
+        { rankingid = player.rankingid 
+        , address = player.address
         , rank = player.rank
         , challengeraddress = player.challengeraddress
         }

@@ -4,6 +4,7 @@ module SR.Defaults exposing
     emptyAppInfo, emptyFormValidations, emptyOwnedRanking
     , emptyRankingInfo, emptyUser, emptyUserPlayer, emptyUserRanking, globalBinName
     , globalContainerId, secretKey, selectedBinName, selectedContainerId, userBinName, userContainerId
+    , emptyFRanking
     )
 
 
@@ -24,7 +25,8 @@ import EverySet exposing (EverySet)
 
 emptyPlayer : SR.Types.Player
 emptyPlayer =
-    { address = ""
+    { rankingid = ""
+    , address = ""
     , rank = 0
     , challengeraddress = ""
     }
@@ -88,6 +90,15 @@ emptyUserPlayer =
 
 emptyRankingInfo =
     { id_ = "0"
+    , active = False
+    , rankingname = ""
+    , rankingdesc = Nothing
+    , rankingowneraddr = ""
+    }
+
+emptyFRanking =
+
+    { id_ = 0
     , active = False
     , rankingname = ""
     , rankingdesc = Nothing
