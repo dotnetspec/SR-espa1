@@ -4,7 +4,7 @@ module Data.Players exposing (Players
     , validatedPlayerList
     , handleFetchedPlayers
     , extractPlayersFromWebData
-    , emptyPlayers
+    , empty
     , addPlayer
     , removePlayer
     , asList
@@ -26,8 +26,9 @@ import List.Unique
 type Players = Players (EverySet SR.Types.Player)
 type PlayerNames = PlayerNames (EverySet String)
 
-emptyPlayers : Players 
-emptyPlayers = 
+
+empty : Players 
+empty = 
     Players (EverySet.empty)
 
 asPlayers : EverySet SR.Types.Player -> Players 
@@ -151,27 +152,27 @@ handleFetchedPlayers lplayer =
             (asPlayers (EverySet.fromList a), "Success")
 
         RemoteData.NotAsked ->
-            (emptyPlayers, "Not Asked")
+            (empty, "Not Asked")
 
         RemoteData.Loading ->
-            (emptyPlayers, "Loading")
+            (empty, "Loading")
 
         RemoteData.Failure err ->
             case err of
                 Http.BadUrl s ->
-                    (emptyPlayers, s)
+                    (empty, s)
 
                 Http.Timeout ->
-                    (emptyPlayers, "TimeOut")
+                    (empty, "TimeOut")
 
                 Http.NetworkError ->
-                    (emptyPlayers, "Network Err")
+                    (empty, "Network Err")
 
                 Http.BadStatus statuscode ->
-                    (emptyPlayers, (String.fromInt statuscode))
+                    (empty, (String.fromInt statuscode))
 
                 Http.BadBody s ->
-                    (emptyPlayers, s)
+                    (empty, s)
 
 
 gotAddress : SR.Types.Player -> String

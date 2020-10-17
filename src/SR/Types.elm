@@ -18,7 +18,9 @@ module SR.Types exposing
     , FRanking
     , newRanking
     , newUserRanking
-    ,fromScalarCodecId
+    , fromScalarCodecId
+    , FPlayer
+    , newPlayer
     )
 
 {-| Types
@@ -293,6 +295,18 @@ type alias Player =
     , rank : Int
     , challengeraddress : String
     }
+
+type alias FPlayer =
+    { id_ : SRdb.ScalarCodecs.Id
+    , rankingid : String
+    , address : String
+    , rank : Int
+    , challengeraddress : String
+    }
+
+newPlayer : FPlayer -> Player 
+newPlayer fplayer = 
+    Player (fromScalarCodecId fplayer.id_) fplayer.address fplayer.rank fplayer.challengeraddress
 
 
 
