@@ -1506,10 +1506,7 @@ update msg model =
                                 (model, Cmd.none)
 
                             Just userVal ->
-                                let 
-                                    _ =
-                                        Debug.log "in CreateNewUser" "yes"
-
+                                let
                                     userSet = case dataState of 
                                                 StateFetched users rankings dKind -> 
                                                     users 
@@ -2366,73 +2363,16 @@ view model =
                     Html.text ("Loading ...")
 
                 (StateFetched sUsers sRankings (Global sGlobal ), Nothing, SR.Types.AppStateGeneral) ->
-                    let 
-                            userVal = SR.Defaults.emptyUser
-                    in
-                    Framework.responsiveLayout [] <|
-                            Element.column
-                                Framework.container
-                                [ Element.el (Heading.h5) <|
-                                    Element.text ("SportRank - Welcome")
-                                , displayEnableEthereumBtn
-                                , Element.text ("\n")
-                                --, Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
-                                , Element.column Grid.section <|
-                                    [ Element.el [] <| Element.text ""
-                                    --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-                                    , Element.wrappedRow (Card.fill ++ Grid.simple)
-                                        [ Element.column
-                                            Grid.simple
-                                            [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                                                { onChange = NewUserNameInputChg
-                                                , text = userVal.username
-                                                --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
-                                                , placeholder = Nothing
-                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
-                                                }
-                                            --, nameValidationErr appInfo sUsers
-                                            , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                                { onChange = NewUserPasswordInputChg
-                                                , text = userVal.password
-                                                , placeholder = Nothing
-                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                                                }
-                                            ]
-                                        ]
-                                    ]
-                                , infoBtn "Log In" ClickedLogInUser
-                                , Element.text ("\n")
-                                , displayRegisterBtnIfNewUser
-                                    SR.Defaults.emptyUser.username
-                                    ClickedRegister
-                                , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
-                                ]
+                    generalLoginView SR.Defaults.emptyUser sUsers sGlobal
+                        
+                (StateFetched sUsers sRankings (Global sGlobal ), Nothing, SR.Types.AppStateCreateNewUser) ->
+                    registerNewUserView SR.Defaults.emptyUser sUsers
 
                 (StateFetched sUsers sRankings (Global sGlobal ), Just userVal, SR.Types.AppStateGeneral) ->
-                    Framework.responsiveLayout [] <|
-                        Element.column
-                            Framework.container 
-                                [ Element.el (Heading.h5) <|
-                                    Element.text ("SportRank - Welcome " ++ userVal.username)
-                                    , displayEnableEthereumBtn
-                                    , displayForToken userVal sGlobal
-                                    -- if the UI following is an issue needing branching
-                                    -- do it in a separate function like dispalyForToken
-                                    , infoBtn "Log In" ClickedLogInUser
-                                    , Element.text ("\n")
-                                            , displayRegisterBtnIfNewUser
-                                                SR.Defaults.emptyUser.username
-                                                ClickedRegister
-                                    , Element.text ("\n")
-                                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
-                                    
-                                ]
+                    gotUserView userVal sUsers sGlobal
                             
                 (StateFetched sUsers sRankings (Selected _ ), Just userVal, SR.Types.AppStateGeneral) ->
                      greetingView <| "ToDo: Select w/o a token should be possible"
-
-                -- (StateFetched sUsers sRankings (Global _), Just userVal, SR.Types.AppStateGeneral) ->
-                --     greetingView <| "Handle Rankings"
 
                 (StateFetched sUsers _ _ , Nothing, SR.Types.AppStateGeneral) ->
                     Html.text ("dKind not specified")
@@ -2473,6 +2413,117 @@ view model =
                                         SR.Defaults.emptyUser.username
                                         ClickedRegister   
                         ]
+
+-- view helpers
+
+generalLoginView : SR.Types.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
+generalLoginView userVal sUsers sGlobal =
+    Framework.responsiveLayout [] <|
+        Element.column
+            Framework.container
+            [ Element.el (Heading.h5) <|
+                Element.text ("SportRank - Welcome")
+            , displayEnableEthereumBtn
+            , Element.text ("\n")
+            --, Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
+            , Element.column Grid.section <|
+                [ Element.el [] <| Element.text ""
+                --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                    [ Element.column
+                        Grid.simple
+                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                            { onChange = NewUserNameInputChg
+                            , text = userVal.username
+                            --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
+                            }
+                        --, nameValidationErr appInfo sUsers
+                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                            { onChange = NewUserPasswordInputChg
+                            , text = userVal.password
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                            }
+                        ]
+                    ]
+                ]
+            , infoBtn "Log In" ClickedLogInUser
+            , Element.text ("\n")
+            , displayRegisterBtnIfNewUser
+                SR.Defaults.emptyUser.username
+                ClickedRegister
+            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
+            ]
+
+registerNewUserView : SR.Types.User -> Data.Users.Users -> Html Msg 
+registerNewUserView userVal sUsers = 
+    Framework.responsiveLayout [] <|
+        Element.column Grid.section <|
+            [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+            , Element.wrappedRow (Card.fill ++ Grid.simple)
+                [ Element.column
+                    Grid.simple
+                    [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                        { onChange = NewUserNameInputChg
+                        , text = userVal.username
+                        , placeholder = Nothing
+                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+                        }
+                    , nameValidationErr userVal sUsers
+                    , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                        { onChange = NewUserPasswordInputChg
+                        , text = userVal.password
+                        , placeholder = Nothing
+                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                        }
+                    , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+                        { onChange = NewUserDescInputChg
+                        , text = userVal.description
+                        , placeholder = Nothing
+                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+                        }
+                    , userDescValidationErr userVal
+                    , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+                        { onChange = NewUserEmailInputChg
+                        , text = userVal.email
+                        , placeholder = Nothing
+                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+                        }
+                    , emailValidationErr userVal
+                    , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+                        { onChange = NewUserMobileInputChg
+                        , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
+                        , placeholder = Nothing
+                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+                        }
+                    , mobileValidationErr userVal
+                    ]
+                ]
+            , Element.text "* required and CANNOT be changed \nunder current ETH account"
+            , SR.Elements.justParasimpleUserInfoText
+            ]
+
+gotUserView : SR.Types.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
+gotUserView userVal sUsers sGlobal =
+    Framework.responsiveLayout [] <|
+        Element.column
+            Framework.container 
+                [ Element.el (Heading.h5) <|
+                    Element.text ("SportRank - Welcome " ++ userVal.username)
+                    , displayEnableEthereumBtn
+                    , displayForToken userVal sGlobal
+                    -- if the UI following is an issue needing branching
+                    -- do it in a separate function like dispalyForToken
+                    , infoBtn "Log In" ClickedLogInUser
+                    , Element.text ("\n")
+                            , displayRegisterBtnIfNewUser
+                                SR.Defaults.emptyUser.username
+                                ClickedRegister
+                    , Element.text ("\n")
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
+                ]
 
 displayForToken : SR.Types.User -> Data.Global.Global -> Element Msg 
 displayForToken userVal sGlobal = 
