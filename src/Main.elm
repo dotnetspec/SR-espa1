@@ -166,7 +166,7 @@ type Msg
     | ClickedDeleteRankingConfirmed
     | ClickedRemoveFromUserMemberRankings
     | ClickedEnableEthereum
-    | ResetToShowGlobal
+    | Cancel
     | ResetToShowSelected
     | ResetRejectedNewUserToShowGlobal
     | LadderNameInputChg String
@@ -754,39 +754,28 @@ update msg model =
             ( AppOps walletState dataState clearedNameFieldAppInfo SR.Types.UICreateNewLadder SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none )
 
 
-        (ResetToShowGlobal, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
-                    case dataState of 
-                        StateFetched sUsers sRankings dKind ->
-                            case appInfo.m_user of
-                                Nothing ->
-                                    let
-                                        newAppInfo = {appInfo | appState = SR.Types.AppStateGeneral}
-                                    in
-                                        ( AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState emptyTxRecord, allRankings )
+        (Cancel, AppOps walletState (StateFetched sUsers sRankings dKind) appInfo uiState subState accountState  txRec ) ->
+            let
+                newAppInfo = {appInfo | appState = SR.Types.AppStateGeneral}
+            in
+                ( AppOps walletState (StateFetched sUsers sRankings dKind) newAppInfo uiState SR.Types.StopSubscription accountState emptyTxRecord, Cmd.none )
+        
                                 
-                                Just userVal ->
-                                    let
-                                        newDataKind = Global Data.Global.empty
-                                        newDataState = StateFetched sUsers sRankings newDataKind
-                                    in
-                                        ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription accountState emptyTxRecord, allRankings )
-                        
-                        StateUpdated sUsers sRankings dKind ->
-                            case appInfo.m_user of
-                                Nothing ->
-                                    (model, Cmd.none)
-                                Just userVal ->
-                                    let
-                                        newDataKind = Global Data.Global.empty
-                                        newDataState = StateFetched sUsers sRankings newDataKind
+        (Cancel, AppOps walletState (StateUpdated sUsers sRankings dKind) appInfo uiState subState accountState  txRec ) ->
+            case appInfo.m_user of
+                Nothing ->
+                    (model, Cmd.none)
+                Just userVal ->
+                    let
+                        newDataKind = Global Data.Global.empty
+                        newDataState = StateFetched sUsers sRankings newDataKind
 
-                                        _ = Debug.log "toGlobal now" "stateupdated"
-                                    in
-                                    ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, allRankings )
-                        
-                        
-                        AllEmpty -> 
-                            (model, Cmd.none)
+                        _ = Debug.log "toGlobal now" "stateupdated"
+                    in
+                    ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, Cmd.none )
+
+        (Cancel, AppOps walletState AllEmpty appInfo uiState subState accountState  txRec ) ->
+            (Failure "Network error ...", Cmd.none)
 
         (ResetToShowSelected, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
             case dataState of 
@@ -2879,7 +2868,7 @@ selecteduserIsOwnerhomebutton user =
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
                 [ Input.button (Button.simple ++ Color.simple) <|
-                    { onPress = Just <| ResetToShowGlobal
+                    { onPress = Just <| Cancel
                     , label = Element.text "Home"
                     }
                 , Input.button (Button.simple ++ Color.danger) <|
@@ -2900,7 +2889,7 @@ selecteduserIsPlayerHomebutton user =
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
                 [ Input.button (Button.simple ++ Color.simple) <|
-                    { onPress = Just <| ResetToShowGlobal
+                    { onPress = Just <| Cancel
                     , label = Element.text "Home"
                     }
                 ]
@@ -2915,7 +2904,7 @@ selecteduserIsNeitherPlayerNorOwnerHomebutton user accountState =
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
                 [ Input.button (Button.simple ++ Color.simple) <|
-                    { onPress = Just <| ResetToShowGlobal
+                    { onPress = Just <| Cancel
                     , label = Element.text "Home"
                     }
                 , displayJoinBtnNewOrExistingUser user accountState
@@ -2966,7 +2955,7 @@ newrankingconfirmbutton appInfo dataState =
                             , Element.column (Card.simple ++ Grid.simple) <|
                                 [ Element.wrappedRow Grid.simple <|
                                     [ Input.button (Button.simple ++ Color.simple) <|
-                                        { onPress = Just <| ResetToShowGlobal
+                                        { onPress = Just <| Cancel
                                         , label = Element.text "Cancel"
                                         }
                                     , Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput appInfo.selectedRanking (Data.Global.asList sGlobal))) <|
@@ -3012,7 +3001,7 @@ confirmDelRankingBtn appInfo dataState =
                                         , Element.column (Card.simple ++ Grid.simple) <|
                                             [ Element.wrappedRow Grid.simple <|
                                                 [ Input.button (Button.simple ++ Color.simple) <|
-                                                    { onPress = Just <| ResetToShowGlobal
+                                                    { onPress = Just <| Cancel
                                                     , label = Element.text "Cancel"
                                                     }
                                                     , Input.button Button.simple <|
@@ -3046,7 +3035,7 @@ confirmDelRankingBtn appInfo dataState =
 --                             , Element.column (Card.simple ++ Grid.simple) <|
 --                                 [ Element.wrappedRow Grid.simple <|
 --                                     [ Input.button (Button.simple ++ Color.simple) <|
---                                         { onPress = Just <| ResetToShowGlobal
+--                                         { onPress = Just <| Cancel
 --                                         , label = Element.text "Continue"
 --                                         }
 --                                     -- , Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput appInfo.selectedRanking (Data.Global.asList sGlobal))) <|
@@ -3309,7 +3298,7 @@ newuserConfirmPanel  m_user luser =
                     , Element.column (Card.simple ++ Grid.simple) <|
                         [ Element.wrappedRow Grid.simple <|
                             [ Input.button (Button.simple ++ Color.info) <|
-                                { onPress = Just <| ResetToShowGlobal
+                                { onPress = Just <| Cancel
                                 , label = Element.text "Cancel"
                                 }
                             ]
@@ -3322,7 +3311,7 @@ newuserConfirmPanel  m_user luser =
                         , Element.column (Card.simple ++ Grid.simple) <|
                             [ Element.wrappedRow Grid.simple <|
                                 [ Input.button (Button.simple ++ Color.info) <|
-                                    { onPress = Just <| ResetToShowGlobal
+                                    { onPress = Just <| Cancel
                                     , label = Element.text "Cancel"
                                     }
                                 ]
@@ -3337,7 +3326,7 @@ newuserConfirmPanel  m_user luser =
                         , Element.column (Card.simple ++ Grid.simple) <|
                             [ Element.wrappedRow Grid.simple <|
                                 [ Input.button (Button.simple ++ Color.info) <|
-                                    { onPress = Just <| ResetToShowGlobal
+                                    { onPress = Just <| Cancel
                                     , label = Element.text "Cancel"
                                     }
                                 ]
@@ -3350,7 +3339,7 @@ newuserConfirmPanel  m_user luser =
                     , Element.column (Card.simple ++ Grid.simple) <|
                         [ Element.wrappedRow Grid.simple <|
                             [ Input.button (Button.simple ++ Color.info) <|
-                                { onPress = Just <| ResetToShowGlobal
+                                { onPress = Just <| Cancel
                                 , label = Element.text "Cancel"
                                 }
                             , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput userVal luser False)) <|
@@ -3371,7 +3360,7 @@ existingUserConfirmPanel user luser =
         , Element.column (Card.simple ++ Grid.simple) <|
             [ Element.wrappedRow Grid.simple <|
                 [ Input.button (Button.simple ++ Color.info) <|
-                    { onPress = Just <| ResetToShowGlobal
+                    { onPress = Just <| Cancel
                     , label = Element.text "Cancel"
                     }
                 , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput user luser True)) <|
@@ -4214,7 +4203,7 @@ continueView continueStr =
             , Element.column (Card.simple ++ Grid.simple) <|
                     [ Element.column Grid.simple <|
                         [ Input.button (Button.simple ++ Color.primary) <|
-                            { onPress = Just <| ResetToShowGlobal
+                            { onPress = Just <| Cancel
                             , label = Element.text "Continue ..."
                             }
                         ]
@@ -4240,7 +4229,7 @@ continueWithRemoveDeletedRankingView continueStr =
             , Element.column (Card.simple ++ Grid.simple) <|
                     [ Element.column Grid.simple <|
                         [ Input.button (Button.simple ++ Color.primary) <|
-                            { onPress = Just <| ResetToShowGlobal
+                            { onPress = Just <| Cancel
                             , label = Element.text "Cancel"
                             }
                         ]
