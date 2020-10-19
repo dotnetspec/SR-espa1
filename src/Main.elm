@@ -323,28 +323,28 @@ update msg model =
             let 
                 newAppInfo = {appInfo | appState = SR.Types.AppStateCreateNewUser}
             in
-                ( AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec, Cmd.none )
-            --case walletState of
-                -- SR.Types.WalletStateLocked ->
-                --     ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
-                -- SR.Types.WalletOpenedNoUserAccount ->
-                --     ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
-                -- SR.Types.WalletOperational ->
-                --     ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
-                -- SR.Types.WalletStopSub ->
-                --     ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
-                -- SR.Types.WalletOpened ->
-                --     case appInfo.m_user of
-                --         Nothing ->
-                --             ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
-                --         Just user ->
-                --             case user.m_ethaddress of
-                --                 Nothing ->
-                --                     (model, Cmd.none)
-                --                 Just addr ->
-                --                     ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec, Cmd.none )
-                -- _ ->
-                --     (model, Cmd.none)
+                --( AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec, Cmd.none )
+            case walletState of
+                SR.Types.WalletStateLocked ->
+                    ( AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec, Cmd.none )
+                SR.Types.WalletOpenedNoUserAccount ->
+                    ( AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec, Cmd.none )
+                SR.Types.WalletOperational ->
+                    ( AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec, Cmd.none )
+                SR.Types.WalletStopSub ->
+                    ( AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec, Cmd.none )
+                SR.Types.WalletOpened ->
+                    case newAppInfo.m_user of
+                        Nothing ->
+                            ( AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec, Cmd.none )
+                        Just user ->
+                            case user.m_ethaddress of
+                                Nothing ->
+                                    (model, Cmd.none)
+                                Just addr ->
+                                    ( AppOps SR.Types.WalletOperational dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec, Cmd.none )
+                _ ->
+                    (model, Cmd.none)
 
 
         (PlayersReceived response, AppOps walletState dataState appInfo uiState subState accountState  txRec )  ->
@@ -2368,6 +2368,9 @@ view model =
                 (StateFetched sUsers sRankings (Global sGlobal ), Nothing, SR.Types.AppStateCreateNewUser) ->
                     registerNewUserView SR.Defaults.emptyUser sUsers
 
+                (StateFetched sUsers sRankings dKind, Just userVal, SR.Types.AppStateCreateNewUser) ->
+                    failureView "User Already Exists!"
+
                 (StateFetched sUsers sRankings (Global sGlobal ), Just userVal, SR.Types.AppStateGeneral) ->
                     gotUserView userVal sUsers sGlobal
                             
@@ -2384,10 +2387,6 @@ view model =
                                 
                         Just tokenVal ->
                                     inputUserDetailsView dataState appInfo
-
-                (StateFetched sUsers sRankings dKind, Just userVal, SR.Types.AppStateCreateNewUser) ->
-                            inputUserDetailsView dataState appInfo
-                            
                 (StateUpdated _ _ _, _, _) ->
                     Html.text ("No User - No Update")
                 
@@ -2395,24 +2394,7 @@ view model =
                             Html.text ("View fell thru")
 
         Failure str ->
-            Framework.responsiveLayout [] <|
-                Element.column
-                    Framework.container 
-                        [ Element.el (Heading.h5) <|
-                            Element.text ("SportRank - Welcome ")
-                            , displayEnableEthereumBtn
-                            , Element.text ("\n")
-                            , Element.el Color.danger <| Element.text str
-                            , Element.text ("\n")
-                            --, displayForToken userVal sGlobal
-                            -- if the UI following is an issue needing branching
-                            -- do it in a separate function like dispalyForToken
-                            , infoBtn "Log In" ClickedLogInUser
-                            , Element.text ("\n")
-                                    , displayRegisterBtnIfNewUser
-                                        SR.Defaults.emptyUser.username
-                                        ClickedRegister   
-                        ]
+           failureView str
 
 -- view helpers
 
@@ -2503,6 +2485,7 @@ registerNewUserView userVal sUsers =
                 ]
             , Element.text "* required and CANNOT be changed \nunder current ETH account"
             , SR.Elements.justParasimpleUserInfoText
+            , newuserConfirmPanel (Just userVal) (Data.Users.asList sUsers)
             ]
 
 gotUserView : SR.Types.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
@@ -2524,6 +2507,28 @@ gotUserView userVal sUsers sGlobal =
                     , Element.text ("\n")
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
                 ]
+
+failureView : String -> Html Msg 
+failureView str = 
+     Framework.responsiveLayout [] <|
+        Element.column
+            Framework.container 
+                [ Element.el (Heading.h5) <|
+                    Element.text ("SportRank - Welcome ")
+                    , displayEnableEthereumBtn
+                    , Element.text ("\n")
+                    , Element.el Color.danger <| Element.text str
+                    , Element.text ("\n")
+                    --, displayForToken userVal sGlobal
+                    -- if the UI following is an issue needing branching
+                    -- do it in a separate function like dispalyForToken
+                    , infoBtn "Log In" ClickedLogInUser
+                    , Element.text ("\n")
+                            , displayRegisterBtnIfNewUser
+                                SR.Defaults.emptyUser.username
+                                ClickedRegister   
+                ]
+
 
 displayForToken : SR.Types.User -> Data.Global.Global -> Element Msg 
 displayForToken userVal sGlobal = 
@@ -4035,6 +4040,7 @@ displayRegisterNewUser userVal sUsers =
             ]
         , Element.text "* required and CANNOT be changed \nunder current ETH account"
         , SR.Elements.justParasimpleUserInfoText
+        , newuserConfirmPanel (Just userVal) (Data.Users.asList sUsers)
         ]
                 
 
