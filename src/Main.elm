@@ -762,13 +762,14 @@ update msg model =
                                     let
                                         newAppInfo = {appInfo | appState = SR.Types.AppStateGeneral}
                                     in
-                                        ( AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState emptyTxRecord, gotGlobal )
+                                        ( AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState emptyTxRecord, allRankings )
+                                
                                 Just userVal ->
                                     let
                                         newDataKind = Global Data.Global.empty
                                         newDataState = StateFetched sUsers sRankings newDataKind
                                     in
-                                        ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription accountState emptyTxRecord, gotGlobal )
+                                        ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription accountState emptyTxRecord, allRankings )
                         
                         StateUpdated sUsers sRankings dKind ->
                             case appInfo.m_user of
@@ -781,7 +782,7 @@ update msg model =
 
                                         _ = Debug.log "toGlobal now" "stateupdated"
                                     in
-                                    ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, gotGlobal )
+                                    ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, allRankings )
                         
                         
                         AllEmpty -> 
@@ -1205,7 +1206,7 @@ update msg model =
             in 
             case walletState of 
                 SR.Types.WalletOperational ->
-                    ( AppOps SR.Types.WalletOperational dataState newAppInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, gotGlobal )
+                    ( AppOps SR.Types.WalletOperational dataState newAppInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription SR.Types.Registered emptyTxRecord, allRankings )
                 _ -> 
                     (model, Cmd.none)
 
@@ -1739,7 +1740,7 @@ updateWithReceivedUsers model response =
                         lFromFToUser = List.map SR.Types.newUser filteredFUserList
                         newsUsers = Data.Users.asUsers (EverySet.fromList lFromFToUser)
                         newDataKind = Global (Data.Global.created sRankings newsUsers)
-                        newDataState = StateFetched sUsers sRankings newDataKind
+                        newDataState = StateFetched newsUsers sRankings newDataKind
                     in
                         AppOps walletState newDataState appInfo uiState subState accountState txRec
 
@@ -1839,7 +1840,7 @@ updateWithReceivedRankings model response =
                         lFromFToRanking = List.map SR.Types.newRanking filteredFRankingList
                         newsRankings = Data.Rankings.asRankings (EverySet.fromList lFromFToRanking)
                         newDataKind = Global (Data.Global.created newsRankings sUsers)
-                        newDataState = StateFetched sUsers sRankings newDataKind
+                        newDataState = StateFetched sUsers newsRankings newDataKind
                     in
                         AppOps walletState newDataState appInfo uiState subState accountState txRec
 
@@ -2084,98 +2085,97 @@ gotWalletAddrApplyToUser appInfo uaddr =
 
 handleNewUserInputs : Model -> Msg -> Model
 handleNewUserInputs model msg =
-    case model of
-        AppOps walletState dataState appInfo uiState subState accountState  txRec ->
-            case msg of
-                NewUserNameInputChg namefield ->
-                    case appInfo.m_user of
-                        Nothing ->
-                            let
-                                -- create a new empty user
-                                newUser = SR.Defaults.emptyUser
-                                newUserWithUpdatedNameField = 
-                                    { newUser | username = namefield }
-                                newAppInfo =
-                                    { appInfo | m_user = Just newUserWithUpdatedNameField}
-                            in
-                            AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec
-                        
-                        Just userVal ->
-                            let
-                                updatedNewUser =
-                                    { userVal | username = namefield }
+    case (model, msg) of
+        (AppOps walletState dataState appInfo uiState subState accountState txRec, NewUserNameInputChg namefield) ->
+            case appInfo.m_user of
+                Nothing ->
+                    let
+                        -- create a new empty user
+                        newUser = SR.Defaults.emptyUser
+                        newUserWithUpdatedNameField = 
+                            { newUser | username = namefield }
+                        newAppInfo =
+                            { appInfo | m_user = Just newUserWithUpdatedNameField}
+                    in
+                        AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec
 
-                                newAppInfo =
-                                    { appInfo | m_user = Just updatedNewUser }
-                            in
-                            AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec
+                Just userVal ->
+                    let
+                        updatedNewUser =
+                            { userVal | username = namefield }
 
-                NewUserPasswordInputChg passwordfield ->
-                    case appInfo.m_user of
-                        Nothing ->
-                            model
-                        Just userVal ->
-                            let
-                                newUser = userVal
+                        newAppInfo =
+                            { appInfo | m_user = Just updatedNewUser }
+                    in
+                    AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec
 
-                                updatedNewUser =
-                                    { newUser | password = passwordfield }
+            
+            
+        (AppOps walletState dataState appInfo uiState subState accountState txRec, NewUserPasswordInputChg passwordfield) ->
+            case appInfo.m_user of
+                Nothing ->
+                    model
+                Just userVal ->
+                    let
+                        newUser = userVal
 
-                                newAppInfo =
-                                    { appInfo | m_user = Just updatedNewUser }
-                            in
-                            AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec
+                        updatedNewUser =
+                            { newUser | password = passwordfield }
 
-                NewUserDescInputChg descfield ->
-                   case appInfo.m_user of
-                        Nothing ->
-                            model
-                        Just userVal ->
-                            let
-                                newUser = userVal
+                        newAppInfo =
+                            { appInfo | m_user = Just updatedNewUser }
+                    in
+                        AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec
+            
 
-                                updatedNewUser =
-                                    { newUser | description = descfield }
+        (AppOps walletState dataState appInfo uiState subState accountState txRec,  NewUserDescInputChg descfield) ->
+            case appInfo.m_user of
+                Nothing ->
+                    model
+                Just userVal ->
+                    let
+                        newUser = userVal
 
-                                newAppInfo =
-                                    { appInfo | m_user = Just updatedNewUser }
-                            in
-                            AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec
+                        updatedNewUser =
+                            { newUser | description = descfield }
 
-                NewUserEmailInputChg emailfield ->
-                    case appInfo.m_user of
-                        Nothing ->
-                            model
-                        Just userVal ->
-                            let
-                                updatedNewUser =
-                                    { userVal | email = emailfield }
+                        newAppInfo =
+                            { appInfo | m_user = Just updatedNewUser }
+                    in
+                        AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec
 
-                                newAppInfo =
-                                    { appInfo | m_user = Just updatedNewUser }
-                            in
-                            AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec
+        (AppOps walletState dataState appInfo uiState subState accountState txRec, NewUserEmailInputChg emailfield) ->
+            case appInfo.m_user of
+                Nothing ->
+                    model
+                Just userVal ->
+                    let
+                        updatedNewUser =
+                            { userVal | email = emailfield }
 
-                NewUserMobileInputChg mobilefield ->
-                    case appInfo.m_user of
-                        Nothing ->
-                            model
-                        Just userVal ->
-                            let
-                                newUser = userVal
+                        newAppInfo =
+                            { appInfo | m_user = Just updatedNewUser }
+                    in
+                        AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec
+            
 
-                                updatedNewUser =
-                                    { newUser | mobile = mobilefield }
+        (AppOps walletState dataState appInfo uiState subState accountState txRec, NewUserMobileInputChg mobilefield) ->
+            case appInfo.m_user of
+                Nothing ->
+                    model
+                Just userVal ->
+                    let
+                        newUser = userVal
 
-                                newAppInfo =
-                                    { appInfo | m_user = Just updatedNewUser }
-                            in
-                            AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec
+                        updatedNewUser =
+                            { newUser | mobile = mobilefield }
 
-                _ ->
-                    Failure "NewUserNameInputChg"
+                        newAppInfo =
+                            { appInfo | m_user = Just updatedNewUser }
+                    in
+                        AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription accountState txRec            
 
-        _ ->
+        (_,_) ->
             Failure "NewUserNameInputChg"
 
 
@@ -2369,7 +2369,7 @@ view model =
                     registerNewUserView SR.Defaults.emptyUser sUsers
 
                 (StateFetched sUsers sRankings dKind, Just userVal, SR.Types.AppStateCreateNewUser) ->
-                    failureView "User Already Exists!"
+                    registerNewUserView userVal sUsers
 
                 (StateFetched sUsers sRankings (Global sGlobal ), Just userVal, SR.Types.AppStateGeneral) ->
                     gotUserView userVal sUsers sGlobal
@@ -2421,7 +2421,7 @@ generalLoginView userVal sUsers sGlobal =
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
                             }
-                        --, nameValidationErr appInfo sUsers
+                        --, nameValidView appInfo sUsers
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
                             { onChange = NewUserPasswordInputChg
                             , text = userVal.password
@@ -2453,7 +2453,7 @@ registerNewUserView userVal sUsers =
                         , placeholder = Nothing
                         , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
                         }
-                    , nameValidationErr userVal sUsers
+                    , nameValidView userVal sUsers
                     , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
                         { onChange = NewUserPasswordInputChg
                         , text = userVal.password
@@ -2547,7 +2547,7 @@ displayForToken userVal sGlobal =
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
                             }
-                        --, nameValidationErr appInfo sUsers
+                        --, nameValidView appInfo sUsers
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
                             { onChange = NewUserPasswordInputChg
                             , text = userVal.password
@@ -3426,62 +3426,6 @@ enableButton enable =
         Color.disabled
 
 
--- inputNewUser : DataState -> SR.Types.AppInfo -> Element Msg
--- inputNewUser dataState appInfo =
---     case dataState of
---         StateFetched sUsers sRankings dKind ->
---                     case appInfo.m_user of
---                         Nothing ->
---                             Element.text "No user"
---                         Just userVal ->
---                             Element.column Grid.section <|
---                                 [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
---                                 , Element.wrappedRow (Card.fill ++ Grid.simple)
---                                     [ Element.column
---                                         Grid.simple
---                                         [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
---                                             { onChange = NewUserNameInputChg
---                                             , text = userVal.username
---                                             , placeholder = Nothing
---                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
---                                             }
---                                         , nameValidationErr userVal sUsers
---                                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
---                                             { onChange = NewUserPasswordInputChg
---                                             , text = userVal.password
---                                             , placeholder = Nothing
---                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
---                                             }
---                                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
---                                             { onChange = NewUserDescInputChg
---                                             , text = userVal.description
---                                             , placeholder = Nothing
---                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
---                                             }
---                                         , userDescValidationErr userVal
---                                         , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
---                                             { onChange = NewUserEmailInputChg
---                                             , text = userVal.email
---                                             , placeholder = Nothing
---                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
---                                             }
---                                         , emailValidationErr userVal
---                                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
---                                             { onChange = NewUserMobileInputChg
---                                             , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
---                                             , placeholder = Nothing
---                                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
---                                             }
---                                         , mobileValidationErr userVal
---                                         ]
---                                     ]
---                                 , Element.text "* required and CANNOT be changed \nunder current ETH account"
---                                 , SR.Elements.justParasimpleUserInfoText
---                                 ]
---         _ ->
---                     Element.text "Problem creating new user"
-
-
 inputUpdateExistingUser : Model -> Element Msg
 inputUpdateExistingUser model =
     case model of
@@ -3538,16 +3482,17 @@ inputUpdateExistingUser model =
             Element.text "Fail on inputNewUser"
 
 
-nameValidationErr : SR.Types.User -> Data.Users.Users -> Element Msg
-nameValidationErr userVal sUsers =
+nameValidView : SR.Types.User -> Data.Users.Users -> Element Msg
+nameValidView userVal sUsers =
+
         if userVal.username == "" then
             Element.el
                     (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
                         ++ [ Element.moveLeft 0.0 ]
                     )
-                    (Element.text """Must be unique (4-8 chars)""")
+                    (Element.text """Must be unique (4-8 continuous chars)""")
         else
-            if Data.Users.isNameValidationErr userVal.username sUsers then 
+            if Data.Users.isNameValid userVal.username sUsers then 
                 Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
 
             else
@@ -3555,7 +3500,7 @@ nameValidationErr userVal sUsers =
                     (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
                         ++ [ Element.moveLeft 0.0 ]
                     )
-                    (Element.text """Must be unique (4-8 chars)""")
+                    (Element.text """Must be unique (4-8 continuous chars)""")
 
 
 ladderNameValidationErr : SR.Types.AppInfo -> DataState -> Element Msg
@@ -3572,7 +3517,7 @@ ladderNameValidationErr appInfo dataState =
                             (List.append [ Element.htmlAttribute (Html.Attributes.id "laddernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
                                 ++ [ Element.moveLeft 0.0 ]
                             )
-                            (Element.text """Must be unique (4-8 chars)""")
+                            (Element.text """Must be unique (4-8 continuous chars)""")
 
                 _ -> 
                     let 
@@ -3671,7 +3616,7 @@ handleNoUserView dataState =
                                                 , placeholder = Nothing
                                                 , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
                                                 }
-                                            --, nameValidationErr appInfo sUsers
+                                            --, nameValidView appInfo sUsers
                                             , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
                                                 { onChange = NewUserPasswordInputChg
                                                 , text = userVal.password
@@ -3723,7 +3668,7 @@ handleGlobalNoTokenView dataState userVal =
                                         , placeholder = Nothing
                                         , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
                                         }
-                                    --, nameValidationErr appInfo sUsers
+                                    --, nameValidView appInfo sUsers
                                     , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
                                         { onChange = NewUserPasswordInputChg
                                         , text = userVal.password
@@ -4008,7 +3953,7 @@ displayRegisterNewUser userVal sUsers =
                     , placeholder = Nothing
                     , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
                     }
-                , nameValidationErr userVal sUsers
+                , nameValidView userVal sUsers
                 , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
                     { onChange = NewUserPasswordInputChg
                     , text = userVal.password
@@ -4431,11 +4376,6 @@ fetchedSingleRanking (Internal.Types.RankingId rankingId) =
     --     , tracker = Nothing
     --     , url = SR.Constants.baseBinUrl ++ rankingId ++ "/latest"
     --     }
-
-
-gotGlobal : Cmd Msg
-gotGlobal =
-    Cmd.none
 
 
 addedUserAsFirstPlayerInNewList : SR.Types.User -> Cmd Msg

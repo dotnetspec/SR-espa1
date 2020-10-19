@@ -12,7 +12,7 @@ module Data.Users exposing (Users
     , isUniqueUserName
     , isEmpty
     --, gotUserListFromRemData
-    , isNameValidationErr
+    , isNameValid
     , extractUsersFromWebData
     , gotUserFromUserList
     , empty
@@ -314,15 +314,20 @@ extractUsersFromWebData remData =
             in
             []
 
-isNameValidationErr : String -> Users -> Bool 
-isNameValidationErr newName sUsers =
+isNameValid : String -> Users -> Bool 
+isNameValid newName sUsers =
     let 
-        userNameSet = gotUserNames sUsers 
+        userNameSet = gotUserNames sUsers
     in
     if EverySet.member newName userNameSet then
-        True 
-    else 
+        -- let 
+        
+        --     _ = Debug.log "EverySet.member" "True"
+        -- in
+        False 
+    else if (String.length newName <= 4) then
         False
+    else True
 
 -- gotUserListFromRemData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
 -- gotUserListFromRemData userList =
