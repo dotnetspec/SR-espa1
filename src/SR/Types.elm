@@ -243,23 +243,9 @@ type alias User =
     , m_token : Maybe Token
     }
 
--- newUser username =
---     User 0 True username "" Nothing "" "" "" [""] 0 Nothing
+-- new empty User:
+-- SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
 
-emptyActiveUser : User
-emptyActiveUser =
-    { datestamp = 123456
-    , active = True
-    , username = ""
-    , password = ""
-    , m_ethaddress = Nothing
-    , description = ""
-    , email = ""
-    , mobile = ""
-    , userjoinrankings = []
-    , member_since = 1
-    , m_token = Nothing
-    }
 
 newUser : FUser -> User 
 newUser fuser = 
@@ -295,6 +281,9 @@ type alias Player =
     , rank : Int
     , challengeraddress : String
     }
+
+-- empty player
+--  SR.Types.Player "" "" 0 ""
 
 type alias FPlayer =
     { id_ : SRdb.ScalarCodecs.Id
@@ -346,6 +335,9 @@ type alias Ranking =
     , rankingdesc : Maybe String
     , rankingowneraddr : String
     }
+
+-- empty ranking
+-- SR.Types.Ranking "" True "" Nothing ""
 
 newRanking : FRanking -> Ranking 
 newRanking franking = 

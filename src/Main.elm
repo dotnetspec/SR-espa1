@@ -304,19 +304,9 @@ update msg model =
                     (model, Cmd.none)
 
 
-        (ClickedConfirmedRegisterNewUser, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
-            case walletState of 
-                SR.Types.WalletOperational ->
-                    ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription SR.Types.Registered txRec, Cmd.none )
-
-                SR.Types.WalletStateLocked ->
-                    ( AppOps walletState dataState appInfo SR.Types.UIDisplayWalletLockedInstructions SR.Types.StopSubscription SR.Types.Registered txRec, Cmd.none )
-
-                SR.Types.WalletStopSub ->
-                    ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription SR.Types.Registered txRec, Cmd.none )
-
-                _ ->
-                    ( AppOps walletState dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription SR.Types.Registered txRec, Cmd.none )
+        (ClickedConfirmedRegisterNewUser, AppOps walletState dataState appInfo uiState subState accountState txRec ) ->
+            
+            ( AppOps walletState dataState appInfo uiState SR.Types.StopSubscription SR.Types.Registered txRec, Cmd.none )
                 
 
         (ClickedRegister, AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
@@ -1191,7 +1181,7 @@ update msg model =
 
         (ResetRejectedNewUserToShowGlobal,  AppOps walletState dataState appInfo uiState subState accountState  txRec ) ->
             let 
-                newAppInfo = {appInfo | m_user = Just SR.Defaults.emptyUser}
+                newAppInfo = {appInfo | m_user = Just (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)}
             in 
             case walletState of 
                 SR.Types.WalletOperational ->
@@ -1866,14 +1856,14 @@ updateWithReceivedRankingById model response =
 
         (AppOps walletState (StateFetched sUsers sRankings (Global sGlobal)) appInfo uiState subState accountState txRec, Ok franking) ->
             let
-                --filteredFRanking = Maybe.withDefault SR.Defaults.emptyFRanking franking
+                --filteredFRanking = Maybe.withDefault (SR.Types.Ranking 0 True "" Nothing "") franking
                 -- need to convert from FRanking to Ranking (id_ needs to be a String)
-                --user = Maybe.withDefault SR.Defaults.emptyUser appInfo.m_user
+                --user = Maybe.withDefault (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing) appInfo.m_user
 
                 --ethaddr = Maybe.withDefault "" (Just (Eth.Utils.addressToString user.m_ethaddress))
                 --fromFToRanking = SR.Types.newRanking filteredFRanking
                 -- below just getting to compile
-                fromFToRanking = SR.Defaults.emptyRankingInfo
+                fromFToRanking = (SR.Types.Ranking "" True "" Nothing "")
                 -- --_ = Debug.log "lFromFToRanking : " lFromFToRanking
                 newAppInfo = {appInfo | selectedRanking = fromFToRanking}
                 
@@ -2075,12 +2065,16 @@ gotWalletAddrApplyToUser appInfo uaddr =
 handleNewUserInputs : Model -> Msg -> Model
 handleNewUserInputs model msg =
     case (model, msg) of
+        --(AppOps walletState dataState appInfo uiState subState accountState txRec, NewUserNameInputChg namefield) ->
         (AppOps walletState dataState appInfo uiState subState accountState txRec, NewUserNameInputChg namefield) ->
-            case appInfo.m_user of
-                Nothing ->
+            let 
+                newUser = Maybe.withDefault (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing) appInfo.m_user
+            in
+            -- case m_user of
+            --     Nothing ->
                     let
                         -- create a new empty user
-                        newUser = SR.Defaults.emptyUser
+                        --newUser = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
                         newUserWithUpdatedNameField = 
                             { newUser | username = namefield }
                         newAppInfo =
@@ -2088,15 +2082,15 @@ handleNewUserInputs model msg =
                     in
                         AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec
 
-                Just userVal ->
-                    let
-                        updatedNewUser =
-                            { userVal | username = namefield }
+                -- Just userVal ->
+                --     let
+                --         updatedNewUser =
+                --             { userVal | username = namefield }
 
-                        newAppInfo =
-                            { appInfo | m_user = Just updatedNewUser }
-                    in
-                    AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec
+                --         newAppInfo =
+                --             { appInfo | m_user = Just updatedNewUser }
+                --     in
+                --     AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription accountState txRec
 
             
             
@@ -2352,10 +2346,10 @@ view model =
                     Html.text ("Loading ...")
 
                 (StateFetched sUsers sRankings (Global sGlobal ), Nothing, SR.Types.AppStateGeneral) ->
-                    generalLoginView SR.Defaults.emptyUser sUsers sGlobal
+                    generalLoginView (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing) sUsers sGlobal
                         
                 (StateFetched sUsers sRankings (Global sGlobal ), Nothing, SR.Types.AppStateCreateNewUser) ->
-                    registerNewUserView SR.Defaults.emptyUser sUsers
+                    registerNewUserView (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing) sUsers
 
                 (StateFetched sUsers sRankings dKind, Just userVal, SR.Types.AppStateCreateNewUser) ->
                     registerNewUserView userVal sUsers
@@ -2423,9 +2417,9 @@ generalLoginView userVal sUsers sGlobal =
             , infoBtn "Log In" ClickedLogInUser
             , Element.text ("\n")
             , displayRegisterBtnIfNewUser
-                SR.Defaults.emptyUser.username
+                (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing).username
                 ClickedRegister
-            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
+            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing))) (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
             ]
 
 registerNewUserView : SR.Types.User -> Data.Users.Users -> Html Msg 
@@ -2491,10 +2485,10 @@ gotUserView userVal sUsers sGlobal =
                     , infoBtn "Log In" ClickedLogInUser
                     , Element.text ("\n")
                             , displayRegisterBtnIfNewUser
-                                SR.Defaults.emptyUser.username
+                                (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing).username
                                 ClickedRegister
                     , Element.text ("\n")
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing))) (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
                 ]
 
 failureView : String -> Html Msg 
@@ -2514,7 +2508,7 @@ failureView str =
                     , infoBtn "Log In" ClickedLogInUser
                     , Element.text ("\n")
                             , displayRegisterBtnIfNewUser
-                                SR.Defaults.emptyUser.username
+                                (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing).username
                                 ClickedRegister   
                 ]
 
@@ -3572,7 +3566,7 @@ inputNewLadder appInfo dataState =
 handleNoUserView : DataState -> Html Msg
 handleNoUserView dataState =   
     let 
-        userVal = SR.Defaults.emptyUser
+        userVal = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
     in
         case dataState of
             AllEmpty -> 
@@ -3618,9 +3612,9 @@ handleNoUserView dataState =
                                 , infoBtn "Log In" ClickedLogInUser
                                 , Element.text ("\n")
                                 , displayRegisterBtnIfNewUser
-                                    SR.Defaults.emptyUser.username
+                                    ""
                                     ClickedRegister
-                                , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
+                                , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing))) (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
                                 ]
 
 
@@ -3670,10 +3664,10 @@ handleGlobalNoTokenView dataState userVal =
                         , infoBtn "Log In" ClickedLogInUser
                         , Element.text ("\n")
                                 , displayRegisterBtnIfNewUser
-                                    SR.Defaults.emptyUser.username
+                                    (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing).username
                                     ClickedRegister
                         , Element.text ("\n")
-                        , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Defaults.emptyUser)) SR.Defaults.emptyUser
+                        , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing))) (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
                         ]
                 
 
@@ -3766,7 +3760,7 @@ selectedUserIsOwnerView dataState appInfo =
                                 Element.column
                                     Framework.container
                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - No User11"
-                                    , selecteduserIsOwnerhomebutton SR.Defaults.emptyUser
+                                    , selecteduserIsOwnerhomebutton (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
                                     , playerbuttons dataState appInfo
                                     ]
                         Just userVal ->
@@ -3845,8 +3839,8 @@ selectedUserIsNeitherOwnerNorPlayerView  dataState appInfo accountState =
                     Framework.responsiveLayout [] <|
                         Element.column
                             Framework.container
-                            [ newOrExistingUserNameDisplay SR.Defaults.emptyUser accountState
-                            , selecteduserIsNeitherPlayerNorOwnerHomebutton SR.Defaults.emptyUser accountState
+                            [ newOrExistingUserNameDisplay (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing) accountState
+                            , selecteduserIsNeitherPlayerNorOwnerHomebutton (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing) accountState
                             , playerbuttons  dataState appInfo
                             ]
                 Just userVal ->
@@ -3881,7 +3875,7 @@ inputUserDetailsView dataState appInfo =
             case dataState of
                 StateFetched sUsers sRankings dKind ->
                     let 
-                        userVal = SR.Defaults.emptyUser
+                        userVal = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
                     in
                     if Data.Users.isEmpty sUsers then
                         Framework.responsiveLayout [] <|

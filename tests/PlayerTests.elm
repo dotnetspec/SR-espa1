@@ -100,10 +100,10 @@ testsortPlayerListByRank =
 
         listOfUserPlayers =
             [ { player = player
-              , user = SR.Defaults.emptyUser
+              , user = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
               }
             , { player = challenger
-              , user = SR.Defaults.emptyUser
+              , user = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
               }
             ]
 
@@ -121,10 +121,10 @@ testsortPlayerListByRank =
 
         output =
             [ { player = outputplayer
-              , user = SR.Defaults.emptyUser
+              , user = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
               }
             , { player = outputchallenger
-              , user = SR.Defaults.emptyUser
+              , user = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
               }
             ]
     in
@@ -153,10 +153,10 @@ userPlayerRankingOrderTest =
 
         listOfUserPlayers =
             [ { player = player
-              , user = SR.Defaults.emptyUser
+              , user = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
               }
             , { player = challenger
-              , user = SR.Defaults.emptyUser
+              , user = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
               }
             ]
 
@@ -174,10 +174,10 @@ userPlayerRankingOrderTest =
 
         output =
             [ { player = outputplayer
-              , user = SR.Defaults.emptyUser
+              , user = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
               }
             , { player = outputchallenger
-              , user = SR.Defaults.emptyUser
+              , user = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
               }
             ]
     in

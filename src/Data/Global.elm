@@ -171,21 +171,14 @@ removeUserRanking  sGlobal uRanking =
         Global rankedUserRankings->
          asGlobal (EverySet.remove uRanking rankedUserRankings)
 
-
-
 removedUserRankingByRankingId : Global -> Internal.Types.RankingId -> Global 
 removedUserRankingByRankingId sGlobal rnkId = 
     created (Data.Rankings.removedById rnkId (rankingsAsSet sGlobal) ) (usersAsSet sGlobal)
 
-
 addEmptyUser : SR.Types.User -> SR.Types.Ranking -> SR.Types.UserRanking 
-addEmptyUser user ranking = 
-    let
-        newUserRanking = {rankingInfo = ranking, userInfo = user}
-    in
-        newUserRanking
-
-
+addEmptyUser user ranking =
+    {rankingInfo = ranking, userInfo = user}
+        
 gotUsersFromUserRankings : List SR.Types.UserRanking -> List SR.Types.User 
 gotUsersFromUserRankings luRankings = 
     List.map toUser luRankings
@@ -193,8 +186,6 @@ gotUsersFromUserRankings luRankings =
 toUser : SR.Types.UserRanking -> SR.Types.User 
 toUser uRanking = 
     uRanking.userInfo
-
-
 
 isGlobalRankingOwnedByUser : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
 isGlobalRankingOwnedByUser user ownedrnk =

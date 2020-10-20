@@ -112,7 +112,7 @@ gotRankingFromRankingList rankingList (Internal.Types.RankingId rnkid) =
         existingRanking
     -- case existingRanking of
     --     Nothing ->
-    --         SR.Defaults.emptyRankingInfo
+    --         (SR.Types.Ranking "" True "" Nothing "")
 
     --     Just a ->
     --         a
@@ -286,33 +286,33 @@ extractRankingsFromWebData remData =
 --             a
 
 --         RemoteData.NotAsked ->
---             [ SR.Defaults.emptyRankingInfo
+--             [ (SR.Types.Ranking "" True "" Nothing "")
 --             ]
 
 --         RemoteData.Loading ->
---             [ SR.Defaults.emptyRankingInfo
+--             [ (SR.Types.Ranking "" True "" Nothing "")
 --             ]
 
 --         RemoteData.Failure err ->
 --             case err of
 --                 Http.BadUrl s ->
---                     [ SR.Defaults.emptyRankingInfo
+--                     [ (SR.Types.Ranking "" True "" Nothing "")
 --                     ]
 
 --                 Http.Timeout ->
---                     [ SR.Defaults.emptyRankingInfo
+--                     [ (SR.Types.Ranking "" True "" Nothing "")
 --                     ]
 
 --                 Http.NetworkError ->
---                     [ SR.Defaults.emptyRankingInfo
+--                     [ (SR.Types.Ranking "" True "" Nothing "")
 --                     ]
 
 --                 Http.BadStatus statuscode ->
---                     [ SR.Defaults.emptyRankingInfo
+--                     [ (SR.Types.Ranking "" True "" Nothing "")
 --                     ]
 
 --                 Http.BadBody s ->
---                     [ SR.Defaults.emptyRankingInfo
+--                     [ (SR.Types.Ranking "" True "" Nothing "")
 --                     ]
 
 gotRankingInfo : SR.Types.UserRanking -> SR.Types.Ranking

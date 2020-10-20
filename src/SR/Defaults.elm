@@ -1,17 +1,15 @@
 module SR.Defaults exposing
-    ( emptyPlayer
-    , emptyActiveUser,
+    ( 
     emptyAppInfo, emptyFormValidations, emptyOwnedRanking
-    , emptyRankingInfo, emptyUser, emptyUserPlayer, emptyUserRanking, globalBinName
-    , globalContainerId, secretKey, selectedBinName, selectedContainerId, userBinName, userContainerId
-    , emptyFRanking
+    , emptyUserPlayer, emptyUserRanking, globalBinName
+    , globalContainerId, secretKey, selectedBinName
+    , selectedContainerId, userBinName, userContainerId
     )
 
 
 {-| Default values.
 For those withDefault shenanigans.
 
-@docs emptyPlayer
 
 -}
 
@@ -21,32 +19,6 @@ import Internal.Types as Internal
 import SR.Types exposing (..)
 import EverySet exposing (EverySet)
 
-
-
-emptyPlayer : SR.Types.Player
-emptyPlayer =
-    { rankingid = ""
-    , address = ""
-    , rank = 0
-    , challengeraddress = ""
-    }
-
-
-
-emptyUser : SR.Types.User
-emptyUser =
-    { datestamp = 123456
-    , active = False
-    , username = ""
-    , password = ""
-    , m_ethaddress = Nothing
-    , description = ""
-    , email = ""
-    , mobile = ""
-    , userjoinrankings = []
-    , member_since = 1
-    , m_token = Nothing
-    }
 
 
 emptyFormValidations : SR.Types.FormValidations
@@ -60,64 +32,20 @@ emptyFormValidations =
     }
 
 
-emptyActiveUser : SR.Types.User
-emptyActiveUser =
-    { datestamp = 123456
-    , active = True
-    , username = ""
-    , password = ""
-    , m_ethaddress = Nothing
-    , description = ""
-    , email = ""
-    , mobile = ""
-    , userjoinrankings = []
-    , member_since = 1
-    , m_token = Nothing
-    }
-
-
 emptyUserRanking =
-    { rankingInfo = emptyRankingInfo
-    , userInfo = emptyUser
+    { rankingInfo = (SR.Types.Ranking "" True "" Nothing "")
+    , userInfo = SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
     }
 
 
 emptyUserPlayer =
-    { player = emptyPlayer
-    , user = emptyUser
+    { player = SR.Types.Player "" "" 0 ""
+    , user = SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
     }
-
-
-emptyRankingInfo =
-    { id_ = "0"
-    , active = False
-    , rankingname = ""
-    , rankingdesc = Nothing
-    , rankingowneraddr = ""
-    }
-
-emptyFRanking =
-
-    { id_ = 0
-    , active = False
-    , rankingname = ""
-    , rankingdesc = Nothing
-    , rankingowneraddr = ""
-    }
-
-
--- emptyAllLists =
---     { userRankings = Data.Global.emptyGlobal
---     , users = Data.Users.emptyUsers
---     , userPlayers = []
---     -- , lownedUserRanking = []
---     -- , lmemberUserRanking = []
---     -- , lotherUserRanking = []
---     }
 
 
 emptyAppInfo =
-    { selectedRanking = emptyRankingInfo
+    { selectedRanking = (SR.Types.Ranking "" True "" Nothing "")
     , player = emptyUserPlayer
     , m_user = Nothing
     , challenger = emptyUserPlayer
@@ -126,8 +54,8 @@ emptyAppInfo =
 
 
 emptyOwnedRanking =
-    { rankingInfo = emptyRankingInfo
-    , userInfo = emptyUser
+    { rankingInfo = (SR.Types.Ranking "" True "" Nothing "")
+    , userInfo = SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
     }
 
 

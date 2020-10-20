@@ -68,7 +68,7 @@ playersetLength (Players sPlayers) =
     
 --     case existingPlayer of
 --         Nothing ->
---             SR.Defaults.emptyPlayer
+--             SR.Types.Player "" "" 0 ""
 
 --         Just a ->
 --             a
@@ -94,7 +94,7 @@ removePlayer player sPlayers =
 --     in
 --     case existingPlayer of
 --         Nothing ->
---             SR.Defaults.emptyPlayer
+--             SR.Types.Player "" "" 0 ""
 
 --         Just a ->
 --             a

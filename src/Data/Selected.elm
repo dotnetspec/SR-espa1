@@ -501,7 +501,7 @@ gotRankingOwnerAsPlayer selectedRanking luplayer =
     in
         case m_userPlayer of
             Nothing ->
-                SR.Defaults.emptyPlayer
+                SR.Types.Player "" "" 0 ""
             Just userPlayer ->
                 userPlayer.player
 
@@ -576,7 +576,7 @@ convertEachPlayerToUserPlayer luser player =
     in
         case m_user of 
             Nothing ->
-                { player = player, user = SR.Defaults.emptyUser }
+                { player = player, user = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing) }
             Just userVal ->
                 { player = player, user = userVal }
                 

@@ -124,7 +124,7 @@ gotUser (Users susers) uaddr =
     --              EverySet.toList (EverySet.filter (\r -> (String.toLower <| r.m_ethaddress) == (String.toLower <| uaddr))
     --                 susers)
     -- in
-        Just SR.Defaults.emptyUser
+        Just (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
 
 
 
@@ -336,33 +336,33 @@ isNameValid newName sUsers =
 --             a
 
 --         RemoteData.NotAsked ->
---             [ SR.Defaults.emptyUser
+--             [ (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
 --             ]
 
 --         RemoteData.Loading ->
---             [ SR.Defaults.emptyUser
+--             [ (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
 --             ]
 
 --         RemoteData.Failure err ->
 --             case err of
 --                 Http.BadUrl s ->
---                     [ SR.Defaults.emptyUser
+--                     [ (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
 --                     ]
 
 --                 Http.Timeout ->
---                     [ SR.Defaults.emptyUser
+--                     [ (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
 --                     ]
 
 --                 Http.NetworkError ->
---                     [ SR.Defaults.emptyUser
+--                     [ (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
 --                     ]
 
 --                 Http.BadStatus statuscode ->
---                     [ SR.Defaults.emptyUser
+--                     [ (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
 --                     ]
 
 --                 Http.BadBody s ->
---                     [ SR.Defaults.emptyUser
+--                     [ (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
 --                     ]
 
 -- removedDuplicateUserFromUserList : List SR.Types.User -> List SR.Types.User
