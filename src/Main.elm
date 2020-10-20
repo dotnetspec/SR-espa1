@@ -1557,9 +1557,7 @@ update msg model =
                         Nothing ->
                             (model, Cmd.none)
                         Just userVal ->
-                            --(model, createAndOrLoginUser userVal.username userVal.password userVal.m_ethaddress)
                             (model, loginUser userVal.username userVal.password)
-                            
                     
                 Failure _ ->
                     (model, Cmd.none)
@@ -1568,6 +1566,7 @@ update msg model =
         (LoggedInUser response, modelReDef) ->
             ( updateFromLoggedInUser modelReDef response
                , commandFromLoggedInUser response
+               
             )
 
         (ReceivedUsers response, modelReDef) ->
@@ -2466,7 +2465,7 @@ registerNewUserView userVal sUsers =
                     , mobileValidationErr userVal
                     ]
                 ]
-            , Element.text "* required and CANNOT be changed \nunder current ETH account"
+            , Element.text "* required"
             , SR.Elements.justParasimpleUserInfoText
             , newuserConfirmPanel (Just userVal) (Data.Users.asList sUsers)
             ]
@@ -3966,7 +3965,7 @@ displayRegisterNewUser userVal sUsers =
                 , mobileValidationErr userVal
                 ]
             ]
-        , Element.text "* required and CANNOT be changed \nunder current ETH account"
+        , Element.text "* required"
         , SR.Elements.justParasimpleUserInfoText
         , newuserConfirmPanel (Just userVal) (Data.Users.asList sUsers)
         ]
