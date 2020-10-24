@@ -1917,11 +1917,11 @@ updateWithReceivedRankingById model response =
 
 updateFromLoggedInUser: Model -> Result (GQLHttp.Error (String)) (SR.Types.Token) -> Model
 updateFromLoggedInUser model response =
-    case response of
+    case (model, response) of
         --Ok (lstringhead :: lstringtail) ->
-        Ok token ->
-            case model of
-                AppOps walletState dataState appInfo uiState subState accountState  txRec ->
+        (AppOps walletState dataState appInfo uiState subState accountState txRec, Ok token) ->
+            -- case model of
+            --     AppOps walletState dataState appInfo uiState subState accountState  txRec ->
                     case appInfo.m_user of
                         Just user ->
                             let
@@ -1936,13 +1936,18 @@ updateFromLoggedInUser model response =
                         Nothing ->
                             model
                 
-                Failure _ ->
-                    model
+                
 
         -- Ok [] ->
         --     model
 
-        Err _ ->
+        (AppOps walletState dataState appInfo uiState subState accountState txRec, Err _) ->
+            let
+                newAppInfo = { appInfo | appState = SR.Types.AppStateGeneral }
+            in
+                AppOps walletState dataState newAppInfo uiState subState accountState txRec
+
+        (Failure _, _) ->
             model
 
 updateFromRegisteredNewUser: Model -> Result (GQLHttp.Error SR.Types.Token) SR.Types.Token -> Model
@@ -2394,15 +2399,18 @@ view : Model -> Html Msg
 view model =
     case model of
         AppOps walletState dataState appInfo uiState subState accountState txRec ->
+            let
+                user = Maybe.withDefault (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing) appInfo.m_user
+            in
             case (dataState, appInfo.m_user, appInfo.appState) of 
                 (AllEmpty, _, _) ->
                     Html.text ("Loading ...")
 
                 (StateFetched sUsers sRankings (Global sGlobal ), Nothing, SR.Types.AppStateGeneral) ->
-                    generalLoginView (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing) sUsers sGlobal
+                    generalLoginView user sUsers sGlobal
                         
                 (StateFetched sUsers sRankings (Global sGlobal ), Nothing, SR.Types.AppStateCreateNewUser) ->
-                    registerNewUserView (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing) sUsers
+                    registerNewUserView user sUsers
 
                 (StateFetched sUsers sRankings dKind, Just userVal, SR.Types.AppStateCreateNewUser) ->
                     registerNewUserView userVal sUsers
@@ -2533,15 +2541,6 @@ gotUserView userVal sUsers sGlobal =
                     Element.text ("SportRank - Welcome " ++ userVal.username)
                     , displayEnableEthereumBtn
                     , displayForToken userVal sGlobal
-                    -- if the UI following is an issue needing branching
-                    -- do it in a separate function like dispalyForToken
-                     , infoBtn "Log In" ClickedLogInUser
-                    , Element.text ("\n")
-                            , displayRegisterBtnIfNewUser
-                                (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing).username
-                                ClickedRegister
-
-                    , Element.text ("\n")
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing))) (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
                 ]
 
@@ -2593,8 +2592,13 @@ displayForToken userVal sGlobal =
                             }
                         ]
                     ]
+                , infoBtn "Log In" ClickedLogInUser
+                , Element.text ("\n")
+                , displayRegisterBtnIfNewUser
+                    (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing).username
+                    ClickedRegister
                 ]
-                                    
+                                
 
         Just tokenVal ->
             Element.column Grid.section <|
