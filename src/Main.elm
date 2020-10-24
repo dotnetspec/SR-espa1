@@ -182,7 +182,8 @@ type Msg
     | ExistingUserEmailInputChg String
     | ExistingUserMobileInputChg String
     | ClickedLogInUser
-    | LoggedInUser (Result (GQLHttp.Error SR.Types.Token) SR.Types.Token)
+    | LoggedInUser (Result (GQLHttp.Error (SR.Types.Token)) (SR.Types.Token))
+    | RegisteredNewUser (Result (GQLHttp.Error SR.Types.Token) SR.Types.Token)
     | ReceivedUserNames (Result (GQLHttp.Error (List String)) (List String))
     | ReceivedUsers (Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FUser)))) (Maybe (List (Maybe SR.Types.FUser))))
     | ReceivedRankings (Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FRanking)))) (Maybe (List (Maybe SR.Types.FRanking))))
@@ -305,7 +306,6 @@ update msg model =
 
 
         (ClickedConfirmedRegisterNewUser, AppOps walletState dataState appInfo uiState subState accountState txRec ) ->
-            
             ( AppOps walletState dataState appInfo uiState SR.Types.StopSubscription SR.Types.Registered txRec, Cmd.none )
                 
 
@@ -1565,8 +1565,13 @@ update msg model =
 
         (LoggedInUser response, modelReDef) ->
             ( updateFromLoggedInUser modelReDef response
-               , commandFromLoggedInUser response
-               
+               , commandFromLoggedInUser response 
+            )
+
+            
+        (RegisteredNewUser response, modelReDef) ->
+            ( updateFromRegisteredNewUser modelReDef response
+               , Cmd.none 
             )
 
         (ReceivedUsers response, modelReDef) ->
@@ -1613,22 +1618,40 @@ update msg model =
 
 -- GQL commands
 
-commandFromLoggedInUser : Result (GQLHttp.Error SR.Types.Token) SR.Types.Token -> Cmd Msg
+loginUser : String -> String -> Cmd Msg
+loginUser user_name password =
+    -- let
+    --     m_request = Bridge.requestLoginUser user_name password
+    --     --token = GQLHttp.Request ("fnED4l5RLyACAQPPrxU00AYHDsuIa1t_Od3e0lwmdZ54dywWfAA")
+    -- in
+    GQLHttp.send LoggedInUser (Bridge.requestLoginUser user_name password)
+
+    -- case m_request of 
+    --     Nothing ->
+    --         Cmd.none
+    --     Just request ->
+    --         GQLHttp.send LoggedInUser request
+    --GQLHttp.send LoggedInUser token
+
+registerUser : String -> String -> Cmd Msg
+registerUser user_name password =
+    --GQLHttp.send RegisteredNewUser (Bridge.requestregisterUser user_name password)
+    Cmd.none
+
+commandFromLoggedInUser : Result (GQLHttp.Error (String)) (SR.Types.Token) -> Cmd Msg
 commandFromLoggedInUser response =
     case response of
+        -- Ok (lstringhead :: lstringtail) ->
+        --     allUserNames lstringhead
+
         Ok token ->
             allUserNames token
 
+        -- Ok [] ->
+        --     Cmd.none
+
         Err _ ->
             Cmd.none
-
-createAndOrLoginUser : String -> String -> String -> Cmd Msg
-createAndOrLoginUser user_name password m_ethaddress =
-    GQLHttp.send LoggedInUser (Bridge.requestCreateAndOrLoginUser Bridge.handleCreateAndOrLoginUserOptionalArguments user_name password m_ethaddress)
-
-loginUser : String -> String -> Cmd Msg
-loginUser user_name password =
-    GQLHttp.send LoggedInUser (Bridge.requestLoginUser user_name password)
 
 
 allUserNames : SR.Types.Token -> Cmd Msg
@@ -1892,9 +1915,10 @@ updateWithReceivedRankingById model response =
         (Failure _, Err _) ->
             (Failure "updateWithReceivedUsers6")
 
-updateFromLoggedInUser: Model -> Result (GQLHttp.Error SR.Types.Token) SR.Types.Token -> Model
+updateFromLoggedInUser: Model -> Result (GQLHttp.Error (String)) (SR.Types.Token) -> Model
 updateFromLoggedInUser model response =
     case response of
+        --Ok (lstringhead :: lstringtail) ->
         Ok token ->
             case model of
                 AppOps walletState dataState appInfo uiState subState accountState  txRec ->
@@ -1902,6 +1926,7 @@ updateFromLoggedInUser model response =
                         Just user ->
                             let
                                 updated_user =
+                                    --{ user | m_token = Just lstringhead }
                                     { user | m_token = Just token }
 
                                 newAppInfo = { appInfo | m_user = Just updated_user }
@@ -1913,8 +1938,37 @@ updateFromLoggedInUser model response =
                 
                 Failure _ ->
                     model
+
+        -- Ok [] ->
+        --     model
+
         Err _ ->
             model
+
+updateFromRegisteredNewUser: Model -> Result (GQLHttp.Error SR.Types.Token) SR.Types.Token -> Model
+updateFromRegisteredNewUser model response =
+    case (response, model) of
+        (Ok token, AppOps walletState dataState appInfo uiState subState accountState txRec) ->
+            case appInfo.m_user of
+                Just user ->
+                    let
+                        updated_user =
+                            { user | m_token = Just token }
+
+                        newAppInfo = { appInfo | m_user = Just updated_user }
+                    in
+                    AppOps walletState dataState newAppInfo uiState subState accountState txRec
+
+                Nothing ->
+                    model
+
+        ( Ok _, Failure _ ) ->
+            (Failure "New user registered, model failure")
+
+        (Err str, _) ->
+            (Failure "Problem registering new user")
+        
+        
 
 updateAppInfoOnRankingSelected : SR.Types.AppInfo -> Internal.Types.RankingId -> String -> String -> SR.Types.AppInfo
 updateAppInfoOnRankingSelected appInfo rnkid rnkownerstr rnknamestr =
@@ -2481,11 +2535,12 @@ gotUserView userVal sUsers sGlobal =
                     , displayForToken userVal sGlobal
                     -- if the UI following is an issue needing branching
                     -- do it in a separate function like dispalyForToken
-                    , infoBtn "Log In" ClickedLogInUser
+                     , infoBtn "Log In" ClickedLogInUser
                     , Element.text ("\n")
                             , displayRegisterBtnIfNewUser
                                 (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing).username
                                 ClickedRegister
+
                     , Element.text ("\n")
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing))) (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
                 ]

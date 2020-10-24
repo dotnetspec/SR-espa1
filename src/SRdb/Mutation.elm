@@ -211,8 +211,7 @@ type alias CreateNewPlayerOptionalArguments =
 
 
 type alias CreateNewPlayerRequiredArguments =
-    { active : Bool
-    , address : String
+    { address : String
     , rank : Int
     }
 
@@ -231,7 +230,7 @@ createNewPlayer fillInOptionals requiredArgs object_ =
             [ Argument.optional "challengeraddress" filledInOptionals.challengeraddress Encode.string ]
                 |> List.filterMap identity
     in
-    Object.selectionForCompositeField "createNewPlayer" (optionalArgs ++ [ Argument.required "active" requiredArgs.active Encode.bool, Argument.required "address" requiredArgs.address Encode.string, Argument.required "rank" requiredArgs.rank Encode.int ]) object_ identity
+    Object.selectionForCompositeField "createNewPlayer" (optionalArgs ++ [ Argument.required "address" requiredArgs.address Encode.string, Argument.required "rank" requiredArgs.rank Encode.int ]) object_ identity
 
 
 type alias DeleteUserRequiredArguments =

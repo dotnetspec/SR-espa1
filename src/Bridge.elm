@@ -16,6 +16,24 @@ import SR.Constants
 import Graphql.SelectionSet exposing (SelectionSet(..))
 import Eth.Types
 
+requestLoginUser : SR.Types.UserName -> SR.Types.Password -> Http.Request (SR.Types.Token)
+requestLoginUser user_name password =
+    let
+        requiredArgs = {username = user_name, password = password}
+    in
+        Http.queryRequest SR.Constants.endpointURL (queryLoginUser requiredArgs)
+        |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
+
+gotToken : List String -> SR.Types.Token 
+gotToken lstring = 
+    "fnED42KNUgACBwPPrxU00AYHx6mKEh6FP2HmKvQZ4ePZpk-VDhY"
+
+
+queryLoginUser : Query.LoginUserRequiredArguments -> SelectionSet (SR.Types.Token) RootQuery
+queryLoginUser requiredArgs =
+    Query.loginUser requiredArgs
+
+
 
 mutationCreateAndOrLoginUser : (Mutation.CreateAndOrLoginUserOptionalArguments -> Mutation.CreateAndOrLoginUserOptionalArguments) 
     -> SR.Types.UserName -> SR.Types.Password -> String -> SelectionSet SR.Types.Token RootMutation
@@ -49,20 +67,6 @@ requestAllUserNames token =
 queryAllUserNames : SelectionSet (List String) RootQuery
 queryAllUserNames =
     Query.allUserNames
-
-
-requestLoginUser : SR.Types.UserName -> SR.Types.Password -> Http.Request SR.Types.Token
-requestLoginUser user_name password =
-    let
-        requiredArgs = {username = user_name, password = password}
-    in
-        Http.queryRequest SR.Constants.endpointURL (queryLoginUser requiredArgs)
-        |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
-
-
-queryLoginUser : Query.LoginUserRequiredArguments -> SelectionSet SR.Types.Token RootQuery
-queryLoginUser requiredArgs =
-        Query.loginUser requiredArgs
 
 userSelectionSet : SelectionSet SR.Types.FUser SRdb.Object.User
 userSelectionSet =
