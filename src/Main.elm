@@ -3621,61 +3621,6 @@ inputNewLadder appInfo dataState =
                 ]
 
 
-handleNoUserView : DataState -> Html Msg
-handleNoUserView dataState =   
-    let 
-        userVal = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
-    in
-        case dataState of
-            AllEmpty -> 
-                Html.text ("Loading ...")
-            StateUpdated _ _ _ ->
-                Html.text ("No User - No Update")
-            StateFetched sUsers sRankings dKind ->
-                case dKind of
-                    Selected sSelected ->
-                        Html.text ("Nothing should have been selected yet")
-                    Global sGlobal  ->
-                        Framework.responsiveLayout [] <|
-                            Element.column
-                                Framework.container
-                                [ Element.el (Heading.h5) <|
-                                    Element.text ("SportRank - Welcome")
-                                , displayEnableEthereumBtn
-                                , Element.text ("\n")
-                                --, Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
-                                , Element.column Grid.section <|
-                                    [ Element.el [] <| Element.text ""
-                                    --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-                                    , Element.wrappedRow (Card.fill ++ Grid.simple)
-                                        [ Element.column
-                                            Grid.simple
-                                            [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                                                { onChange = NewUserNameInputChg
-                                                , text = userVal.username
-                                                --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
-                                                , placeholder = Nothing
-                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
-                                                }
-                                            --, nameValidView appInfo sUsers
-                                            , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                                { onChange = NewUserPasswordInputChg
-                                                , text = userVal.password
-                                                , placeholder = Nothing
-                                                , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                                                }
-                                            ]
-                                        ]
-                                    ]
-                                , infoBtn "Log In" ClickedLogInUser
-                                , Element.text ("\n")
-                                , displayRegisterBtnIfNewUser
-                                    ""
-                                    ClickedRegister
-                                , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing))) (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
-                                ]
-
-
 handleGlobalNoTokenView : DataState -> SR.Types.User -> Html Msg
 handleGlobalNoTokenView dataState userVal =
     case dataState of
