@@ -1,7 +1,5 @@
 module Utils.Validation.Validate exposing (
-
-    validatedUserList
-    , validatedMaxTextLength
+    validatedMaxTextLength
     , isValidRankingId)
 
 
@@ -44,22 +42,3 @@ rankingIdVar =
     --, reserved = Set.fromList [ "let", "in", "case", "of" ]
     , reserved = Set.fromList [""]
     }
-
-
-
-
-
-validatedUserList : List SR.Types.User -> List SR.Types.User
-validatedUserList luser =
-    List.filterMap
-        isValidUserAddrInList
-        luser
-
-
-isValidUserAddrInList : SR.Types.User -> Maybe SR.Types.User
-isValidUserAddrInList user =
-    case user.m_ethaddress of 
-        Nothing ->
-            Nothing
-        Just m_ethaddress ->
-            Just user

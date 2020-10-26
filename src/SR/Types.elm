@@ -188,11 +188,13 @@ type OpponentRelativeRank
     | OpponentRankLower
 
 
-
+--todo probably remove AccountState
 type AccountState 
-    = Guest 
-    | Registered
-    | EthEnabled
+    = 
+    --Guest 
+    --changed Registered to get to compile
+    --| Registered
+    EthEnabled
     | EthEnabledAndRegistered
 
 
@@ -229,42 +231,48 @@ type AppState
     | AppStateEnterUndecided
 
 
-type alias User =
-    { datestamp : Int
+type alias UserInfo =
+    { --datestamp to become creditsremaining
+    datestamp : Int
     , active : Bool
     , username : String
     , password : String
-    , m_ethaddress : Maybe Eth.Types.Address
-    , description : String
-    , email : String
-    , mobile : String
+    , extrauserinfo : ExtraUserInfo
+    --, m_ethaddress : Maybe Eth.Types.Address
+    -- , description : String
+    -- , email : String
+    -- , mobile : String
     , userjoinrankings : List String
     , member_since : Int
-    , m_token : Maybe Token
+    --, m_token : Maybe Token
     }
 
-type alias Member_Since =
-    Int
-
-type alias UserName2 =
+type alias UserId =
     String
 
-type alias GuestInputInfo =
+-- type alias Member_Since =
+--     Int
+
+-- type alias UserName2 =
+--     String
+
+type alias ExtraUserInfo =
     {
-    password : String
-    , description : String
+    description : String
     , email : String
     , mobile : String
     }
 
-type alias UserJoinedRankings2 =
-    List String
+-- type alias UserJoinedRankings2 =
+--     List String
 
 
-type UserExtra =
-    Guest2 GuestInputInfo UserName
-    | Registered2 Member_Since UserJoinedRankings2 UserName
-    | Credited Member_Since UserJoinedRankings2 UserName
+type User =
+    Guest
+    | Registered UserId Token UserInfo
+    | NoWallet UserId Token UserInfo
+    | NoCredit Eth.Types.Address UserId Token UserInfo
+    | Credited Eth.Types.Address UserId Token UserInfo
 
 
 -- new empty User:
@@ -276,8 +284,8 @@ newUser fuser =
     let 
         ethaddrResult = Result.toMaybe (Eth.Utils.toAddress fuser.ethaddress)
     in
-        User 1234 True fuser.username "" (Maybe.withDefault Nothing (Just ethaddrResult)) (Maybe.withDefault "" fuser.description) (Maybe.withDefault "" fuser.email) (Maybe.withDefault "" fuser.mobile) [] fuser.member_since  Nothing
-
+        --User 1234 True fuser.username "" (Maybe.withDefault Nothing (Just ethaddrResult)) (Maybe.withDefault "" fuser.description) (Maybe.withDefault "" fuser.email) (Maybe.withDefault "" fuser.mobile) [] fuser.member_since  Nothing
+        Registered "1234" "5678" (UserInfo 1 True "" "" (ExtraUserInfo "" "" "") [""] 1)
 
 type alias FUser = {
     active : Bool
