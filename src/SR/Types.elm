@@ -243,6 +243,30 @@ type alias User =
     , m_token : Maybe Token
     }
 
+type alias Member_Since =
+    Int
+
+type alias UserName2 =
+    String
+
+type alias GuestInputInfo =
+    {
+    password : String
+    , description : String
+    , email : String
+    , mobile : String
+    }
+
+type alias UserJoinedRankings2 =
+    List String
+
+
+type UserExtra =
+    Guest2 GuestInputInfo UserName
+    | Registered2 Member_Since UserJoinedRankings2 UserName
+    | Credited Member_Since UserJoinedRankings2 UserName
+
+
 -- new empty User:
 -- SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
 
