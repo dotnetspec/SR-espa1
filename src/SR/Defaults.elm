@@ -34,13 +34,14 @@ emptyFormValidations =
 
 emptyUserRanking =
     { rankingInfo = (SR.Types.Ranking "" True "" Nothing "")
-    , userInfo = SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
+    , userInfo = SR.Types.Guest
     }
 
 
 emptyUserPlayer =
     { player = SR.Types.Player "" "" 0 ""
-    , user = SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
+    --, user = SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
+    , user = SR.Types.Guest
     }
 
 
@@ -55,7 +56,9 @@ emptyAppInfo =
 
 emptyOwnedRanking =
     { rankingInfo = (SR.Types.Ranking "" True "" Nothing "")
-    , userInfo = SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
+    --, userInfo = SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
+    -- todo: below not possible for an owned ranking (temp solution)
+    , userInfo = SR.Types.Guest
     }
 
 

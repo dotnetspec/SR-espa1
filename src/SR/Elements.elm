@@ -68,12 +68,53 @@ permanentlyDeleteWarnPara =
 
 globalHeading : SR.Types.User -> Element msg
 globalHeading user =
-    Element.column Grid.section <|
-        [ Element.el Heading.h5 <| Element.text "Global Rankings"
-        , Element.column Card.fill
-            [ Element.el Heading.h4 <| Element.text user.username
+    case user of
+        SR.Types.Guest ->
+            Element.column Grid.section <|
+            [ Element.el Heading.h5 <| Element.text "Global Rankings"
+            , Element.column Card.fill
+                [ Element.el Heading.h4 <| Element.text "Guest"
+                ]
             ]
-        ]
+        
+        (SR.Types.Registered _ _ userInfo) -> 
+            Element.column Grid.section <|
+                [ Element.el Heading.h5 <| Element.text "Global Rankings"
+                , Element.column Card.fill
+                    [ Element.el Heading.h4 <| Element.text userInfo.username
+                    ]
+                ]
+
+        (SR.Types.NoWallet _ _ userInfo) -> 
+            Element.column Grid.section <|
+                [ Element.el Heading.h5 <| Element.text "Global Rankings"
+                , Element.column Card.fill
+                    [ Element.el Heading.h4 <| Element.text userInfo.username
+                    ]
+                ]
+
+        (SR.Types.NoCredit _ _ _ userInfo) -> 
+            Element.column Grid.section <|
+                [ Element.el Heading.h5 <| Element.text "Global Rankings"
+                , Element.column Card.fill
+                    [ Element.el Heading.h4 <| Element.text userInfo.username
+                    ]
+                ]
+
+        (SR.Types.Credited _ _ _ userInfo) -> 
+            Element.column Grid.section <|
+                [ Element.el Heading.h5 <| Element.text "Global Rankings"
+                , Element.column Card.fill
+                    [ Element.el Heading.h4 <| Element.text userInfo.username
+                    ]
+                ]
+
+        
+
+-- | Registered UserId Token UserInfo
+--     | NoWallet UserId Token UserInfo
+--     | NoCredit Eth.Types.Address UserId Token UserInfo
+--     | Credited Eth.Types.Address UserId Token UserInfo
 
 
 selectedRankingHeaderEl : SR.Types.Ranking -> Element msg

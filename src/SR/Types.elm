@@ -3,7 +3,8 @@ module SR.Types exposing
     , Player, Opponent, OpponentRelativeRank(..), Options, ResultOfMatch(..), WalletState(..)
     , UIState(..)
     --, AllLists
-    , AppInfo, Colors, CreateNewLadderFormFields, FormValidations, LadderState(..), ModalState(..), NewRankingListServerResponse, Ranking, ResultRadioOptions(..), User, UserListState(..), UserPlayer, UserRanking, colors
+    , AppInfo, Colors, CreateNewLadderFormFields, FormValidations, LadderState(..), ModalState(..)
+    , NewRankingListServerResponse, Ranking, ResultRadioOptions(..), User(..), UserListState(..), UserPlayer, UserRanking, colors
     ,  AppState(..)
     , SelectedStatus(..)
     , SubState(..)
