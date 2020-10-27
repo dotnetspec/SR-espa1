@@ -48,9 +48,20 @@ type Users = Users (EverySet SR.Types.User)
 type UserNames = UserNames (EverySet String)
 
 
-newUser : String -> String -> Maybe Eth.Types.Address -> String -> String -> String -> SR.Types.User
-newUser username password ethaddr desc email mobile =
-    SR.Types.User 12345 True username password ethaddr desc email mobile [""] 0 Nothing
+newUser : String -> String -> String -> String -> String -> SR.Types.User
+newUser username password desc email mobile =
+    --SR.Types.User 12345 True username password ethaddr desc email mobile [""] 0 Nothing
+    SR.Types.Registered "" "" (SR.Types.UserInfo 10 True username password (SR.Types.ExtraUserInfo desc email mobile) [""] 0)
+    -- , active : Bool
+    -- , username : String
+    -- , password : String
+    -- , extrauserinfo : ExtraUserInfo
+    -- --, m_ethaddress : Maybe Eth.Types.Address
+    -- -- , description : String
+    -- -- , email : String
+    -- -- , mobile : String
+    -- , userjoinrankings : List String
+    -- , member_since : Int
 
 empty : Users 
 empty = 
@@ -124,7 +135,8 @@ gotUser (Users susers) uaddr =
     --              EverySet.toList (EverySet.filter (\r -> (String.toLower <| r.m_ethaddress) == (String.toLower <| uaddr))
     --                 susers)
     -- in
-        Just (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
+        --Just (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
+        Just SR.Types.Guest
 
 
 

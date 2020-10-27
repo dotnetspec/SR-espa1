@@ -109,13 +109,6 @@ globalHeading user =
                     ]
                 ]
 
-        
-
--- | Registered UserId Token UserInfo
---     | NoWallet UserId Token UserInfo
---     | NoCredit Eth.Types.Address UserId Token UserInfo
---     | Credited Eth.Types.Address UserId Token UserInfo
-
 
 selectedRankingHeaderEl : SR.Types.Ranking -> Element msg
 selectedRankingHeaderEl rnkInfo =

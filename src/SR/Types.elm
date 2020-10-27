@@ -22,6 +22,8 @@ module SR.Types exposing
     , fromScalarCodecId
     , FPlayer
     , newPlayer
+    , UserInfo
+    , ExtraUserInfo
     )
 
 {-| Types
@@ -263,9 +265,6 @@ type alias ExtraUserInfo =
     , email : String
     , mobile : String
     }
-
--- type alias UserJoinedRankings2 =
---     List String
 
 
 type User =
