@@ -9,7 +9,7 @@ module Data.Users exposing (Users
     --, removeCurrentUserEntryFromUserList
     --, removedDuplicateUserFromUserList
     --, isRegistered
-    , isUniqueUserName
+    --, isUniqueUserName
     , isEmpty
     --, gotUserListFromRemData
     , isNameValid
@@ -23,7 +23,7 @@ module Data.Users exposing (Users
     , asUsers
     , gotUser
     , userSetLength
-    , isUserNameValidated
+    --, isUserNameValidated
     , removedInvalidRankingId
     )
 
@@ -81,26 +81,26 @@ gotUserName user =
         (SR.Types.Credited addr userId token userInfo) ->
             userInfo.username
 
-isUserNameValidated : String -> List SR.Types.User -> Bool
-isUserNameValidated username luser =
-    if String.length username > 3 && String.length username < 9 && isUniqueUserName username luser then
-        True
+-- isUserNameValidated : String -> List SR.Types.User -> Bool
+-- isUserNameValidated username luser =
+--     if String.length username > 3 && String.length username < 9 && isUniqueUserName username luser then
+--         True
 
-    else
-        False
+--     else
+--         False
 
-isUniqueUserName : String -> List SR.Types.User -> Bool
-isUniqueUserName str luser =
-    let
-        newList =
-            List.filter (\r -> (String.toLower <| r.username) == (String.toLower <| str))
-                (validatedUserList luser)
-    in
-    if List.isEmpty newList then
-        True
+-- isUniqueUserName : String -> List SR.Types.User -> Bool
+-- isUniqueUserName str luser =
+--     let
+--         newList =
+--             List.filter (\r -> (String.toLower <| r.username) == (String.toLower <| str))
+--                 (validatedUserList luser)
+--     in
+--     if List.isEmpty newList then
+--         True
 
-    else
-        False
+--     else
+--         False
 
 addUser : SR.Types.User -> Users -> Users
 addUser user susers = 
