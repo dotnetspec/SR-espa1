@@ -24,6 +24,7 @@ module SR.Types exposing
     , newPlayer
     , UserInfo
     , ExtraUserInfo
+    , UserId
     )
 
 {-| Types
@@ -273,6 +274,18 @@ type User =
     | NoWallet UserId Token UserInfo
     | NoCredit Eth.Types.Address UserId Token UserInfo
     | Credited Eth.Types.Address UserId Token UserInfo
+
+-- case user of
+--         SR.Types.Guest ->
+--             SR.Types.Guest
+--         (SR.Types.Registered userId token userInfo) ->
+--             SR.Types.Registered userId token userInfo
+--         (SR.Types.NoWallet userId token userInfo) ->
+--             SR.Types.NoWallet userId token userInfo
+--         (SR.Types.NoCredit addr userId token userInfo) ->
+--             SR.Types.NoCredit addr userId token userInfo
+--         (SR.Types.Credited addr userId token userInfo) ->
+--             SR.Types.Credited addr userId token userInfo
 
 
 -- new empty User:

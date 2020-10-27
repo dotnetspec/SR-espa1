@@ -8,13 +8,13 @@ module Data.Users exposing (Users
     , removedRankindIdFromUser
     --, removeCurrentUserEntryFromUserList
     --, removedDuplicateUserFromUserList
-    , isRegistered
+    --, isRegistered
     , isUniqueUserName
     , isEmpty
     --, gotUserListFromRemData
     , isNameValid
     , extractUsersFromWebData
-    , gotUserFromUserList
+    --, gotUserFromUserList
     , empty
     --, updateAddr
     , addUser
@@ -44,24 +44,14 @@ import SR.Defaults
 -- Users (EverySet SR.Types.User) is not the same type as (EverySet SR.Types.User)
 -- Peter Damoc
 -- You can think about the tag ('Users') as a box containing a type.
+-- There can only ever be registered users in the User set
 type Users = Users (EverySet SR.Types.User)
 type UserNames = UserNames (EverySet String)
 
 
 newUser : String -> String -> String -> String -> String -> SR.Types.User
 newUser username password desc email mobile =
-    --SR.Types.User 12345 True username password ethaddr desc email mobile [""] 0 Nothing
     SR.Types.Registered "" "" (SR.Types.UserInfo 10 True username password (SR.Types.ExtraUserInfo desc email mobile) [""] 0)
-    -- , active : Bool
-    -- , username : String
-    -- , password : String
-    -- , extrauserinfo : ExtraUserInfo
-    -- --, m_ethaddress : Maybe Eth.Types.Address
-    -- -- , description : String
-    -- -- , email : String
-    -- -- , mobile : String
-    -- , userjoinrankings : List String
-    -- , member_since : Int
 
 empty : Users 
 empty = 
@@ -77,18 +67,23 @@ asUsers : EverySet SR.Types.User -> Users
 asUsers esUser  = 
     Users esUser
 
-isRegistered : List SR.Types.User -> SR.Types.User -> Bool
-isRegistered luser user =
-    case user.m_ethaddress of 
-        Nothing ->
-            False
+gotUserName : SR.Types.User -> String 
+gotUserName user = 
+    case user of
+        SR.Types.Guest ->
+            "Guest"
+        (SR.Types.Registered userId token userInfo) ->
+            userInfo.username
+        (SR.Types.NoWallet userId token userInfo) ->
+            userInfo.username
+        (SR.Types.NoCredit addr userId token userInfo) ->
+            userInfo.username
+        (SR.Types.Credited addr userId token userInfo) ->
+            userInfo.username
 
-        Just addr ->
-            True
-
-isUserNameValidated : SR.Types.User -> List SR.Types.User -> Bool
-isUserNameValidated user luser =
-    if String.length user.username > 3 && String.length user.username < 9 && isUniqueUserName user.username luser then
+isUserNameValidated : String -> List SR.Types.User -> Bool
+isUserNameValidated username luser =
+    if String.length username > 3 && String.length username < 9 && isUniqueUserName username luser then
         True
 
     else
@@ -119,24 +114,36 @@ gotUserNames (Users users) =
 
 gotName : SR.Types.User -> String 
 gotName user = 
-    user.username
+    --user.username
+    -- todo: fix
+    ""
 
 userSetLength : Users -> Int 
 userSetLength (Users susers) = 
     EverySet.size susers
 
 
-gotUser : Users  -> String -> Maybe SR.Types.User
-gotUser (Users susers) uaddr =
-    --todo: not using currently
-    -- let
-    --         existingUser =
-    --         List.head <|
-    --              EverySet.toList (EverySet.filter (\r -> (String.toLower <| r.m_ethaddress) == (String.toLower <| uaddr))
-    --                 susers)
-    -- in
-        --Just (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
-        Just SR.Types.Guest
+gotUser : Users -> SR.Types.UserId -> Maybe SR.Types.User
+gotUser (Users susers) userId =
+    let 
+        esUser = EverySet.filter (\user -> (gotUIDFromUser user) == userId) susers
+    in
+        List.head (EverySet.toList esUser)
+
+gotUIDFromUser : SR.Types.User -> SR.Types.UserId
+gotUIDFromUser user = 
+    case user of
+        SR.Types.Guest ->
+            ""
+        (SR.Types.Registered userId _ _) ->
+            userId
+        (SR.Types.NoWallet userId _ _) ->
+            userId
+        (SR.Types.NoCredit _ userId _ _) ->
+            userId
+        (SR.Types.Credited _ userId _ _) ->
+            userId
+
 
 
 
@@ -149,8 +156,12 @@ addedNewJoinedRankingId rankingId user lUser =
         
 
         -- if there's anything wrong with the existing joinrankings data fix it here:
+        -- userJoinRankings =
+        --     List.Unique.filterDuplicates (List.filterMap removedInvalidRankingId user.userjoinrankings)
+        -- todo: temp fix
         userJoinRankings =
-            List.Unique.filterDuplicates (List.filterMap removedInvalidRankingId user.userjoinrankings)
+            List.Unique.filterDuplicates (List.filterMap removedInvalidRankingId [""])
+        
 
         --_ = Debug.log "userJoinRankings in added" userJoinRankings
 
@@ -164,14 +175,16 @@ addedNewJoinedRankingId rankingId user lUser =
         validatedUserJoinRankings =
             List.Unique.filterDuplicates (List.filterMap removedInvalidRankingId validatedRankingAdded)
 
-        userUpdated =
-            --{ user | userjoinrankings =  validatedRankingAdded}
-            { user | userjoinrankings =  validatedUserJoinRankings}
+        -- userUpdated =
+        --     --{ user | userjoinrankings =  validatedRankingAdded}
+        --     { user | userjoinrankings =  validatedUserJoinRankings}
 
-        newUserList =
-            userUpdated :: lUser
+        -- newUserList =
+        --     userUpdated :: lUser
     in
-    newUserList
+    --todo: temp fix
+    --newUserList
+    [SR.Types.Guest]
 
 
 removedInvalidRankingId : String -> Maybe String 
@@ -195,7 +208,9 @@ removedRankindIdFromUser : String -> SR.Types.User -> SR.Types.User
 removedRankindIdFromUser  rnkId user = 
     let
         -- if there's anything wrong with the existing joinrankings data fix it here:
-        userJoinRankings = List.Unique.filterDuplicates (List.filterMap removedInvalidRankingId user.userjoinrankings)
+        -- todo: temp fix
+        --userJoinRankings = List.Unique.filterDuplicates (List.filterMap removedInvalidRankingId user.userjoinrankings)
+        userJoinRankings = List.Unique.filterDuplicates (List.filterMap removedInvalidRankingId [""])
         --_ = Debug.log "userJoinRankings" userJoinRankings
 
         filteredOutRanking =
@@ -203,9 +218,11 @@ removedRankindIdFromUser  rnkId user =
 
         --_ = Debug.log "filteredOutRanking" filteredOutRanking
 
-        userUpdated = {user | userjoinrankings = filteredOutRanking}
+        --userUpdated = {user | userjoinrankings = filteredOutRanking}
     in
-        userUpdated
+        --userUpdated
+        -- todo: temp fix
+        SR.Types.Guest
 
 filterRankingIds : String -> String -> Maybe String 
 filterRankingIds rnkIdToFilter currentRnkId =
@@ -253,30 +270,34 @@ asList susers =
 
 
 updatedUserInSet : Users -> SR.Types.User -> Users
-updatedUserInSet susers userToUpdate =
-    case userToUpdate.m_ethaddress of 
-        Nothing ->
+updatedUserInSet susers updatedUser =
+--the user is 'Registered' for the purposes of updating the Set
+    case updatedUser of
+        SR.Types.Guest ->
             susers
-        Just address ->
-            let 
-                -- use the address to get the existing user entry to remove
-                user = gotUser susers (Eth.Utils.addressToString address)
-                userRemoved = removeUser user susers
-            in 
-                addUser userToUpdate userRemoved
+        (SR.Types.Registered userId token userInfo) ->
+            -- remove the original user, then add the new one
+            addUser updatedUser <| removeUser (gotUser susers userId) susers
+        (SR.Types.NoWallet userId token userInfo) ->
+            addUser updatedUser <| removeUser (gotUser susers userId) susers
+        (SR.Types.NoCredit addr userId token userInfo) ->
+            addUser updatedUser <| removeUser (gotUser susers userId) susers
+        (SR.Types.Credited addr userId token userInfo) ->
+            addUser updatedUser <| removeUser (gotUser susers userId) susers
 
 
-gotUserFromUserList : List SR.Types.User -> String -> Maybe SR.Types.User
-gotUserFromUserList userList uaddr =
-    let
-        existingUser =
-            List.head <|
-                --List.filter (\r -> (String.toLower <| r.m_ethaddress) == (String.toLower <| Just uaddr))
-                List.filter (\r -> (r.m_ethaddress) == (Result.toMaybe (Eth.Utils.toAddress uaddr)))
-                    (validatedUserList userList)
+
+-- gotUserFromUserList : List SR.Types.User -> String -> Maybe SR.Types.User
+-- gotUserFromUserList userList uaddr =
+--     let
+--         existingUser =
+--             List.head <|
+--                 --List.filter (\r -> (String.toLower <| r.m_ethaddress) == (String.toLower <| Just uaddr))
+--                 List.filter (\r -> (r.m_ethaddress) == (Result.toMaybe (Eth.Utils.toAddress uaddr)))
+--                     (validatedUserList userList)
         
-    in
-        existingUser
+--     in
+--         existingUser
  
 
 validatedUserList : List SR.Types.User -> List SR.Types.User
@@ -377,28 +398,7 @@ isNameValid newName sUsers =
 --                     [ (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
 --                     ]
 
--- removedDuplicateUserFromUserList : List SR.Types.User -> List SR.Types.User
--- removedDuplicateUserFromUserList userList =
---     let
---         laddresses =
---             List.map gotAddressesFromUserList userList
 
---         lremovedDuplicateAddresses =
---             List.Unique.filterDuplicates laddresses
-
---         lusersWithDuplicatesRemoved =
---             List.map (gotUserFromUserList userList) lremovedDuplicateAddresses
---     in
---     lusersWithDuplicatesRemoved
-
-
-gotAddressesFromUserList : SR.Types.User -> String
-gotAddressesFromUserList user =
-    case user.m_ethaddress of
-        Nothing ->
-            ""
-        Just addr ->
-            Eth.Utils.addressToString addr
 
 -- removeCurrentUserEntryFromUserList : List SR.Types.User -> Eth.Types.Address -> List SR.Types.User
 -- removeCurrentUserEntryFromUserList userList uaddr =

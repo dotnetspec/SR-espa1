@@ -3435,7 +3435,7 @@ isValidatedForAllUserDetailsInput user luser isExistingUser =
         True
 
     else if
-        Data.Users.isUserNameValidated user luser
+        Data.Users.isUserNameValidated (Data.Users.gotUserName user) luser
             && isUserDescValidated user
             && isEmailValidated user
             && isMobileValidated user

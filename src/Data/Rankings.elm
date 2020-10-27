@@ -94,17 +94,17 @@ isIdInSet sRankings rnkId =
 
 removedDeletedRankingsFromUserJoined : SR.Types.User -> Rankings -> SR.Types.User 
 removedDeletedRankingsFromUserJoined user sRankings = 
-        case user of
-            SR.Types.Guest ->
-                SR.Types.Guest
-            (SR.Types.Registered userId token userInfo) ->
-                SR.Types.Registered userId token (handleDeletionFromUserJoined userInfo sRankings)
-            (SR.Types.NoWallet userId token userInfo) ->
-                SR.Types.NoWallet userId token <| handleDeletionFromUserJoined userInfo sRankings
-            (SR.Types.NoCredit addr userId token userInfo) ->
-                SR.Types.NoCredit addr userId token <| handleDeletionFromUserJoined userInfo sRankings
-            (SR.Types.Credited addr userId token userInfo) ->
-                SR.Types.Credited addr userId token <| handleDeletionFromUserJoined userInfo sRankings
+    case user of
+        SR.Types.Guest ->
+            SR.Types.Guest
+        (SR.Types.Registered userId token userInfo) ->
+            SR.Types.Registered userId token (handleDeletionFromUserJoined userInfo sRankings)
+        (SR.Types.NoWallet userId token userInfo) ->
+            SR.Types.NoWallet userId token <| handleDeletionFromUserJoined userInfo sRankings
+        (SR.Types.NoCredit addr userId token userInfo) ->
+            SR.Types.NoCredit addr userId token <| handleDeletionFromUserJoined userInfo sRankings
+        (SR.Types.Credited addr userId token userInfo) ->
+            SR.Types.Credited addr userId token <| handleDeletionFromUserJoined userInfo sRankings
 
 
 handleDeletionFromUserJoined : SR.Types.UserInfo -> Rankings -> SR.Types.UserInfo
@@ -112,7 +112,6 @@ handleDeletionFromUserJoined userInfo sRankings =
     let
         lwithDeletedRankingIdsRemoved = List.filter (isIdInSet sRankings) (Utils.MyUtils.stringListToRankingIdList userInfo.userjoinrankings)
         newUserInfo = {userInfo | userjoinrankings = Utils.MyUtils.rankingIdListToStringList lwithDeletedRankingIdsRemoved} 
-
     in
         newUserInfo
 
