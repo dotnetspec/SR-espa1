@@ -2,7 +2,7 @@
 module Data.Users exposing (Users
     , newUser
     , updatedUserInSet
-    , validatedUserList
+    --, validatedUserList
     , addedNewJoinedRankingId
     , removedRankingIdFromAll
     , removedRankindIdFromUser
@@ -300,24 +300,24 @@ updatedUserInSet susers updatedUser =
 --         existingUser
  
 
-validatedUserList : List SR.Types.User -> List SR.Types.User
-validatedUserList luser =
-    List.filterMap
-        isValidUserAddrInList
-        luser
+-- validatedUserList : List SR.Types.User -> List SR.Types.User
+-- validatedUserList luser =
+--     List.filterMap
+--         isValidUserAddrInList
+--         luser
 
 
-isValidUserAddrInList : SR.Types.User -> Maybe SR.Types.User
-isValidUserAddrInList user =
-    case user.m_ethaddress of 
-        Nothing ->
-            Nothing
-        Just addr ->
-            if Eth.Utils.isAddress (Eth.Utils.addressToString addr) then
-                Just user
+-- isValidUserAddrInList : SR.Types.User -> Maybe SR.Types.User
+-- isValidUserAddrInList user =
+--     case user.m_ethaddress of 
+--         Nothing ->
+--             Nothing
+--         Just addr ->
+--             if Eth.Utils.isAddress (Eth.Utils.addressToString addr) then
+--                 Just user
 
-            else
-                Nothing
+--             else
+--                 Nothing
 
 
 extractUsersFromWebData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
