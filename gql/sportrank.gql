@@ -3,7 +3,6 @@ type User
     active : Boolean!
     username : String! @unique
     password : String! @unique
-    ethaddress : String! @unique
     description : String
     email : String @unique 
     mobile : String @unique
@@ -12,9 +11,9 @@ type User
 
 type Player 
  {  rankingid : String! @unique
-    address : String! @unique
+    uid : String! @unique
     rank : Int!
-    challengeraddress : String
+    challengerid : String
 }
 
 type Ranking
@@ -22,7 +21,7 @@ type Ranking
     active : Boolean!
     rankingname : String! @unique
     rankingdesc : String
-    rankingowneraddr : String! @unique
+    rankingownerid : String! @unique
     }
 
 type UserJoinedRanking
@@ -31,28 +30,27 @@ type UserJoinedRanking
     rankingid : String!
     rankingname : String!
     useraddr : String!
-    rankingowneraddr : String!
+    rankingownerid : String!
     }
 
 
 type Mutation {
-  createAndOrLoginUser(active: Boolean!, username: String!, password: String!, ethaddress: String!, description: String, email: String, mobile: String): String! @resolver(name: "create_andor_login_user")
-  createNewPlayer(rankingid: String!, address: String!, rank: Int!, challengeraddress: String): Player! @resolver(name: "create_new_player")
-  createNewRanking(active: Boolean!, rankingname : String!, rankingdesc : String, rankingowneraddr : String!): Ranking! @resolver(name: "create_new_ranking")
-  createNewUser(active: Boolean!, username : String!, password : String!, ethaddress: String!, description: String, email: String, mobile: String): String! @resolver(name: "create_new_user")
-  createNewUserJoinedRanking(active: Boolean!, rankingid : String!, rankingname : String!, useraddr: String!, rankingowneraddr : String!): UserJoinedRanking! @resolver(name: "create_new_userjoinedranking")
+  createAndOrLoginUser(active: Boolean!, username: String!, password: String!, description: String, email: String, mobile: String): String! @resolver(name: "create_andor_login_user")
+  createNewPlayer(rankingid: String!, uid: String!, rank: Int!, challengerid: String): Player! @resolver(name: "create_new_player")
+  createNewRanking(active: Boolean!, rankingname : String!, rankingdesc : String, rankingownerid : String!): Ranking! @resolver(name: "create_new_ranking")
+  createNewUser(active: Boolean!, username : String!, password : String!, description: String, email: String, mobile: String): String! @resolver(name: "create_new_user")
+  createNewUserJoinedRanking(active: Boolean!, rankingid : String!, rankingname : String!, useraddr: String!, rankingownerid : String!): UserJoinedRanking! @resolver(name: "create_new_userjoinedranking")
 }
 
 type Query {
   allUserNames: [String!]! @resolver(name: "all_user_names")
-  allPlayerAddresses: [String!]! @resolver(name: "all_player_addresses")
+  allPlayerUIDs: [String!]! @resolver(name: "all_player_uids")
   allPlayerRanks: [Int!]! @resolver(name: "all_player_ranks")
-  allPlayerChallengerAddresses: [String!]! @resolver(name: "all_player_challenger_addresses")
+  allPlayerChallengerUIDs: [String!]! @resolver(name: "all_player_challenger_uids")
   allPlayers: [Player] @resolver(name: "all_players")
   allRankings: [Ranking] @resolver(name: "all_rankings")
   allUserJoinedRanking: [UserJoinedRanking] @resolver(name: "all_userjoinedranking")
   allUsers: [User] @resolver(name: "all_users")
-  usernameFromEthaddress(ethaddress: String!): [String!]! @resolver(name: "usernameFromEthaddress")
   loginUser(username: String!, password: String!): String! @resolver(name: "login_user")
   findRankingById (rankingid: Int!): [Ranking!]! @resolver(name: "find_ranking_by_id")
 }

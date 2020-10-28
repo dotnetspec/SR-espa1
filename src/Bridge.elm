@@ -71,6 +71,7 @@ queryAllUserNames =
 userSelectionSet : SelectionSet SR.Types.FUser SRdb.Object.User
 userSelectionSet =
     Graphql.SelectionSet.succeed SR.Types.FUser
+        |> Graphql.SelectionSet.with SRdb.Object.User.id_
         |> Graphql.SelectionSet.with SRdb.Object.User.active
         |> Graphql.SelectionSet.with SRdb.Object.User.description
         |> Graphql.SelectionSet.with SRdb.Object.User.email

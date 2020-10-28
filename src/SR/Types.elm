@@ -254,12 +254,6 @@ type alias UserInfo =
 type alias UserId =
     String
 
--- type alias Member_Since =
---     Int
-
--- type alias UserName2 =
---     String
-
 type alias ExtraUserInfo =
     {
     description : String
@@ -298,10 +292,11 @@ newUser fuser =
         ethaddrResult = Result.toMaybe (Eth.Utils.toAddress fuser.ethaddress)
     in
         --User 1234 True fuser.username "" (Maybe.withDefault Nothing (Just ethaddrResult)) (Maybe.withDefault "" fuser.description) (Maybe.withDefault "" fuser.email) (Maybe.withDefault "" fuser.mobile) [] fuser.member_since  Nothing
-        Registered "1234" "5678" (UserInfo 1 True "" "" (ExtraUserInfo "" "" "") [""] 1)
+        Registered (fromScalarCodecId fuser.id_) "5678" (UserInfo 1 True "" "" (ExtraUserInfo "" "" "") [""] 1)
 
 type alias FUser = {
-    active : Bool
+    id_ :  SRdb.ScalarCodecs.Id
+    , active : Bool
     , description : Maybe String
     , email : Maybe String
     , ethaddress : String
@@ -378,7 +373,7 @@ type alias Ranking =
     , active : Bool
     , rankingname : String
     , rankingdesc : Maybe String
-    , rankingowneraddr : String
+    , rankingownerid : String
     }
 
 -- empty ranking

@@ -576,7 +576,7 @@ convertEachPlayerToUserPlayer luser player =
     in
         case m_user of 
             Nothing ->
-                { player = player, user = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing) }
+                { player = player, user = (SR.Types.Guest) }
             Just userVal ->
                 { player = player, user = userVal }
                 
