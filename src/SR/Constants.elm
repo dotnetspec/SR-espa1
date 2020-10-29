@@ -19,7 +19,8 @@ customKeyBearerToken =
     -- Parent - Bootstrap:
     --"Bearer fnADz_OrVEACDOQU5b_WC-fOgnXuPZG4zrrLvYOW"
     -- Test Server
-    "Bearer fnAD243JhjACDOiDuITEP1PhNXAg8Sz0J8tIT1wI" 
+    --"Bearer fnAD243JhjACDOiDuITEP1PhNXAg8Sz0J8tIT1wI" 
+    "Bearer fnAD5T3afrACB4yY_Z70kgKubKO4bkQDOatmAqGi"
 
 baseBinUrl : String 
 baseBinUrl = 

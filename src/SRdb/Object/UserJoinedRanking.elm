@@ -24,9 +24,9 @@ rankingid =
     Object.selectionForField "String" "rankingid" [] Decode.string
 
 
-rankingowneraddr : SelectionSet String SRdb.Object.UserJoinedRanking
-rankingowneraddr =
-    Object.selectionForField "String" "rankingowneraddr" [] Decode.string
+rankingownerid : SelectionSet String SRdb.Object.UserJoinedRanking
+rankingownerid =
+    Object.selectionForField "String" "rankingownerid" [] Decode.string
 
 
 {-| The document's ID.

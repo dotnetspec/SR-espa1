@@ -41,11 +41,6 @@ id_ =
     Object.selectionForField "ScalarCodecs.Id" "_id" [] (SRdb.ScalarCodecs.codecs |> SRdb.Scalar.unwrapCodecs |> .codecId |> .decoder)
 
 
-ethaddress : SelectionSet String SRdb.Object.User
-ethaddress =
-    Object.selectionForField "String" "ethaddress" [] Decode.string
-
-
 member_since : SelectionSet Int SRdb.Object.User
 member_since =
     Object.selectionForField "Int" "member_since" [] Decode.int

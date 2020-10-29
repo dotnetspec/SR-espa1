@@ -19,11 +19,6 @@ import SRdb.ScalarCodecs
 import SRdb.Union
 
 
-allPlayerAddresses : SelectionSet (List String) RootQuery
-allPlayerAddresses =
-    Object.selectionForField "(List String)" "allPlayerAddresses" [] (Decode.string |> Decode.list)
-
-
 allRankings :
     SelectionSet decodesTo SRdb.Object.Ranking
     -> SelectionSet (Maybe (List (Maybe decodesTo))) RootQuery
@@ -46,11 +41,6 @@ findUserJoinedRankingByID :
     -> SelectionSet (Maybe decodesTo) RootQuery
 findUserJoinedRankingByID requiredArgs object_ =
     Object.selectionForCompositeField "findUserJoinedRankingByID" [ Argument.required "id" requiredArgs.id (SRdb.ScalarCodecs.codecs |> SRdb.Scalar.unwrapEncoder .codecId) ] object_ (identity >> Decode.nullable)
-
-
-allPlayerChallengerAddresses : SelectionSet (List String) RootQuery
-allPlayerChallengerAddresses =
-    Object.selectionForField "(List String)" "allPlayerChallengerAddresses" [] (Decode.string |> Decode.list)
 
 
 allPlayerRanks : SelectionSet (List Int) RootQuery
@@ -97,9 +87,14 @@ type alias LoginUserRequiredArguments =
 
 loginUser :
     LoginUserRequiredArguments
-    -> SelectionSet (String) RootQuery
+    -> SelectionSet String RootQuery
 loginUser requiredArgs =
-    Object.selectionForField "(String)" "loginUser" [ Argument.required "username" requiredArgs.username Encode.string, Argument.required "password" requiredArgs.password Encode.string ] Decode.string
+    Object.selectionForField "String" "loginUser" [ Argument.required "username" requiredArgs.username Encode.string, Argument.required "password" requiredArgs.password Encode.string ] Decode.string
+
+
+allPlayerUIDs : SelectionSet (List String) RootQuery
+allPlayerUIDs =
+    Object.selectionForField "(List String)" "allPlayerUIDs" [] (Decode.string |> Decode.list)
 
 
 allPlayers :
@@ -107,17 +102,6 @@ allPlayers :
     -> SelectionSet (Maybe (List (Maybe decodesTo))) RootQuery
 allPlayers object_ =
     Object.selectionForCompositeField "allPlayers" [] object_ (identity >> Decode.nullable >> Decode.list >> Decode.nullable)
-
-
-type alias UsernameFromEthaddressRequiredArguments =
-    { ethaddress : String }
-
-
-usernameFromEthaddress :
-    UsernameFromEthaddressRequiredArguments
-    -> SelectionSet (List String) RootQuery
-usernameFromEthaddress requiredArgs =
-    Object.selectionForField "(List String)" "usernameFromEthaddress" [ Argument.required "ethaddress" requiredArgs.ethaddress Encode.string ] (Decode.string |> Decode.list)
 
 
 type alias FindRankingByIDRequiredArguments =
@@ -147,6 +131,11 @@ findRankingById :
     -> SelectionSet (List decodesTo) RootQuery
 findRankingById requiredArgs object_ =
     Object.selectionForCompositeField "findRankingById" [ Argument.required "rankingid" requiredArgs.rankingid Encode.int ] object_ (identity >> Decode.list)
+
+
+allPlayerChallengerUIDs : SelectionSet (List String) RootQuery
+allPlayerChallengerUIDs =
+    Object.selectionForField "(List String)" "allPlayerChallengerUIDs" [] (Decode.string |> Decode.list)
 
 
 type alias FindPlayerByIDRequiredArguments =

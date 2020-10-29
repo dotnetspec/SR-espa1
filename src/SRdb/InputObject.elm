@@ -25,27 +25,29 @@ buildPlayerInput required fillOptionals =
     let
         optionals =
             fillOptionals
-                { challengeraddress = Absent }
+                { challengerid = Absent }
     in
-    { address = required.address, rank = required.rank, challengeraddress = optionals.challengeraddress }
+    { rankingid = required.rankingid, uid = required.uid, rank = required.rank, challengerid = optionals.challengerid }
 
 
 type alias PlayerInputRequiredFields =
-    { address : String
+    { rankingid : String
+    , uid : String
     , rank : Int
     }
 
 
 type alias PlayerInputOptionalFields =
-    { challengeraddress : OptionalArgument String }
+    { challengerid : OptionalArgument String }
 
 
 {-| Type for the PlayerInput input object.
 -}
 type alias PlayerInput =
-    { address : String
+    { rankingid : String
+    , uid : String
     , rank : Int
-    , challengeraddress : OptionalArgument String
+    , challengerid : OptionalArgument String
     }
 
 
@@ -54,7 +56,7 @@ type alias PlayerInput =
 encodePlayerInput : PlayerInput -> Value
 encodePlayerInput input =
     Encode.maybeObject
-        [ ( "address", Encode.string input.address |> Just ), ( "rank", Encode.int input.rank |> Just ), ( "challengeraddress", Encode.string |> Encode.optional input.challengeraddress ) ]
+        [ ( "rankingid", Encode.string input.rankingid |> Just ), ( "uid", Encode.string input.uid |> Just ), ( "rank", Encode.int input.rank |> Just ), ( "challengerid", Encode.string |> Encode.optional input.challengerid ) ]
 
 
 buildRankingInput :
@@ -67,13 +69,13 @@ buildRankingInput required fillOptionals =
             fillOptionals
                 { rankingdesc = Absent }
     in
-    { active = required.active, rankingname = required.rankingname, rankingdesc = optionals.rankingdesc, rankingowneraddr = required.rankingowneraddr }
+    { active = required.active, rankingname = required.rankingname, rankingdesc = optionals.rankingdesc, rankingownerid = required.rankingownerid }
 
 
 type alias RankingInputRequiredFields =
     { active : Bool
     , rankingname : String
-    , rankingowneraddr : String
+    , rankingownerid : String
     }
 
 
@@ -87,7 +89,7 @@ type alias RankingInput =
     { active : Bool
     , rankingname : String
     , rankingdesc : OptionalArgument String
-    , rankingowneraddr : String
+    , rankingownerid : String
     }
 
 
@@ -96,7 +98,7 @@ type alias RankingInput =
 encodeRankingInput : RankingInput -> Value
 encodeRankingInput input =
     Encode.maybeObject
-        [ ( "active", Encode.bool input.active |> Just ), ( "rankingname", Encode.string input.rankingname |> Just ), ( "rankingdesc", Encode.string |> Encode.optional input.rankingdesc ), ( "rankingowneraddr", Encode.string input.rankingowneraddr |> Just ) ]
+        [ ( "active", Encode.bool input.active |> Just ), ( "rankingname", Encode.string input.rankingname |> Just ), ( "rankingdesc", Encode.string |> Encode.optional input.rankingdesc ), ( "rankingownerid", Encode.string input.rankingownerid |> Just ) ]
 
 
 buildUserInput :
@@ -109,14 +111,13 @@ buildUserInput required fillOptionals =
             fillOptionals
                 { description = Absent, email = Absent, mobile = Absent }
     in
-    { active = required.active, username = required.username, password = required.password, ethaddress = required.ethaddress, description = optionals.description, email = optionals.email, mobile = optionals.mobile, member_since = required.member_since }
+    { active = required.active, username = required.username, password = required.password, description = optionals.description, email = optionals.email, mobile = optionals.mobile, member_since = required.member_since }
 
 
 type alias UserInputRequiredFields =
     { active : Bool
     , username : String
     , password : String
-    , ethaddress : String
     , member_since : Int
     }
 
@@ -134,7 +135,6 @@ type alias UserInput =
     { active : Bool
     , username : String
     , password : String
-    , ethaddress : String
     , description : OptionalArgument String
     , email : OptionalArgument String
     , mobile : OptionalArgument String
@@ -147,14 +147,14 @@ type alias UserInput =
 encodeUserInput : UserInput -> Value
 encodeUserInput input =
     Encode.maybeObject
-        [ ( "active", Encode.bool input.active |> Just ), ( "username", Encode.string input.username |> Just ), ( "password", Encode.string input.password |> Just ), ( "ethaddress", Encode.string input.ethaddress |> Just ), ( "description", Encode.string |> Encode.optional input.description ), ( "email", Encode.string |> Encode.optional input.email ), ( "mobile", Encode.string |> Encode.optional input.mobile ), ( "member_since", Encode.int input.member_since |> Just ) ]
+        [ ( "active", Encode.bool input.active |> Just ), ( "username", Encode.string input.username |> Just ), ( "password", Encode.string input.password |> Just ), ( "description", Encode.string |> Encode.optional input.description ), ( "email", Encode.string |> Encode.optional input.email ), ( "mobile", Encode.string |> Encode.optional input.mobile ), ( "member_since", Encode.int input.member_since |> Just ) ]
 
 
 buildUserJoinedRankingInput :
     UserJoinedRankingInputRequiredFields
     -> UserJoinedRankingInput
 buildUserJoinedRankingInput required =
-    { active = required.active, rankingid = required.rankingid, rankingname = required.rankingname, useraddr = required.useraddr, rankingowneraddr = required.rankingowneraddr }
+    { active = required.active, rankingid = required.rankingid, rankingname = required.rankingname, useraddr = required.useraddr, rankingownerid = required.rankingownerid }
 
 
 type alias UserJoinedRankingInputRequiredFields =
@@ -162,7 +162,7 @@ type alias UserJoinedRankingInputRequiredFields =
     , rankingid : String
     , rankingname : String
     , useraddr : String
-    , rankingowneraddr : String
+    , rankingownerid : String
     }
 
 
@@ -173,7 +173,7 @@ type alias UserJoinedRankingInput =
     , rankingid : String
     , rankingname : String
     , useraddr : String
-    , rankingowneraddr : String
+    , rankingownerid : String
     }
 
 
@@ -182,4 +182,4 @@ type alias UserJoinedRankingInput =
 encodeUserJoinedRankingInput : UserJoinedRankingInput -> Value
 encodeUserJoinedRankingInput input =
     Encode.maybeObject
-        [ ( "active", Encode.bool input.active |> Just ), ( "rankingid", Encode.string input.rankingid |> Just ), ( "rankingname", Encode.string input.rankingname |> Just ), ( "useraddr", Encode.string input.useraddr |> Just ), ( "rankingowneraddr", Encode.string input.rankingowneraddr |> Just ) ]
+        [ ( "active", Encode.bool input.active |> Just ), ( "rankingid", Encode.string input.rankingid |> Just ), ( "rankingname", Encode.string input.rankingname |> Just ), ( "useraddr", Encode.string input.useraddr |> Just ), ( "rankingownerid", Encode.string input.rankingownerid |> Just ) ]

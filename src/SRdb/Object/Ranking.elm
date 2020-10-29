@@ -19,9 +19,9 @@ import SRdb.ScalarCodecs
 import SRdb.Union
 
 
-rankingowneraddr : SelectionSet String SRdb.Object.Ranking
-rankingowneraddr =
-    Object.selectionForField "String" "rankingowneraddr" [] Decode.string
+rankingownerid : SelectionSet String SRdb.Object.Ranking
+rankingownerid =
+    Object.selectionForField "String" "rankingownerid" [] Decode.string
 
 
 {-| The document's ID.

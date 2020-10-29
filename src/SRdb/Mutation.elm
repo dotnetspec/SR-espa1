@@ -50,7 +50,6 @@ type alias CreateNewUserRequiredArguments =
     { active : Bool
     , username : String
     , password : String
-    , ethaddress : String
     }
 
 
@@ -67,7 +66,7 @@ createNewUser fillInOptionals requiredArgs =
             [ Argument.optional "description" filledInOptionals.description Encode.string, Argument.optional "email" filledInOptionals.email Encode.string, Argument.optional "mobile" filledInOptionals.mobile Encode.string ]
                 |> List.filterMap identity
     in
-    Object.selectionForField "String" "createNewUser" (optionalArgs ++ [ Argument.required "active" requiredArgs.active Encode.bool, Argument.required "username" requiredArgs.username Encode.string, Argument.required "password" requiredArgs.password Encode.string, Argument.required "ethaddress" requiredArgs.ethaddress Encode.string ]) Decode.string
+    Object.selectionForField "String" "createNewUser" (optionalArgs ++ [ Argument.required "active" requiredArgs.active Encode.bool, Argument.required "username" requiredArgs.username Encode.string, Argument.required "password" requiredArgs.password Encode.string ]) Decode.string
 
 
 type alias CreateUserRequiredArguments =
@@ -129,7 +128,7 @@ type alias CreateNewUserJoinedRankingRequiredArguments =
     , rankingid : String
     , rankingname : String
     , useraddr : String
-    , rankingowneraddr : String
+    , rankingownerid : String
     }
 
 
@@ -138,7 +137,7 @@ createNewUserJoinedRanking :
     -> SelectionSet decodesTo SRdb.Object.UserJoinedRanking
     -> SelectionSet decodesTo RootMutation
 createNewUserJoinedRanking requiredArgs object_ =
-    Object.selectionForCompositeField "createNewUserJoinedRanking" [ Argument.required "active" requiredArgs.active Encode.bool, Argument.required "rankingid" requiredArgs.rankingid Encode.string, Argument.required "rankingname" requiredArgs.rankingname Encode.string, Argument.required "useraddr" requiredArgs.useraddr Encode.string, Argument.required "rankingowneraddr" requiredArgs.rankingowneraddr Encode.string ] object_ identity
+    Object.selectionForCompositeField "createNewUserJoinedRanking" [ Argument.required "active" requiredArgs.active Encode.bool, Argument.required "rankingid" requiredArgs.rankingid Encode.string, Argument.required "rankingname" requiredArgs.rankingname Encode.string, Argument.required "useraddr" requiredArgs.useraddr Encode.string, Argument.required "rankingownerid" requiredArgs.rankingownerid Encode.string ] object_ identity
 
 
 type alias UpdateRankingRequiredArguments =
@@ -168,7 +167,7 @@ type alias CreateNewRankingOptionalArguments =
 type alias CreateNewRankingRequiredArguments =
     { active : Bool
     , rankingname : String
-    , rankingowneraddr : String
+    , rankingownerid : String
     }
 
 
@@ -186,7 +185,7 @@ createNewRanking fillInOptionals requiredArgs object_ =
             [ Argument.optional "rankingdesc" filledInOptionals.rankingdesc Encode.string ]
                 |> List.filterMap identity
     in
-    Object.selectionForCompositeField "createNewRanking" (optionalArgs ++ [ Argument.required "active" requiredArgs.active Encode.bool, Argument.required "rankingname" requiredArgs.rankingname Encode.string, Argument.required "rankingowneraddr" requiredArgs.rankingowneraddr Encode.string ]) object_ identity
+    Object.selectionForCompositeField "createNewRanking" (optionalArgs ++ [ Argument.required "active" requiredArgs.active Encode.bool, Argument.required "rankingname" requiredArgs.rankingname Encode.string, Argument.required "rankingownerid" requiredArgs.rankingownerid Encode.string ]) object_ identity
 
 
 type alias CreatePlayerRequiredArguments =
@@ -207,11 +206,12 @@ createPlayer requiredArgs object_ =
 
 
 type alias CreateNewPlayerOptionalArguments =
-    { challengeraddress : OptionalArgument String }
+    { challengerid : OptionalArgument String }
 
 
 type alias CreateNewPlayerRequiredArguments =
-    { address : String
+    { rankingid : String
+    , uid : String
     , rank : Int
     }
 
@@ -224,13 +224,13 @@ createNewPlayer :
 createNewPlayer fillInOptionals requiredArgs object_ =
     let
         filledInOptionals =
-            fillInOptionals { challengeraddress = Absent }
+            fillInOptionals { challengerid = Absent }
 
         optionalArgs =
-            [ Argument.optional "challengeraddress" filledInOptionals.challengeraddress Encode.string ]
+            [ Argument.optional "challengerid" filledInOptionals.challengerid Encode.string ]
                 |> List.filterMap identity
     in
-    Object.selectionForCompositeField "createNewPlayer" (optionalArgs ++ [ Argument.required "address" requiredArgs.address Encode.string, Argument.required "rank" requiredArgs.rank Encode.int ]) object_ identity
+    Object.selectionForCompositeField "createNewPlayer" (optionalArgs ++ [ Argument.required "rankingid" requiredArgs.rankingid Encode.string, Argument.required "uid" requiredArgs.uid Encode.string, Argument.required "rank" requiredArgs.rank Encode.int ]) object_ identity
 
 
 type alias DeleteUserRequiredArguments =
@@ -278,7 +278,6 @@ type alias CreateAndOrLoginUserRequiredArguments =
     { active : Bool
     , username : String
     , password : String
-    , ethaddress : String
     }
 
 
@@ -295,7 +294,7 @@ createAndOrLoginUser fillInOptionals requiredArgs =
             [ Argument.optional "description" filledInOptionals.description Encode.string, Argument.optional "email" filledInOptionals.email Encode.string, Argument.optional "mobile" filledInOptionals.mobile Encode.string ]
                 |> List.filterMap identity
     in
-    Object.selectionForField "String" "createAndOrLoginUser" (optionalArgs ++ [ Argument.required "active" requiredArgs.active Encode.bool, Argument.required "username" requiredArgs.username Encode.string, Argument.required "password" requiredArgs.password Encode.string, Argument.required "ethaddress" requiredArgs.ethaddress Encode.string ]) Decode.string
+    Object.selectionForField "String" "createAndOrLoginUser" (optionalArgs ++ [ Argument.required "active" requiredArgs.active Encode.bool, Argument.required "username" requiredArgs.username Encode.string, Argument.required "password" requiredArgs.password Encode.string ]) Decode.string
 
 
 type alias CreateRankingRequiredArguments =

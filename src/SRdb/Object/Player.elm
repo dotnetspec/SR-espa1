@@ -19,9 +19,9 @@ import SRdb.ScalarCodecs
 import SRdb.Union
 
 
-challengeraddress : SelectionSet (Maybe String) SRdb.Object.Player
-challengeraddress =
-    Object.selectionForField "(Maybe String)" "challengeraddress" [] (Decode.string |> Decode.nullable)
+rankingid : SelectionSet String SRdb.Object.Player
+rankingid =
+    Object.selectionForField "String" "rankingid" [] Decode.string
 
 
 {-| The document's ID.
@@ -36,9 +36,14 @@ rank =
     Object.selectionForField "Int" "rank" [] Decode.int
 
 
-address : SelectionSet String SRdb.Object.Player
-address =
-    Object.selectionForField "String" "address" [] Decode.string
+uid : SelectionSet String SRdb.Object.Player
+uid =
+    Object.selectionForField "String" "uid" [] Decode.string
+
+
+challengerid : SelectionSet (Maybe String) SRdb.Object.Player
+challengerid =
+    Object.selectionForField "(Maybe String)" "challengerid" [] (Decode.string |> Decode.nullable)
 
 
 {-| The document's timestamp.

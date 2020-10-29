@@ -9,16 +9,8 @@ type Player
     = Player
 
 
-type PlayerPage
-    = PlayerPage
-
-
 type Ranking
     = Ranking
-
-
-type RankingPage
-    = RankingPage
 
 
 type User
