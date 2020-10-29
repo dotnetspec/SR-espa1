@@ -108,7 +108,7 @@ validatedPlayerList lPlayer =
 
 isValidPlayerAddrInList : SR.Types.Player -> Maybe SR.Types.Player
 isValidPlayerAddrInList player =
-    if Eth.Utils.isAddress player.address then
+    if Eth.Utils.isAddress player.uid then
         Just player
 
     else
@@ -177,7 +177,7 @@ handleFetchedPlayers lplayer =
 
 gotAddress : SR.Types.Player -> String
 gotAddress player =
-    player.address
+    player.uid
 
 -- removeCurrentPlayerEntryFromPlayerList : List SR.Types.Player -> String -> List SR.Types.Player
 -- removeCurrentPlayerEntryFromPlayerList lplayer uaddr =

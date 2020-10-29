@@ -29,7 +29,7 @@ releasePlayerForUI appState =
             let
                 _ = Debug.log "uplayer" uplayer
                 newPlayer = uplayer.player
-                updatedPlayer = {newPlayer | challengeraddress = ""}
+                updatedPlayer = {newPlayer | challengerid = ""}
 
                 updatedUserPlayer = {uplayer | player = updatedPlayer}
                 
@@ -43,7 +43,7 @@ releaseChallengerForUI appState =
         AppState user uplayer uplayerChallenger rnkId ->
             let
                 newChallenger = uplayerChallenger.player
-                updatedChallenger = {newChallenger | challengeraddress = ""}
+                updatedChallenger = {newChallenger | challengerid = ""}
 
                 updatedUplayerChallenger = {uplayerChallenger | player = updatedChallenger}
             in

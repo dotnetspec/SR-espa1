@@ -8,7 +8,7 @@ singleUserPlayer1 =
      {
         player = {
           address = "0xf5003cea9657a15123b1cc83c305f87555d190cf",
-          challengeraddress = "",
+          challengerid = "",
           rank = 2
         },
         user = {
@@ -27,7 +27,7 @@ singleUserPlayer2 =
     {
       player = {
         address = "0x3bb244dec13253d39e22606850f4704b469a4b93",
-        challengeraddress = "",
+        challengerid = "",
         rank = 1
       },
       user = {
@@ -46,7 +46,7 @@ userPlayerList =
   [{
       player = {
         address = "0x3bb244dec13253d39e22606850f4704b469a4b93",
-        challengeraddress = "",
+        challengerid = "",
         rank = 1
       },
       user = {
@@ -62,7 +62,7 @@ userPlayerList =
     }, {
       player = {
         address = "0xf5003cea9657a15123b1cc83c305f87555d190cf",
-        challengeraddress = "",
+        challengerid = "",
         rank = 2
       },
       user = {
@@ -78,7 +78,7 @@ userPlayerList =
     }, {
       player = {
         address = "0x2b5fa24358f7bda9517c66f9f44aa906070fc5a2",
-        challengeraddress = "0xac5491bb066c98fec13046928a78761c0b1e5603",
+        challengerid = "0xac5491bb066c98fec13046928a78761c0b1e5603",
         rank = 3
       },
       user = {
@@ -94,7 +94,7 @@ userPlayerList =
     }, {
       player = {
         address = "0xac5491bb066c98fec13046928a78761c0b1e5603",
-        challengeraddress = "0x2b5fa24358f7bda9517c66f9f44aa906070fc5a2",
+        challengerid = "0x2b5fa24358f7bda9517c66f9f44aa906070fc5a2",
         rank = 4
       },
       user = {

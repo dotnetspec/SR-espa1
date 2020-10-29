@@ -366,7 +366,7 @@ update msg model =
             --                                                         (model, Cmd.none)
             --                                                     Just newAppPlayer ->
             --                                                         let
-            --                                                             m_userPlayer = Data.Selected.gotUserAsPlayer newSSelected (Eth.Utils.unsafeToAddress newAppPlayer.player.player.challengeraddress)
+            --                                                             m_userPlayer = Data.Selected.gotUserAsPlayer newSSelected (Eth.Utils.unsafeToAddress newAppPlayer.player.player.challengerid)
             --                                                         in
             --                                                         case m_userPlayer of
             --                                                             Nothing ->
@@ -400,7 +400,7 @@ update msg model =
                                             
                             --                             newAppPlayer = { appInfo | player = Data.Selected.gotUserAsPlayer newSSelected addr }
 
-                            --                             m_userPlayer = Data.Selected.gotUserAsPlayer newSSelected (Eth.Utils.unsafeToAddress newAppPlayer.player.player.challengeraddress)
+                            --                             m_userPlayer = Data.Selected.gotUserAsPlayer newSSelected (Eth.Utils.unsafeToAddress newAppPlayer.player.player.challengerid)
      
                             --                         in
                             --                             case m_userPlayer of 
@@ -2380,7 +2380,7 @@ updateSelectedRankingPlayerList model luplayers =
                         
 --                         newAppPlayer = { appInfo | player = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer appInfo.m_user.m_ethaddress }
 
---                         newAppChallengerAndPlayer = { newAppPlayer | challenger = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer newAppPlayer.player.player.challengeraddress }
+--                         newAppChallengerAndPlayer = { newAppPlayer | challenger = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer newAppPlayer.player.player.challengerid }
 
 --                         --_ = Debug.log "in populatedSelected" <| stateToSelected
                     
@@ -3160,14 +3160,14 @@ confirmResultbutton model =
                     case dKind of 
                         Selected sSelected ->
                             let
-                                m_playerAsUser = Data.Users.gotUser sUsers appInfo.player.player.address
+                                m_playerAsUser = Data.Users.gotUser sUsers appInfo.player.player.uid
                             in
                             case m_playerAsUser of
                                 Nothing ->
                                     Element.text "No player"
                                 Just playerAsUser ->
                                     let
-                                        m_challengerAsUser = Data.Users.gotUser sUsers appInfo.challenger.player.address
+                                        m_challengerAsUser = Data.Users.gotUser sUsers appInfo.challenger.player.uid
                                     in
                                     case m_challengerAsUser of
                                         Nothing ->
@@ -4127,7 +4127,7 @@ displayResultBeforeConfirmView model =
                 StateFetched sUsers sRankings (Selected sSelected) -> 
                     let
                         m_playerAsUser =
-                            Data.Users.gotUser sUsers appInfo.player.player.address
+                            Data.Users.gotUser sUsers appInfo.player.player.uid
                     in
                         case m_playerAsUser of 
                             Nothing ->
@@ -4152,12 +4152,12 @@ txErrorView model =
         AppOps walletState dataState appInfo uiState subState accountState  txRec ->
             let
                 m_playerAsUser =
-                    --SR.ListOps.gotUserFromUserList (EverySet.fromList dataState) appInfo.player.player.address
+                    --SR.ListOps.gotUserFromUserList (EverySet.fromList dataState) appInfo.player.player.uid
                     case dataState of 
                         StateFetched users rankings dKind ->
-                            Data.Users.gotUser users appInfo.player.player.address
+                            Data.Users.gotUser users appInfo.player.player.uid
                         _ ->
-                            Data.Users.gotUser Data.Users.empty appInfo.player.player.address
+                            Data.Users.gotUser Data.Users.empty appInfo.player.player.uid
 
             in
                 case m_playerAsUser of 
@@ -4375,7 +4375,7 @@ addedUserAsFirstPlayerInNewList user =
     --             Json.Encode.object
     --             [ [ ( "address", Json.Encode.string (String.toLower user.m_ethaddress) )
     --               , ( "rank", Json.Encode.int 1 )
-    --               , ( "challengeraddress", Json.Encode.string "" )
+    --               , ( "challengerid", Json.Encode.string "" )
     --               ]
     --             ]
     -- in

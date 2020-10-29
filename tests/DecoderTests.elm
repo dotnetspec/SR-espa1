@@ -21,28 +21,28 @@ decoderTest =
     --only <|
         describe "rmInvalidAddr - a decoded player addr must either be valid or default to ''"
             [
-                fuzz3 string int string "challengeraddress defaults to (valid address)" <|
-                \address rank challengeraddress ->
+                fuzz3 string int string "challengerid defaults to (valid address)" <|
+                \address rank challengerid ->
                         [ ( "address", Encode.string address )
                         , ( "rank", Encode.int rank )
-                        ,  ( "challengeraddress", Encode.string "0x3bb244dec13253d39e22606850f4704b469a4b93")
+                        ,  ( "challengerid", Encode.string "0x3bb244dec13253d39e22606850f4704b469a4b93")
                         ]
                             |> Encode.object
                             |> decodeValue SR.Decode.playerDecoder
-                            |> Result.map .challengeraddress
+                            |> Result.map .challengerid
                             |> rmInvalidAddr
                             |> Expect.equal ("0x3bb244dec13253d39e22606850f4704b469a4b93")
             
             ,
-                fuzz3 string int string "challengeraddress defaults to ('')" <|
-                \address rank challengeraddress ->
+                fuzz3 string int string "challengerid defaults to ('')" <|
+                \address rank challengerid ->
                         [ ( "address", Encode.string address )
                         , ( "rank", Encode.int rank )
-                        , ( "challengeraddress", Encode.string challengeraddress)
+                        , ( "challengerid", Encode.string challengerid)
                         ]
                             |> Encode.object
                             |> decodeValue SR.Decode.playerDecoder
-                            |> Result.map .challengeraddress
+                            |> Result.map .challengerid
                             |> rmInvalidAddr
                             |> Expect.equal ("")
             ]

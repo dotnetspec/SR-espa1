@@ -5659,7 +5659,7 @@ var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $author$project$SR$Defaults$emptyAllLists = {lmemberUserRanking: _List_Nil, lotherUserRanking: _List_Nil, lownedUserRanking: _List_Nil, userPlayers: _List_Nil, userRankings: _List_Nil, users: _List_Nil};
 var $author$project$SR$Defaults$emptyRankingInfo = {active: false, id: '0', rankingdesc: 'emptyRankingInfo', rankingname: '', rankingownerid: ''};
 var $author$project$SR$Defaults$emptyUser = {active: false, datestamp: 123456, description: '', email: '', ethaddress: '', mobile: '', userjoinrankings: _List_Nil, username: ''};
-var $author$project$SR$Defaults$emptyPlayer = {address: '', challengeraddress: '', rank: 0};
+var $author$project$SR$Defaults$emptyPlayer = {address: '', challengerid: '', rank: 0};
 var $author$project$SR$Defaults$emptyUserPlayer = {player: $author$project$SR$Defaults$emptyPlayer, user: $author$project$SR$Defaults$emptyUser};
 var $author$project$SR$Defaults$emptyAppInfo = {challenger: $author$project$SR$Defaults$emptyUserPlayer, player: $author$project$SR$Defaults$emptyUserPlayer, selectedRanking: $author$project$SR$Defaults$emptyRankingInfo, user: $author$project$SR$Defaults$emptyUser};
 var $author$project$Main$TxSentryMsg = function (a) {
@@ -8475,12 +8475,12 @@ var $author$project$Main$ReturnFromPlayerListUpdate = function (a) {
 	return {$: 'ReturnFromPlayerListUpdate', a: a};
 };
 var $author$project$SR$Types$Player = F3(
-	function (address, rank, challengeraddress) {
-		return {address: address, challengeraddress: challengeraddress, rank: rank};
+	function (address, rank, challengerid) {
+		return {address: address, challengerid: challengerid, rank: rank};
 	});
 var $author$project$SR$Decode$playerDecoder = A3(
 	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-	'challengeraddress',
+	'challengerid',
 	$elm$json$Json$Decode$string,
 	A3(
 		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
@@ -8526,13 +8526,13 @@ var $author$project$Main$jsonEncodeNewSelectedRankingPlayerList = function (lupl
 					_Utils_Tuple2(
 					'address',
 					$elm$json$Json$Encode$string(
-						$elm$core$String$toLower(player.address))),
+						$elm$core$String$toLower(player.uid))),
 					_Utils_Tuple2(
 					'rank',
 					$elm$json$Json$Encode$int(player.rank)),
 					_Utils_Tuple2(
-					'challengeraddress',
-					$elm$json$Json$Encode$string(player.challengeraddress))
+					'challengerid',
+					$elm$json$Json$Encode$string(player.challengerid))
 				]));
 	};
 	var encodedList = A2($elm$json$Json$Encode$list, encodePlayerObj, lplayers);
@@ -8575,7 +8575,7 @@ var $author$project$SR$ListOps$resetPlayerRankToOne = function (uplayer) {
 	var newuserplayerplayer = uplayer.player;
 	var newPlayer = _Utils_update(
 		newuserplayerplayer,
-		{address: uplayer.player.address, challengeraddress: uplayer.player.challengeraddress, rank: 1});
+		{address: uplayer.player.uid, challengerid: uplayer.player.challengerid, rank: 1});
 	var newUserPlayer = _Utils_update(
 		uplayer,
 		{player: newPlayer});
@@ -8586,7 +8586,7 @@ var $author$project$SR$ListOps$resetPlayerRankingList = F2(
 		var newuserplayerplayer = uplayer.player;
 		var newPlayer = _Utils_update(
 			newuserplayerplayer,
-			{address: uplayer.player.address, challengeraddress: uplayer.player.challengeraddress, rank: newRank});
+			{address: uplayer.player.uid, challengerid: uplayer.player.challengerid, rank: newRank});
 		var newUserPlayer = _Utils_update(
 			uplayer,
 			{player: newPlayer});
@@ -8615,7 +8615,7 @@ var $author$project$Main$addCurrentUserToPlayerList = F3(
 		var newUserPlayer = {
 			player: {
 				address: userRec.ethaddress,
-				challengeraddress: '',
+				challengerid: '',
 				rank: $elm$core$List$length(luPlayer) + 1
 			},
 			user: userRec
@@ -8778,7 +8778,7 @@ var $author$project$SR$ListOps$convertEachPlayerToUserPlayer = F2(
 	function (luser, player) {
 		return {
 			player: player,
-			user: A2($author$project$SR$ListOps$gotUserFromUserList, luser, player.address)
+			user: A2($author$project$SR$ListOps$gotUserFromUserList, luser, player.uid)
 		};
 	});
 var $author$project$SR$ListOps$convertPlayersToUserPlayers = F2(
@@ -8808,7 +8808,7 @@ var $author$project$SR$ListOps$gotUserPlayerFromPlayerListStrAddress = F2(
 				$elm$core$List$filter,
 				function (r) {
 					return _Utils_eq(
-						r.player.address,
+						r.player.uid,
 						$elm$core$String$toLower(addr));
 				},
 				luplayer));
@@ -8822,7 +8822,7 @@ var $author$project$SR$ListOps$gotUserPlayerFromPlayerListStrAddress = F2(
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$SR$ListOps$doesPlayerAddrNOTMatchAddr = F2(
 	function (addr, player) {
-		return (!_Utils_eq(player.player.address, addr)) ? $elm$core$Maybe$Just(player) : $elm$core$Maybe$Nothing;
+		return (!_Utils_eq(player.player.uid, addr)) ? $elm$core$Maybe$Just(player) : $elm$core$Maybe$Nothing;
 	});
 var $author$project$SR$ListOps$filterPlayerOutOfPlayerList = F2(
 	function (addr, lplayer) {
@@ -8832,15 +8832,15 @@ var $author$project$SR$ListOps$filterPlayerOutOfPlayerList = F2(
 			lplayer);
 	});
 var $author$project$SR$ListOps$setPlayerInPlayerListWithNewChallengerAddr = F3(
-	function (lPlayer, uplayer, challengeraddress) {
+	function (lPlayer, uplayer, challengerid) {
 		var newUserPlayerPlayerField = uplayer.player;
 		var updatedPlayer = _Utils_update(
 			newUserPlayerPlayerField,
-			{challengeraddress: uplayer.player.challengeraddress});
+			{challengerid: uplayer.player.challengerid});
 		var newUserPlayer = _Utils_update(
 			uplayer,
 			{player: updatedPlayer});
-		var filteredPlayerList = A2($author$project$SR$ListOps$filterPlayerOutOfPlayerList, uplayer.player.address, lPlayer);
+		var filteredPlayerList = A2($author$project$SR$ListOps$filterPlayerOutOfPlayerList, uplayer.player.uid, lPlayer);
 		var newPlayerList = A2($elm$core$List$cons, newUserPlayer, filteredPlayerList);
 		return newPlayerList;
 	});
@@ -8869,9 +8869,9 @@ var $author$project$Main$createNewPlayerListWithNewChallengeAndUpdateJsonBin = f
 		var appInfo = model.c;
 		var uiState = model.d;
 		var txRec = model.e;
-		var newplayerListWithPlayerUpdated = A3($author$project$SR$ListOps$setPlayerInPlayerListWithNewChallengerAddr, allLists.userPlayers, appInfo.player, appInfo.challenger.player.address);
-		var challengerAsPlayer = A2($author$project$SR$ListOps$gotUserPlayerFromPlayerListStrAddress, allLists.userPlayers, appInfo.challenger.player.address);
-		var newplayerListWithPlayerAndChallengerUpdated = A3($author$project$SR$ListOps$setPlayerInPlayerListWithNewChallengerAddr, newplayerListWithPlayerUpdated, challengerAsPlayer, appInfo.player.player.address);
+		var newplayerListWithPlayerUpdated = A3($author$project$SR$ListOps$setPlayerInPlayerListWithNewChallengerAddr, allLists.userPlayers, appInfo.player, appInfo.challenger.player.uid);
+		var challengerAsPlayer = A2($author$project$SR$ListOps$gotUserPlayerFromPlayerListStrAddress, allLists.userPlayers, appInfo.challenger.player.uid);
+		var newplayerListWithPlayerAndChallengerUpdated = A3($author$project$SR$ListOps$setPlayerInPlayerListWithNewChallengerAddr, newplayerListWithPlayerUpdated, challengerAsPlayer, appInfo.player.player.uid);
 		var sortedByRankingnewplayerListWithPlayerAndChallengerUpdated = $author$project$SR$ListOps$sortedPlayerListByRank(newplayerListWithPlayerAndChallengerUpdated);
 		var newAllLists = _Utils_update(
 			allLists,
@@ -10083,7 +10083,7 @@ var $author$project$SR$ListOps$setPlayerInPlayerListWithChallengeResult = F3(
 		var playerToUserPlayer = uplayer.player;
 		var updatedPlayer = _Utils_update(
 			playerToUserPlayer,
-			{challengeraddress: '', rank: rank});
+			{challengerid: '', rank: rank});
 		var newUserPlayer = _Utils_update(
 			uplayer,
 			{player: updatedPlayer});
@@ -11782,7 +11782,7 @@ var $author$project$SR$ListOps$gotCurrentUserAsPlayerFromPlayerList = F2(
 				$elm$core$List$filter,
 				function (r) {
 					return _Utils_eq(
-						r.player.address,
+						r.player.uid,
 						$elm$core$String$toLower(userRec.ethaddress));
 				},
 				luPlayer));
@@ -11871,7 +11871,7 @@ var $author$project$Main$updatedSelectedRankingOnPlayersReceived = F2(
 			var newAppChallengerAndPlayer = _Utils_update(
 				newAppPlayer,
 				{
-					challenger: A2($author$project$SR$ListOps$gotUserPlayerFromPlayerListStrAddress, luplayer, newAppPlayer.player.player.challengeraddress)
+					challenger: A2($author$project$SR$ListOps$gotUserPlayerFromPlayerListStrAddress, luplayer, newAppPlayer.player.player.challengerid)
 				});
 			var allListsPlayersAdded = _Utils_update(
 				allLists,
@@ -18761,8 +18761,8 @@ var $author$project$Main$confirmChallengebutton = function (model) {
 		var appInfo = model.c;
 		var uiState = model.d;
 		var txRec = model.e;
-		var playerAsUser = A2($author$project$SR$ListOps$gotUserFromUserList, allLists.users, appInfo.player.player.address);
-		var challengerAsUser = A2($author$project$SR$ListOps$gotUserFromUserList, allLists.users, appInfo.challenger.player.address);
+		var playerAsUser = A2($author$project$SR$ListOps$gotUserFromUserList, allLists.users, appInfo.player.player.uid);
+		var challengerAsUser = A2($author$project$SR$ListOps$gotUserFromUserList, allLists.users, appInfo.challenger.player.uid);
 		return A2(
 			$mdgriffith$elm_ui$Element$column,
 			$Orasund$elm_ui_framework$Framework$Grid$section,
@@ -19191,7 +19191,7 @@ var $author$project$Main$displayChallengeBeforeConfirmView = function (model) {
 		var appInfo = model.c;
 		var uiState = model.d;
 		var txRec = model.e;
-		var playerAsUser = A2($author$project$SR$ListOps$gotUserFromUserList, allLists.users, appInfo.player.player.address);
+		var playerAsUser = A2($author$project$SR$ListOps$gotUserFromUserList, allLists.users, appInfo.player.player.uid);
 		return A2(
 			$Orasund$elm_ui_framework$Framework$responsiveLayout,
 			_List_Nil,
@@ -19254,8 +19254,8 @@ var $author$project$Main$confirmResultbutton = function (model) {
 		var appInfo = model.c;
 		var uiState = model.d;
 		var txRec = model.e;
-		var playerAsUser = A2($author$project$SR$ListOps$gotUserFromUserList, allLists.users, appInfo.player.player.address);
-		var challengerAsUser = A2($author$project$SR$ListOps$gotUserFromUserList, allLists.users, appInfo.challenger.player.address);
+		var playerAsUser = A2($author$project$SR$ListOps$gotUserFromUserList, allLists.users, appInfo.player.player.uid);
+		var challengerAsUser = A2($author$project$SR$ListOps$gotUserFromUserList, allLists.users, appInfo.challenger.player.uid);
 		return A2(
 			$mdgriffith$elm_ui$Element$column,
 			$Orasund$elm_ui_framework$Framework$Grid$section,
@@ -19344,7 +19344,7 @@ var $author$project$Main$displayResultBeforeConfirmView = function (model) {
 		var appInfo = model.c;
 		var uiState = model.d;
 		var txRec = model.e;
-		var playerAsUser = A2($author$project$SR$ListOps$gotUserFromUserList, allLists.users, appInfo.player.player.address);
+		var playerAsUser = A2($author$project$SR$ListOps$gotUserFromUserList, allLists.users, appInfo.player.player.uid);
 		return A2(
 			$Orasund$elm_ui_framework$Framework$responsiveLayout,
 			_List_Nil,
@@ -20919,7 +20919,7 @@ var $author$project$Main$ChangedUIStateToEnterResult = function (a) {
 };
 var $author$project$SR$ListOps$isThisPlayerAddr = F2(
 	function (playerAddr, uplayer) {
-		return _Utils_eq(uplayer.player.address, playerAddr) ? $elm$core$Maybe$Just(uplayer) : $elm$core$Maybe$Nothing;
+		return _Utils_eq(uplayer.player.uid, playerAddr) ? $elm$core$Maybe$Just(uplayer) : $elm$core$Maybe$Nothing;
 	});
 var $author$project$SR$ListOps$findPlayerInList = F2(
 	function (user, luPlayer) {
@@ -20936,7 +20936,7 @@ var $author$project$SR$ListOps$isUserPlayerMemberOfSelectedRanking = F2(
 			return false;
 		} else {
 			var a = filteredRec.a;
-			return _Utils_eq(a.player.address, user.ethaddress) ? true : false;
+			return _Utils_eq(a.player.uid, user.ethaddress) ? true : false;
 		}
 	});
 var $Orasund$elm_ui_framework$Framework$Color$green = A3($mdgriffith$elm_ui$Element$rgb255, 35, 209, 96);
@@ -20953,10 +20953,10 @@ var $author$project$Main$configureThenAddPlayerRankingBtns = F2(
 			var appInfo = model.c;
 			var uiState = model.d;
 			var txRec = model.e;
-			var playerAsUser = A2($author$project$SR$ListOps$gotUserFromUserList, allLists.users, uplayer.player.address);
-			var isPlayerCurrentUser = _Utils_eq(uplayer.player.address, appInfo.user.ethaddress) ? true : false;
-			var isCurrentUserInAChallenge = (appInfo.player.player.challengeraddress !== '') ? true : false;
-			var challengerAsUser = A2($author$project$SR$ListOps$gotUserFromUserList, allLists.users, uplayer.player.challengeraddress);
+			var playerAsUser = A2($author$project$SR$ListOps$gotUserFromUserList, allLists.users, uplayer.player.uid);
+			var isPlayerCurrentUser = _Utils_eq(uplayer.player.uid, appInfo.user.ethaddress) ? true : false;
+			var isCurrentUserInAChallenge = (appInfo.player.player.challengerid !== '') ? true : false;
+			var challengerAsUser = A2($author$project$SR$ListOps$gotUserFromUserList, allLists.users, uplayer.player.challengerid);
 			var isChallenged = (challengerAsUser.username !== '') ? true : false;
 			var printChallengerNameOrAvailable = isChallenged ? challengerAsUser.username : 'Available';
 			return A2($author$project$SR$ListOps$isUserPlayerMemberOfSelectedRanking, allLists.userPlayers, appInfo.user) ? (isPlayerCurrentUser ? (isCurrentUserInAChallenge ? A2(
@@ -21379,7 +21379,7 @@ var $author$project$Main$txErrorView = function (model) {
 		var appInfo = model.c;
 		var uiState = model.d;
 		var txRec = model.e;
-		var playerAsUser = A2($author$project$SR$ListOps$gotUserFromUserList, allLists.users, appInfo.player.player.address);
+		var playerAsUser = A2($author$project$SR$ListOps$gotUserFromUserList, allLists.users, appInfo.player.player.uid);
 		return A2(
 			$Orasund$elm_ui_framework$Framework$responsiveLayout,
 			_List_Nil,

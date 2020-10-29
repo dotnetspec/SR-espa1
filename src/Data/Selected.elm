@@ -53,7 +53,7 @@ import Eth.Utils
 import Eth.Types
 import SR.Defaults
 import SR.Defaults
-import SRdb.Object.User exposing (ethaddress)
+--import SRdb.Object.User exposing (ethaddress)
 
 
 
@@ -116,7 +116,7 @@ resultView  status =
 createdUserPlayer : List SR.Types.User -> SR.Types.Player -> SR.Types.UserPlayer
 createdUserPlayer luser player =
     let
-        m_user = Data.Users.gotUserFromUserList luser player.address
+        m_user = Data.Users.gotUserFromUserList luser player.uid
     in
         case m_user of
             Nothing ->
@@ -166,7 +166,7 @@ changedRank : SR.Types.UserPlayer -> Int -> Selected -> Selected
 changedRank uplayer newRank sSelected = 
     let 
         newPlayer = uplayer.player
-        updatedPlayer = { newPlayer | rank = newRank, challengeraddress = ""}
+        updatedPlayer = { newPlayer | rank = newRank, challengerid = ""}
         updatedUserPlayer = { uplayer | player = updatedPlayer}
     in   
         removeUserPlayer uplayer sSelected
@@ -198,7 +198,7 @@ isUserPlayerMemberOfSelectedRanking luplayer user =
                 Nothing ->
                     False 
                 Just addr ->
-                    if (String.toLower a.player.address) == (String.toLower (Eth.Utils.addressToString addr)) then
+                    if (String.toLower a.player.uid) == (String.toLower (Eth.Utils.addressToString addr)) then
                         True
 
                     else
@@ -259,7 +259,7 @@ findPlayerInList user luPlayer =
 
 isThisPlayerAddr : String -> SR.Types.UserPlayer -> Maybe SR.Types.UserPlayer
 isThisPlayerAddr playerAddr uplayer =
-    if (String.toLower uplayer.player.address) == (String.toLower playerAddr) then
+    if (String.toLower uplayer.player.uid) == (String.toLower playerAddr) then
         Just uplayer
 
     else
@@ -278,11 +278,11 @@ extractRank uplayer =
     uplayer.player.rank
 
 assignChallengerAddr : Selected -> SR.Types.UserPlayer -> String -> Selected
-assignChallengerAddr sSelected uplayer challengeraddress =
+assignChallengerAddr sSelected uplayer challengerid =
     let 
         newSSelected = removeUserPlayer uplayer sSelected
         newPlayer = uplayer.player
-        updatedPlayer = {newPlayer | challengeraddress = challengeraddress}
+        updatedPlayer = {newPlayer | challengerid = challengerid}
         newUPlayer = {uplayer | player = updatedPlayer}
     in
         addUserPlayer newUPlayer newSSelected
@@ -290,7 +290,7 @@ assignChallengerAddr sSelected uplayer challengeraddress =
 isChallenged : Selected -> Data.Users.Users -> SR.Types.UserPlayer -> Bool
 isChallenged (Selected sSelected rnkId status sPlayers ) sUsers uplayer = 
     let
-        m_challenger = Data.Users.gotUser sUsers uplayer.player.challengeraddress
+        m_challenger = Data.Users.gotUser sUsers uplayer.player.challengerid
     in
         case m_challenger of 
             Nothing ->
@@ -316,7 +316,7 @@ isChallenged (Selected sSelected rnkId status sPlayers ) sUsers uplayer =
 --                             { rankingid =  strrankingId
 --                             , address = Eth.Utils.addressToString ethaddress
 --                             , rank = List.length luPlayer + 1
---                             , challengeraddress = ""
+--                             , challengerid = ""
 --                             }
 --                         , user = userRec
 --                         }
@@ -333,7 +333,7 @@ isPlayerCurrentUser user uplayer =
             False
 
         Just addr ->
-            if (String.toLower uplayer.player.address) == (String.toLower (Eth.Utils.addressToString addr)) then
+            if (String.toLower uplayer.player.uid) == (String.toLower (Eth.Utils.addressToString addr)) then
                 True
 
             else
@@ -355,17 +355,17 @@ printChallengerNameOrAvailable sSelected sUsers uplayer =
 
 gotOpponent : Selected -> SR.Types.UserPlayer -> Maybe SR.Types.UserPlayer
 gotOpponent sSelected uplayer = 
-    gotUserPlayerFromPlayerListStrAddress (asList sSelected) uplayer.player.challengeraddress
+    gotUserPlayerFromPlayerListStrAddress (asList sSelected) uplayer.player.challengerid
 
 
 updatePlayerRankWithWonResult : List SR.Types.UserPlayer -> SR.Types.UserPlayer -> List SR.Types.UserPlayer
 updatePlayerRankWithWonResult luPlayer uplayer =
     let
         filteredPlayerList =
-            filterPlayerOutOfPlayerList uplayer.player.address luPlayer
+            filterPlayerOutOfPlayerList uplayer.player.uid luPlayer
 
         m_opponentAsPlayer =
-            gotUserPlayerFromPlayerListStrAddress luPlayer uplayer.player.challengeraddress
+            gotUserPlayerFromPlayerListStrAddress luPlayer uplayer.player.challengerid
     in
         case m_opponentAsPlayer of
             Nothing ->
@@ -434,9 +434,9 @@ resetPlayerRankingList newRank uplayer =
 
         newPlayer =
             { newuserplayerplayer
-                | address = uplayer.player.address
+                | address = uplayer.player.uid
                 , rank = newRank
-                , challengeraddress = uplayer.player.challengeraddress
+                , challengerid = uplayer.player.challengerid
             }
 
         newUserPlayer =
@@ -453,9 +453,9 @@ resetPlayerRankToOne uplayer =
 
         newPlayer =
             { newuserplayerplayer
-                | address = uplayer.player.address
+                | address = uplayer.player.uid
                 , rank = 1
-                , challengeraddress = uplayer.player.challengeraddress
+                , challengerid = uplayer.player.challengerid
             }
 
         newUserPlayer =
@@ -486,7 +486,7 @@ gotCurrentUserAsPlayerFromPlayerList luPlayer userRec =
             let
                 existingPlayer =
                     List.head <|
-                        List.filter (\r -> r.player.address == (String.toLower <| (Eth.Utils.addressToString ethaddress)))
+                        List.filter (\r -> r.player.uid == (String.toLower <| (Eth.Utils.addressToString ethaddress)))
                             luPlayer
             in
                 existingPlayer
@@ -510,7 +510,7 @@ gotUserPlayerFromPlayerListStrAddress luplayer addr =
     let
         existingUser =
             List.head <|
-                List.filter (\r -> r.player.address == (String.toLower <| addr))
+                List.filter (\r -> r.player.uid == (String.toLower <| addr))
                     luplayer
     in
         existingUser
@@ -531,7 +531,7 @@ filterPlayerOutOfPlayerList addr lplayer =
 
 doesPlayerAddrNOTMatchAddr : String -> SR.Types.UserPlayer -> Maybe SR.Types.UserPlayer
 doesPlayerAddrNOTMatchAddr addr player =
-    if player.player.address /= addr then
+    if player.player.uid /= addr then
         Just player
 
     else
@@ -572,7 +572,7 @@ convertPlayersToUserPlayers lplayer luser =
 convertEachPlayerToUserPlayer : List SR.Types.User -> SR.Types.Player -> SR.Types.UserPlayer
 convertEachPlayerToUserPlayer luser player =
     let
-        m_user = Data.Users.gotUser (Data.Users.asUsers (EverySet.fromList luser)) player.address
+        m_user = Data.Users.gotUser (Data.Users.asUsers (EverySet.fromList luser)) player.uid
     in
         case m_user of 
             Nothing ->
@@ -580,7 +580,7 @@ convertEachPlayerToUserPlayer luser player =
             Just userVal ->
                 { player = player, user = userVal }
                 
-    --{ player = player, user = Data.Users.gotUser (Data.Users.asUsers (EverySet.fromList luser)) player.address }
+    --{ player = player, user = Data.Users.gotUser (Data.Users.asUsers (EverySet.fromList luser)) player.uid }
 
 
 handleWon : Selected -> SR.Types.AppInfo -> Data.Users.Users -> (Selected, SR.Types.AppInfo)
@@ -765,9 +765,9 @@ jsonEncodeNewSelectedRankingPlayerList luplayers =
         encodePlayerObj : SR.Types.Player -> Json.Encode.Value
         encodePlayerObj player =
             Json.Encode.object
-                [ ( "address", Json.Encode.string (String.toLower player.address |> Debug.log "player.address: ") )
+                [ ( "address", Json.Encode.string (String.toLower player.uid |> Debug.log "player.uid: ") )
                 , ( "rank", Json.Encode.int player.rank )
-                , ( "challengeraddress", Json.Encode.string (player.challengeraddress |> Debug.log "challenger.address: "))
+                , ( "challengerid", Json.Encode.string (player.challengerid |> Debug.log "challenger.address: "))
                 ]
 
         encodedList =
@@ -784,8 +784,8 @@ assignChallengerAddrsForBOTHPlayers sSelected appInfo =
     case sSelected of 
         Selected sselected rnkId status sPlayers  ->
             let
-                sUserUpdated = assignChallengerAddr (asSelected sselected rnkId status sPlayers) appInfo.player appInfo.challenger.player.address
-                sChallengerUpdated = assignChallengerAddr sUserUpdated appInfo.challenger appInfo.player.player.address --sUsers rnkId
+                sUserUpdated = assignChallengerAddr (asSelected sselected rnkId status sPlayers) appInfo.player appInfo.challenger.player.uid
+                sChallengerUpdated = assignChallengerAddr sUserUpdated appInfo.challenger appInfo.player.player.uid --sUsers rnkId
             in 
                 sChallengerUpdated
 
@@ -818,7 +818,7 @@ extractAndSortPlayerList rdlPlayer luser =
 
 -- convertEachPlayerToUserPlayer : List SR.Types.User -> SR.Types.Player -> SR.Types.UserPlayer
 -- convertEachPlayerToUserPlayer luser player =
---     { player = player, user = gotUserFromUserList luser player.address }
+--     { player = player, user = gotUserFromUserList luser player.uid }
 
 
 -- gotRankingOwner : SR.Types.Ranking -> List SR.Types.UserRanking -> List SR.Types.UserPlayer -> SR.Types.UserPlayer

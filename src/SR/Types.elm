@@ -288,22 +288,18 @@ type User =
 
 newUser : FUser -> User 
 newUser fuser = 
-    let 
-        ethaddrResult = Result.toMaybe (Eth.Utils.toAddress fuser.ethaddress)
-    in
-        --User 1234 True fuser.username "" (Maybe.withDefault Nothing (Just ethaddrResult)) (Maybe.withDefault "" fuser.description) (Maybe.withDefault "" fuser.email) (Maybe.withDefault "" fuser.mobile) [] fuser.member_since  Nothing
-        Registered (fromScalarCodecId fuser.id_) "5678" (UserInfo 1 True "" "" (ExtraUserInfo "" "" "") [""] 1)
+    Registered (fromScalarCodecId fuser.id_) "5678" (UserInfo 1 True "" "" (ExtraUserInfo "" "" "") [""] 1)
 
 type alias FUser = {
     id_ :  SRdb.ScalarCodecs.Id
     , active : Bool
     , description : Maybe String
     , email : Maybe String
-    , ethaddress : String
     , member_since : Int
     , mobile : Maybe String
     , username : String
     }
+
 
 type alias Token =
     String
@@ -317,9 +313,9 @@ type alias Password =
 
 type alias Player =
     { rankingid : String
-    , address : String
+    , uid : String
     , rank : Int
-    , challengeraddress : String
+    , challengerid : String
     }
 
 -- empty player
@@ -330,12 +326,12 @@ type alias FPlayer =
     , rankingid : String
     , address : String
     , rank : Int
-    , challengeraddress : String
+    , challengerid : String
     }
 
 newPlayer : FPlayer -> Player 
 newPlayer fplayer = 
-    Player (fromScalarCodecId fplayer.id_) fplayer.address fplayer.rank fplayer.challengeraddress
+    Player (fromScalarCodecId fplayer.id_) fplayer.address fplayer.rank fplayer.challengerid
 
 
 

@@ -211,12 +211,27 @@ gotUserRanking lownedrankings user =
 -- but the test was created using this version (a mistake, but little difference)
 removedDeletedRankingsFromUserJoined : SR.Types.User -> Global -> SR.Types.User 
 removedDeletedRankingsFromUserJoined user sGlobal = 
-    let
-        lwithDeletedRankingIdsRemoved = List.filter (Data.Rankings.isIdInSet (asRankings sGlobal)) (Utils.MyUtils.stringListToRankingIdList user.userjoinrankings)
-        newUser = {user | userjoinrankings = Utils.MyUtils.rankingIdListToStringList lwithDeletedRankingIdsRemoved}
+        case user of 
+            SR.Types.Guest ->
+                SR.Types.Guest
 
-    in
-        newUser
+            (SR.Types.Registered userId token userInfo) ->
+                let
+                    lwithDeletedRankingIdsRemoved = List.filter (Data.Rankings.isIdInSet (asRankings sGlobal)) 
+                    (Utils.MyUtils.stringListToRankingIdList userInfo.userjoinrankings)
+
+                    newUserInfo = {userInfo | userjoinrankings = Utils.MyUtils.rankingIdListToStringList lwithDeletedRankingIdsRemoved}
+                in
+                    SR.Types.Registered userId token newUserInfo
+
+            --todo: as above for the others or refactor
+            (SR.Types.NoWallet userId token userInfo) ->
+                SR.Types.NoWallet userId token userInfo
+            (SR.Types.NoCredit addr userId token userInfo) ->
+                SR.Types.NoCredit addr userId token userInfo
+            (SR.Types.Credited addr userId token userInfo) ->
+                SR.Types.Credited addr userId token userInfo
+        --newUser
     
 
 
@@ -475,7 +490,7 @@ gotUserPlayerFromPlayerListStrAddress luplayer addr =
     let
         existingUser =
             List.head <|
-                List.filter (\r -> r.player.address == (String.toLower <| addr))
+                List.filter (\r -> r.player.uid == (String.toLower <| addr))
                     luplayer
     in
     case existingUser of

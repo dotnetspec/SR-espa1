@@ -30,16 +30,16 @@ import Json.Encode as Encode
 -- decoderTest : Test
 -- decoderTest =
 --     only <| 
---      fuzz3 string int string "challengeraddress defaults to ('')" <|
---      \address rank challengeraddress ->
+--      fuzz3 string int string "challengerid defaults to ('')" <|
+--      \address rank challengerid ->
 --          --\_ ->
 --              [ ( "address", Encode.string address )
 --              , ( "rank", Encode.int rank )
---              , ( "challengeraddress", Encode.string challengeraddress)
+--              , ( "challengerid", Encode.string challengerid)
 --              ]
 --                  |> Encode.object
 --                  |> decodeValue SR.Decode.playerDecoder
---                  |> Result.map .challengeraddress
+--                  |> Result.map .challengerid
 --                  |> Expect.equal (Ok "")
 
 
@@ -89,13 +89,13 @@ testsortPlayerListByRank =
         player =
             { address = ""
             , rank = 2
-            , challengeraddress = ""
+            , challengerid = ""
             }
 
         challenger =
             { address = ""
             , rank = 1
-            , challengeraddress = ""
+            , challengerid = ""
             }
 
         listOfUserPlayers =
@@ -110,13 +110,13 @@ testsortPlayerListByRank =
         outputplayer =
             { address = ""
             , rank = 1
-            , challengeraddress = ""
+            , challengerid = ""
             }
 
         outputchallenger =
             { address = ""
             , rank = 2
-            , challengeraddress = ""
+            , challengerid = ""
             }
 
         output =
@@ -142,13 +142,13 @@ userPlayerRankingOrderTest =
         player =
             { address = ""
             , rank = 2
-            , challengeraddress = ""
+            , challengerid = ""
             }
 
         challenger =
             { address = ""
             , rank = 1
-            , challengeraddress = ""
+            , challengerid = ""
             }
 
         listOfUserPlayers =
@@ -163,13 +163,13 @@ userPlayerRankingOrderTest =
         outputplayer =
             { address = ""
             , rank = 1
-            , challengeraddress = ""
+            , challengerid = ""
             }
 
         outputchallenger =
             { address = ""
             , rank = 2
-            , challengeraddress = ""
+            , challengerid = ""
             }
 
         output =
@@ -229,13 +229,13 @@ sortPlayerListTest1 =
 --         outputplayer =
 --             { address = "0xf5003cea9657a15123b1cc83c305f87555d190cf"
 --             , rank = 2
---             , challengeraddress = "0x3bb244dec13253d39e22606850f4704b469a4b93"
+--             , challengerid = "0x3bb244dec13253d39e22606850f4704b469a4b93"
 --             }
 
 --         outputchallenger =
 --             { address = "0x3bb244dec13253d39e22606850f4704b469a4b93"
 --             , rank = 1
---             , challengeraddress = "0xf5003cea9657a15123b1cc83c305f87555d190cf"
+--             , challengerid = "0xf5003cea9657a15123b1cc83c305f87555d190cf"
 --             }
 
 --         output =
@@ -252,7 +252,7 @@ sortPlayerListTest1 =
 --             -- test "Sub func - Challenge successfully updates player's challenger address in list " <|
 --             --     \() ->
 --             --         Data.Players.assignChallengerAddr Testdata.UserPlayerTestData.userPlayerList 
---             --         Testdata.UserPlayerTestData.singleUserPlayer1 Testdata.UserPlayerTestData.singleUserPlayer2.player.address
+--             --         Testdata.UserPlayerTestData.singleUserPlayer1 Testdata.UserPlayerTestData.singleUserPlayer2.player.uid
 --             --             |> Expect.equal output
             
 --             -- ,
@@ -265,9 +265,9 @@ sortPlayerListTest1 =
 --                     (Data.Selected.assignChallengerAddr 
 --                     Testdata.UserPlayerTestData.userPlayerList 
 --                     Testdata.UserPlayerTestData.singleUserPlayer2 
---                     Testdata.UserPlayerTestData.singleUserPlayer1.player.address)
+--                     Testdata.UserPlayerTestData.singleUserPlayer1.player.uid)
 --                     Testdata.UserPlayerTestData.singleUserPlayer1 
---                     Testdata.UserPlayerTestData.singleUserPlayer2.player.address
+--                     Testdata.UserPlayerTestData.singleUserPlayer2.player.uid
 --                     |> Data.Selected.asList
 --                     |> List.take 2 
 --                     |> Expect.equal output
