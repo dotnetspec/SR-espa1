@@ -64,9 +64,9 @@ isValidOwnerAddress : SR.Types.Ranking -> Bool
 isValidOwnerAddress rankInfo =
     let
         _ =
-            Debug.log "isValidOwnerAddress" rankInfo.rankingowneraddr
+            Debug.log "isValidOwnerAddress" rankInfo.rankingownerid
     in
-    if Eth.Utils.isAddress rankInfo.rankingowneraddr then
+    if Eth.Utils.isAddress rankInfo.rankingownerid then
         True
 
     else
@@ -74,7 +74,7 @@ isValidOwnerAddress rankInfo =
 
 
 
---Expect.notEqual "" a.rankingowneraddr
+--Expect.notEqual "" a.rankingownerid
 
 
 
@@ -87,7 +87,7 @@ createAllUserAsOwnerGlobalRankingListTest =
                     , active = True
                     , rankingname = "Test 10"
                     , rankingdesc = "t10"
-                    , rankingowneraddr = "0xce987a7e670655f30e582fbde1573b5be8ffb9a8"
+                    , rankingownerid = "0xce987a7e670655f30e582fbde1573b5be8ffb9a8"
                     }
                 userOwner =
                     { datestamp = 1569839363942

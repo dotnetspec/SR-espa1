@@ -36,22 +36,22 @@ queryLoginUser requiredArgs =
 
 
 mutationCreateAndOrLoginUser : (Mutation.CreateAndOrLoginUserOptionalArguments -> Mutation.CreateAndOrLoginUserOptionalArguments) 
-    -> SR.Types.UserName -> SR.Types.Password -> String -> SelectionSet SR.Types.Token RootMutation
-mutationCreateAndOrLoginUser fillInOptionals user_name password ethaddress =
+    -> SR.Types.UserName -> SR.Types.Password -> SelectionSet SR.Types.Token RootMutation
+mutationCreateAndOrLoginUser fillInOptionals user_name password  =
     let
         -- filledInOptionals =
         --     fillInOptionals { description = Absent, email = Absent, mobile = Absent }
         required_arguments =
-            Mutation.CreateAndOrLoginUserRequiredArguments True user_name password ethaddress
+            Mutation.CreateAndOrLoginUserRequiredArguments True user_name password
 
     in
     Mutation.createAndOrLoginUser fillInOptionals required_arguments
 
 
 requestCreateAndOrLoginUser : (Mutation.CreateAndOrLoginUserOptionalArguments -> Mutation.CreateAndOrLoginUserOptionalArguments) ->
- SR.Types.UserName -> SR.Types.Password -> String -> Http.Request SR.Types.Token
-requestCreateAndOrLoginUser fillInOptionals user_name password ethaddress =
-    Http.mutationRequest SR.Constants.endpointURL (mutationCreateAndOrLoginUser fillInOptionals user_name password ethaddress)
+ SR.Types.UserName -> SR.Types.Password -> Http.Request SR.Types.Token
+requestCreateAndOrLoginUser fillInOptionals user_name password =
+    Http.mutationRequest SR.Constants.endpointURL (mutationCreateAndOrLoginUser fillInOptionals user_name password)
         |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
 
 handleCreateAndOrLoginUserOptionalArguments : Mutation.CreateAndOrLoginUserOptionalArguments -> Mutation.CreateAndOrLoginUserOptionalArguments
@@ -75,7 +75,6 @@ userSelectionSet =
         |> Graphql.SelectionSet.with SRdb.Object.User.active
         |> Graphql.SelectionSet.with SRdb.Object.User.description
         |> Graphql.SelectionSet.with SRdb.Object.User.email
-        |> Graphql.SelectionSet.with SRdb.Object.User.ethaddress
         |> Graphql.SelectionSet.with SRdb.Object.User.member_since
         |> Graphql.SelectionSet.with SRdb.Object.User.mobile
         |> Graphql.SelectionSet.with SRdb.Object.User.username
@@ -116,7 +115,7 @@ rankingSelectionSet =
             |> Graphql.SelectionSet.with SRdb.Object.Ranking.active
             |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingname
             |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingdesc
-            |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingowneraddr
+            |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingownerid
 
 queryAllRankings : SelectionSet SR.Types.FRanking SRdb.Object.Ranking
     -> SelectionSet (Maybe (List (Maybe SR.Types.FRanking))) RootQuery

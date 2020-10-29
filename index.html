@@ -5657,7 +5657,7 @@ var $author$project$SR$Types$UILoading = {$: 'UILoading'};
 var $author$project$SR$Types$WalletStateUnknown = {$: 'WalletStateUnknown'};
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $author$project$SR$Defaults$emptyAllLists = {lmemberUserRanking: _List_Nil, lotherUserRanking: _List_Nil, lownedUserRanking: _List_Nil, userPlayers: _List_Nil, userRankings: _List_Nil, users: _List_Nil};
-var $author$project$SR$Defaults$emptyRankingInfo = {active: false, id: '0', rankingdesc: 'emptyRankingInfo', rankingname: '', rankingowneraddr: ''};
+var $author$project$SR$Defaults$emptyRankingInfo = {active: false, id: '0', rankingdesc: 'emptyRankingInfo', rankingname: '', rankingownerid: ''};
 var $author$project$SR$Defaults$emptyUser = {active: false, datestamp: 123456, description: '', email: '', ethaddress: '', mobile: '', userjoinrankings: _List_Nil, username: ''};
 var $author$project$SR$Defaults$emptyPlayer = {address: '', challengeraddress: '', rank: 0};
 var $author$project$SR$Defaults$emptyUserPlayer = {player: $author$project$SR$Defaults$emptyPlayer, user: $author$project$SR$Defaults$emptyUser};
@@ -6392,8 +6392,8 @@ var $author$project$SR$Defaults$globalContainerId = A2($elm$http$Http$header, 'c
 var $author$project$SR$Constants$globalJsonbinRankingReadLink = 'https://api.jsonbin.io/b/5e66ec74a030db370e1b23fc/latest';
 var $elm$json$Json$Decode$list = _Json_decodeList;
 var $author$project$SR$Types$Ranking = F5(
-	function (id, active, rankingname, rankingdesc, rankingowneraddr) {
-		return {active: active, id: id, rankingdesc: rankingdesc, rankingname: rankingname, rankingowneraddr: rankingowneraddr};
+	function (id, active, rankingname, rankingdesc, rankingownerid) {
+		return {active: active, id: id, rankingdesc: rankingdesc, rankingname: rankingname, rankingownerid: rankingownerid};
 	});
 var $elm$json$Json$Decode$bool = _Json_decodeBool;
 var $NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom = $elm$json$Json$Decode$map2($elm$core$Basics$apR);
@@ -6408,7 +6408,7 @@ var $NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required = F3(
 var $elm$json$Json$Decode$string = _Json_decodeString;
 var $author$project$SR$Decode$rankingDecoder = A3(
 	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-	'rankingowneraddr',
+	'rankingownerid',
 	$elm$json$Json$Decode$string,
 	A3(
 		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
@@ -8736,8 +8736,8 @@ var $author$project$Main$newJsonEncodedList = function (lotherrankingInfo) {
 					'rankingdesc',
 					$elm$json$Json$Encode$string(rankingInfo.rankingdesc)),
 					_Utils_Tuple2(
-					'rankingowneraddr',
-					$elm$json$Json$Encode$string(rankingInfo.rankingowneraddr))
+					'rankingownerid',
+					$elm$json$Json$Encode$string(rankingInfo.rankingownerid))
 				]));
 	};
 	var encodedList = A2($elm$json$Json$Encode$list, encodeAglobalRankingObj, newRankingInfoList);
@@ -8750,7 +8750,7 @@ var $author$project$Main$addedNewRankingListEntryInGlobal = F5(
 			id: $author$project$Main$gotNewRankingIdFromWebData(newrankingid),
 			rankingdesc: rnkInfo.rankingdesc,
 			rankingname: rnkInfo.rankingname,
-			rankingowneraddr: rankingowneraddress
+			rankingownerid: rankingowneraddress
 		};
 		var newOtherRankingInfo = {
 			rankingInfo: newRankingInfo,
@@ -8790,7 +8790,7 @@ var $author$project$SR$ListOps$convertPlayersToUserPlayers = F2(
 	});
 var $author$project$SR$ListOps$createNewOwnedRanking = F2(
 	function (luser, rankingInfo) {
-		var userOwner = A2($author$project$SR$ListOps$gotUserFromUserList, luser, rankingInfo.rankingowneraddr);
+		var userOwner = A2($author$project$SR$ListOps$gotUserFromUserList, luser, rankingInfo.rankingownerid);
 		var newOwnedRanking = {rankingInfo: rankingInfo, userInfo: userOwner};
 		return newOwnedRanking;
 	});
@@ -9957,7 +9957,7 @@ var $author$project$Eth$Units$gwei = A2(
 		$cmditch$elm_bigint$BigInt$fromInt(1000000000)));
 var $author$project$SR$ListOps$createdUserRankingPlayerRanking = F2(
 	function (luser, rankingInfo) {
-		var userOwner = A2($author$project$SR$ListOps$gotUserFromUserList, luser, rankingInfo.rankingowneraddr);
+		var userOwner = A2($author$project$SR$ListOps$gotUserFromUserList, luser, rankingInfo.rankingownerid);
 		var newOwnedRanking = {rankingInfo: rankingInfo, userInfo: userOwner};
 		return newOwnedRanking;
 	});
@@ -10028,7 +10028,7 @@ var $author$project$SR$ListOps$gotOwned = F2(
 			lownedrankings);
 	});
 var $author$project$SR$ListOps$isValidOwnerAddress = function (rankInfo) {
-	return $author$project$Eth$Utils$isAddress(rankInfo.rankingowneraddr) ? true : false;
+	return $author$project$Eth$Utils$isAddress(rankInfo.rankingownerid) ? true : false;
 };
 var $author$project$SR$ListOps$ownerValidatedRankingList = function (lrankinginfo) {
 	return A2($elm$core$List$filter, $author$project$SR$ListOps$isValidOwnerAddress, lrankinginfo);
@@ -11663,7 +11663,7 @@ var $author$project$Main$updateAppInfoOnRankingSelected = F4(
 			{
 				id: $author$project$Utils$MyUtils$stringFromRankingId(rnkid),
 				rankingname: rnknamestr,
-				rankingowneraddr: rnkownerstr
+				rankingownerid: rnkownerstr
 			});
 		var newAppInfo = _Utils_update(
 			appInfo,
@@ -19391,7 +19391,7 @@ var $author$project$Main$memberRankingInfoBtn = function (rankingobj) {
 						A3(
 							$author$project$Main$ClickedSelectedMemberRanking,
 							$author$project$Internal$Types$RankingId(rankingobj.id),
-							rankingobj.rankingowneraddr,
+							rankingobj.rankingownerid,
 							rankingobj.rankingname))
 				})
 			]));
@@ -19439,7 +19439,7 @@ var $author$project$Main$neitherOwnerNorMemberRankingInfoBtn = function (ranking
 						A3(
 							$author$project$Main$ClickedSelectedNeitherOwnerNorMember,
 							$author$project$Internal$Types$RankingId(rankingobj.id),
-							rankingobj.rankingowneraddr,
+							rankingobj.rankingownerid,
 							rankingobj.rankingname))
 				})
 			]));
@@ -19485,7 +19485,7 @@ var $author$project$Main$ownedRankingInfoBtn = function (rankingobj) {
 						A3(
 							$author$project$Main$ClickedSelectedOwnedRanking,
 							$author$project$Internal$Types$RankingId(rankingobj.id),
-							rankingobj.rankingowneraddr,
+							rankingobj.rankingownerid,
 							rankingobj.rankingname))
 				})
 			]));

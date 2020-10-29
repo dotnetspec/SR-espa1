@@ -381,7 +381,7 @@ type alias Ranking =
 
 newRanking : FRanking -> Ranking 
 newRanking franking = 
-    Ranking (fromScalarCodecId franking.id_) True franking.rankingname franking.rankingdesc franking.rankingowneraddr
+    Ranking (fromScalarCodecId franking.id_) True franking.rankingname franking.rankingdesc franking.rankingownerid
 
 type alias FRanking =
 
@@ -389,7 +389,7 @@ type alias FRanking =
     , active : Bool
     , rankingname : String
     , rankingdesc : Maybe String
-    , rankingowneraddr : String
+    , rankingownerid : String
     }
 
 fromScalarCodecId : SRdb.ScalarCodecs.Id -> String

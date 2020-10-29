@@ -220,7 +220,7 @@ isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
                 Nothing ->
                     False 
                 Just addr ->
-                    if a.rankingInfo.rankingowneraddr == (Eth.Utils.addressToString addr) then
+                    if a.rankingInfo.rankingownerid == (Eth.Utils.addressToString addr) then
                         True
 
                     else

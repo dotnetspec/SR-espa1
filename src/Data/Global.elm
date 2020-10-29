@@ -68,8 +68,11 @@ created sRankings sUser =
 createdUserRanking : List SR.Types.User -> SR.Types.Ranking -> Maybe SR.Types.UserRanking
 createdUserRanking luser ranking =
     let
-        userOwner =
-            Data.Users.gotUserFromUserList luser ranking.rankingowneraddr
+        --todo: fix
+        userOwner = Nothing
+            --Data.Users.gotUserFromUserList luser ranking.rankingownerid
+            
+            
     in
         case userOwner of
             Nothing ->
@@ -257,7 +260,7 @@ addUserRanking sGlobal newrnkId rnkInfo user =
     --         , active = True
     --         , rankingname = rnkInfo.rankingname
     --         , rankingdesc = rnkInfo.rankingdesc
-    --         , rankingowneraddr = user.m_ethaddress
+    --         , rankingownerid = user.m_ethaddress
     --         }
 
     --     newUserRanking =
@@ -421,7 +424,7 @@ newJsonEncodedList lotherrankingInfo =
                 , ( "rankingname", Json.Encode.string rankingInfo.rankingname )
                 --, ( "rankingdesc", Json.Encode.string rankingInfo.rankingdesc )
                 , ( "rankingdesc", Json.Encode.string "" )
-                , ( "rankingowneraddr", Json.Encode.string rankingInfo.rankingowneraddr )
+                , ( "rankingownerid", Json.Encode.string rankingInfo.rankingownerid )
                 ]
 
         encodedList =
@@ -490,7 +493,7 @@ createdUserRankingPlayerRanking : List SR.Types.User -> SR.Types.Ranking -> SR.T
 createdUserRankingPlayerRanking luser rankingInfo =
     -- let
     --     userOwner =
-    --         Data.Users.gotUserFromUserList luser rankingInfo.rankingowneraddr
+    --         Data.Users.gotUserFromUserList luser rankingInfo.rankingownerid
 
     --     newOwnedRanking =
     --         { rankingInfo = rankingInfo

@@ -1982,7 +1982,7 @@ updateAppInfoOnRankingSelected appInfo rnkid rnkownerstr rnknamestr =
             appInfo.selectedRanking
 
         newRnkInfo =
-            { newSelectedRanking | id_ = Utils.MyUtils.stringFromRankingId rnkid, rankingowneraddr = rnkownerstr, rankingname = rnknamestr }
+            { newSelectedRanking | id_ = Utils.MyUtils.stringFromRankingId rnkid, rankingownerid = rnkownerstr, rankingname = rnknamestr }
 
         newAppInfo =
             { appInfo | selectedRanking = newRnkInfo }
@@ -2722,7 +2722,7 @@ ownedRankingInfoBtn : SR.Types.Ranking -> Element Msg
 ownedRankingInfoBtn rankingobj =
     Element.column Grid.simple <|
         [ Input.button (Button.fill ++ Color.primary) <|
-            { onPress = Just (ClickedSelectedOwnedRanking (Internal.Types.RankingId rankingobj.id_) rankingobj.rankingowneraddr rankingobj.rankingname)
+            { onPress = Just (ClickedSelectedOwnedRanking (Internal.Types.RankingId rankingobj.id_) rankingobj.rankingownerid rankingobj.rankingname)
             , label = Element.text rankingobj.rankingname
             }
         ]
@@ -2748,14 +2748,14 @@ memberRankingInfoBtn ranking =
     if ranking.rankingname /= "" then
         Element.column Grid.simple <|
             [ Input.button (Button.fill ++ Color.primary) <|
-                { onPress = Just (ClickedSelectedMemberRanking (Internal.Types.RankingId ranking.id_) ranking.rankingowneraddr ranking.rankingname)
+                { onPress = Just (ClickedSelectedMemberRanking (Internal.Types.RankingId ranking.id_) ranking.rankingownerid ranking.rankingname)
                 , label = Element.text ranking.rankingname
                 }
             ]
     else 
         Element.column Grid.simple <|
             [ Input.button (Button.fill ++ Color.primary) <|
-                { onPress = Just (ClickedSelectedMemberRanking (Internal.Types.RankingId ranking.id_) ranking.rankingowneraddr ranking.rankingname)
+                { onPress = Just (ClickedSelectedMemberRanking (Internal.Types.RankingId ranking.id_) ranking.rankingownerid ranking.rankingname)
                 , label = Element.el
                             [ Font.color (Element.rgb 1 0 0)
                             , Font.size 18
@@ -2785,7 +2785,7 @@ neitherOwnerNorMemberRankingInfoBtn : SR.Types.Ranking -> Element Msg
 neitherOwnerNorMemberRankingInfoBtn rankingobj =
     Element.column Grid.simple <|
         [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "otherrankingbtn") ] ++ Button.fill ++ Color.primary) <|
-            { onPress = Just (ClickedSelectedNeitherOwnerNorMember (Internal.Types.RankingId rankingobj.id_) rankingobj.rankingowneraddr rankingobj.rankingname)
+            { onPress = Just (ClickedSelectedNeitherOwnerNorMember (Internal.Types.RankingId rankingobj.id_) rankingobj.rankingownerid rankingobj.rankingname)
             , label = Element.text rankingobj.rankingname
             }
         ]

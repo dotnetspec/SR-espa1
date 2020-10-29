@@ -144,7 +144,7 @@ gotRanking (Rankings sRankings) uaddr =
     let
         existingRanking =
             List.head <|
-                 EverySet.toList (EverySet.filter (\r -> (String.toLower <| r.rankingowneraddr) == (String.toLower <| uaddr))
+                 EverySet.toList (EverySet.filter (\r -> (String.toLower <| r.rankingownerid) == (String.toLower <| uaddr))
                     sRankings)
     in
         existingRanking
@@ -242,7 +242,7 @@ updateAddr sRankings addr =
                     Just ranking ->
                         let
                             rankingRemoved = remove ranking sRankings
-                            updatedRankingAddr = { ranking | rankingowneraddr = addr }
+                            updatedRankingAddr = { ranking | rankingownerid = addr }
                         in
                             addRanking updatedRankingAddr rankingRemoved
 
@@ -374,7 +374,7 @@ extractRankingInfoListFromMaybeList lranking =
 
 -- isValidOwnerAddress : SR.Types.Ranking -> Bool
 -- isValidOwnerAddress rankInfo =
---     if Eth.Utils.isAddress rankInfo.rankingowneraddr then
+--     if Eth.Utils.isAddress rankInfo.rankingownerid then
 --         True
 
 --     else

@@ -10,7 +10,7 @@ singleUserRanking =
       , active = True
       , rankingname = "Test 10"
       , rankingdesc = "t10"
-      , rankingowneraddr = "0xce987a7e670655f30e582fbde1573b5be8ffb9a8"
+      , rankingownerid = "0xce987a7e670655f30e582fbde1573b5be8ffb9a8"
       }                  
     , 
       userInfo = { datestamp = 1569839363942
@@ -30,7 +30,7 @@ userRankingList =
                     , active = True
                     , rankingname = "Test 10"
                     , rankingdesc = "t10"
-                    , rankingowneraddr = "0xce987a7e670655f30e582fbde1573b5be8ffb9a8"
+                    , rankingownerid = "0xce987a7e670655f30e582fbde1573b5be8ffb9a8"
                     }
                     
     ,   userInfo = { datestamp = 1569839363942
@@ -52,7 +52,7 @@ userRankingList =
             , active = True
             , rankingname = "Test 8"
             , rankingdesc = "t8"
-            , rankingowneraddr = "0xf9bd658a9f3e23ed77192a14a9da6a5c37566218"
+            , rankingownerid = "0xf9bd658a9f3e23ed77192a14a9da6a5c37566218"
             }
                       
       , 
