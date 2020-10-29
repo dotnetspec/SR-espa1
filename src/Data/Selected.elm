@@ -53,6 +53,7 @@ import Eth.Utils
 import Eth.Types
 import SR.Defaults
 import SR.Defaults
+import Data.Global
 --import SRdb.Object.User exposing (ethaddress)
 
 
@@ -116,11 +117,13 @@ resultView  status =
 createdUserPlayer : List SR.Types.User -> SR.Types.Player -> SR.Types.UserPlayer
 createdUserPlayer luser player =
     let
-        m_user = Data.Users.gotUserFromUserList luser player.uid
+        --m_user = Data.Users.gotUserFromUserList luser player.uid
+        m_user = Data.Users.gotUser (Data.Users.asUsers luser) player.uid
     in
         case m_user of
             Nothing ->
-                SR.Defaults.emptyUserPlayer
+                --SR.Defaults.emptyUserPlayer
+                Data.Global.empty
             Just user ->
                 let
                       newUserPlayer =

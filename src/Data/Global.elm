@@ -217,8 +217,7 @@ removedDeletedRankingsFromUserJoined user sGlobal =
 
             (SR.Types.Registered userId token userInfo) ->
                 let
-                    lwithDeletedRankingIdsRemoved = List.filter (Data.Rankings.isIdInSet (asRankings sGlobal)) 
-                    (Utils.MyUtils.stringListToRankingIdList userInfo.userjoinrankings)
+                    lwithDeletedRankingIdsRemoved = List.filter (Data.Rankings.isIdInSet (asRankings sGlobal)) (Utils.MyUtils.stringListToRankingIdList userInfo.userjoinrankings)
 
                     newUserInfo = {userInfo | userjoinrankings = Utils.MyUtils.rankingIdListToStringList lwithDeletedRankingIdsRemoved}
                 in

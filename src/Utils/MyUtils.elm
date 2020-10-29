@@ -140,7 +140,7 @@ createdMaybePlayerFromPlayer : SR.Types.Player -> Maybe SR.Types.Player
 createdMaybePlayerFromPlayer player =
     Just
         { rankingid = player.rankingid 
-        , address = player.uid
+        , uid = player.uid
         , rank = player.rank
         , challengerid = player.challengerid
         }
