@@ -1,7 +1,6 @@
 -- Global will be mainly used to handle internal data of the global rankings listing as it relates to the current user
 -- Global currently uses the UserRankings type
 module Data.Global exposing (Global, gotOthers
-    , gotUserRanking
     , gotOwned
     , filteredSelected
     , createdPlayers
@@ -238,18 +237,6 @@ toUser : SR.Types.UserRanking -> SR.Types.User
 toUser uRanking = 
     uRanking.userInfo
 
--- isGlobalRankingOwnedByUser : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
--- isGlobalRankingOwnedByUser user ownedrnk =
-    
-    
-
-gotUserRanking : List SR.Types.UserRanking -> SR.Types.User -> List SR.Types.UserRanking
-gotUserRanking lownedrankings user =
-    List.filterMap
-        (isUserInGlobalRankings
-            user
-        )
-        lownedrankings
 
 --nb. the app is currently using the Data.Rankings version of removedDeletedRankingsFromUserJoined
 -- but the test was created using this version (a mistake, but little difference)
@@ -277,14 +264,6 @@ removedDeletedRankingsFromUserJoined user sGlobal =
         --newUser
     
 
-
-isUserInGlobalRankings : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
-isUserInGlobalRankings user ownedrnk =
-    if ownedrnk.userInfo.m_ethaddress == user.m_ethaddress then
-        Just ownedrnk
-
-    else
-        Nothing
 
 
 gotAllRankindIds : SR.Types.UserRanking -> String
