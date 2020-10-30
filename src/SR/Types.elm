@@ -10,7 +10,7 @@ module SR.Types exposing
     , SubState(..)
     , DeleteBinResponse
     , UpdateGlobalBinResponse
-    , AccountState(..)
+    --, AccountState(..)
     , Token
     , UserName
     , Password
@@ -193,13 +193,13 @@ type OpponentRelativeRank
 
 
 --todo probably remove AccountState
-type AccountState 
-    = 
+-- type AccountState 
+--     = 
     --Guest 
     --changed Registered to get to compile
     --| Registered
-    EthEnabled
-    | EthEnabledAndRegistered
+    -- EthEnabled
+    -- | EthEnabledAndRegistered
 
 
 type alias UserPlayer =

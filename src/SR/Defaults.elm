@@ -48,7 +48,7 @@ emptyUserPlayer =
 emptyAppInfo =
     { selectedRanking = (SR.Types.Ranking "" True "" Nothing "")
     , player = emptyUserPlayer
-    , user = Nothing
+    , user = SR.Types.Guest
     , challenger = emptyUserPlayer
     , appState = AppStateGeneral
     }
