@@ -117,13 +117,12 @@ resultView  status =
 createdUserPlayer : List SR.Types.User -> SR.Types.Player -> SR.Types.UserPlayer
 createdUserPlayer luser player =
     let
-        --m_user = Data.Users.gotUserFromUserList luser player.uid
-        m_user = Data.Users.gotUser (Data.Users.asUsers luser) player.uid
+        m_user = Data.Users.gotUser (Data.Users.asUsers (EverySet.fromList luser)) player.uid
     in
         case m_user of
             Nothing ->
-                --SR.Defaults.emptyUserPlayer
-                Data.Global.empty
+                SR.Defaults.emptyUserPlayer
+                
             Just user ->
                 let
                       newUserPlayer =
@@ -155,7 +154,7 @@ addNewUserPlayerJoinRanking uplayer rnkId =
         case uplayer.user of
             SR.Types.Guest ->
                 uplayer
-                
+
             (SR.Types.Registered userId token userInfo) ->
                  let 
                     updatedUserJoinRankings = {userInfo | userjoinrankings = Utils.MyUtils.stringFromRankingId rnkId :: userInfo.userjoinrankings}
@@ -216,29 +215,53 @@ isCurrentUserPlayerLowerRanked uplayer challenger =
         True 
         else False
 
-isUserPlayerMemberOfSelectedRanking : List SR.Types.UserPlayer -> SR.Types.User -> Bool
-isUserPlayerMemberOfSelectedRanking luplayer user =
-    let
-        filteredList =
-            findPlayerInList user luplayer
+isUserPlayerMemberOfSelectedRanking : Selected -> SR.Types.User -> Bool
+isUserPlayerMemberOfSelectedRanking sSelected user =
+    --todo: fix
+    False
+    -- let
+    --     filteredList =
+    --         gotPlayer user sSelected
 
-        filteredRec =
-            List.head filteredList
-    in
-    case filteredRec of
-        Nothing ->
-            False
+    --     filteredRec =
+    --         List.head filteredList
+    -- in
+    -- case filteredRec of
+    --     Nothing ->
+    --         False
 
-        Just a ->
-            case user.m_ethaddress of 
-                Nothing ->
-                    False 
-                Just addr ->
-                    if (String.toLower a.player.uid) == (String.toLower (Eth.Utils.addressToString addr)) then
-                        True
+    --     Just a ->
+    --         case user of
+    --             SR.Types.Guest ->
+    --                 False
+                    
+    --             (SR.Types.Registered userId token userInfo) ->
+    --                 if (String.toLower a.player.uid) == userId then
+    --                     True
 
-                    else
-                        False
+    --                 else
+    --                     False
+
+    --             (SR.Types.NoWallet userId token userInfo) ->
+    --                 if (String.toLower a.player.uid) == userId then
+    --                     True
+
+    --                 else
+    --                     False
+
+    --             (SR.Types.NoCredit addr userId token userInfo) ->
+    --                 if (String.toLower a.player.uid) == userId then
+    --                     True
+
+    --                 else
+    --                     False
+
+    --             (SR.Types.Credited addr userId token userInfo) ->
+    --                 if (String.toLower a.player.uid) == userId then
+    --                     True
+
+    --                 else
+    --                     False
 
 
 isUserOwnerOfSelectedUserRanking : SR.Types.Ranking -> List SR.Types.UserRanking -> SR.Types.User -> Bool
@@ -252,16 +275,38 @@ isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
             False
 
         Just a ->
-            case user.m_ethaddress of 
-                Nothing ->
-                    False 
-                Just addr ->
-                    if a.rankingInfo.rankingownerid == (Eth.Utils.addressToString addr) then
+            case user of
+                SR.Types.Guest ->
+                    False
+
+                (SR.Types.Registered userId token userInfo) ->
+                    if a.rankingInfo.rankingownerid == userId then
                         True
 
                     else
                         False
 
+                (SR.Types.NoWallet userId token userInfo) ->
+                    if a.rankingInfo.rankingownerid == userId then
+                        True
+
+                    else
+                        False
+
+                (SR.Types.NoCredit addr userId token userInfo) ->
+                    if a.rankingInfo.rankingownerid == userId then
+                        True
+
+                    else
+                        False
+
+                (SR.Types.Credited addr userId token userInfo) ->
+                    if a.rankingInfo.rankingownerid == userId then
+                        True
+
+                    else
+                        False
+        
 extractSelectedUserRankingFromGlobalList : List SR.Types.UserRanking -> String -> Maybe SR.Types.UserRanking
 extractSelectedUserRankingFromGlobalList luranking rankingid =
     List.filterMap
@@ -279,27 +324,54 @@ isUserRankingIdInList rankingid urnk =
     else
         Nothing
 
-findPlayerInList : SR.Types.User -> List SR.Types.UserPlayer -> List SR.Types.UserPlayer
-findPlayerInList user luPlayer =
+gotPlayer : SR.Types.User -> Selected -> Selected
+gotPlayer user (Selected sSelected rnkId sStatus players)=
     -- todo: fix
     --[SR.Defaults.emptyUserPlayer]
-    case user.m_ethaddress of 
-        Nothing ->
-            luPlayer 
-        Just ethaddress ->
-            List.filterMap
-                (isThisPlayerAddr
-                    (String.toLower (Eth.Utils.addressToString ethaddress))
-                )
-                luPlayer
+    case user of
+                SR.Types.Guest ->
+                    empty
+                    
+                (SR.Types.Registered userId token userInfo) ->
+                --todo: fix 
+                    empty
+                    -- asSelected <| 
+                    --     (EverySet.filter
+                    --         (isThisPlayerId
+                    --             (userId)
+                    --         )
+                    --         sSelected)
+                    --         rnkId sStatus players
 
-isThisPlayerAddr : String -> SR.Types.UserPlayer -> Maybe SR.Types.UserPlayer
-isThisPlayerAddr playerAddr uplayer =
-    if (String.toLower uplayer.player.uid) == (String.toLower playerAddr) then
+                     
+                (SR.Types.NoWallet userId token userInfo) ->
+                    empty
+
+                (SR.Types.NoCredit addr userId token userInfo) ->
+                    empty
+
+                (SR.Types.Credited addr userId token userInfo) ->
+                    empty
+
+
+    -- case user.m_ethaddress of 
+    --     Nothing ->
+    --         luPlayer 
+    --     Just ethaddress ->
+    --         List.filterMap
+    --             (isThisPlayerId
+    --                 (String.toLower (Eth.Utils.addressToString ethaddress))
+    --             )
+    --             luPlayer
+
+isThisPlayerId : String -> SR.Types.UserPlayer -> Maybe SR.Types.UserPlayer
+isThisPlayerId playerId uplayer =
+    if uplayer.player.uid == playerId then
         Just uplayer
 
     else
         Nothing
+    
 
 asList : Selected -> List SR.Types.UserPlayer 
 asList srank = 
@@ -332,11 +404,36 @@ isChallenged (Selected sSelected rnkId status sPlayers ) sUsers uplayer =
             Nothing ->
                 False 
             Just challenger ->
-                if challenger.username /= "" then
-                    True
+            --     if challenger.username /= "" then
+            --         True
 
-                else
-                    False
+            --     else
+            --         False
+
+                case challenger of
+                    SR.Types.Guest ->
+                        False
+                    (SR.Types.Registered userId token userInfo) ->
+                        if userInfo.username /= "" then
+                            True
+                        else
+                            False
+
+                    (SR.Types.NoWallet userId token userInfo) ->
+                        if userInfo.username /= "" then
+                            True
+                        else
+                            False
+                    (SR.Types.NoCredit addr userId token userInfo) ->
+                        if userInfo.username /= "" then
+                            True
+                        else
+                            False
+                    (SR.Types.Credited addr userId token userInfo) ->
+                        if userInfo.username /= "" then
+                            True
+                        else
+                            False
 
 --todo: should this be here or just in User?
 -- userAdded : String -> List SR.Types.UserPlayer -> SR.Types.User -> List SR.Types.UserPlayer
@@ -364,12 +461,29 @@ isChallenged (Selected sSelected rnkId status sPlayers ) sUsers uplayer =
     
 isPlayerCurrentUser : SR.Types.User -> SR.Types.UserPlayer -> Bool
 isPlayerCurrentUser user uplayer = 
-    case user.m_ethaddress of 
-        Nothing ->
+    case user of
+        SR.Types.Guest ->
             False
+        (SR.Types.Registered userId token userInfo) ->
+            if uplayer.player.uid == userId then
+                True
 
-        Just addr ->
-            if (String.toLower uplayer.player.uid) == (String.toLower (Eth.Utils.addressToString addr)) then
+            else
+                False
+        (SR.Types.NoWallet userId token userInfo) ->
+            if uplayer.player.uid == userId then
+                True
+
+            else
+                False
+        (SR.Types.NoCredit addr userId token userInfo) ->
+            if uplayer.player.uid == userId then
+                True
+
+            else
+                False
+        (SR.Types.Credited addr userId token userInfo) ->
+            if uplayer.player.uid == userId then
                 True
 
             else
@@ -385,7 +499,17 @@ printChallengerNameOrAvailable sSelected sUsers uplayer =
                 "Available"
             Just opponent ->
                 if isChallenged sSelected sUsers uplayer then
-                    opponent.user.username
+                    case opponent.user of
+                        SR.Types.Guest ->
+                            "Available"
+                        (SR.Types.Registered userId token userInfo) ->
+                            userInfo.username
+                        (SR.Types.NoWallet userId token userInfo) ->
+                            userInfo.username
+                        (SR.Types.NoCredit addr userId token userInfo) ->
+                            userInfo.username
+                        (SR.Types.Credited addr userId token userInfo) ->
+                            userInfo.username
                 else
                     "Available"
 
@@ -470,7 +594,7 @@ resetPlayerRankingList newRank uplayer =
 
         newPlayer =
             { newuserplayerplayer
-                | address = uplayer.player.uid
+                | uid = uplayer.player.uid
                 , rank = newRank
                 , challengerid = uplayer.player.challengerid
             }
@@ -489,7 +613,7 @@ resetPlayerRankToOne uplayer =
 
         newPlayer =
             { newuserplayerplayer
-                | address = uplayer.player.uid
+                | uid = uplayer.player.uid
                 , rank = 1
                 , challengerid = uplayer.player.challengerid
             }
@@ -512,20 +636,21 @@ canPlayerBeInList uplayer =
 
 gotCurrentUserAsPlayerFromPlayerList : List SR.Types.UserPlayer -> SR.Types.User -> Maybe SR.Types.UserPlayer
 gotCurrentUserAsPlayerFromPlayerList luPlayer userRec =
-    --todo: fix
-    --SR.Defaults.emptyUserPlayer
-    case userRec.m_ethaddress of
-        Nothing ->
-            Nothing
 
-        Just ethaddress ->
-            let
-                existingPlayer =
-                    List.head <|
-                        List.filter (\r -> r.player.uid == (String.toLower <| (Eth.Utils.addressToString ethaddress)))
-                            luPlayer
-            in
-                existingPlayer
+    --todo: fix
+    Nothing
+    -- case userRec.m_ethaddress of
+    --     Nothing ->
+    --         Nothing
+
+    --     Just ethaddress ->
+    --         let
+    --             existingPlayer =
+    --                 List.head <|
+    --                     List.filter (\r -> r.player.uid == (String.toLower <| (Eth.Utils.addressToString ethaddress)))
+    --                         luPlayer
+    --         in
+    --             existingPlayer
 
 
 
@@ -608,9 +733,9 @@ convertPlayersToUserPlayers lplayer luser =
 convertEachPlayerToUserPlayer : List SR.Types.User -> SR.Types.Player -> SR.Types.UserPlayer
 convertEachPlayerToUserPlayer luser player =
     let
-        m_user = Data.Users.gotUser (Data.Users.asUsers (EverySet.fromList luser)) player.uid
+        user = Data.Users.gotUser (Data.Users.asUsers (EverySet.fromList luser)) player.uid
     in
-        case m_user of 
+        case user of 
             Nothing ->
                 { player = player, user = (SR.Types.Guest) }
             Just userVal ->
@@ -641,7 +766,7 @@ handleWon (Selected esUPlayer rnkId status sPlayers ) appInfo sUsers =
                         -- handling with AppState then handing back to AppInfo for now ...
                         
                             
-                        updatedUserPlayer = Data.AppState.releasePlayerForUI (Data.AppState.updateAppState appInfo.m_user 
+                        updatedUserPlayer = Data.AppState.releasePlayerForUI (Data.AppState.updateAppState (Just appInfo.user) 
                             appInfo.player appInfo.challenger (Utils.MyUtils.stringToRankingId appInfo.selectedRanking.id_))
 
                         newAppInfo =

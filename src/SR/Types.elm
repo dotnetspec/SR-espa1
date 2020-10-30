@@ -217,10 +217,11 @@ newUserRanking ranking user =
     UserRanking ranking user
 
 
+
 type alias AppInfo =
     { selectedRanking : Ranking
     , player : UserPlayer
-    , m_user : Maybe User
+    , user : User
     , challenger : UserPlayer
     , appState : AppState
     }

@@ -235,16 +235,14 @@ filterRankingIds rnkIdToFilter currentRnkId =
     
 
 removeUser : Maybe SR.Types.User -> Users -> Users
-removeUser m_user susers = 
-    case susers of 
-        Users setOfUsers->
+removeUser m_user (Users sUsers) = 
+    -- case susers of 
+    --     Users setOfUsers->
             case m_user of 
                 Nothing ->
-                    susers
+                    asUsers sUsers
                 Just user ->
-                    asUsers (EverySet.remove user setOfUsers) 
-
-
+                    asUsers (EverySet.remove user sUsers)
 
 asList : Users -> List SR.Types.User 
 asList susers = 

@@ -9,8 +9,8 @@ import Internal.Types
 type AppState = AppState (Maybe SR.Types.User) SR.Types.UserPlayer SR.Types.UserPlayer Internal.Types.RankingId
 
 updateAppState : (Maybe SR.Types.User) -> SR.Types.UserPlayer  -> SR.Types.UserPlayer ->  Internal.Types.RankingId -> AppState
-updateAppState m_user uplayer uplayerChallenger rnkId = 
-    AppState m_user uplayer uplayerChallenger rnkId
+updateAppState user uplayer uplayerChallenger rnkId = 
+    AppState user uplayer uplayerChallenger rnkId
 
 -- updateAppInfo : AppState -> SR.Types.AppInfo 
 -- updateAppInfo appState = 
