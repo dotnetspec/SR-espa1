@@ -207,7 +207,7 @@ type alias UserPlayer =
     , user : User
     }
 
-
+--UserRanking.userInfo will always be Registered only
 type alias UserRanking =
     { rankingInfo : Ranking
     , userInfo : User

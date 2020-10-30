@@ -125,20 +125,68 @@ gotOwned global user =
         
 isOwned : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
 isOwned user ownedrnk =
-    if ownedrnk.userInfo.m_ethaddress == user.m_ethaddress then
-        Just ownedrnk
+    case user of
+        SR.Types.Guest ->
+            Nothing
+        --UserRanking.userInfo will always be Registered only
+        SR.Types.Registered userId _ _ ->
+            case ownedrnk.userInfo of 
+                SR.Types.Registered owneruserId _ _ ->
+                    if owneruserId == userId then
+                        Just ownedrnk
+                    else
+                        Nothing
 
-    else
-        Nothing
+                _ ->
+                    Nothing 
+
+        (SR.Types.NoWallet userId _ _) ->
+            case ownedrnk.userInfo of 
+                SR.Types.Registered owneruserId _ _ ->
+                    if owneruserId == userId then
+                        Just ownedrnk
+                    else
+                        Nothing
+
+                _ ->
+                    Nothing 
+
+        (SR.Types.NoCredit addr userId _ _) ->
+            case ownedrnk.userInfo of 
+                SR.Types.Registered owneruserId _ _ ->
+                    if owneruserId == userId then
+                        Just ownedrnk
+                    else
+                        Nothing
+
+                _ ->
+                    Nothing
+
+        (SR.Types.Credited addr userId _ _) ->
+            case ownedrnk.userInfo of 
+                SR.Types.Registered owneruserId _ _ ->
+                    if owneruserId == userId then
+                        Just ownedrnk
+                    else
+                        Nothing
+
+                _ ->
+                    Nothing 
 
 
 gotMember : Global -> SR.Types.User -> List SR.Types.UserRanking
-gotMember sGlobal user  = 
-    let
-        lmemberRankingIds = user.userjoinrankings
-    in
-        --List.map (gotUserRankingByRankingId sGlobal) lmemberRankingIds
-        List.filterMap (gotUserRankingByRankingId sGlobal) lmemberRankingIds
+gotMember sGlobal user = 
+    case user of
+        SR.Types.Guest ->
+            []
+        (SR.Types.Registered _ _ userInfo) ->
+            List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinrankings
+        (SR.Types.NoWallet userId token userInfo) ->
+            List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinrankings
+        (SR.Types.NoCredit addr userId token userInfo) ->
+            List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinrankings
+        (SR.Types.Credited addr userId token userInfo) ->
+            List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinrankings
 
 gotOthers : Global -> SR.Types.User -> Global
 gotOthers global user = 
@@ -190,14 +238,10 @@ toUser : SR.Types.UserRanking -> SR.Types.User
 toUser uRanking = 
     uRanking.userInfo
 
-isGlobalRankingOwnedByUser : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
-isGlobalRankingOwnedByUser user ownedrnk =
-    if ownedrnk.userInfo.m_ethaddress == user.m_ethaddress then
-        Just ownedrnk
-
-    else
-        Nothing
-
+-- isGlobalRankingOwnedByUser : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
+-- isGlobalRankingOwnedByUser user ownedrnk =
+    
+    
 
 gotUserRanking : List SR.Types.UserRanking -> SR.Types.User -> List SR.Types.UserRanking
 gotUserRanking lownedrankings user =
