@@ -152,13 +152,46 @@ addUserPlayer uplayer sSelected =
 
 addNewUserPlayerJoinRanking : SR.Types.UserPlayer -> Internal.Types.RankingId -> SR.Types.UserPlayer
 addNewUserPlayerJoinRanking uplayer rnkId = 
-    let 
-        newUser = uplayer.user 
-        updatedUserJoinRankings = {newUser | userjoinrankings = Utils.MyUtils.stringFromRankingId rnkId :: uplayer.user.userjoinrankings}
-        newUserPlayer =  { uplayer | player = uplayer.player, user = updatedUserJoinRankings }
-        _ = Debug.log "newUserPlayer" newUserPlayer
-    in 
-        newUserPlayer
+        case uplayer.user of
+            SR.Types.Guest ->
+                uplayer
+                
+            (SR.Types.Registered userId token userInfo) ->
+                 let 
+                    updatedUserJoinRankings = {userInfo | userjoinrankings = Utils.MyUtils.stringFromRankingId rnkId :: userInfo.userjoinrankings}
+                    newUser = SR.Types.Registered userId token updatedUserJoinRankings
+                    newUserPlayer =  { uplayer | player = uplayer.player, user = newUser }
+                    
+                in
+                    newUserPlayer
+            
+            (SR.Types.NoWallet userId token userInfo) ->
+                let 
+                    updatedUserJoinRankings = {userInfo | userjoinrankings = Utils.MyUtils.stringFromRankingId rnkId :: userInfo.userjoinrankings}
+                    newUser = SR.Types.NoWallet userId token updatedUserJoinRankings
+                    newUserPlayer =  { uplayer | player = uplayer.player, user = newUser }
+                    
+                in
+                    newUserPlayer
+            
+            (SR.Types.NoCredit addr userId token userInfo) ->
+                let 
+                    updatedUserJoinRankings = {userInfo | userjoinrankings = Utils.MyUtils.stringFromRankingId rnkId :: userInfo.userjoinrankings}
+                    newUser = SR.Types.NoCredit addr userId token updatedUserJoinRankings
+                    newUserPlayer =  { uplayer | player = uplayer.player, user = newUser }
+                    
+                in
+                    newUserPlayer
+
+            (SR.Types.Credited addr userId token userInfo) ->
+                let 
+                    updatedUserJoinRankings = {userInfo | userjoinrankings = Utils.MyUtils.stringFromRankingId rnkId :: userInfo.userjoinrankings}
+                    newUser = SR.Types.Credited addr userId token updatedUserJoinRankings
+                    newUserPlayer =  { uplayer | player = uplayer.player, user = newUser }
+                    
+                in
+                    newUserPlayer
+
 
 removeUserPlayer : SR.Types.UserPlayer -> Selected -> Selected
 removeUserPlayer uplayer sSelected = 
@@ -635,7 +668,7 @@ handleWon (Selected esUPlayer rnkId status sPlayers ) appInfo sUsers =
                             appInfo.player.player
 
                         newUserPlayerPlayerUpdated =
-                            { newUserPlayerPlayer | address = "" }
+                            { newUserPlayerPlayer | uid = "" }
 
                         newAppInfoPlayer =
                             appInfo.player
@@ -674,7 +707,7 @@ handleLost (Selected esUPlayer rnkId status sPlayers ) appInfo =
                     appInfo.player.player
 
                 newPlayerUpdated =
-                    { newUserPlayerPlayer | address = "" }
+                    { newUserPlayerPlayer | uid = "" }
 
                 newUserPlayerUpdated =
                     { newUserPlayer | player = newPlayerUpdated }
@@ -706,7 +739,7 @@ handleLost (Selected esUPlayer rnkId status sPlayers ) appInfo =
                     appInfo.player.player
 
                 newUserPlayerPlayerUpdated =
-                    { newUserPlayerPlayer | address = "" }
+                    { newUserPlayerPlayer | uid = "" }
 
                 newUserPlayerUpdated =
                     { newUserPlayer | player = newUserPlayerPlayerUpdated }
@@ -737,7 +770,7 @@ handleUndecided (Selected esUPlayer rnkId status sPlayers ) appInfo =
                     appInfo.player.player
 
                 newPlayerPlayerUpdated =
-                    { newUserPlayerPlayer | address = "" }
+                    { newUserPlayerPlayer | uid = "" }
 
                 newUserPlayerUpdated =
                     { newUserPlayer | player = newPlayerPlayerUpdated }
@@ -768,9 +801,9 @@ jsonEncodeNewSelectedRankingPlayerList luplayers =
         encodePlayerObj : SR.Types.Player -> Json.Encode.Value
         encodePlayerObj player =
             Json.Encode.object
-                [ ( "address", Json.Encode.string (String.toLower player.uid |> Debug.log "player.uid: ") )
+                [ ( "uid", Json.Encode.string (String.toLower player.uid |> Debug.log "player.uid: ") )
                 , ( "rank", Json.Encode.int player.rank )
-                , ( "challengerid", Json.Encode.string (player.challengerid |> Debug.log "challenger.address: "))
+                , ( "challengerid", Json.Encode.string (player.challengerid |> Debug.log "challenger id: "))
                 ]
 
         encodedList =
