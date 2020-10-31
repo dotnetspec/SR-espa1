@@ -1995,28 +1995,22 @@ updateWithReceivedRankingById model response =
 updateFromLoggedInUser: Model -> Result (GQLHttp.Error (String)) (SR.Types.Token) -> Model
 updateFromLoggedInUser model response =
     case (model, response) of
-        --Ok (lstringhead :: lstringtail) ->
         (AppOps walletState dataState appInfo uiState subState  txRec, Ok token) ->
-            -- case model of
-            --     AppOps walletState dataState appInfo uiState subState txRec ->
-                    case appInfo.user of
-                        Just user ->
-                            let
-                                updated_user =
-                                    --{ user | m_token = Just lstringhead }
-                                    { user | m_token = Just token }
-
-                                newAppInfo = { appInfo | user = Just updated_user }
-                            in
-                            AppOps walletState dataState newAppInfo uiState subState txRec
-
-                        Nothing ->
-                            model
-                
-                
-
-        -- Ok [] ->
-        --     model
+            case appInfo.user of
+                SR.Types.Guest ->
+                    model
+                (SR.Types.Registered userId _ userInfo) ->
+                    let
+                        updated_user = SR.Types.Registered userId token userInfo         
+                        newAppInfo = { appInfo | user = updated_user }
+                    in
+                        AppOps walletState dataState newAppInfo uiState subState txRec
+                (SR.Types.NoWallet userId _ userInfo) ->
+                    model
+                (SR.Types.NoCredit addr userId _ userInfo) ->
+                    model
+                (SR.Types.Credited addr userId _ userInfo) ->
+                    model
 
         (AppOps walletState dataState appInfo uiState subState  txRec, Err _) ->
             let
