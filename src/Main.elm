@@ -2906,35 +2906,68 @@ memberrankingbuttons urankingList user =
         newRankingList =
             Data.Rankings.extractRankingList urankingList
     in
-    if user.username == "" then
-        Element.text ""
-
-    else
-        Element.column Grid.section <|
+    case user of
+        SR.Types.Guest ->
+            Element.text ""
+        (SR.Types.Registered userId token userInfo) ->
+            Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertMemberRankingList newRankingList
+                insertMemberRankingList <| Data.Rankings.extractRankingList urankingList
+            ]
+        (SR.Types.NoWallet userId token userInfo) ->
+            Element.column Grid.section <|
+            [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
+            , Element.column (Card.simple ++ Grid.simple) <|
+                insertMemberRankingList <| Data.Rankings.extractRankingList urankingList
+            ]
+        (SR.Types.NoCredit addr userId token userInfo) ->
+            Element.column Grid.section <|
+            [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
+            , Element.column (Card.simple ++ Grid.simple) <|
+                insertMemberRankingList <| Data.Rankings.extractRankingList urankingList
+            ]
+        (SR.Types.Credited addr userId token userInfo) ->
+            Element.column Grid.section <|
+            [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
+            , Element.column (Card.simple ++ Grid.simple) <|
+                insertMemberRankingList <| Data.Rankings.extractRankingList urankingList
             ]
 
 
 otherrankingbuttons : List SR.Types.UserRanking -> SR.Types.User -> Element Msg
 otherrankingbuttons urankingList user =
-    let
-        newRankingList =
-            Data.Rankings.extractRankingList urankingList
-    in
-    if user.username == "" then
-        Element.column Grid.section <|
+    case user of
+        SR.Types.Guest ->
+            Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "View Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList newRankingList
+                insertNeitherOwnerNorMemberRankingList (Data.Rankings.extractRankingList urankingList)
             ]
-
-    else
-        Element.column Grid.section <|
+        (SR.Types.Registered userId token userInfo) ->
+            Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList newRankingList
+                insertNeitherOwnerNorMemberRankingList (Data.Rankings.extractRankingList urankingList)
+            ]
+
+        (SR.Types.NoWallet userId token userInfo) ->
+            Element.column Grid.section <|
+            [ Element.el Heading.h5 <| Element.text "Other Rankings: "
+            , Element.column (Card.simple ++ Grid.simple) <|
+                insertNeitherOwnerNorMemberRankingList (Data.Rankings.extractRankingList urankingList)
+            ]
+        (SR.Types.NoCredit addr userId token userInfo) ->
+            Element.column Grid.section <|
+            [ Element.el Heading.h5 <| Element.text "Other Rankings: "
+            , Element.column (Card.simple ++ Grid.simple) <|
+                insertNeitherOwnerNorMemberRankingList (Data.Rankings.extractRankingList urankingList)
+            ]
+        (SR.Types.Credited addr userId token userInfo) ->
+            Element.column Grid.section <|
+            [ Element.el Heading.h5 <| Element.text "Other Rankings: "
+            , Element.column (Card.simple ++ Grid.simple) <|
+                insertNeitherOwnerNorMemberRankingList (Data.Rankings.extractRankingList urankingList)
             ]
 
 
@@ -2946,8 +2979,9 @@ insertOwnedRankingList lrankinginfo user =
                 ownedRankingInfoBtn
                 lrankinginfo
     in
-    if user.username == "" then
-                [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
+    case user of
+        SR.Types.Guest ->
+            [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
                     ++ Button.fill
                     ++ Button.simple 
                     ++ Color.info) <|
@@ -2955,8 +2989,14 @@ insertOwnedRankingList lrankinginfo user =
                     , label = Element.text "Create New Ladder"
                     }
                 ]
-    else
-        mapOutRankingList
+        (SR.Types.Registered userId token userInfo) ->
+            mapOutRankingList
+        (SR.Types.NoWallet userId token userInfo) ->
+            mapOutRankingList
+        (SR.Types.NoCredit addr userId token userInfo) ->
+            mapOutRankingList
+        (SR.Types.Credited addr userId token userInfo) ->
+            mapOutRankingList
 
 
 ownedRankingInfoBtn : SR.Types.Ranking -> Element Msg
