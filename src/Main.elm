@@ -2186,16 +2186,25 @@ handleTxSubMsg subMsg =
 gotWalletAddrApplyToUser : SR.Types.AppInfo -> Eth.Types.Address ->  SR.Types.AppInfo
 gotWalletAddrApplyToUser appInfo uaddr =
     case appInfo.user of
-        Nothing ->
-            appInfo
-        Just userVal ->
-            let
-                newUserWithAddr =
-                    { userVal | m_ethaddress =  Just uaddr }
-                newAppInfo =
-                    { appInfo | user = Just newUserWithAddr }
-            in
-            newAppInfo
+        -- Nothing ->
+        --     appInfo
+        -- Just userVal ->
+            
+
+            SR.Types.Guest ->
+                appInfo
+            
+            (SR.Types.Registered userId token userInfo) ->
+                { appInfo | user = SR.Types.NoCredit uaddr userId token userInfo }
+
+            (SR.Types.NoWallet userId token userInfo) ->
+                    { appInfo | user = SR.Types.NoCredit uaddr userId token userInfo }
+                
+            (SR.Types.NoCredit addr userId token userInfo) ->
+                appInfo
+
+            (SR.Types.Credited addr userId token userInfo) ->
+                appInfo
 
 
 handleNewUserInputs : Model -> Msg -> Model
@@ -2487,43 +2496,37 @@ view : Model -> Html Msg
 view model =
     case model of
         AppOps walletState dataState appInfo uiState subState  txRec ->
-            let
-                user = Maybe.withDefault SR.Types.Guest appInfo.user
-            in
             case (dataState, appInfo.user, appInfo.appState) of 
                 (AllEmpty, _, _) ->
                     Html.text ("Loading ...")
 
-                (StateFetched sUsers sRankings (Global sGlobal ), Nothing, SR.Types.AppStateGeneral) ->
-                    generalLoginView user sUsers sGlobal
-                        
-                (StateFetched sUsers sRankings (Global sGlobal ), Nothing, SR.Types.AppStateCreateNewUser) ->
-                    registerNewUserView user sUsers
-
-                (StateFetched sUsers sRankings dKind, Just userVal, SR.Types.AppStateCreateNewUser) ->
+                (StateFetched sUsers sRankings dKind, userVal, SR.Types.AppStateCreateNewUser) ->
                     registerNewUserView userVal sUsers
 
-                (StateFetched sUsers sRankings (Global sGlobal ), Just userVal, SR.Types.AppStateGeneral) ->
+                (StateFetched sUsers sRankings (Global sGlobal ), userVal, SR.Types.AppStateGeneral) ->
                     gotUserView userVal sUsers sGlobal
                             
-                (StateFetched sUsers sRankings (Selected _ ), Just userVal, SR.Types.AppStateGeneral) ->
+                (StateFetched sUsers sRankings (Selected _ ), userVal, SR.Types.AppStateGeneral) ->
                      greetingView <| "ToDo: Select w/o a token should be possible"
-
-                (StateFetched sUsers _ _ , Nothing, SR.Types.AppStateGeneral) ->
-                    Html.text ("dKind not specified")
                 
-                (StateFetched sUsers sRankings dKind, Just userVal, SR.Types.AppStateUpdateProfile) ->
-                    case userVal.m_token of 
-                        Nothing ->
-                                    handleGlobalNoTokenView dataState userVal
-                                
-                        Just tokenVal ->
-                                    inputUserDetailsView dataState appInfo
+                (StateFetched sUsers sRankings dKind, userVal, SR.Types.AppStateUpdateProfile) ->
+                    case userVal of 
+                        SR.Types.Guest ->
+                            handleGlobalNoTokenView dataState userVal
+                        (SR.Types.Registered userId token userInfo) ->
+                            inputUserDetailsView dataState appInfo
+                        (SR.Types.NoWallet userId token userInfo) ->
+                            inputUserDetailsView dataState appInfo
+                        (SR.Types.NoCredit addr userId token userInfo) ->
+                            inputUserDetailsView dataState appInfo
+                        (SR.Types.Credited addr userId token userInfo) ->
+                            inputUserDetailsView dataState appInfo
+
                 (StateUpdated _ _ _, _, _) ->
                     Html.text ("No User - No Update")
                 
                 (_, _, _) ->
-                            Html.text ("View fell thru")
+                    Html.text ("View fell thru")
 
         Failure str ->
            failureView str
@@ -2622,15 +2625,48 @@ registerNewUserView userVal sUsers =
 
 gotUserView : SR.Types.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
 gotUserView userVal sUsers sGlobal =
-    Framework.responsiveLayout [] <|
-        Element.column
-            Framework.container 
+    case userVal of
+        SR.Types.Guest ->
+            Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome " ++ userVal.username)
+                    Element.text ("SportRank - Welcome Guest")
                     , displayEnableEthereumBtn
                     , displayForToken userVal sGlobal
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Types.Guest)) SR.Types.Guest
                 ]
+        (SR.Types.Registered userId token userInfo) ->
+            Framework.responsiveLayout [] <| Element.column Framework.container 
+                [ Element.el (Heading.h5) <|
+                    Element.text ("SportRank - Welcome " ++ userInfo.username)
+                    , displayEnableEthereumBtn
+                    , displayForToken userVal sGlobal
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal)) userVal
+                ]
+        (SR.Types.NoWallet userId token userInfo) ->
+            Framework.responsiveLayout [] <| Element.column Framework.container 
+                [ Element.el (Heading.h5) <|
+                    Element.text ("SportRank - Welcome " ++ userInfo.username)
+                    , displayEnableEthereumBtn
+                    , displayForToken userVal sGlobal
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal)) userVal
+                ]
+        (SR.Types.NoCredit addr userId token userInfo) ->
+            Framework.responsiveLayout [] <| Element.column Framework.container 
+                [ Element.el (Heading.h5) <|
+                    Element.text ("SportRank - Welcome " ++ userInfo.username)
+                    , displayEnableEthereumBtn
+                    , displayForToken userVal sGlobal
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal)) userVal
+                ]
+        (SR.Types.Credited addr userId token userInfo) ->
+            Framework.responsiveLayout [] <| Element.column Framework.container 
+                [ Element.el (Heading.h5) <|
+                    Element.text ("SportRank - Welcome " ++ userInfo.username)
+                    , displayEnableEthereumBtn
+                    , displayForToken userVal sGlobal
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal)) userVal
+                ]
+    
 
 failureView : String -> Html Msg 
 failureView str = 
