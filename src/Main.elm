@@ -2666,7 +2666,7 @@ registerNewUserView userVal sUsers =
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
                             }
-                        , userDescValidationErr userVal
+                        , userDescValidationErr userInfo.extrauserinfo.description
                         , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
                             { onChange = NewUserEmailInputChg
                             , text = userInfo.extrauserinfo.email
@@ -2680,7 +2680,7 @@ registerNewUserView userVal sUsers =
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
                             }
-                        , mobileValidationErr userVal
+                        , mobileValidationErr userInfo.extrauserinfo.mobile
                         ]
                     ]
                 , Element.text "* required"
@@ -3201,23 +3201,75 @@ insertPlayerList dataState appInfo =
 
 selecteduserIsOwnerhomebutton : SR.Types.User -> Element Msg
 selecteduserIsOwnerhomebutton user =
-    Element.column Grid.section <|
-        [ Element.el Heading.h6 <| Element.text "Click to continue ..."
-        , Element.column (Card.simple ++ Grid.simple) <|
-            [ Element.wrappedRow Grid.simple <|
-                [ Input.button (Button.simple ++ Color.simple) <|
-                    { onPress = Just <| Cancel
-                    , label = Element.text "Home"
-                    }
-                , Input.button (Button.simple ++ Color.danger) <|
-                    { onPress = Just <| ClickedDeleteRanking user.m_ethaddress
-                    , label = Element.text "Delete"
-                    }
+    case user of
+        SR.Types.Guest ->
+            Element.text "Error"
+        (SR.Types.Registered userId token userInfo) ->
+            Element.column Grid.section <|
+                [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+                , Element.column (Card.simple ++ Grid.simple) <|
+                    [ Element.wrappedRow Grid.simple <|
+                        [ Input.button (Button.simple ++ Color.simple) <|
+                            { onPress = Just <| Cancel
+                            , label = Element.text "Home"
+                            }
+                        , Input.button (Button.simple ++ Color.danger) <|
+                            { onPress = Just <| ClickedDeleteRanking userId
+                            , label = Element.text "Delete"
+                            }
+                        ]
+                    ]
                 ]
-            ]
-
+        (SR.Types.NoWallet userId token userInfo) ->
+             Element.column Grid.section <|
+                [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+                , Element.column (Card.simple ++ Grid.simple) <|
+                    [ Element.wrappedRow Grid.simple <|
+                        [ Input.button (Button.simple ++ Color.simple) <|
+                            { onPress = Just <| Cancel
+                            , label = Element.text "Home"
+                            }
+                        , Input.button (Button.simple ++ Color.danger) <|
+                            { onPress = Just <| ClickedDeleteRanking userId
+                            , label = Element.text "Delete"
+                            }
+                        ]
+                    ]
+                ]
+        (SR.Types.NoCredit addr userId token userInfo) ->
+            Element.column Grid.section <|
+                [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+                , Element.column (Card.simple ++ Grid.simple) <|
+                    [ Element.wrappedRow Grid.simple <|
+                        [ Input.button (Button.simple ++ Color.simple) <|
+                            { onPress = Just <| Cancel
+                            , label = Element.text "Home"
+                            }
+                        , Input.button (Button.simple ++ Color.danger) <|
+                            { onPress = Just <| ClickedDeleteRanking userId
+                            , label = Element.text "Delete"
+                            }
+                        ]
+                    ]
+                ]
+        (SR.Types.Credited addr userId token userInfo) ->
+            Element.column Grid.section <|
+                [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+                , Element.column (Card.simple ++ Grid.simple) <|
+                    [ Element.wrappedRow Grid.simple <|
+                        [ Input.button (Button.simple ++ Color.simple) <|
+                            { onPress = Just <| Cancel
+                            , label = Element.text "Home"
+                            }
+                        , Input.button (Button.simple ++ Color.danger) <|
+                            { onPress = Just <| ClickedDeleteRanking userId
+                            , label = Element.text "Delete"
+                            }
+                        ]
+                    ]
+                ]
         --, SR.Elements.simpleUserInfoText
-        ]
+        
 
 
 selecteduserIsPlayerHomebutton : SR.Types.User -> Element Msg
@@ -3554,9 +3606,9 @@ acknoweldgeTxErrorbtn model =
             Element.text "Fail acknoweldgeTxErrorbtn"
 
 
-userDescValidationErr : SR.Types.User -> Element Msg
-userDescValidationErr user =
-    if isUserDescValidated user then
+userDescValidationErr : String -> Element Msg
+userDescValidationErr str =
+    if isUserDescValidated str then
         Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "descValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "")
 
     else
@@ -3633,12 +3685,12 @@ emailValidationErr str =
         Element.el [] <| Element.text ""
 
 
-mobileValidationErr : SR.Types.User -> Element Msg
-mobileValidationErr user =
-    if isMobileValidated user then
+mobileValidationErr : String -> Element Msg
+mobileValidationErr str =
+    if isMobileValidated str then
         Element.el (List.append [ Font.color SR.Types.colors.green, Font.alignLeft ] [ Element.htmlAttribute (Html.Attributes.id "userMobileValid") ]) (Element.text "Mobile OK!")
 
-    else if String.length user.mobile > 0 then
+    else if String.length str > 0 then
         Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.htmlAttribute (Html.Attributes.id "userMobileInvalid") ] ++ [ Element.moveLeft 5.0 ])
             (Element.text """ Mobile number, if
  entered, must be valid""")
@@ -3910,17 +3962,17 @@ ladderNameValidationErr appInfo dataState =
 
 
 
-isMobileValidated : SR.Types.User -> Bool
-isMobileValidated user =
+isMobileValidated : String -> Bool
+isMobileValidated str =
     let
         mobileNumberInt =
-            Maybe.withDefault 0 (String.toInt user.mobile)
+            Maybe.withDefault 0 (String.toInt str)
     in
-    if String.length user.mobile == 0 then
+    if String.length str == 0 then
         True
 
     else if
-        (String.length user.mobile > 4 && String.length user.mobile < 25)
+        (String.length str > 4 && String.length str < 25)
             && (Just mobileNumberInt /= Just 0)
     then
         True
@@ -4391,7 +4443,7 @@ displayRegisterNewUser userVal sUsers =
                         , placeholder = Nothing
                         , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
                         }
-                    , userDescValidationErr userVal
+                    , userDescValidationErr userInfo.extrauserinfo.description
                     , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
                         { onChange = NewUserEmailInputChg
                         , text = userInfo.extrauserinfo.email
@@ -4405,7 +4457,7 @@ displayRegisterNewUser userVal sUsers =
                         , placeholder = Nothing
                         , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
                         }
-                    , mobileValidationErr userVal
+                    , mobileValidationErr userInfo.extrauserinfo.mobile
                     ]
                 ]
             , Element.text "* required"
@@ -4947,44 +4999,44 @@ httpUpdateUsers  updatedUsers =
     Cmd.none
 
 
-jsonEncodeNewUsersList : List SR.Types.User -> Json.Encode.Value
-jsonEncodeNewUsersList luserInfo =
-    let
-        encodeNewUserObj : SR.Types.User -> Json.Encode.Value
-        encodeNewUserObj userInfo =
-            case userInfo.m_ethaddress of
-                Nothing ->
-                    Json.Encode.object
-                        [ ( "datestamp", Json.Encode.int 1569839363942 )
-                        , ( "active", Json.Encode.bool True )
-                        , ( "username", Json.Encode.string userInfo.username )
-                        , ( "m_ethaddress", Json.Encode.string "")
-                        , ( "description", Json.Encode.string userInfo.description )
-                        , ( "email", Json.Encode.string userInfo.email )
-                        , ( "mobile", Json.Encode.string userInfo.mobile )
-                        , ( "userjoinrankings", Json.Encode.list encodeRankingIdList userInfo.userjoinrankings )
-                        ]
-                Just addr ->
-                    Json.Encode.object
-                        [ ( "datestamp", Json.Encode.int 1569839363942 )
-                        , ( "active", Json.Encode.bool True )
-                        , ( "username", Json.Encode.string userInfo.username )
-                        , ( "m_ethaddress", Json.Encode.string (String.toLower (Eth.Utils.addressToString addr)) )
-                        , ( "description", Json.Encode.string userInfo.description )
-                        , ( "email", Json.Encode.string userInfo.email )
-                        , ( "mobile", Json.Encode.string userInfo.mobile )
-                        , ( "userjoinrankings", Json.Encode.list encodeRankingIdList userInfo.userjoinrankings )
-                        ]
+-- jsonEncodeNewUsersList : List SR.Types.User -> Json.Encode.Value
+-- jsonEncodeNewUsersList luserInfo =
+--     let
+--         encodeNewUserObj : SR.Types.User -> Json.Encode.Value
+--         encodeNewUserObj userInfo =
+--             case userInfo.m_ethaddress of
+--                 Nothing ->
+--                     Json.Encode.object
+--                         [ ( "datestamp", Json.Encode.int 1569839363942 )
+--                         , ( "active", Json.Encode.bool True )
+--                         , ( "username", Json.Encode.string userInfo.username )
+--                         , ( "m_ethaddress", Json.Encode.string "")
+--                         , ( "description", Json.Encode.string userInfo.description )
+--                         , ( "email", Json.Encode.string userInfo.email )
+--                         , ( "mobile", Json.Encode.string userInfo.mobile )
+--                         , ( "userjoinrankings", Json.Encode.list encodeRankingIdList userInfo.userjoinrankings )
+--                         ]
+--                 Just addr ->
+--                     Json.Encode.object
+--                         [ ( "datestamp", Json.Encode.int 1569839363942 )
+--                         , ( "active", Json.Encode.bool True )
+--                         , ( "username", Json.Encode.string userInfo.username )
+--                         , ( "m_ethaddress", Json.Encode.string (String.toLower (Eth.Utils.addressToString addr)) )
+--                         , ( "description", Json.Encode.string userInfo.description )
+--                         , ( "email", Json.Encode.string userInfo.email )
+--                         , ( "mobile", Json.Encode.string userInfo.mobile )
+--                         , ( "userjoinrankings", Json.Encode.list encodeRankingIdList userInfo.userjoinrankings )
+--                         ]
 
-        encodeRankingIdList : String -> Json.Encode.Value
-        encodeRankingIdList rankingIdstr =
-            Json.Encode.string
-                rankingIdstr
+--         encodeRankingIdList : String -> Json.Encode.Value
+--         encodeRankingIdList rankingIdstr =
+--             Json.Encode.string
+--                 rankingIdstr
 
-        encodedList =
-            Json.Encode.list encodeNewUserObj luserInfo
-    in
-    encodedList
+--         encodedList =
+--             Json.Encode.list encodeNewUserObj luserInfo
+--     in
+--     encodedList
 
 
 httpAddCurrentUserToPlayerList : DataState -> SR.Types.User -> Cmd Msg
