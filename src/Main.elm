@@ -869,23 +869,23 @@ update msg model =
             ( handleNewUserInputs model (NewUserMobileInputChg updateField), Cmd.none )
 
 
-        (ExistingUserNameInputChg updateField, _) ->
-            ( handleExistingUserInputs model (ExistingUserNameInputChg updateField), Cmd.none )
+        (ExistingUserNameInputChg updateField, AppOps walletState dataState appInfo uiState subState txRec) ->
+            ( handleExistingUserInputs model (ExistingUserNameInputChg updateField) appInfo, Cmd.none )
 
-        (ExistingUserPasswordInputChg updateField, _) ->
-            ( handleExistingUserInputs model (ExistingUserPasswordInputChg updateField), Cmd.none )
-
-
-        (ExistingUserDescInputChg updateField, _) ->
-            ( handleExistingUserInputs model (ExistingUserDescInputChg updateField), Cmd.none )
+        (ExistingUserPasswordInputChg updateField, AppOps walletState dataState appInfo uiState subState txRec) ->
+            ( handleExistingUserInputs model (ExistingUserPasswordInputChg updateField) appInfo, Cmd.none )
 
 
-        (ExistingUserEmailInputChg updateField, _) ->
-            ( handleExistingUserInputs model (ExistingUserEmailInputChg updateField), Cmd.none )
+        (ExistingUserDescInputChg updateField, AppOps walletState dataState appInfo uiState subState txRec) ->
+            ( handleExistingUserInputs model (ExistingUserDescInputChg updateField) appInfo, Cmd.none )
 
 
-        (ExistingUserMobileInputChg updateField, _) ->
-            ( handleExistingUserInputs model (ExistingUserMobileInputChg updateField), Cmd.none )
+        (ExistingUserEmailInputChg updateField, AppOps walletState dataState appInfo uiState subState txRec) ->
+            ( handleExistingUserInputs model (ExistingUserEmailInputChg updateField) appInfo, Cmd.none )
+
+
+        (ExistingUserMobileInputChg updateField, AppOps walletState dataState appInfo uiState subState txRec) ->
+            ( handleExistingUserInputs model (ExistingUserMobileInputChg updateField) appInfo, Cmd.none )
 
 
         (ClickedConfirmedUpdateExistingUser, AppOps walletState dataState appInfo uiState subState txRec )  ->
@@ -2307,71 +2307,89 @@ handleNewUserInputs model msg =
             Failure "NewUserNameInputChg"
 
 
-handleExistingUserInputs : Model -> Msg -> Model
-handleExistingUserInputs model msg =
-    case model of
-        AppOps walletState dataState appInfo uiState subState txRec ->
-            case msg of
-                ExistingUserNameInputChg namefield ->
-                    model
+handleExistingUserInputs : Model -> Msg -> SR.Types.AppInfo -> Model
+handleExistingUserInputs model msg appInfoToUpdate =
+    case (model, msg, appInfoToUpdate.user) of
+        (AppOps walletState dataState appInfo uiState subState txRec, ExistingUserNameInputChg namefield, _ ) ->
+            model
+        (AppOps walletState dataState appInfo uiState subState txRec, ExistingUserPasswordInputChg passwordfield, _) ->
+            model
+        (AppOps walletState dataState appInfo uiState subState txRec, ExistingUserDescInputChg descfield, SR.Types.Guest) ->
+            model
+        (AppOps walletState dataState appInfo uiState subState txRec, ExistingUserDescInputChg descfield, SR.Types.Registered userId token userInfo) ->
+            AppOps walletState dataState (updateAppInfoUserDesc userId token appInfo descfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
-                -- todo: determine how to handle this:
-                ExistingUserPasswordInputChg passwordfield ->
-                    model
+        (AppOps walletState dataState appInfo uiState subState txRec, ExistingUserDescInputChg descfield, SR.Types.NoWallet userId token userInfo) ->
+                AppOps walletState dataState (updateAppInfoUserDesc userId token appInfo descfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
+                
+        (AppOps walletState dataState appInfo uiState subState txRec, ExistingUserDescInputChg descfield, SR.Types.NoCredit addr userId token userInfo) ->
+                AppOps walletState dataState (updateAppInfoUserDesc userId token appInfo descfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
-                ExistingUserDescInputChg descfield ->
-                    case appInfo.user of
-                        Nothing ->
-                            model
-                        Just userVal ->
-                            let
-                                newUser = userVal
+        (AppOps walletState dataState appInfo uiState subState txRec, ExistingUserDescInputChg descfield, SR.Types.Credited addr userId token userInfo) ->
+                AppOps walletState dataState (updateAppInfoUserDesc userId token appInfo descfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
-                                updatedNewUser =
-                                    { newUser | description = descfield }
+        (AppOps walletState dataState appInfo uiState subState txRec, ExistingUserEmailInputChg emailfield, SR.Types.Guest) ->
+            model
+        (AppOps walletState dataState appInfo uiState subState txRec, ExistingUserEmailInputChg emailfield, SR.Types.Registered userId token userInfo) ->
+            AppOps walletState dataState (updateAppInfoUserEmail userId token appInfo emailfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
-                                newAppInfo =
-                                    { appInfo | user = Just updatedNewUser }
-                            in
-                            AppOps walletState dataState newAppInfo SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
+        (AppOps walletState dataState appInfo uiState subState txRec, ExistingUserEmailInputChg emailfield, SR.Types.NoWallet userId token userInfo) ->
+                AppOps walletState dataState (updateAppInfoUserEmail userId token appInfo emailfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
+                
+        (AppOps walletState dataState appInfo uiState subState txRec, ExistingUserEmailInputChg emailfield, SR.Types.NoCredit addr userId token userInfo) ->
+                AppOps walletState dataState (updateAppInfoUserEmail userId token appInfo emailfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
-                ExistingUserEmailInputChg emailfield ->
-                    case appInfo.user of
-                        Nothing ->
-                            model
-                        Just userVal ->
-                            let
-                                newUser = userVal
+        (AppOps walletState dataState appInfo uiState subState txRec, ExistingUserEmailInputChg emailfield, SR.Types.Credited addr userId token userInfo) ->
+                AppOps walletState dataState (updateAppInfoUserEmail userId token appInfo emailfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
-                                updatedNewUser =
-                                    { newUser | email = emailfield }
+        
+        (AppOps walletState dataState appInfo uiState subState txRec, ExistingUserMobileInputChg mobilefield, SR.Types.Guest) ->
+            model
+        (AppOps walletState dataState appInfo uiState subState txRec, ExistingUserMobileInputChg mobilefield, SR.Types.Registered userId token userInfo) ->
+            AppOps walletState dataState (updateAppInfoUserMobile userId token appInfo mobilefield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
-                                newAppInfo =
-                                    { appInfo | user = Just updatedNewUser }
-                            in
-                            AppOps walletState dataState newAppInfo SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
+        (AppOps walletState dataState appInfo uiState subState txRec, ExistingUserMobileInputChg mobilefield, SR.Types.NoWallet userId token userInfo) ->
+                AppOps walletState dataState (updateAppInfoUserMobile userId token appInfo mobilefield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
+                
+        (AppOps walletState dataState appInfo uiState subState txRec, ExistingUserMobileInputChg mobilefield, SR.Types.NoCredit addr userId token userInfo) ->
+                AppOps walletState dataState (updateAppInfoUserMobile userId token appInfo mobilefield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
-                ExistingUserMobileInputChg mobilefield ->
-                    case appInfo.user of
-                        Nothing ->
-                            model
-                        Just userVal ->
-                            let
-                                newUser = userVal
-
-                                updatedNewUser =
-                                    { newUser | mobile = mobilefield }
-
-                                newAppInfo =
-                                    { appInfo | user = Just updatedNewUser }
-                            in
-                            AppOps walletState dataState newAppInfo SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
-
-                _ ->
-                    Failure "ExistingUserNameInputChg"
+        (AppOps walletState dataState appInfo uiState subState txRec, ExistingUserMobileInputChg mobilefield, SR.Types.Credited addr userId token userInfo) ->
+                AppOps walletState dataState (updateAppInfoUserMobile userId token appInfo mobilefield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
         _ ->
             Failure "ExistingUserNameInputChg"
+
+updateAppInfoUserDesc : SR.Types.UserId -> SR.Types.Token -> SR.Types.AppInfo -> String -> SR.Types.UserInfo -> SR.Types.AppInfo
+updateAppInfoUserDesc userId token appInfo descfield userInfo =
+    let
+        existingExtraUserInfo = userInfo.extrauserinfo
+        newExtraInfo = {existingExtraUserInfo | description = descfield}
+        newUserInfo = {userInfo | extrauserinfo = newExtraInfo}
+        newAppInfo = { appInfo | user = SR.Types.Registered userId token newUserInfo }
+    in
+    newAppInfo
+
+updateAppInfoUserEmail : SR.Types.UserId -> SR.Types.Token -> SR.Types.AppInfo -> String -> SR.Types.UserInfo -> SR.Types.AppInfo 
+updateAppInfoUserEmail userId token appInfo emailfield userInfo =
+    let
+        existingExtraUserInfo = userInfo.extrauserinfo
+        newExtraInfo = {existingExtraUserInfo | email = emailfield}
+        newUserInfo = {userInfo | extrauserinfo = newExtraInfo}
+        newAppInfo = { appInfo | user = SR.Types.Registered userId token newUserInfo }
+    in
+        newAppInfo
+
+
+updateAppInfoUserMobile : SR.Types.UserId -> SR.Types.Token -> SR.Types.AppInfo -> String -> SR.Types.UserInfo -> SR.Types.AppInfo 
+updateAppInfoUserMobile userId token appInfo mobilefield userInfo =
+    let
+        existingExtraUserInfo = userInfo.extrauserinfo
+        newExtraInfo = {existingExtraUserInfo | mobile = mobilefield}
+        newUserInfo = {userInfo | extrauserinfo = newExtraInfo}
+        newAppInfo = { appInfo | user = SR.Types.Registered userId token newUserInfo }
+    in
+        newAppInfo
 
 
 updatedForChallenge : Model -> List SR.Types.UserPlayer -> SR.Types.UserPlayer -> SR.Types.User -> Model
