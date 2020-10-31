@@ -2535,9 +2535,9 @@ view model =
 
 generalLoginView : SR.Types.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
 generalLoginView userVal sUsers sGlobal =
-    Framework.responsiveLayout [] <|
-        Element.column
-            Framework.container
+    case userVal of 
+        SR.Types.Guest ->
+            Framework.responsiveLayout [] <| Element.column Framework.container
             [ Element.el (Heading.h5) <|
                 Element.text ("SportRank - Welcome")
             , displayEnableEthereumBtn
@@ -2551,7 +2551,7 @@ generalLoginView userVal sUsers sGlobal =
                         Grid.simple
                         [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
                             { onChange = NewUserNameInputChg
-                            , text = userVal.username
+                            , text = ""
                             --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
@@ -2559,7 +2559,7 @@ generalLoginView userVal sUsers sGlobal =
                         --, nameValidView appInfo sUsers
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
                             { onChange = NewUserPasswordInputChg
-                            , text = userVal.password
+                            , text = ""
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
                             }
@@ -2574,54 +2574,113 @@ generalLoginView userVal sUsers sGlobal =
             , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Types.Guest)) SR.Types.Guest
             ]
 
-registerNewUserView : SR.Types.User -> Data.Users.Users -> Html Msg 
-registerNewUserView userVal sUsers = 
-    Framework.responsiveLayout [] <|
-        Element.column Grid.section <|
-            [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-            , Element.wrappedRow (Card.fill ++ Grid.simple)
-                [ Element.column
-                    Grid.simple
-                    [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                        { onChange = NewUserNameInputChg
-                        , text = userVal.username
-                        , placeholder = Nothing
-                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
-                        }
-                    , nameValidView userVal sUsers
-                    , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                        { onChange = NewUserPasswordInputChg
-                        , text = userVal.password
-                        , placeholder = Nothing
-                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                        }
-                    , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
-                        { onChange = NewUserDescInputChg
-                        , text = userVal.description
-                        , placeholder = Nothing
-                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
-                        }
-                    , userDescValidationErr userVal
-                    , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
-                        { onChange = NewUserEmailInputChg
-                        , text = userVal.email
-                        , placeholder = Nothing
-                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
-                        }
-                    , emailValidationErr userVal
-                    , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
-                        { onChange = NewUserMobileInputChg
-                        , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
-                        , placeholder = Nothing
-                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
-                        }
-                    , mobileValidationErr userVal
+        (SR.Types.Registered userId token userInfo) ->
+            Framework.responsiveLayout [] <| Element.column Framework.container
+            [ Element.el (Heading.h5) <|
+                Element.text ("SportRank - Welcome")
+            , displayEnableEthereumBtn
+            , Element.text ("\n")
+            --, Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
+            , Element.column Grid.section <|
+                [ Element.el [] <| Element.text ""
+                --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                    [ Element.column
+                        Grid.simple
+                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                            { onChange = NewUserNameInputChg
+                            , text = userInfo.username
+                            --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
+                            }
+                        --, nameValidView appInfo sUsers
+                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                            { onChange = NewUserPasswordInputChg
+                            , text = userInfo.password
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                            }
+                        ]
                     ]
                 ]
-            , Element.text "* required"
-            , SR.Elements.justParasimpleUserInfoText
-            , newuserConfirmPanel (Just userVal) (Data.Users.asList sUsers)
+            , infoBtn "Log In" ClickedLogInUser
+            , Element.text ("\n")
+            , displayRegisterBtnIfNewUser
+                ""
+                ClickedRegister
+            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (SR.Types.Registered userId token userInfo))) (SR.Types.Registered userId token userInfo) 
             ]
+
+        (SR.Types.NoWallet userId token userInfo) ->
+            Html.text "Irrelevant view"
+        (SR.Types.NoCredit addr userId token userInfo) ->
+            Html.text "Irrelevant view"
+        (SR.Types.Credited addr userId token userInfo) ->
+            Html.text "Irrelevant view"
+    
+
+registerNewUserView : SR.Types.User -> Data.Users.Users -> Html Msg 
+registerNewUserView userVal sUsers = 
+    case userVal of
+        SR.Types.Guest ->
+            Html.text "Should have switched to Registered"
+        (SR.Types.Registered userId token userInfo) ->
+            Framework.responsiveLayout [] <|
+            Element.column Grid.section <|
+                [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                    [ Element.column
+                        Grid.simple
+                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                            { onChange = NewUserNameInputChg
+                            , text = userInfo.username
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+                            }
+                        , nameValidView userVal sUsers
+                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                            { onChange = NewUserPasswordInputChg
+                            , text = userInfo.password
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                            }
+                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+                            { onChange = NewUserDescInputChg
+                            , text = userInfo.extrauserinfo.description
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+                            }
+                        , userDescValidationErr userVal
+                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+                            { onChange = NewUserEmailInputChg
+                            , text = userInfo.extrauserinfo.email
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+                            }
+                        , emailValidationErr userInfo.extrauserinfo.email
+                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+                            { onChange = NewUserMobileInputChg
+                            , text = Utils.Validation.Validate.validatedMaxTextLength userInfo.extrauserinfo.mobile 25
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+                            }
+                        , mobileValidationErr userVal
+                        ]
+                    ]
+                , Element.text "* required"
+                , SR.Elements.justParasimpleUserInfoText
+                , newuserConfirmPanel userVal (Data.Users.asList sUsers)
+                ]
+
+        (SR.Types.NoWallet userId token userInfo) ->
+            Html.text "Irrelevant view"
+        (SR.Types.NoCredit addr userId token userInfo) ->
+            Html.text "Irrelevant view"
+        (SR.Types.Credited addr userId token userInfo) ->
+            Html.text "Irrelevant view"
+
+    
 
 gotUserView : SR.Types.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
 gotUserView userVal sUsers sGlobal =
@@ -3500,9 +3559,9 @@ isEmailValidated str =
         False
 
 
-emailValidationErr : SR.Types.User -> Element Msg
-emailValidationErr user =
-    if isEmailValidated user then
+emailValidationErr : String -> Element Msg
+emailValidationErr str =
+    if isEmailValidated str then
         Element.el
             (List.append
                 [ Font.color SR.Types.colors.green, Font.alignLeft ]
@@ -3510,7 +3569,7 @@ emailValidationErr user =
             )
             (Element.text "Email OK!")
 
-    else if String.length user.email > 0 then
+    else if String.length str > 0 then
         Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.moveLeft 7.0 ])
             (Element.text """ Email, if
  entered, must be valid""")
@@ -3681,60 +3740,60 @@ enableButton enable =
         Color.disabled
 
 
-inputUpdateExistingUser : Model -> Element Msg
-inputUpdateExistingUser model =
-    case model of
-        AppOps walletState dataState appInfo uiState subState txRec ->
-            case appInfo.user of
-                Nothing ->
-                    Element.text "No User9"
-                Just userVal ->
-                    Element.column Grid.section <|
-                        [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-                        , Element.wrappedRow (Card.fill ++ Grid.simple)
-                            [ Element.column
-                                Grid.simple
-                                [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ Color.disabled)
-                                    { onChange = ExistingUserNameInputChg
-                                    , text = userVal.username
-                                    , placeholder = Just <| Input.placeholder [] <| Element.text "yah placeholder"
-                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
-                                    }
-                                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userPassword") ])
-                                    { onChange = ExistingUserPasswordInputChg
-                                    , text = userVal.password
-                                    , placeholder = Nothing
-                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                                    }
-                                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
-                                    { onChange = ExistingUserDescInputChg
-                                    , text = userVal.description
-                                    , placeholder = Nothing
-                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
-                                    }
-                                , userDescValidationErr userVal
-                                , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
-                                    { onChange = ExistingUserEmailInputChg
-                                    , text = userVal.email
-                                    , placeholder = Nothing
-                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
-                                    }
-                                , emailValidationErr userVal
-                                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
-                                    { onChange = ExistingUserMobileInputChg
-                                    , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
-                                    , placeholder = Nothing
-                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
-                                    }
-                                , mobileValidationErr userVal
-                                ]
-                            ]
+-- inputUpdateExistingUser : Model -> Element Msg
+-- inputUpdateExistingUser model =
+--     case model of
+--         AppOps walletState dataState appInfo uiState subState txRec ->
+--             case appInfo.user of
+--                 Nothing ->
+--                     Element.text "No User9"
+--                 Just userVal ->
+--                     Element.column Grid.section <|
+--                         [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+--                         , Element.wrappedRow (Card.fill ++ Grid.simple)
+--                             [ Element.column
+--                                 Grid.simple
+--                                 [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ Color.disabled)
+--                                     { onChange = ExistingUserNameInputChg
+--                                     , text = userVal.username
+--                                     , placeholder = Just <| Input.placeholder [] <| Element.text "yah placeholder"
+--                                     , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
+--                                     }
+--                                 , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userPassword") ])
+--                                     { onChange = ExistingUserPasswordInputChg
+--                                     , text = userVal.password
+--                                     , placeholder = Nothing
+--                                     , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+--                                     }
+--                                 , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+--                                     { onChange = ExistingUserDescInputChg
+--                                     , text = userVal.description
+--                                     , placeholder = Nothing
+--                                     , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+--                                     }
+--                                 , userDescValidationErr userVal
+--                                 , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+--                                     { onChange = ExistingUserEmailInputChg
+--                                     , text = userVal.email
+--                                     , placeholder = Nothing
+--                                     , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+--                                     }
+--                                 , userInfo.extrauserinfo.email
+--                                 , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+--                                     { onChange = ExistingUserMobileInputChg
+--                                     , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
+--                                     , placeholder = Nothing
+--                                     , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+--                                     }
+--                                 , mobileValidationErr userVal
+--                                 ]
+--                             ]
 
-                        --, Element.text "* required"
-                        ]
+--                         --, Element.text "* required"
+--                         ]
 
-        _ ->
-            Element.text "Fail on inputNewUser"
+--         _ ->
+--             Element.text "Fail on inputNewUser"
 
 
 nameValidView : SR.Types.User -> Data.Users.Users -> Element Msg
@@ -3845,19 +3904,17 @@ inputNewLadder appInfo dataState =
 
 handleGlobalNoTokenView : DataState -> SR.Types.User -> Html Msg
 handleGlobalNoTokenView dataState userVal =
-    case dataState of
-        AllEmpty -> 
+    case (dataState, userVal) of
+        (AllEmpty, _) -> 
             Html.text ("No Data")
-        StateUpdated _ _ _ ->
+        (StateUpdated _ _ _, _) ->
             Html.text ("No User - No Update")
-        StateFetched sUsers sRankings dKind ->
+        (StateFetched sUsers sRankings dKind, SR.Types.Guest) ->
             case dKind of
                 Selected _ ->
                     Html.text ("Nothing should have been selected yet")
                 Global sGlobal -> 
-                    Framework.responsiveLayout
-                    []
-                    <|
+                    Framework.responsiveLayout [] <|
                     Element.column
                         Framework.container
                         [ Element.el (Heading.h5) <|
@@ -3871,7 +3928,7 @@ handleGlobalNoTokenView dataState userVal =
                                     Grid.simple
                                     [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
                                         { onChange = NewUserNameInputChg
-                                        , text = userVal.username
+                                        , text = ""
                                         --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
                                         , placeholder = Nothing
                                         , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
@@ -3879,7 +3936,7 @@ handleGlobalNoTokenView dataState userVal =
                                     --, nameValidView appInfo sUsers
                                     , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
                                         { onChange = NewUserPasswordInputChg
-                                        , text = userVal.password
+                                        , text = ""
                                         , placeholder = Nothing
                                         , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
                                         }
@@ -3894,7 +3951,51 @@ handleGlobalNoTokenView dataState userVal =
                         , Element.text ("\n")
                         , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Types.Guest)) SR.Types.Guest
                         ]
-                
+
+        (StateFetched sUsers sRankings dKind, SR.Types.Registered userId token userInfo) ->
+            case dKind of
+                Selected _ ->
+                    Html.text ("Nothing should have been selected yet")
+                Global sGlobal -> 
+                    Framework.responsiveLayout [] <|
+                    Element.column
+                        Framework.container
+                        [ Element.el (Heading.h5) <|
+                            Element.text ("SportRank - Welcome")
+                        , displayEnableEthereumBtn
+                        , Element.column Grid.section <|
+                            [ Element.el [] <| Element.text ""
+                            --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                            , Element.wrappedRow (Card.fill ++ Grid.simple)
+                                [ Element.column
+                                    Grid.simple
+                                    [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                                        { onChange = NewUserNameInputChg
+                                        , text = userInfo.username
+                                        --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
+                                        , placeholder = Nothing
+                                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
+                                        }
+                                    --, nameValidView appInfo sUsers
+                                    , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                                        { onChange = NewUserPasswordInputChg
+                                        , text = userInfo.password
+                                        , placeholder = Nothing
+                                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                                        }
+                                    ]
+                                ]
+                            ]
+                        , infoBtn "Log In" ClickedLogInUser
+                        , Element.text ("\n")
+                                , displayRegisterBtnIfNewUser
+                                    ""
+                                    ClickedRegister
+                        , Element.text ("\n")
+                        , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (SR.Types.Registered userId token userInfo))) (SR.Types.Registered userId token userInfo)
+                        ]
+        (_, _) ->
+            Html.text ("Already have a token")
 
 
 displayUpdateProfileBtnIfExistingUser : String -> Element Msg
@@ -4206,51 +4307,65 @@ inputUserDetailsView dataState appInfo =
                 
 displayRegisterNewUser :  SR.Types.User -> Data.Users.Users -> Element Msg 
 displayRegisterNewUser userVal sUsers =
-    Element.column Grid.section <|
-        [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-        , Element.wrappedRow (Card.fill ++ Grid.simple)
-            [ Element.column
-                Grid.simple
-                [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                    { onChange = NewUserNameInputChg
-                    , text = userVal.username
-                    , placeholder = Nothing
-                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
-                    }
-                , nameValidView userVal sUsers
-                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                    { onChange = NewUserPasswordInputChg
-                    , text = userVal.password
-                    , placeholder = Nothing
-                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                    }
-                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
-                    { onChange = NewUserDescInputChg
-                    , text = userVal.description
-                    , placeholder = Nothing
-                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
-                    }
-                , userDescValidationErr userVal
-                , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
-                    { onChange = NewUserEmailInputChg
-                    , text = userVal.email
-                    , placeholder = Nothing
-                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
-                    }
-                , emailValidationErr userVal
-                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
-                    { onChange = NewUserMobileInputChg
-                    , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
-                    , placeholder = Nothing
-                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
-                    }
-                , mobileValidationErr userVal
+    case userVal of
+        SR.Types.Guest ->
+            Element.text "Should have switched to a Registered user already"
+        
+        (SR.Types.Registered userId token userInfo) ->
+            Element.column Grid.section <|
+            [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+            , Element.wrappedRow (Card.fill ++ Grid.simple)
+                [ Element.column
+                    Grid.simple
+                    [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                        { onChange = NewUserNameInputChg
+                        , text = userInfo.username
+                        , placeholder = Nothing
+                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+                        }
+                    , nameValidView userVal sUsers
+                    , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                        { onChange = NewUserPasswordInputChg
+                        , text = userInfo.password
+                        , placeholder = Nothing
+                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                        }
+                    , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+                        { onChange = NewUserDescInputChg
+                        , text = userInfo.extrauserinfo.description
+                        , placeholder = Nothing
+                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+                        }
+                    , userDescValidationErr userVal
+                    , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+                        { onChange = NewUserEmailInputChg
+                        , text = userInfo.extrauserinfo.email
+                        , placeholder = Nothing
+                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+                        }
+                    , emailValidationErr userInfo.extrauserinfo.email
+                    , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+                        { onChange = NewUserMobileInputChg
+                        , text = Utils.Validation.Validate.validatedMaxTextLength userInfo.extrauserinfo.mobile 25
+                        , placeholder = Nothing
+                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+                        }
+                    , mobileValidationErr userVal
+                    ]
                 ]
+            , Element.text "* required"
+            , SR.Elements.justParasimpleUserInfoText
+            , newuserConfirmPanel (userVal) (Data.Users.asList sUsers)
             ]
-        , Element.text "* required"
-        , SR.Elements.justParasimpleUserInfoText
-        , newuserConfirmPanel (Just userVal) (Data.Users.asList sUsers)
-        ]
+
+        (SR.Types.NoWallet userId token userInfo) ->
+            Element.text "Should be a Registered user"
+        (SR.Types.NoCredit addr userId token userInfo) ->
+            Element.text "Should be a Registered user"
+        (SR.Types.Credited addr userId token userInfo) ->
+            Element.text "Should be a Registered user"
+    
+    
                 
 
     -- case dataState of 
