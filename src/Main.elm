@@ -2692,8 +2692,8 @@ failureView str =
 
 displayForToken : SR.Types.User -> Data.Global.Global -> Element Msg 
 displayForToken userVal sGlobal = 
-    case userVal.m_token of 
-        Nothing ->
+    case userVal of
+        SR.Types.Guest ->
             Element.column Grid.section <|
                 [ Element.el [] <| Element.text ""
                 --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
@@ -2702,7 +2702,7 @@ displayForToken userVal sGlobal =
                         Grid.simple
                         [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
                             { onChange = NewUserNameInputChg
-                            , text = userVal.username
+                            , text = ""
                             --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
@@ -2710,7 +2710,7 @@ displayForToken userVal sGlobal =
                         --, nameValidView appInfo sUsers
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
                             { onChange = NewUserPasswordInputChg
-                            , text = userVal.password
+                            , text = ""
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
                             }
@@ -2722,14 +2722,32 @@ displayForToken userVal sGlobal =
                     ""
                     ClickedRegister
                 ]
-                                
-
-        Just tokenVal ->
+            
+        (SR.Types.Registered userId token userInfo) ->
             Element.column Grid.section <|
                 [Element.text ("\n")
                 , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
                 , memberrankingbuttons (Data.Global.gotMember sGlobal userVal) userVal
                 ]
+        (SR.Types.NoWallet userId token userInfo) ->
+            Element.column Grid.section <|
+                [Element.text ("\n")
+                , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
+                , memberrankingbuttons (Data.Global.gotMember sGlobal userVal) userVal
+                ]
+        (SR.Types.NoCredit addr userId token userInfo) ->
+            Element.column Grid.section <|
+                [Element.text ("\n")
+                , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
+                , memberrankingbuttons (Data.Global.gotMember sGlobal userVal) userVal
+                ]
+        (SR.Types.Credited addr userId token userInfo) ->
+            Element.column Grid.section <|
+                [Element.text ("\n")
+                , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
+                , memberrankingbuttons (Data.Global.gotMember sGlobal userVal) userVal
+                ]
+  
 
 greetingHeading : String -> Element Msg
 greetingHeading greetingStr =
@@ -2744,23 +2762,45 @@ greetingHeading greetingStr =
 
 ownedrankingbuttons : List SR.Types.UserRanking -> SR.Types.User -> Element Msg
 ownedrankingbuttons urankingList user =
-    let
-        newRankingList =
-            Data.Rankings.extractRankingList urankingList
-    in
-    if user.username == "" then
-        Element.text ""
-
-    else
-        Element.column Grid.section <|
+    case user of 
+        SR.Types.Guest ->
+            Element.text ""
+        (SR.Types.Registered userId token userInfo) ->
+            Element.column Grid.section <|
             [ if List.isEmpty urankingList then
                 -- the button will be in the "Your Created Rankings" section instead
                 Element.el [] <| Element.text ""
-
               else
                 Element.el Heading.h5 <| Element.text "Your Created Rankings:"
-            , Element.column (Card.simple ++ Grid.simple) <|
-                determineOwnedRankingButtonsDisplay newRankingList user
+                , Element.column (Card.simple ++ Grid.simple) <|
+                determineOwnedRankingButtonsDisplay (Data.Rankings.extractRankingList urankingList) user
+            ]
+        (SR.Types.NoWallet userId token userInfo) ->
+            Element.column Grid.section <|
+            [ if List.isEmpty urankingList then
+                Element.el [] <| Element.text ""
+              else
+                Element.el Heading.h5 <| Element.text "Your Created Rankings:"
+                , Element.column (Card.simple ++ Grid.simple) <|
+                determineOwnedRankingButtonsDisplay (Data.Rankings.extractRankingList urankingList) user
+            ]
+        (SR.Types.NoCredit addr userId token userInfo) ->
+            Element.column Grid.section <|
+            [ if List.isEmpty urankingList then
+                Element.el [] <| Element.text ""
+              else
+                Element.el Heading.h5 <| Element.text "Your Created Rankings:"
+                , Element.column (Card.simple ++ Grid.simple) <|
+                determineOwnedRankingButtonsDisplay (Data.Rankings.extractRankingList urankingList) user
+            ]
+        (SR.Types.Credited addr userId token userInfo) ->
+            Element.column Grid.section <|
+            [ if List.isEmpty urankingList then
+                Element.el [] <| Element.text ""
+              else
+                Element.el Heading.h5 <| Element.text "Your Created Rankings:"
+                , Element.column (Card.simple ++ Grid.simple) <|
+                determineOwnedRankingButtonsDisplay (Data.Rankings.extractRankingList urankingList) user
             ]
 
 
