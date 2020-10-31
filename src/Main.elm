@@ -161,7 +161,7 @@ type Msg
     | ClickedChallengeOpponent SR.Types.UserPlayer
     | ClickedJoinSelected
     | ClickedChangedUIStateToEnterResult SR.Types.UserPlayer
-    | ClickedDeleteRanking (Maybe Eth.Types.Address)
+    | ClickedDeleteRanking
     | ClickedDeleteRankingConfirmed
     | ClickedRemoveFromUserMemberRankings
     | ClickedEnableEthereum
@@ -940,7 +940,7 @@ update msg model =
                     (model, Cmd.none)
 
 
-        (ClickedDeleteRanking uaddr, AppOps walletState dataState appInfo uiState subState txRec )  ->
+        (ClickedDeleteRanking, AppOps walletState dataState appInfo uiState subState txRec )  ->
             case dataState of 
                 StateFetched sUsers sRankings dKind ->
                     case dKind of 
@@ -3175,6 +3175,14 @@ configureThenAddPlayerRankingBtns sSelected sUsers appInfo uplayer =
                 Element.text "No User4"
             (SR.Types.Credited addr userId token userInfo, _) ->
                 Element.text "No User5"
+            ( SR.Types.Registered _ _ _, SR.Types.Guest ) ->
+                Element.text "No challenger"
+            ( SR.Types.Registered _ _ _, SR.Types.NoWallet _ _ _ )->
+                Element.text "No challenger"
+            ( SR.Types.Registered _ _ _, SR.Types.NoCredit _ _ _ _ )->
+                Element.text "No challenger"
+            ( SR.Types.Registered _ _ _, SR.Types.Credited _ _ _ _ )->
+                Element.text "No challenger"
           
 
 insertPlayerList : DataState -> SR.Types.AppInfo -> List (Element Msg)
@@ -3201,10 +3209,10 @@ insertPlayerList dataState appInfo =
 
 selecteduserIsOwnerhomebutton : SR.Types.User -> Element Msg
 selecteduserIsOwnerhomebutton user =
-    case user of
-        SR.Types.Guest ->
-            Element.text "Error"
-        (SR.Types.Registered userId token userInfo) ->
+    -- case user of
+    --     SR.Types.Guest ->
+    --         Element.text "Error"
+    --     (SR.Types.Registered userId token userInfo) ->
             Element.column Grid.section <|
                 [ Element.el Heading.h6 <| Element.text "Click to continue ..."
                 , Element.column (Card.simple ++ Grid.simple) <|
@@ -3214,60 +3222,60 @@ selecteduserIsOwnerhomebutton user =
                             , label = Element.text "Home"
                             }
                         , Input.button (Button.simple ++ Color.danger) <|
-                            { onPress = Just <| ClickedDeleteRanking userId
+                            { onPress = Just <| ClickedDeleteRanking
                             , label = Element.text "Delete"
                             }
                         ]
                     ]
                 ]
-        (SR.Types.NoWallet userId token userInfo) ->
-             Element.column Grid.section <|
-                [ Element.el Heading.h6 <| Element.text "Click to continue ..."
-                , Element.column (Card.simple ++ Grid.simple) <|
-                    [ Element.wrappedRow Grid.simple <|
-                        [ Input.button (Button.simple ++ Color.simple) <|
-                            { onPress = Just <| Cancel
-                            , label = Element.text "Home"
-                            }
-                        , Input.button (Button.simple ++ Color.danger) <|
-                            { onPress = Just <| ClickedDeleteRanking userId
-                            , label = Element.text "Delete"
-                            }
-                        ]
-                    ]
-                ]
-        (SR.Types.NoCredit addr userId token userInfo) ->
-            Element.column Grid.section <|
-                [ Element.el Heading.h6 <| Element.text "Click to continue ..."
-                , Element.column (Card.simple ++ Grid.simple) <|
-                    [ Element.wrappedRow Grid.simple <|
-                        [ Input.button (Button.simple ++ Color.simple) <|
-                            { onPress = Just <| Cancel
-                            , label = Element.text "Home"
-                            }
-                        , Input.button (Button.simple ++ Color.danger) <|
-                            { onPress = Just <| ClickedDeleteRanking userId
-                            , label = Element.text "Delete"
-                            }
-                        ]
-                    ]
-                ]
-        (SR.Types.Credited addr userId token userInfo) ->
-            Element.column Grid.section <|
-                [ Element.el Heading.h6 <| Element.text "Click to continue ..."
-                , Element.column (Card.simple ++ Grid.simple) <|
-                    [ Element.wrappedRow Grid.simple <|
-                        [ Input.button (Button.simple ++ Color.simple) <|
-                            { onPress = Just <| Cancel
-                            , label = Element.text "Home"
-                            }
-                        , Input.button (Button.simple ++ Color.danger) <|
-                            { onPress = Just <| ClickedDeleteRanking userId
-                            , label = Element.text "Delete"
-                            }
-                        ]
-                    ]
-                ]
+        -- (SR.Types.NoWallet userId token userInfo) ->
+        --      Element.column Grid.section <|
+        --         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+        --         , Element.column (Card.simple ++ Grid.simple) <|
+        --             [ Element.wrappedRow Grid.simple <|
+        --                 [ Input.button (Button.simple ++ Color.simple) <|
+        --                     { onPress = Just <| Cancel
+        --                     , label = Element.text "Home"
+        --                     }
+        --                 , Input.button (Button.simple ++ Color.danger) <|
+        --                     { onPress = Just <| ClickedDeleteRanking userId
+        --                     , label = Element.text "Delete"
+        --                     }
+        --                 ]
+        --             ]
+        --         ]
+        -- (SR.Types.NoCredit addr userId token userInfo) ->
+        --     Element.column Grid.section <|
+        --         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+        --         , Element.column (Card.simple ++ Grid.simple) <|
+        --             [ Element.wrappedRow Grid.simple <|
+        --                 [ Input.button (Button.simple ++ Color.simple) <|
+        --                     { onPress = Just <| Cancel
+        --                     , label = Element.text "Home"
+        --                     }
+        --                 , Input.button (Button.simple ++ Color.danger) <|
+        --                     { onPress = Just <| ClickedDeleteRanking userId
+        --                     , label = Element.text "Delete"
+        --                     }
+        --                 ]
+        --             ]
+        --         ]
+        -- (SR.Types.Credited addr userId token userInfo) ->
+        --     Element.column Grid.section <|
+        --         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+        --         , Element.column (Card.simple ++ Grid.simple) <|
+        --             [ Element.wrappedRow Grid.simple <|
+        --                 [ Input.button (Button.simple ++ Color.simple) <|
+        --                     { onPress = Just <| Cancel
+        --                     , label = Element.text "Home"
+        --                     }
+        --                 , Input.button (Button.simple ++ Color.danger) <|
+        --                     { onPress = Just <| ClickedDeleteRanking userId
+        --                     , label = Element.text "Delete"
+        --                     }
+        --                 ]
+        --             ]
+        --         ]
         --, SR.Elements.simpleUserInfoText
         
 
@@ -3493,6 +3501,14 @@ confirmChallengebutton model =
                     Element.text <| " No User3"
                 (SR.Types.Credited addr userId token userInfo, _) ->
                     Element.text <| " No User3"
+                ( SR.Types.Registered _ _ _, SR.Types.Guest ) ->
+                    Element.text "No challenger"
+                ( SR.Types.Registered _ _ _, SR.Types.NoWallet _ _ _ )->
+                    Element.text "No challenger"
+                ( SR.Types.Registered _ _ _, SR.Types.NoCredit _ _ _ _ )->
+                    Element.text "No challenger"
+                ( SR.Types.Registered _ _ _, SR.Types.Credited _ _ _ _ )->
+                    Element.text "No challenger"
                     
         _ ->
             Element.text "Fail confirmChallengebutton"
@@ -3564,6 +3580,14 @@ confirmResultbutton model =
                                             (SR.Types.NoCredit addr userId token userInfo, _) ->
                                                 Element.text "No challenger"
                                             (SR.Types.Credited addr userId token userInfo, _) ->
+                                                Element.text "No challenger"
+                                            ( SR.Types.Registered _ _ _, SR.Types.Guest ) ->
+                                                Element.text "No challenger"
+                                            ( SR.Types.Registered _ _ _, SR.Types.NoWallet _ _ _ )->
+                                                Element.text "No challenger"
+                                            ( SR.Types.Registered _ _ _, SR.Types.NoCredit _ _ _ _ )->
+                                                Element.text "No challenger"
+                                            ( SR.Types.Registered _ _ _, SR.Types.Credited _ _ _ _ )->
                                                 Element.text "No challenger"
                                             
                         _ ->
@@ -4341,7 +4365,7 @@ newOrExistingUserNameDisplay user =
         SR.Types.Guest ->
             Element.el Heading.h4 <| Element.text <| "New User - Please Register and Enable Ethereum to join"
         (SR.Types.Registered userId token userInfo) ->
-            SR.Types.Registered userId token userInfo
+            Element.el Heading.h4 <| Element.text <| "Please Register and Enable Ethereum to join"
         (SR.Types.NoWallet userId token userInfo) ->
             Element.el Heading.h4 <| Element.text <| "Please Register and Enable Ethereum to join"
         (SR.Types.NoCredit addr userId token userInfo) ->
