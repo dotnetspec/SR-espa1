@@ -2032,16 +2032,19 @@ updateFromRegisteredNewUser model response =
     case (response, model) of
         (Ok token, AppOps walletState dataState appInfo uiState subState  txRec) ->
             case appInfo.user of
-                Just user ->
+                SR.Types.Guest ->
+                    model
+                (SR.Types.Registered userId _ userInfo) ->
                     let
-                        updated_user =
-                            { user | m_token = Just token }
-
-                        newAppInfo = { appInfo | user = Just updated_user }
+                        updated_user = SR.Types.Registered userId token userInfo         
+                        newAppInfo = { appInfo | user = updated_user }
                     in
-                    AppOps walletState dataState newAppInfo uiState subState txRec
-
-                Nothing ->
+                        AppOps walletState dataState newAppInfo uiState subState txRec
+                (SR.Types.NoWallet userId _ userInfo) ->
+                    model
+                (SR.Types.NoCredit addr userId _ userInfo) ->
+                    model
+                (SR.Types.Credited addr userId _ userInfo) ->
                     model
 
         ( Ok _, Failure _ ) ->
