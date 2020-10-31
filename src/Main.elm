@@ -3533,11 +3533,11 @@ mobileValidationErr user =
         Element.el [] <| Element.text ""
 
 
-newuserConfirmPanel : Maybe SR.Types.User -> List SR.Types.User -> Element Msg
+newuserConfirmPanel : SR.Types.User -> List SR.Types.User -> Element Msg
 newuserConfirmPanel  user luser =
         case user of
-            Nothing ->
-                if List.isEmpty luser then
+        SR.Types.Guest ->
+            if List.isEmpty luser then
                     Element.column Grid.section <|
                     [ SR.Elements.missingDataPara
                     , Element.el Heading.h6 <| Element.text "Click to continue ..."
@@ -3564,8 +3564,8 @@ newuserConfirmPanel  user luser =
                             ]
                         ]
 
-            Just userVal ->
-                if List.isEmpty luser then
+        (SR.Types.Registered userId token userInfo) ->
+            if List.isEmpty luser then
                     Element.column Grid.section <|
                         [ SR.Elements.missingDataPara
                         , Element.el Heading.h6 <| Element.text "Click to continue ..."
@@ -3588,14 +3588,20 @@ newuserConfirmPanel  user luser =
                                 { onPress = Just <| Cancel
                                 , label = Element.text "Cancel"
                                 }
-                            , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput userVal luser False)) <|
+                            , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput (SR.Types.Registered userId token userInfo)  luser False)) <|
                                 { onPress = Just <| ClickedConfirmedRegisterNewUser
                                 , label = Element.text "Register"
                                 }
                             ]
                         ]
                     ]
-
+        
+        (SR.Types.NoWallet userId token userInfo) ->
+            Element.text "newuserConfirmPanel Err"
+        (SR.Types.NoCredit addr userId token userInfo) ->
+            Element.text "newuserConfirmPanel Err"
+        (SR.Types.Credited addr userId token userInfo) ->
+            Element.text "newuserConfirmPanel Err"
 
 
 
@@ -3733,15 +3739,16 @@ inputUpdateExistingUser model =
 
 nameValidView : SR.Types.User -> Data.Users.Users -> Element Msg
 nameValidView userVal sUsers =
-
-        if userVal.username == "" then
+    case userVal of 
+        SR.Types.Guest ->
             Element.el
-                    (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
-                        ++ [ Element.moveLeft 0.0 ]
-                    )
-                    (Element.text """Must be unique (4-8 continuous chars)""")
-        else
-            if Data.Users.isNameValid userVal.username sUsers then 
+                (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
+                    ++ [ Element.moveLeft 0.0 ]
+                )
+                (Element.text """Must be unique (4-8 continuous chars)""")
+        
+        (SR.Types.Registered userId token userInfo) ->
+            if Data.Users.isNameValid userInfo.username sUsers then 
                 Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
 
             else
@@ -3750,6 +3757,13 @@ nameValidView userVal sUsers =
                         ++ [ Element.moveLeft 0.0 ]
                     )
                     (Element.text """Must be unique (4-8 continuous chars)""")
+
+        (SR.Types.NoWallet userId token userInfo) ->
+            (Element.text """Validation View Error""")
+        (SR.Types.NoCredit addr userId token userInfo) ->
+            (Element.text """Validation View Error""")
+        (SR.Types.Credited addr userId token userInfo) ->
+            (Element.text """Validation View Error""")
 
 
 ladderNameValidationErr : SR.Types.AppInfo -> DataState -> Element Msg
@@ -4131,8 +4145,8 @@ newOrExistingUserNameDisplay user =
 inputUserDetailsView : DataState -> SR.Types.AppInfo -> Html Msg
 inputUserDetailsView dataState appInfo =
     case appInfo.user of
-        Nothing ->
-            case dataState of
+    SR.Types.Guest ->
+        case dataState of
                 StateFetched sUsers sRankings dKind ->
                     let 
                         userVal = SR.Types.Guest
@@ -4158,8 +4172,8 @@ inputUserDetailsView dataState appInfo =
                 _ ->
                     Html.text "tbc"
 
-        Just userVal ->
-            case dataState of
+    (SR.Types.Registered userId token userInfo) ->
+        case dataState of
                 StateFetched sUsers sRankings dKind ->
                     if Data.Users.isEmpty sUsers then
                         Framework.responsiveLayout [] <|
@@ -4176,11 +4190,18 @@ inputUserDetailsView dataState appInfo =
                                 [ displayEnableEthereumBtn
                                 , Element.text "\n"
                                 , Element.el Heading.h4 <| Element.text "Create New User"
-                                , displayRegisterNewUser userVal sUsers
+                                , displayRegisterNewUser (SR.Types.Registered userId token userInfo) sUsers
                                 , newuserConfirmPanel appInfo.user (Data.Users.asList sUsers)
                                 ]
                 _ ->
                     Html.text "tbc"
+    
+    (SR.Types.NoWallet userId token userInfo) ->
+        Html.text "tbc"
+    (SR.Types.NoCredit addr userId token userInfo) ->
+        Html.text "tbc"
+    (SR.Types.Credited addr userId token userInfo) ->
+        Html.text "tbc"
 
                 
 displayRegisterNewUser :  SR.Types.User -> Data.Users.Users -> Element Msg 
