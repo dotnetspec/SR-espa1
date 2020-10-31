@@ -3278,7 +3278,12 @@ confirmResultbutton model =
                                         Nothing ->
                                             Element.text "No challenger"
                                         Just challengerAsUser ->
-                                            Element.column Grid.section <|
+                                            -- challenger should always be registered
+                                            case (playerAsUser, challengerAsUser) of
+                                            (SR.Types.Guest, _) ->
+                                                Element.text "No challenger"
+                                            (SR.Types.Registered _ _ playerUserInfo, SR.Types.Registered userId token challengerUserInfo) ->
+                                                Element.column Grid.section <|
                                                 [ Element.column (Card.simple ++ Grid.simple) <|
                                                     [ Element.wrappedRow Grid.simple <|
                                                         [ Input.button (Button.simple ++ Color.simple) <|
@@ -3288,7 +3293,8 @@ confirmResultbutton model =
                                                         ]
                                                     ]
                                                 , Element.paragraph (Card.fill ++ Color.info) <|
-                                                    [ Element.el [] <| Element.text <| playerAsUser.username ++ " you had a challenge match vs " ++ challengerAsUser.username
+                                                    [ Element.el [] <| Element.text <| playerUserInfo.username 
+                                                        ++ " you had a challenge match vs " ++ challengerUserInfo.username
                                                     ]
                                                 , Element.el Heading.h6 <| Element.text <| "Please confirm your result: "
                                                 , Element.column (Card.simple ++ Grid.simple) <|
@@ -3311,6 +3317,13 @@ confirmResultbutton model =
                                                 , SR.Elements.ethereumWalletWarning
                                                 , SR.Elements.footer
                                                 ]
+                                            (SR.Types.NoWallet userId token userInfo, _) ->
+                                                Element.text "No challenger"
+                                            (SR.Types.NoCredit addr userId token userInfo, _) ->
+                                                Element.text "No challenger"
+                                            (SR.Types.Credited addr userId token userInfo, _) ->
+                                                Element.text "No challenger"
+                                            
                         _ ->
                             Element.text "Fail confirmResultbutton"
                 _ ->
