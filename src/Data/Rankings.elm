@@ -1,14 +1,14 @@
 -- Rankings will be mainly used to communicate externally to the jsonbin server
 
 module Data.Rankings exposing (Rankings
-    --, gotRankingListFromRemData
-    , extractRankingList
+    , Ranking
     , gotRankingFromRankingList
+    , stringListToRankingIdList
+    , rankingIdListToStringList
     , isUniqueRankingName
     , isIdInSet
     , isIdInList
     , isEmpty
-    , gotRankingInfo
     , extractRankingsFromWebData
     , empty
     , updateAddr
@@ -16,41 +16,71 @@ module Data.Rankings exposing (Rankings
     , remove
     , removedById
     , handleServerDeletedRanking
-    , removedDeletedRankingsFromUserJoined
     , asList, asRankings, getRanking, gotRanking, rankingsetLength
     , isRankingNameValidated)
 
 
-import SR.Types
+--import SR.Types
 import EverySet exposing (EverySet)
 import Internal.Types
 import RemoteData
 import Http
-import Utils.MyUtils
+--import Utils.MyUtils
 import Utils.Validation.Validate
 import Css exposing (ex)
+import SRdb.Scalar exposing (Id(..))
+import SRdb.ScalarCodecs
+import Set
 
+type alias Ranking =
+    { 
+        id_ : String
+     --id_ : SRdb.ScalarCodecs.Id
+    , active : Bool
+    , rankingname : String
+    , rankingdesc : Maybe String
+    , rankingownerid : String
+    }
 
+type Rankings = Rankings (EverySet Ranking)
 
-type Rankings = Rankings (EverySet SR.Types.Ranking)
+newRanking : FRanking -> Ranking 
+newRanking franking = 
+    Ranking (fromScalarCodecId franking.id_) True franking.rankingname franking.rankingdesc franking.rankingownerid
+
+type alias FRanking =
+
+    { id_ : SRdb.ScalarCodecs.Id
+    , active : Bool
+    , rankingname : String
+    , rankingdesc : Maybe String
+    , rankingownerid : String
+    }
+
+fromScalarCodecId : SRdb.ScalarCodecs.Id -> String
+fromScalarCodecId (Id id) =
+    let
+        _ = Debug.log "id : " id
+    in
+        id
 
 empty : Rankings 
 empty = 
     Rankings (EverySet.empty)
 
-asRankings : EverySet SR.Types.Ranking -> Rankings 
+asRankings : EverySet Ranking -> Rankings 
 asRankings esRanking  = 
     Rankings esRanking 
 
-addRanking : SR.Types.Ranking -> Rankings -> Rankings
+addRanking : Ranking -> Rankings -> Rankings
 addRanking ranking sRankings = 
     case sRankings of 
         Rankings setOfRankings  ->
                 asRankings (EverySet.insert ranking setOfRankings)
 
-isRankingNameValidated : SR.Types.Ranking -> List SR.Types.UserRanking -> Bool
-isRankingNameValidated rankingInfo luranking =
-    if String.length rankingInfo.rankingname > 3 && String.length rankingInfo.rankingname < 9 && isUniqueRankingName rankingInfo.rankingname luranking then
+isRankingNameValidated : Ranking -> Rankings -> Bool
+isRankingNameValidated rankingInfo sRanking =
+    if String.length rankingInfo.rankingname > 3 && String.length rankingInfo.rankingname < 9 && isUniqueRankingName rankingInfo.rankingname sRanking then
         True
 
     else
@@ -63,17 +93,26 @@ isEmpty : Rankings -> Bool
 isEmpty (Rankings sRankings) =
     EverySet.isEmpty sRankings
 
-extractRankingList : List SR.Types.UserRanking -> List SR.Types.Ranking
-extractRankingList luserranking =
-    List.map extractRanking luserranking
+stringToRankingId : String -> Internal.Types.RankingId
+stringToRankingId rnkId =
+    Internal.Types.RankingId rnkId
+
+stringListToRankingIdList : List String -> List Internal.Types.RankingId
+stringListToRankingIdList lrnkId =
+    List.map stringToRankingId lrnkId
 
 
-extractRanking : SR.Types.UserRanking -> SR.Types.Ranking
-extractRanking uranking =
-    uranking.rankingInfo
+rankingIdListToStringList : List Internal.Types.RankingId -> List String
+rankingIdListToStringList lrnkId =
+    List.map stringFromRankingId lrnkId
 
 
-isIdInList : List SR.Types.Ranking -> Internal.Types.RankingId -> Bool
+stringFromRankingId : Internal.Types.RankingId -> String
+stringFromRankingId (Internal.Types.RankingId rnkId) =
+    rnkId
+
+
+isIdInList : List Ranking -> Internal.Types.RankingId -> Bool
 isIdInList lranking rnkId = 
     isIdInSet (asRankings (EverySet.fromList lranking)) rnkId
 
@@ -92,31 +131,8 @@ isIdInSet sRankings rnkId =
             else 
                 False
 
-removedDeletedRankingsFromUserJoined : SR.Types.User -> Rankings -> SR.Types.User 
-removedDeletedRankingsFromUserJoined user sRankings = 
-    case user of
-        SR.Types.Guest ->
-            SR.Types.Guest
-        (SR.Types.Registered userId token userInfo) ->
-            SR.Types.Registered userId token (handleDeletionFromUserJoined userInfo sRankings)
-        (SR.Types.NoWallet userId token userInfo) ->
-            SR.Types.NoWallet userId token <| handleDeletionFromUserJoined userInfo sRankings
-        (SR.Types.NoCredit addr userId token userInfo) ->
-            SR.Types.NoCredit addr userId token <| handleDeletionFromUserJoined userInfo sRankings
-        (SR.Types.Credited addr userId token userInfo) ->
-            SR.Types.Credited addr userId token <| handleDeletionFromUserJoined userInfo sRankings
 
-
-handleDeletionFromUserJoined : SR.Types.UserInfo -> Rankings -> SR.Types.UserInfo
-handleDeletionFromUserJoined userInfo sRankings = 
-    let
-        lwithDeletedRankingIdsRemoved = List.filter (isIdInSet sRankings) (Utils.MyUtils.stringListToRankingIdList userInfo.userjoinrankings)
-        newUserInfo = {userInfo | userjoinrankings = Utils.MyUtils.rankingIdListToStringList lwithDeletedRankingIdsRemoved} 
-    in
-        newUserInfo
-
-
-gotRankingFromRankingList : List SR.Types.Ranking -> Internal.Types.RankingId -> Maybe SR.Types.Ranking
+gotRankingFromRankingList : List Ranking -> Internal.Types.RankingId -> Maybe Ranking
 gotRankingFromRankingList rankingList (Internal.Types.RankingId rnkid) =
     let
         existingRanking =
@@ -127,7 +143,7 @@ gotRankingFromRankingList rankingList (Internal.Types.RankingId rnkid) =
         existingRanking
     -- case existingRanking of
     --     Nothing ->
-    --         (SR.Types.Ranking "" True "" Nothing "")
+    --         (Ranking "" True "" Nothing "")
 
     --     Just a ->
     --         a
@@ -139,7 +155,7 @@ rankingsetLength (Rankings sRankings) =
     EverySet.size sRankings
 
 
-gotRanking : Rankings  -> String -> Maybe SR.Types.Ranking
+gotRanking : Rankings  -> String -> Maybe Ranking
 gotRanking (Rankings sRankings) uaddr =
     let
         existingRanking =
@@ -150,7 +166,7 @@ gotRanking (Rankings sRankings) uaddr =
         existingRanking
  
 
-gotRankingById : Rankings  -> String -> Maybe SR.Types.Ranking
+gotRankingById : Rankings  -> String -> Maybe Ranking
 gotRankingById (Rankings sRankings) rnkId =
     let
         existingRanking =
@@ -163,7 +179,7 @@ gotRankingById (Rankings sRankings) rnkId =
 
 
 -- probably should return a set, not a list:
--- addedNewJoinedRankingIdToRanking : String -> SR.Types.Ranking -> List SR.Types.Ranking -> List SR.Types.Ranking
+-- addedNewJoinedRankingIdToRanking : String -> Ranking -> List Ranking -> List Ranking
 -- addedNewJoinedRankingIdToRanking rankingId Ranking lRanking =
 --     let
 --         currentRanking =
@@ -183,7 +199,7 @@ gotRankingById (Rankings sRankings) rnkId =
 --     in
 --     newRankingList
 
-remove : SR.Types.Ranking -> Rankings -> Rankings
+remove : Ranking -> Rankings -> Rankings
 remove ranking sRankings = 
     case sRankings of 
         Rankings everySetOfRankings->
@@ -194,7 +210,7 @@ remove ranking sRankings =
 removedById : Internal.Types.RankingId -> Rankings -> Rankings
 removedById rnkId sRankings = 
     let
-        rankingToRemove = gotRankingById sRankings (Utils.MyUtils.stringFromRankingId rnkId)
+        rankingToRemove = gotRankingById sRankings (stringFromRankingId rnkId)
     in
     case rankingToRemove of
         Nothing ->
@@ -202,10 +218,12 @@ removedById rnkId sRankings =
         Just rnkToRemove ->
             case sRankings of 
                 Rankings everySetOfRankings ->
-                    asRankings (EverySet.remove rnkToRemove everySetOfRankings) 
+                    asRankings (EverySet.remove rnkToRemove everySetOfRankings)
 
 
-getRanking : List SR.Types.Ranking -> String -> Maybe SR.Types.Ranking
+
+
+getRanking : List Ranking -> String -> Maybe Ranking
 getRanking luranking rankingid =
     List.filterMap
         (isRankingRankingIdInList
@@ -214,7 +232,7 @@ getRanking luranking rankingid =
         luranking
         |> List.head
 
-isRankingRankingIdInList : String -> SR.Types.Ranking -> Maybe SR.Types.Ranking
+isRankingRankingIdInList : String -> Ranking -> Maybe Ranking
 isRankingRankingIdInList rankingid urnk =
     if urnk.id_ == rankingid then
         Just urnk
@@ -222,7 +240,7 @@ isRankingRankingIdInList rankingid urnk =
     else
         Nothing
 
-asList : Rankings -> List SR.Types.Ranking
+asList : Rankings -> List Ranking
 asList sRankings = 
     case sRankings of 
         Rankings setOfRankings ->
@@ -247,39 +265,42 @@ updateAddr sRankings addr =
                             addRanking updatedRankingAddr rankingRemoved
 
 
-
-handleServerDeletedRanking : RemoteData.WebData (SR.Types.UpdateGlobalBinResponse) -> (Rankings, String)
+-- not sure we will use WebData here:
+--handleServerDeletedRanking : RemoteData.WebData (SR.Types.UpdateGlobalBinResponse) -> (Rankings, String)
+handleServerDeletedRanking : RemoteData.WebData (Ranking) -> (Rankings, String)
 handleServerDeletedRanking rdupdateglobalbinresponse =
-    case rdupdateglobalbinresponse of
-        RemoteData.Success a ->
-            (asRankings (EverySet.fromList a.data), "Success")
+    -- todo: fix
+        (empty, "")
+    -- case rdupdateglobalbinresponse of
+    --     RemoteData.Success a ->
+    --         (asRankings (EverySet.fromList a.data), "Success")
 
-        RemoteData.NotAsked ->
-            (empty, "Not Asked")
+    --     RemoteData.NotAsked ->
+    --         (empty, "Not Asked")
 
-        RemoteData.Loading ->
-            (empty, "Loading")
+    --     RemoteData.Loading ->
+    --         (empty, "Loading")
 
-        RemoteData.Failure err ->
-            case err of
-                Http.BadUrl s ->
-                    (empty, s)
+    --     RemoteData.Failure err ->
+    --         case err of
+    --             Http.BadUrl s ->
+    --                 (empty, s)
 
-                Http.Timeout ->
-                    (empty, "TimeOut")
+    --             Http.Timeout ->
+    --                 (empty, "TimeOut")
 
-                Http.NetworkError ->
-                    (empty, "Network Err")
+    --             Http.NetworkError ->
+    --                 (empty, "Network Err")
 
-                Http.BadStatus statuscode ->
-                    (empty, (String.fromInt statuscode))
+    --             Http.BadStatus statuscode ->
+    --                 (empty, (String.fromInt statuscode))
 
-                Http.BadBody s ->
-                    (empty, s)
+    --             Http.BadBody s ->
+    --                 (empty, s)
 
 
 
-extractRankingsFromWebData : RemoteData.WebData (List SR.Types.Ranking) -> List SR.Types.Ranking
+extractRankingsFromWebData : RemoteData.WebData (List Ranking) -> List Ranking
 extractRankingsFromWebData remData =
     case remData of
         RemoteData.NotAsked ->
@@ -294,69 +315,16 @@ extractRankingsFromWebData remData =
         RemoteData.Failure httpError ->
             []
 
--- gotRankingListFromRemData : RemoteData.WebData (List SR.Types.Ranking) -> List SR.Types.Ranking
--- gotRankingListFromRemData globalList =
---     case globalList of
---         RemoteData.Success a ->
---             a
 
---         RemoteData.NotAsked ->
---             [ (SR.Types.Ranking "" True "" Nothing "")
---             ]
-
---         RemoteData.Loading ->
---             [ (SR.Types.Ranking "" True "" Nothing "")
---             ]
-
---         RemoteData.Failure err ->
---             case err of
---                 Http.BadUrl s ->
---                     [ (SR.Types.Ranking "" True "" Nothing "")
---                     ]
-
---                 Http.Timeout ->
---                     [ (SR.Types.Ranking "" True "" Nothing "")
---                     ]
-
---                 Http.NetworkError ->
---                     [ (SR.Types.Ranking "" True "" Nothing "")
---                     ]
-
---                 Http.BadStatus statuscode ->
---                     [ (SR.Types.Ranking "" True "" Nothing "")
---                     ]
-
---                 Http.BadBody s ->
---                     [ (SR.Types.Ranking "" True "" Nothing "")
---                     ]
-
-gotRankingInfo : SR.Types.UserRanking -> SR.Types.Ranking
-gotRankingInfo uranking =
-    uranking.rankingInfo
-
-
-isUniqueRankingName : String -> List SR.Types.UserRanking -> Bool
-isUniqueRankingName str luranking =
-    let
-
-        lranking = gotRankingListFromUserRankingList luranking
-        newList =
-            List.filter (\r -> (String.toLower <| r.rankingname) == (String.toLower <| str))
-                ( lranking)
-    in
-    if List.isEmpty newList then
-        True
-
-    else
-        False
-
-gotRankingListFromUserRankingList : List SR.Types.UserRanking -> List SR.Types.Ranking
-gotRankingListFromUserRankingList luranking =
-    List.map gotRankingInfo luranking
+isUniqueRankingName : String -> Rankings -> Bool
+isUniqueRankingName str sRanking =
+    --currently only know how to do this by converting to List first
+    Set.member str (Set.fromList <|  List.map  (\r -> r.rankingname) (asList sRanking))
+    --Set.member str <| Set.map  (\r -> r.rankingname) sRanking
 
 
 
-extractRankingInfoListFromMaybeList : Maybe (List SR.Types.Ranking) -> List SR.Types.Ranking
+extractRankingInfoListFromMaybeList : Maybe (List Ranking) -> List Ranking
 extractRankingInfoListFromMaybeList lranking =
     case lranking of
 
@@ -367,12 +335,12 @@ extractRankingInfoListFromMaybeList lranking =
         Nothing ->
             []
 
--- ownerValidatedRankingList : List SR.Types.Ranking -> List SR.Types.Ranking
+-- ownerValidatedRankingList : List Ranking -> List Ranking
 -- ownerValidatedRankingList lrankinginfo =
 --     List.filter isValidOwnerAddress lrankinginfo
 
 
--- isValidOwnerAddress : SR.Types.Ranking -> Bool
+-- isValidOwnerAddress : Ranking -> Bool
 -- isValidOwnerAddress rankInfo =
 --     if Eth.Utils.isAddress rankInfo.rankingownerid then
 --         True

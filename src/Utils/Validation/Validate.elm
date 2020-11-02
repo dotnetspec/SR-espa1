@@ -3,7 +3,7 @@ module Utils.Validation.Validate exposing (
     , isValidRankingId)
 
 
-import SR.Types
+--import SR.Types
 import Eth.Utils
 import Char
 import Parser exposing (..)

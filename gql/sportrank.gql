@@ -21,7 +21,7 @@ type Ranking
     active : Boolean!
     rankingname : String! @unique
     rankingdesc : String
-    rankingownerid : String! @unique
+    rankingownerid : String!
     }
 
 type UserJoinedRanking

@@ -37,20 +37,34 @@ import SR.Defaults
 --import GlobalRankingsTests exposing (userOwner)
 -- Global came from Selected - there are many functions etc. not relevant to Global in here currently (even if renamed)
 
-type Global = Global (EverySet SR.Types.UserRanking)
+type Global = Global (EverySet UserRanking)
+
+--UserRanking.userInfo will always be Registered only
+type alias UserRanking =
+    { rankingInfo : Ranking
+    , userInfo : User
+    }
+
+-- newUserRanking ranking user =
+--     UserRanking ranking user
 
 empty : Global 
 empty = 
     Global (EverySet.empty)
 
-asGlobal : EverySet SR.Types.UserRanking -> Global 
+asGlobal : EverySet UserRanking -> Global 
 asGlobal esGlobal  = 
     Global esGlobal 
 
 
-asEverySet : Global -> EverySet SR.Types.UserRanking
+asEverySet : Global -> EverySet UserRanking
 asEverySet (Global esGlobal)  = 
      esGlobal
+
+
+gotRanking : SR.Types.UserRanking -> Ranking
+gotRanking uranking =
+    uranking.rankingInfo
 
 
 created : Data.Rankings.Rankings -> Data.Users.Users -> Global
@@ -64,7 +78,7 @@ created sRankings sUser =
         asGlobal esUserRanking
     
 
-createdUserRanking : List SR.Types.User -> SR.Types.Ranking -> Maybe SR.Types.UserRanking
+createdUserRanking : List SR.Types.User -> SR.Types.Ranking -> Maybe UserRanking
 createdUserRanking luser ranking =
     let
         --todo: fix
@@ -122,7 +136,7 @@ gotOwned global user =
         )
         (asList global)))
         
-isOwned : SR.Types.User -> SR.Types.UserRanking -> Maybe SR.Types.UserRanking
+isOwned : SR.Types.User -> UserRanking -> Maybe UserRanking
 isOwned user ownedrnk =
     case user of
         SR.Types.Guest ->
@@ -173,7 +187,7 @@ isOwned user ownedrnk =
                     Nothing 
 
 
-gotMember : Global -> SR.Types.User -> List SR.Types.UserRanking
+gotMember : Global -> SR.Types.User -> List UserRanking
 gotMember sGlobal user = 
     case user of
         SR.Types.Guest ->
@@ -204,18 +218,18 @@ gotOthers global user =
         |> asGlobal
 
 
-isMember : EverySet SR.Types.UserRanking -> SR.Types.UserRanking -> Bool
+isMember : EverySet UserRanking -> UserRanking -> Bool
 isMember esURanking uranking = 
     EverySet.member uranking esURanking
 
 
-isNotMember : EverySet SR.Types.UserRanking -> SR.Types.UserRanking -> Bool
+isNotMember : EverySet UserRanking -> UserRanking -> Bool
 isNotMember esURanking uranking = 
     if EverySet.member uranking esURanking then
         False 
     else True
 
-removeUserRanking :  Global -> SR.Types.UserRanking -> Global
+removeUserRanking :  Global -> UserRanking -> Global
 removeUserRanking  sGlobal uRanking = 
     case sGlobal of 
         Global rankedUserRankings->
@@ -225,15 +239,15 @@ removedUserRankingByRankingId : Global -> Internal.Types.RankingId -> Global
 removedUserRankingByRankingId sGlobal rnkId = 
     created (Data.Rankings.removedById rnkId (rankingsAsSet sGlobal) ) (usersAsSet sGlobal)
 
-addEmptyUser : SR.Types.User -> SR.Types.Ranking -> SR.Types.UserRanking 
+addEmptyUser : SR.Types.User -> SR.Types.Ranking -> UserRanking 
 addEmptyUser user ranking =
     {rankingInfo = ranking, userInfo = user}
         
-gotUsersFromUserRankings : List SR.Types.UserRanking -> List SR.Types.User 
+gotUsersFromUserRankings : List UserRanking -> List SR.Types.User 
 gotUsersFromUserRankings luRankings = 
     List.map toUser luRankings
 
-toUser : SR.Types.UserRanking -> SR.Types.User 
+toUser : UserRanking -> SR.Types.User 
 toUser uRanking = 
     uRanking.userInfo
 
@@ -266,13 +280,13 @@ removedDeletedRankingsFromUserJoined user sGlobal =
 
 
 
-gotAllRankindIds : SR.Types.UserRanking -> String
+gotAllRankindIds : UserRanking -> String
 gotAllRankindIds userRanking =
     userRanking.rankingInfo.id_
 
 
 
-gotUserRankingByRankingId : Global -> String -> Maybe SR.Types.UserRanking 
+gotUserRankingByRankingId : Global -> String -> Maybe UserRanking 
 gotUserRankingByRankingId sGlobal rnkId = 
     case sGlobal of 
         Global userRankings ->
@@ -311,7 +325,7 @@ addUserRanking sGlobal newrnkId rnkInfo user =
     --             asGlobal (EverySet.insert newUserRanking rankedUserRankings)
 
 
-isUserRankingIdInList : String -> SR.Types.UserRanking -> Bool
+isUserRankingIdInList : String -> UserRanking -> Bool
 isUserRankingIdInList rankingid urnk =
     if urnk.rankingInfo.id_ == rankingid then
         True
@@ -320,7 +334,7 @@ isUserRankingIdInList rankingid urnk =
         False
 
 
-asList : Global -> List SR.Types.UserRanking 
+asList : Global -> List UserRanking 
 asList srank = 
     case srank of 
         Global rankedUserRankings ->
@@ -340,7 +354,7 @@ rankingsAsSet sGlobal =
         Global rankedUserRankings ->
             Data.Rankings.asRankings (EverySet.map removeUser rankedUserRankings)
 
-removeUser : SR.Types.UserRanking -> SR.Types.Ranking
+removeUser : UserRanking -> SR.Types.Ranking
 removeUser uranking = 
     uranking.rankingInfo
 
@@ -357,7 +371,7 @@ usersAsSet sGlobal =
         Global rankedUserRankings ->
             Data.Users.asUsers (EverySet.map removeRanking rankedUserRankings)
 
-removeRanking : SR.Types.UserRanking -> SR.Types.User
+removeRanking : UserRanking -> SR.Types.User
 removeRanking uranking = 
     uranking.userInfo
 
@@ -470,7 +484,7 @@ newJsonEncodedList lotherrankingInfo =
     encodedList
 
 
-gotRankingOwner : SR.Types.Ranking -> List SR.Types.UserRanking -> List SR.Types.UserPlayer -> SR.Types.UserPlayer
+gotRankingOwner : SR.Types.Ranking -> List UserRanking -> List SR.Types.UserPlayer -> SR.Types.UserPlayer
 gotRankingOwner selectedRanking luranking luplayer =
     -- todo: fix
         SR.Defaults.emptyUserPlayer
@@ -485,7 +499,7 @@ gotRankingOwner selectedRanking luranking luplayer =
     -- , user = rankingOwnerAsUser
     -- }
 
-gotUserRankingFromUserRankingList : List SR.Types.UserRanking -> Internal.Types.RankingId -> SR.Types.UserRanking
+gotUserRankingFromUserRankingList : List UserRanking -> Internal.Types.RankingId -> UserRanking
 gotUserRankingFromUserRankingList urankingList (Internal.Types.RankingId rnkid) =
     -- todo: fix
         SR.Defaults.emptyUserRanking
@@ -522,11 +536,11 @@ gotUserPlayerFromPlayerListStrAddress luplayer addr =
         Just a ->
             a
 
-createdPlayers : List SR.Types.Ranking -> List SR.Types.User -> List SR.Types.UserRanking
+createdPlayers : List SR.Types.Ranking -> List SR.Types.User -> List UserRanking
 createdPlayers lrankinfo luser =
     List.map (createdUserRankingPlayerRanking luser) lrankinfo
 
-createdUserRankingPlayerRanking : List SR.Types.User -> SR.Types.Ranking -> SR.Types.UserRanking
+createdUserRankingPlayerRanking : List SR.Types.User -> SR.Types.Ranking -> UserRanking
 createdUserRankingPlayerRanking luser rankingInfo =
     -- let
     --     userOwner =
@@ -541,7 +555,7 @@ createdUserRankingPlayerRanking luser rankingInfo =
     --todo: fix
     SR.Defaults.emptyUserRanking
 
-convertMaybeUserRankingListToList : Maybe (List SR.Types.UserRanking) -> List SR.Types.UserRanking
+convertMaybeUserRankingListToList : Maybe (List UserRanking) -> List UserRanking
 convertMaybeUserRankingListToList luRanking =
     case luRanking of
         Nothing ->

@@ -1,24 +1,19 @@
 module SR.Types exposing
     ( PlayerId, RankingId(..)
-    , Player, Opponent, OpponentRelativeRank(..), Options, ResultOfMatch(..), WalletState(..)
+    --, Player, 
+    , Opponent, OpponentRelativeRank(..), Options, ResultOfMatch(..), WalletState(..)
     , UIState(..)
-    --, AllLists
     , AppInfo, Colors, CreateNewLadderFormFields, FormValidations, LadderState(..), ModalState(..)
-    , NewRankingListServerResponse, Ranking, ResultRadioOptions(..), User(..), UserListState(..), UserPlayer, UserRanking, colors
+    , NewRankingListServerResponse, ResultRadioOptions(..), User(..), UserListState(..), UserPlayer
+    , colors
     ,  AppState(..)
     , SelectedStatus(..)
     , SubState(..)
     , DeleteBinResponse
-    , UpdateGlobalBinResponse
-    --, AccountState(..)
-    , Token
-    , UserName
-    , Password
     , FUser
     , newUser
     , FRanking
     , newRanking
-    , newUserRanking
     , fromScalarCodecId
     , FPlayer
     , newPlayer
@@ -54,7 +49,7 @@ import Internal.Types as Internal
 import Ports
 import RemoteData
 import EverySet exposing (EverySet)
---import Data.Users
+
 import SRdb.ScalarCodecs
 import Eth.Utils
 import Eth.Utils
@@ -62,10 +57,9 @@ import Css exposing (em)
 import Result
 --import SR.Defaults
 import SRdb.Scalar exposing (Id(..))
-
-
-
-
+import Data.Rankings
+import Data.Players
+import Data.Users
 --import Json.Decode exposing (Decoder)
 
 
@@ -125,8 +119,8 @@ type WalletState
 
 
 type LadderState
-    = ExistingLadder Ranking
-    | NewLadder Ranking
+    = ExistingLadder Data.Rankings.Ranking
+    | NewLadder Data.Rankings.Ranking
 
 
 type UIState
@@ -203,23 +197,16 @@ type OpponentRelativeRank
 
 
 type alias UserPlayer =
-    { player : Player
-    , user : User
+    { player : Data.Players.Player
+    , user : Data.Users.User
     }
 
---UserRanking.userInfo will always be Registered only
-type alias UserRanking =
-    { rankingInfo : Ranking
-    , userInfo : User
-    }
 
-newUserRanking ranking user =
-    UserRanking ranking user
 
 
 
 type alias AppInfo =
-    { selectedRanking : Ranking
+    { selectedRanking : Data.Rankings.Ranking
     , player : UserPlayer
     , user : User
     , challenger : UserPlayer
@@ -234,107 +221,6 @@ type AppState
     | AppStateEnterWon 
     | AppStateEnterLost 
     | AppStateEnterUndecided
-
-
-type alias UserInfo =
-    { --datestamp to become creditsremaining
-    datestamp : Int
-    , active : Bool
-    , username : String
-    , password : String
-    , extrauserinfo : ExtraUserInfo
-    --, m_ethaddress : Maybe Eth.Types.Address
-    -- , description : String
-    -- , email : String
-    -- , mobile : String
-    , userjoinrankings : List String
-    , member_since : Int
-    --, m_token : Maybe Token
-    }
-
-type alias UserId =
-    String
-
-type alias ExtraUserInfo =
-    {
-    description : String
-    , email : String
-    , mobile : String
-    }
-
-
-type User =
-    Guest
-    | Registered UserId Token UserInfo
-    | NoWallet UserId Token UserInfo
-    | NoCredit Eth.Types.Address UserId Token UserInfo
-    | Credited Eth.Types.Address UserId Token UserInfo
-
--- case user of
---         SR.Types.Guest ->
---             SR.Types.Guest
---         (SR.Types.Registered userId token userInfo) ->
---             SR.Types.Registered userId token userInfo
---         (SR.Types.NoWallet userId token userInfo) ->
---             SR.Types.NoWallet userId token userInfo
---         (SR.Types.NoCredit addr userId token userInfo) ->
---             SR.Types.NoCredit addr userId token userInfo
---         (SR.Types.Credited addr userId token userInfo) ->
---             SR.Types.Credited addr userId token userInfo
-
-
--- new empty User:
--- SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
-
-
-newUser : FUser -> User 
-newUser fuser = 
-    Registered (fromScalarCodecId fuser.id_) "5678" (UserInfo 1 True "" "" (ExtraUserInfo "" "" "") [""] 1)
-
-type alias FUser = {
-    id_ :  SRdb.ScalarCodecs.Id
-    , active : Bool
-    , description : Maybe String
-    , email : Maybe String
-    , member_since : Int
-    , mobile : Maybe String
-    , username : String
-    }
-
-
-type alias Token =
-    String
-
-type alias UserName =
-    String
-
-type alias Password =
-    String
-
-
-type alias Player =
-    { rankingid : String
-    , uid : String
-    , rank : Int
-    , challengerid : String
-    }
-
--- empty player
---  SR.Types.Player "" "" 0 ""
-
-type alias FPlayer =
-    { id_ : SRdb.ScalarCodecs.Id
-    , rankingid : String
-    , address : String
-    , rank : Int
-    , challengerid : String
-    }
-
-newPlayer : FPlayer -> Player 
-newPlayer fplayer = 
-    Player (fromScalarCodecId fplayer.id_) fplayer.address fplayer.rank fplayer.challengerid
-
-
 
 
 type alias FormValidations =
@@ -353,49 +239,6 @@ type alias DeleteBinResponse =
     id : String,
     message : String
     }
-
-type alias UpdateGlobalBinResponse =
-    {
-    success : Bool,
-    data : List Ranking,
-    version : Int,
-    parentId : String
-    }
-    
-
-type alias Ranking =
-    { 
-        id_ : String
-     --id_ : SRdb.ScalarCodecs.Id
-    , active : Bool
-    , rankingname : String
-    , rankingdesc : Maybe String
-    , rankingownerid : String
-    }
-
--- empty ranking
--- SR.Types.Ranking "" True "" Nothing ""
-
-newRanking : FRanking -> Ranking 
-newRanking franking = 
-    Ranking (fromScalarCodecId franking.id_) True franking.rankingname franking.rankingdesc franking.rankingownerid
-
-type alias FRanking =
-
-    { id_ : SRdb.ScalarCodecs.Id
-    , active : Bool
-    , rankingname : String
-    , rankingdesc : Maybe String
-    , rankingownerid : String
-    }
-
-fromScalarCodecId : SRdb.ScalarCodecs.Id -> String
-fromScalarCodecId (Id id) =
-    let
-        _ = Debug.log "id : " id
-    in
-        id
-
 
 
 type alias NewRankingListServerResponse =

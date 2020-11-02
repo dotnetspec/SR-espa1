@@ -1,6 +1,8 @@
 -- Users will be mainly used to communicate externally to the jsonbin server
 module Data.Users exposing (Users
+    , User
     , newUser
+    , newUserFromFUser
     , updatedUserInSet
     --, validatedUserList
     , addedNewJoinedRankingId
@@ -25,33 +27,114 @@ module Data.Users exposing (Users
     , userSetLength
     --, isUserNameValidated
     , removedInvalidRankingId
+    , handleDeletionFromUserJoined
+    , removedDeletedRankingsFromUserJoined
     )
 
 
-import SR.Types
+--import SR.Types
 import EverySet exposing (EverySet)
 import Internal.Types
-import Utils.MyUtils
+--import Utils.MyUtils
 import Eth.Utils
 import RemoteData
 import Http
 import List.Unique
 import Utils.Validation.Validate
 import Eth.Types
-import SR.Defaults
+--import SR.Defaults
+import Data.Rankings
+import SRdb.Scalar exposing (Id(..))
+import SRdb.ScalarCodecs
 
 
--- Users (EverySet SR.Types.User) is not the same type as (EverySet SR.Types.User)
+-- Users (EverySet User) is not the same type as (EverySet User)
 -- Peter Damoc
 -- You can think about the tag ('Users') as a box containing a type.
 -- There can only ever be registered users in the User set
-type Users = Users (EverySet SR.Types.User)
+type Users = Users (EverySet User)
 type UserNames = UserNames (EverySet String)
 
+type alias UserInfo =
+    { --datestamp to become creditsremaining
+    datestamp : Int
+    , active : Bool
+    , username : String
+    , password : String
+    , extrauserinfo : ExtraUserInfo
+    --, m_ethaddress : Maybe Eth.Types.Address
+    -- , description : String
+    -- , email : String
+    -- , mobile : String
+    , userjoinrankings : List String
+    , member_since : Int
+    --, m_token : Maybe Token
+    }
 
-newUser : String -> String -> String -> String -> String -> SR.Types.User
+type alias UserId =
+    String
+
+type alias Token =
+    String
+
+type alias UserName =
+    String
+
+type alias Password =
+    String
+
+type alias ExtraUserInfo =
+    {
+    description : String
+    , email : String
+    , mobile : String
+    }
+
+
+type User =
+    Guest
+    | Registered UserId Token UserInfo
+    | NoWallet UserId Token UserInfo
+    | NoCredit Eth.Types.Address UserId Token UserInfo
+    | Credited Eth.Types.Address UserId Token UserInfo
+
+-- case user of
+--         Guest ->
+--             Guest
+--         (Registered userId token userInfo) ->
+--             Registered userId token userInfo
+--         (NoWallet userId token userInfo) ->
+--             NoWallet userId token userInfo
+--         (NoCredit addr userId token userInfo) ->
+--             NoCredit addr userId token userInfo
+--         (Credited addr userId token userInfo) ->
+--             Credited addr userId token userInfo
+
+
+-- new empty User:
+-- User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
+
+
+newUserFromFUser : FUser -> User 
+newUserFromFUser fuser = 
+    Registered (fromScalarCodecId fuser.id_) "5678" (UserInfo 1 True "" "" (ExtraUserInfo "" "" "") [""] 1)
+
+type alias FUser = {
+    id_ :  SRdb.ScalarCodecs.Id
+    , active : Bool
+    , description : Maybe String
+    , email : Maybe String
+    , member_since : Int
+    , mobile : Maybe String
+    , username : String
+    }
+
+
+
+
+newUser : String -> String -> String -> String -> String -> User
 newUser username password desc email mobile =
-    SR.Types.Registered "" "" (SR.Types.UserInfo 10 True username password (SR.Types.ExtraUserInfo desc email mobile) [""] 0)
+    Registered "" "" (UserInfo 10 True username password (SR.Types.ExtraUserInfo desc email mobile) [""] 0)
 
 empty : Users 
 empty = 
@@ -63,25 +146,39 @@ isEmpty : Users -> Bool
 isEmpty (Users sUsers) =
     EverySet.isEmpty sUsers
 
-asUsers : EverySet SR.Types.User -> Users 
+asUsers : EverySet User -> Users 
 asUsers esUser  = 
     Users esUser
 
-gotUserName : SR.Types.User -> String 
+gotUserName : User -> String 
 gotUserName user = 
     case user of
-        SR.Types.Guest ->
+        Guest ->
             "Guest"
-        (SR.Types.Registered userId token userInfo) ->
+        (Registered userId token userInfo) ->
             userInfo.username
-        (SR.Types.NoWallet userId token userInfo) ->
+        (NoWallet userId token userInfo) ->
             userInfo.username
-        (SR.Types.NoCredit addr userId token userInfo) ->
+        (NoCredit addr userId token userInfo) ->
             userInfo.username
-        (SR.Types.Credited addr userId token userInfo) ->
+        (Credited addr userId token userInfo) ->
             userInfo.username
 
--- isUserNameValidated : String -> List SR.Types.User -> Bool
+removedDeletedRankingsFromUserJoined : User -> Data.Rankings.Rankings -> User 
+removedDeletedRankingsFromUserJoined user sRankings = 
+    case user of
+        Guest ->
+            Guest
+        (Registered userId token userInfo) ->
+            Registered userId token (handleDeletionFromUserJoined userInfo sRankings)
+        (NoWallet userId token userInfo) ->
+            NoWallet userId token <| handleDeletionFromUserJoined userInfo sRankings
+        (NoCredit addr userId token userInfo) ->
+            NoCredit addr userId token <| handleDeletionFromUserJoined userInfo sRankings
+        (Credited addr userId token userInfo) ->
+            Credited addr userId token <| handleDeletionFromUserJoined userInfo sRankings
+
+-- isUserNameValidated : String -> List User -> Bool
 -- isUserNameValidated username luser =
 --     if String.length username > 3 && String.length username < 9 && isUniqueUserName username luser then
 --         True
@@ -89,7 +186,7 @@ gotUserName user =
 --     else
 --         False
 
--- isUniqueUserName : String -> List SR.Types.User -> Bool
+-- isUniqueUserName : String -> List User -> Bool
 -- isUniqueUserName str luser =
 --     let
 --         newList =
@@ -102,7 +199,7 @@ gotUserName user =
 --     else
 --         False
 
-addUser : SR.Types.User -> Users -> Users
+addUser : User -> Users -> Users
 addUser user susers = 
     case susers of 
         Users setOfUsers  ->
@@ -112,7 +209,7 @@ gotUserNames : Users -> EverySet String
 gotUserNames (Users users) = 
     EverySet.map gotName users
 
-gotName : SR.Types.User -> String 
+gotName : User -> String 
 gotName user = 
     --user.username
     -- todo: fix
@@ -123,32 +220,32 @@ userSetLength (Users susers) =
     EverySet.size susers
 
 
-gotUser : Users -> SR.Types.UserId -> Maybe SR.Types.User
+gotUser : Users -> UserId -> Maybe User
 gotUser (Users susers) userId =
     let 
         esUser = EverySet.filter (\user -> (gotUIDFromUser user) == userId) susers
     in
         List.head (EverySet.toList esUser)
 
-gotUIDFromUser : SR.Types.User -> SR.Types.UserId
+gotUIDFromUser : User -> UserId
 gotUIDFromUser user = 
     case user of
-        SR.Types.Guest ->
+        Guest ->
             ""
-        (SR.Types.Registered userId _ _) ->
+        (Registered userId _ _) ->
             userId
-        (SR.Types.NoWallet userId _ _) ->
+        (NoWallet userId _ _) ->
             userId
-        (SR.Types.NoCredit _ userId _ _) ->
+        (NoCredit _ userId _ _) ->
             userId
-        (SR.Types.Credited _ userId _ _) ->
+        (Credited _ userId _ _) ->
             userId
 
 
 
 
 -- probably should be updated to return a set, not a list:
-addedNewJoinedRankingId : String -> SR.Types.User -> List SR.Types.User -> List SR.Types.User
+addedNewJoinedRankingId : String -> User -> List User -> List User
 addedNewJoinedRankingId rankingId user lUser =
     let
         -- currentUser =
@@ -159,6 +256,7 @@ addedNewJoinedRankingId rankingId user lUser =
         -- userJoinRankings =
         --     List.Unique.filterDuplicates (List.filterMap removedInvalidRankingId user.userjoinrankings)
         -- todo: temp fix
+
         userJoinRankings =
             List.Unique.filterDuplicates (List.filterMap removedInvalidRankingId [""])
         
@@ -184,7 +282,7 @@ addedNewJoinedRankingId rankingId user lUser =
     in
     --todo: temp fix
     --newUserList
-    [SR.Types.Guest]
+    [Guest]
 
 
 removedInvalidRankingId : String -> Maybe String 
@@ -204,7 +302,7 @@ removedRankingIdFromAll susers rnkId =
            asUsers (EverySet.map (removedRankindIdFromUser rnkId) setOfUsers)
 
 
-removedRankindIdFromUser : String -> SR.Types.User -> SR.Types.User
+removedRankindIdFromUser : String -> User -> User
 removedRankindIdFromUser  rnkId user = 
     let
         -- if there's anything wrong with the existing joinrankings data fix it here:
@@ -222,7 +320,7 @@ removedRankindIdFromUser  rnkId user =
     in
         --userUpdated
         -- todo: temp fix
-        SR.Types.Guest
+        Guest
 
 filterRankingIds : String -> String -> Maybe String 
 filterRankingIds rnkIdToFilter currentRnkId =
@@ -234,7 +332,7 @@ filterRankingIds rnkIdToFilter currentRnkId =
 
     
 
-removeUser : Maybe SR.Types.User -> Users -> Users
+removeUser : Maybe User -> Users -> Users
 removeUser m_user (Users sUsers) = 
     -- case susers of 
     --     Users setOfUsers->
@@ -244,12 +342,21 @@ removeUser m_user (Users sUsers) =
                 Just user ->
                     asUsers (EverySet.remove user sUsers)
 
-asList : Users -> List SR.Types.User 
+asList : Users -> List User 
 asList susers = 
     case susers of 
         Users setOfUsers ->
             setOfUsers
            |> EverySet.toList
+
+handleDeletionFromUserJoined : UserInfo -> Data.Rankings.Rankings -> UserInfo
+handleDeletionFromUserJoined userInfo sRankings = 
+    let
+        lwithDeletedRankingIdsRemoved = List.filter (Data.Rankings.isIdInSet sRankings) (Data.Rankings.stringListToRankingIdList userInfo.userjoinrankings)
+        newUserInfo = {userInfo | userjoinrankings = Data.Rankings.rankingIdListToStringList lwithDeletedRankingIdsRemoved} 
+    in
+        newUserInfo
+
 
 
 -- updateAddr : Users -> String -> Users
@@ -267,25 +374,25 @@ asList susers =
 --             addUser updatedUserAddr userRemoved
 
 
-updatedUserInSet : Users -> SR.Types.User -> Users
+updatedUserInSet : Users -> User -> Users
 updatedUserInSet susers updatedUser =
 --the user is 'Registered' for the purposes of updating the Set
     case updatedUser of
-        SR.Types.Guest ->
+        Guest ->
             susers
-        (SR.Types.Registered userId token userInfo) ->
+        (Registered userId token userInfo) ->
             -- remove the original user, then add the new one
             addUser updatedUser <| removeUser (gotUser susers userId) susers
-        (SR.Types.NoWallet userId token userInfo) ->
+        (NoWallet userId token userInfo) ->
             addUser updatedUser <| removeUser (gotUser susers userId) susers
-        (SR.Types.NoCredit addr userId token userInfo) ->
+        (NoCredit addr userId token userInfo) ->
             addUser updatedUser <| removeUser (gotUser susers userId) susers
-        (SR.Types.Credited addr userId token userInfo) ->
+        (Credited addr userId token userInfo) ->
             addUser updatedUser <| removeUser (gotUser susers userId) susers
 
 
 
--- gotUserFromUserList : List SR.Types.User -> String -> Maybe SR.Types.User
+-- gotUserFromUserList : List User -> String -> Maybe User
 -- gotUserFromUserList userList uaddr =
 --     let
 --         existingUser =
@@ -298,14 +405,14 @@ updatedUserInSet susers updatedUser =
 --         existingUser
  
 
--- validatedUserList : List SR.Types.User -> List SR.Types.User
+-- validatedUserList : List User -> List User
 -- validatedUserList luser =
 --     List.filterMap
 --         isValidUserAddrInList
 --         luser
 
 
--- isValidUserAddrInList : SR.Types.User -> Maybe SR.Types.User
+-- isValidUserAddrInList : User -> Maybe User
 -- isValidUserAddrInList user =
 --     case user.m_ethaddress of 
 --         Nothing ->
@@ -318,7 +425,7 @@ updatedUserInSet susers updatedUser =
 --                 Nothing
 
 
-extractUsersFromWebData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
+extractUsersFromWebData : RemoteData.WebData (List User) -> List User
 extractUsersFromWebData remData =
     case remData of
         RemoteData.NotAsked ->
@@ -339,10 +446,6 @@ extractUsersFromWebData remData =
             users
 
         RemoteData.Failure httpError ->
-            let
-                _ =
-                    Debug.log "http err" Utils.MyUtils.gotHttpErr <| httpError
-            in
             []
 
 isNameValid : String -> Users -> Bool 
@@ -360,52 +463,52 @@ isNameValid newName sUsers =
         False
     else True
 
--- gotUserListFromRemData : RemoteData.WebData (List SR.Types.User) -> List SR.Types.User
+-- gotUserListFromRemData : RemoteData.WebData (List User) -> List User
 -- gotUserListFromRemData userList =
 --     case userList of
 --         RemoteData.Success a ->
 --             a
 
 --         RemoteData.NotAsked ->
---             [ (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
+--             [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
 --             ]
 
 --         RemoteData.Loading ->
---             [ (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
+--             [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
 --             ]
 
 --         RemoteData.Failure err ->
 --             case err of
 --                 Http.BadUrl s ->
---                     [ (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
+--                     [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
 --                     ]
 
 --                 Http.Timeout ->
---                     [ (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
+--                     [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
 --                     ]
 
 --                 Http.NetworkError ->
---                     [ (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
+--                     [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
 --                     ]
 
 --                 Http.BadStatus statuscode ->
---                     [ (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
+--                     [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
 --                     ]
 
 --                 Http.BadBody s ->
---                     [ (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
+--                     [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
 --                     ]
 
 
 
--- removeCurrentUserEntryFromUserList : List SR.Types.User -> Eth.Types.Address -> List SR.Types.User
+-- removeCurrentUserEntryFromUserList : List User -> Eth.Types.Address -> List User
 -- removeCurrentUserEntryFromUserList userList uaddr =
 --     List.filter (\r -> (String.toLower <| r.m_ethaddress) /= (String.toLower <| (Eth.Utils.addressToString uaddr)))
 --         (validatedUserList userList)
 
 --private
 
--- isUserInListStrAddr : List SR.Types.User -> String -> Bool
+-- isUserInListStrAddr : List User -> String -> Bool
 -- isUserInListStrAddr userlist uaddr =
 --     let
 --         gotSingleUserFromList =

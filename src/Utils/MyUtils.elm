@@ -12,10 +12,10 @@ module Utils.MyUtils exposing
     , splitPlayerFieldsToCreateMaybePlayer
     , stringFromBool
     , stringFromMaybeString
-    , stringFromRankingId
-    , stringToRankingId
-    , stringListToRankingIdList
-    , rankingIdListToStringList
+    -- , stringFromRankingId
+    -- , stringToRankingId
+    -- , stringListToRankingIdList
+    -- , rankingIdListToStringList
     , removeNothingFromList
     --, handleResult
     )
@@ -58,24 +58,6 @@ convertListOfMaybeToList hasAnything =
             List.filterMap (\x -> x) hasAnything
     in
     onlyHasRealValues
-
-
-stringToRankingId : String -> Internal.Types.RankingId
-stringToRankingId rnkId =
-    Internal.Types.RankingId rnkId
-
-stringListToRankingIdList : List String -> List Internal.Types.RankingId
-stringListToRankingIdList lrnkId =
-    List.map stringToRankingId lrnkId
-
-rankingIdListToStringList : List Internal.Types.RankingId -> List String
-rankingIdListToStringList lrnkId =
-    List.map stringFromRankingId lrnkId
-
-
-stringFromRankingId : Internal.Types.RankingId -> String
-stringFromRankingId (Internal.Types.RankingId rnkId) =
-    rnkId
 
 -- convertToRankingId : String -> Internal.Types.RankingId 
 -- convertToRankingId str = 

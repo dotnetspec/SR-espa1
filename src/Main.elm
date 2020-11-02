@@ -3358,7 +3358,7 @@ newrankingconfirmbutton appInfo dataState =
                                         { onPress = Just <| Cancel
                                         , label = Element.text "Cancel"
                                         }
-                                    , Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput appInfo.selectedRanking (Data.Global.asList sGlobal))) <|
+                                    , Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput appInfo.selectedRanking sRankings)) <|
                                         
                                         { onPress = Just <| ClickedConfirmCreateNewLadder
                                         , label = Element.text "Confirm"
@@ -3851,10 +3851,10 @@ isValidatedForAllUserDetailsInput user luser isExistingUser =
 
 
 
-isValidatedForAllLadderDetailsInput : SR.Types.Ranking -> List SR.Types.UserRanking -> Bool
-isValidatedForAllLadderDetailsInput rnkInfo luranking =
+isValidatedForAllLadderDetailsInput : SR.Types.Ranking -> Data.Rankings -> Bool
+isValidatedForAllLadderDetailsInput rnkInfo sRanking =
     if
-        Data.Rankings.isRankingNameValidated rnkInfo luranking
+        Data.Rankings.isRankingNameValidated rnkInfo sRanking
             && isLadderDescValidated rnkInfo
     then
         True

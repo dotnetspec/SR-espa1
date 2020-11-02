@@ -1,5 +1,6 @@
 -- Players will be mainly used to communicate externally to the jsonbin server
 module Data.Players exposing (Players
+    , Player
     , gotAddress
     , validatedPlayerList
     , handleFetchedPlayers
@@ -12,30 +13,55 @@ module Data.Players exposing (Players
     , playersetLength)
 
 
-import SR.Types
+--import SR.Types
 import EverySet exposing (EverySet)
 import Internal.Types
-import Utils.MyUtils
+--import Utils.MyUtils
 import Eth.Utils
 import RemoteData
 import Http
 import List.Unique
+import SRdb.Scalar exposing (Id(..))
+import SRdb.ScalarCodecs
 
 
 
-type Players = Players (EverySet SR.Types.Player)
+type Players = Players (EverySet Player)
 type PlayerNames = PlayerNames (EverySet String)
+
+type alias Player =
+    { rankingid : String
+    , uid : String
+    , rank : Int
+    , challengerid : String
+    }
+
+type alias FPlayer =
+    { id_ : SRdb.ScalarCodecs.Id
+    , rankingid : String
+    , address : String
+    , rank : Int
+    , challengerid : String
+    }
+
+newPlayer : FPlayer -> Player 
+newPlayer fplayer = 
+    Player (fromScalarCodecId fplayer.id_) fplayer.address fplayer.rank fplayer.challengerid
+
+fromScalarCodecId : SRdb.ScalarCodecs.Id -> String
+fromScalarCodecId (Id id) =
+    id
 
 
 empty : Players 
 empty = 
     Players (EverySet.empty)
 
-asPlayers : EverySet SR.Types.Player -> Players 
+asPlayers : EverySet Player -> Players 
 asPlayers esPlayer  = 
     Players esPlayer
 
-asList : Players -> List SR.Types.Player 
+asList : Players -> List Player 
 asList sPlayers = 
     case sPlayers of 
         Players setOfPlayers ->
@@ -45,7 +71,7 @@ asList sPlayers =
 
 
 
-addPlayer : SR.Types.Player -> Players -> Players
+addPlayer : Player -> Players -> Players
 addPlayer player sPlayers = 
     case sPlayers of 
         Players setOfPlayers  ->
@@ -57,7 +83,7 @@ playersetLength (Players sPlayers) =
     EverySet.size sPlayers
 
 
--- gotPlayer : Players  -> String -> SR.Types.Player
+-- gotPlayer : Players  -> String -> Player
 -- gotPlayer (Players sPlayers) uaddr =
 --     let
 --         existingPlayer =
@@ -68,7 +94,7 @@ playersetLength (Players sPlayers) =
     
 --     case existingPlayer of
 --         Nothing ->
---             SR.Types.Player "" "" 0 ""
+--             Player "" "" 0 ""
 
 --         Just a ->
 --             a
@@ -76,7 +102,7 @@ playersetLength (Players sPlayers) =
 
 
 
-removePlayer : SR.Types.Player -> Players -> Players
+removePlayer : Player -> Players -> Players
 removePlayer player sPlayers = 
     case sPlayers of 
         Players setOfPlayers->
@@ -84,7 +110,7 @@ removePlayer player sPlayers =
 
 
 -- todo: remove?
--- gotPlayerFromPlayerList : List SR.Types.Player -> String -> SR.Types.Player
+-- gotPlayerFromPlayerList : List Player -> String -> Player
 -- gotPlayerFromPlayerList lplayer uaddr =
 --     let
 --         existingPlayer =
@@ -94,19 +120,19 @@ removePlayer player sPlayers =
 --     in
 --     case existingPlayer of
 --         Nothing ->
---             SR.Types.Player "" "" 0 ""
+--             Player "" "" 0 ""
 
 --         Just a ->
 --             a
 
-validatedPlayerList : List SR.Types.Player -> List SR.Types.Player
+validatedPlayerList : List Player -> List Player
 validatedPlayerList lPlayer =
     List.filterMap
         isValidPlayerAddrInList
         lPlayer
 
 
-isValidPlayerAddrInList : SR.Types.Player -> Maybe SR.Types.Player
+isValidPlayerAddrInList : Player -> Maybe Player
 isValidPlayerAddrInList player =
     if Eth.Utils.isAddress player.uid then
         Just player
@@ -117,7 +143,7 @@ isValidPlayerAddrInList player =
 
 
 
-extractPlayersFromWebData : RemoteData.WebData (List SR.Types.Player) -> List SR.Types.Player
+extractPlayersFromWebData : RemoteData.WebData (List Player) -> List Player
 extractPlayersFromWebData remData =
     case remData of
         RemoteData.NotAsked ->
@@ -138,14 +164,10 @@ extractPlayersFromWebData remData =
             players
 
         RemoteData.Failure httpError ->
-            let
-                _ =
-                    Debug.log "http err" Utils.MyUtils.gotHttpErr <| httpError
-            in
             []
 
 
-handleFetchedPlayers : RemoteData.WebData (List SR.Types.Player) -> (Players, String)
+handleFetchedPlayers : RemoteData.WebData (List Player) -> (Players, String)
 handleFetchedPlayers lplayer =
     case lplayer of
         RemoteData.Success a ->
@@ -175,18 +197,18 @@ handleFetchedPlayers lplayer =
                     (empty, s)
 
 
-gotAddress : SR.Types.Player -> String
+gotAddress : Player -> String
 gotAddress player =
     player.uid
 
--- removeCurrentPlayerEntryFromPlayerList : List SR.Types.Player -> String -> List SR.Types.Player
+-- removeCurrentPlayerEntryFromPlayerList : List Player -> String -> List Player
 -- removeCurrentPlayerEntryFromPlayerList lplayer uaddr =
 --     List.filter (\r -> (String.toLower <| r.address) /= (String.toLower <| uaddr))
 --         (validatedPlayerList lplayer)
 
 --private
 
--- isPlayerInListStrAddr : List SR.Types.Player -> String -> Bool
+-- isPlayerInListStrAddr : List Player -> String -> Bool
 -- isPlayerInListStrAddr lplayer uaddr =
 --     let
 --         gotSinglePlayerFromList =
