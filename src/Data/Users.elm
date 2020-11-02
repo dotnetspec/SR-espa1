@@ -1,6 +1,10 @@
 -- Users will be mainly used to communicate externally to the jsonbin server
 module Data.Users exposing (Users
-    , User
+    , User(..)
+    , FUser
+    , Token
+    , UserName
+    , Password
     , newUser
     , newUserFromFUser
     , updatedUserInSet
@@ -18,7 +22,6 @@ module Data.Users exposing (Users
     , extractUsersFromWebData
     --, gotUserFromUserList
     , empty
-    --, updateAddr
     , addUser
     , removeUser
     , asList
@@ -115,6 +118,7 @@ type User =
 -- User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
 
 
+
 newUserFromFUser : FUser -> User 
 newUserFromFUser fuser = 
     Registered (fromScalarCodecId fuser.id_) "5678" (UserInfo 1 True "" "" (ExtraUserInfo "" "" "") [""] 1)
@@ -130,11 +134,13 @@ type alias FUser = {
     }
 
 
-
+fromScalarCodecId : SRdb.ScalarCodecs.Id -> String
+fromScalarCodecId (Id id) =
+    id
 
 newUser : String -> String -> String -> String -> String -> User
 newUser username password desc email mobile =
-    Registered "" "" (UserInfo 10 True username password (SR.Types.ExtraUserInfo desc email mobile) [""] 0)
+    Registered "" "" (UserInfo 10 True username password (ExtraUserInfo desc email mobile) [""] 0)
 
 empty : Users 
 empty = 

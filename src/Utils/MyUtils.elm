@@ -2,22 +2,10 @@ module Utils.MyUtils exposing
     ( addressFromStringResult
     , maybeAddressToString
     , convertListOfMaybeToList
-    , convertMaybePlayerToPlayer
-    , createdMaybePlayerFromPlayer
-    --, extractRankinigInfoFromMaybe
-    --, extractUserRankinigFromMaybe
     , gotHttpErr
-    , refEachPlayer
-    , refEachUser
-    , splitPlayerFieldsToCreateMaybePlayer
     , stringFromBool
     , stringFromMaybeString
-    -- , stringFromRankingId
-    -- , stringToRankingId
-    -- , stringListToRankingIdList
-    -- , rankingIdListToStringList
     , removeNothingFromList
-    --, handleResult
     )
 
 import Eth.Types
@@ -63,16 +51,6 @@ convertListOfMaybeToList hasAnything =
 -- convertToRankingId str = 
 --     Internal.Types.RankingId str
 
-
-refEachPlayer : SR.Types.UserPlayer -> SR.Types.Player
-refEachPlayer uplayer =
-    uplayer.player
-
-refEachUser : SR.Types.UserPlayer -> SR.Types.User
-refEachUser uplayer =
-    uplayer.user
-
-
 addressFromStringResult : String -> Internal.Types.Address
 addressFromStringResult uaddr =
     let
@@ -107,48 +85,6 @@ stringFromMaybeString str =
 
         Just a ->
             a
-
-
-splitPlayerFieldsToCreateMaybePlayer : SR.Types.UserPlayer -> Maybe SR.Types.UserPlayer
-splitPlayerFieldsToCreateMaybePlayer uplayer =
-    if uplayer.player.rank > 0 && uplayer.player.rank < 50000 then
-        Just uplayer
-
-    else
-        Nothing
-
-
-createdMaybePlayerFromPlayer : SR.Types.Player -> Maybe SR.Types.Player
-createdMaybePlayerFromPlayer player =
-    Just
-        { rankingid = player.rankingid 
-        , uid = player.uid
-        , rank = player.rank
-        , challengerid = player.challengerid
-        }
-
-
-convertMaybePlayerToPlayer : Maybe SR.Types.UserPlayer -> SR.Types.UserPlayer
-convertMaybePlayerToPlayer mplayer =
-    case mplayer of
-        Nothing ->
-            SR.Defaults.emptyUserPlayer
-
-        Just a ->
-            a
-
-
-
-rankFromMaybeRank : Maybe Int -> Int
-rankFromMaybeRank int =
-    case int of
-        Nothing ->
-            0
-
-        Just a ->
-            a
-
-
 
 -- this is for Maybe Address - potential re-factor
 

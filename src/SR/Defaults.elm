@@ -1,7 +1,9 @@
 module SR.Defaults exposing
     ( 
-    emptyAppInfo, emptyFormValidations, emptyOwnedRanking
-    , emptyUserPlayer, emptyUserRanking, globalBinName
+    emptyAppInfo, emptyFormValidations
+    --, emptyOwnedRanking
+    --, emptyUserPlayer
+    , emptyUserRanking, globalBinName
     , globalContainerId, secretKey, selectedBinName
     , selectedContainerId, userBinName, userContainerId
     )
@@ -18,6 +20,9 @@ import Http
 import Internal.Types as Internal
 import SR.Types exposing (..)
 import EverySet exposing (EverySet)
+import Data.Players
+import Data.Users
+import Data.Rankings
 
 
 
@@ -33,33 +38,34 @@ emptyFormValidations =
 
 
 emptyUserRanking =
-    { rankingInfo = (SR.Types.Ranking "" True "" Nothing "")
-    , userInfo = SR.Types.Guest
+    { rankingInfo = (Data.Rankings.Ranking "" True "" Nothing "")
+    , userInfo = Data.Users.empty
     }
 
 
-emptyUserPlayer =
-    { player = SR.Types.Player "" "" 0 ""
-    --, user = SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
-    , user = SR.Types.Guest
-    }
+-- emptyUserPlayer =
+--     { player = SR.Types.Player "" "" 0 ""
+--     --, user = Data.Users.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
+--     , user = SR.Types.Guest
+--     }
 
 
 emptyAppInfo =
-    { selectedRanking = (SR.Types.Ranking "" True "" Nothing "")
-    , player = emptyUserPlayer
-    , user = SR.Types.Guest
-    , challenger = emptyUserPlayer
+    { selectedRanking = (Data.Rankings.Ranking "" True "" Nothing "")
+    , player = {player = Data.Players.empty, user = Data.Users.empty}
+    , user = Data.Users.Guest
+    , challenger = {player = Data.Players.empty, user = Data.Users.empty}
     , appState = AppStateGeneral
     }
 
 
-emptyOwnedRanking =
-    { rankingInfo = (SR.Types.Ranking "" True "" Nothing "")
-    --, userInfo = SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
-    -- todo: below not possible for an owned ranking (temp solution)
-    , userInfo = SR.Types.Guest
-    }
+
+-- emptyOwnedRanking =
+--     { rankingInfo = (Data.Rankings.Ranking "" True "" Nothing "")
+--     --, userInfo = Data.Users.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
+--     -- todo: below not possible for an owned ranking (temp solution)
+--     , userInfo = SR.Types.Guest
+--     }
 
 
 secretKey =

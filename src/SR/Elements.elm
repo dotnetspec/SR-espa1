@@ -25,6 +25,8 @@ import Internal.Types
 import SR.Defaults
 import SR.Types
 import Utils.MyUtils
+import Data.Rankings
+import Data.Users
 
 
 
@@ -66,10 +68,10 @@ permanentlyDeleteWarnPara =
         ]
 
 
-globalHeading : SR.Types.User -> Element msg
+globalHeading : Data.Users.User -> Element msg
 globalHeading user =
     case user of
-        SR.Types.Guest ->
+        Data.Users.Guest ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Global Rankings"
             , Element.column Card.fill
@@ -77,7 +79,7 @@ globalHeading user =
                 ]
             ]
         
-        (SR.Types.Registered _ _ userInfo) -> 
+        (Data.Users.Registered _ _ userInfo) -> 
             Element.column Grid.section <|
                 [ Element.el Heading.h5 <| Element.text "Global Rankings"
                 , Element.column Card.fill
@@ -85,7 +87,7 @@ globalHeading user =
                     ]
                 ]
 
-        (SR.Types.NoWallet _ _ userInfo) -> 
+        (Data.Users.NoWallet _ _ userInfo) -> 
             Element.column Grid.section <|
                 [ Element.el Heading.h5 <| Element.text "Global Rankings"
                 , Element.column Card.fill
@@ -93,7 +95,7 @@ globalHeading user =
                     ]
                 ]
 
-        (SR.Types.NoCredit _ _ _ userInfo) -> 
+        (Data.Users.NoCredit _ _ _ userInfo) -> 
             Element.column Grid.section <|
                 [ Element.el Heading.h5 <| Element.text "Global Rankings"
                 , Element.column Card.fill
@@ -101,7 +103,7 @@ globalHeading user =
                     ]
                 ]
 
-        (SR.Types.Credited _ _ _ userInfo) -> 
+        (Data.Users.Credited _ _ _ userInfo) -> 
             Element.column Grid.section <|
                 [ Element.el Heading.h5 <| Element.text "Global Rankings"
                 , Element.column Card.fill
@@ -110,7 +112,7 @@ globalHeading user =
                 ]
 
 
-selectedRankingHeaderEl : SR.Types.Ranking -> Element msg
+selectedRankingHeaderEl : Data.Rankings.Ranking -> Element msg
 selectedRankingHeaderEl rnkInfo =
     Element.el Heading.h5 <| Element.text <| "Selected Ranking " ++ "-" ++ rnkInfo.rankingname
 
@@ -139,7 +141,7 @@ legalUserInfoText =
         ]
 
 
--- selectedHeading : SR.Types.User -> SR.Types.Ranking -> Element msg
+-- selectedHeading : Data.Users.User -> Data.Rankings.Ranking -> Element msg
 -- selectedHeading user rnkInfo =
 --     Element.column Grid.section <|
 --         [ Element.el Heading.h5 <|

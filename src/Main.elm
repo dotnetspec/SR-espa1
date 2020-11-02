@@ -181,10 +181,10 @@ type Msg
     | UserEmailInputChg String
     | UserMobileInputChg String
     | ClickedLogInUser
-    | LoggedInUser (Result (GQLHttp.Error (SR.Types.Token)) (SR.Types.Token))
-    | RegisteredNewUser (Result (GQLHttp.Error SR.Types.Token) SR.Types.Token)
+    | LoggedInUser (Result (GQLHttp.Error (Data.Users.Token)) (Data.Users.Token))
+    | RegisteredNewUser (Result (GQLHttp.Error Data.Users.Token) Data.Users.Token)
     | ReceivedUserNames (Result (GQLHttp.Error (List String)) (List String))
-    | ReceivedUsers (Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FUser)))) (Maybe (List (Maybe SR.Types.FUser))))
+    | ReceivedUsers (Result (GQLHttp.Error (Maybe (List (Maybe Data.Users.FUser)))) (Maybe (List (Maybe Data.Users.FUser))))
     | ReceivedRankings (Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FRanking)))) (Maybe (List (Maybe SR.Types.FRanking))))
     | ReceivedPlayersByRankingId (Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FPlayer)))) (Maybe (List (Maybe SR.Types.FPlayer)))) String
     | CreatedGlobal
@@ -193,17 +193,17 @@ type Msg
     | OpenWalletInstructions
     | NoOp
     | SentResultToJsonbin (Result Http.Error ())
-    | SentUserInfoAndDecodedResponseToNewUser (RemoteData.WebData (List SR.Types.User))
+    | SentUserInfoAndDecodedResponseToNewUser (RemoteData.WebData (List Data.Users.User))
     | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
     | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
     | ReturnFromPlayerListUpdate (RemoteData.WebData (List SR.Types.Player))
-    | ReturnFromUserListUpdate (RemoteData.WebData (List SR.Types.User))
+    | ReturnFromUserListUpdate (RemoteData.WebData (List Data.Users.User))
     | ReturnedFromDeletedSelectedRankingFromJsonBin (RemoteData.WebData ( SR.Types.DeleteBinResponse))
-    --| ReturnedFromDeletedRankingFromGlobalList (RemoteData.WebData (List SR.Types.Ranking))
+    --| ReturnedFromDeletedRankingFromGlobalList (RemoteData.WebData (List Data.Rankings.Ranking))
     --| ReturnedFromDeletedRankingFromGlobalList (Result Http.Error SR.Types.)
     | ReturnedFromDeletedRankingFromGlobalList (RemoteData.WebData (SR.Types.UpdateGlobalBinResponse))
     | SentResultToWallet SR.Types.ResultOfMatch
-    | AddedNewRankingToGlobalList (RemoteData.WebData (List SR.Types.Ranking))
+    | AddedNewRankingToGlobalList (RemoteData.WebData (List Data.Rankings.Ranking))
     | TimeUpdated Posix
     | ProcessResult SR.Types.ResultOfMatch
       --Wallet Ops
@@ -1424,7 +1424,7 @@ update msg model =
                                         lplayer =
                                             Data.Players.extractPlayersFromWebData response
 
-                                        --addedNewJoinedRankingId : String -> SR.Types.User -> List SR.Types.User -> List SR.Types.User
+                                        --addedNewJoinedRankingId : String -> Data.Users.User -> List Data.Users.User -> List Data.Users.User
                                         --newUserList = Data.Users.addedNewJoinedRankingId (Utils.MyUtils.stringFromRankingId rnkId) user (Data.Users.asList sUsers)
                                         newUserList = Data.Users.asList (Data.Selected.asUsers sSelected)
 
@@ -1714,7 +1714,7 @@ registerUser user_name password =
     --GQLHttp.send RegisteredNewUser (Bridge.requestregisterUser user_name password)
     Cmd.none
 
-commandFromLoggedInUser : Result (GQLHttp.Error (String)) (SR.Types.Token) -> Cmd Msg
+commandFromLoggedInUser : Result (GQLHttp.Error (String)) (Data.Users.Token) -> Cmd Msg
 commandFromLoggedInUser response =
     case response of
         -- Ok (lstringhead :: lstringtail) ->
@@ -1730,7 +1730,7 @@ commandFromLoggedInUser response =
             Cmd.none
 
 
-allUserNames : SR.Types.Token -> Cmd Msg
+allUserNames : Data.Users.Token -> Cmd Msg
 allUserNames token =
     GQLHttp.send ReceivedUserNames (Bridge.requestAllUserNames token)
 
@@ -1785,8 +1785,8 @@ updateModelFromReceivedUserNames model response =
         Err _ ->
             model
 
---GQLHttp.Error (Maybe (List (Maybe SR.Types.FUser)))) (Maybe (List (Maybe SR.Types.FUser))
-updateWithReceivedUsers : Model -> Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FUser)))) (Maybe (List (Maybe SR.Types.FUser))) -> Model
+--GQLHttp.Error (Maybe (List (Maybe Data.Users.FUser)))) (Maybe (List (Maybe Data.Users.FUser))
+updateWithReceivedUsers : Model -> Result (GQLHttp.Error (Maybe (List (Maybe Data.Users.FUser)))) (Maybe (List (Maybe Data.Users.FUser))) -> Model
 updateWithReceivedUsers model response =
     case (model, response) of -- AllEmpty, so fill the User set
         (AppOps walletState AllEmpty appInfo uiState subState txRec, Ok lusers)  ->
@@ -1954,14 +1954,14 @@ updateWithReceivedRankingById model response =
 
         (AppOps walletState (StateFetched sUsers sRankings (Global sGlobal)) appInfo uiState subState txRec, Ok franking) ->
             let
-                --filteredFRanking = Maybe.withDefault (SR.Types.Ranking 0 True "" Nothing "") franking
+                --filteredFRanking = Maybe.withDefault (Data.Rankings.Ranking 0 True "" Nothing "") franking
                 -- need to convert from FRanking to Ranking (id_ needs to be a String)
                 --user = Maybe.withDefault SR.Types.Guest appInfo.user
 
                 --ethaddr = Maybe.withDefault "" (Just (Eth.Utils.addressToString user.m_ethaddress))
                 --fromFToRanking = SR.Types.newRanking filteredFRanking
                 -- below just getting to compile
-                fromFToRanking = (SR.Types.Ranking "" True "" Nothing "")
+                fromFToRanking = (Data.Rankings.Ranking "" True "" Nothing "")
                 -- --_ = Debug.log "lFromFToRanking : " lFromFToRanking
                 newAppInfo = {appInfo | selectedRanking = fromFToRanking}
                 
@@ -1992,7 +1992,7 @@ updateWithReceivedRankingById model response =
         (Failure _, Err _) ->
             (Failure "updateWithReceivedUsers6")
 
-updateFromLoggedInUser: Model -> Result (GQLHttp.Error (String)) (SR.Types.Token) -> Model
+updateFromLoggedInUser: Model -> Result (GQLHttp.Error (String)) (Data.Users.Token) -> Model
 updateFromLoggedInUser model response =
     case (model, response) of
         (AppOps walletState dataState appInfo uiState subState  txRec, Ok token) ->
@@ -2021,7 +2021,7 @@ updateFromLoggedInUser model response =
         (Failure _, _) ->
             model
 
-updateFromRegisteredNewUser: Model -> Result (GQLHttp.Error SR.Types.Token) SR.Types.Token -> Model
+updateFromRegisteredNewUser: Model -> Result (GQLHttp.Error Data.Users.Token) Data.Users.Token -> Model
 updateFromRegisteredNewUser model response =
     case (response, model) of
         (Ok token, AppOps walletState dataState appInfo uiState subState  txRec) ->
@@ -2357,7 +2357,7 @@ handleUserInputs model msg appInfoToUpdate =
         _ ->
             Failure "UserNameInputChg"
 
-updateAppInfoUserDesc : SR.Types.UserId -> SR.Types.Token -> SR.Types.AppInfo -> String -> SR.Types.UserInfo -> SR.Types.AppInfo
+updateAppInfoUserDesc : SR.Types.UserId -> Data.Users.Token -> SR.Types.AppInfo -> String -> SR.Types.UserInfo -> SR.Types.AppInfo
 updateAppInfoUserDesc userId token appInfo descfield userInfo =
     let
         existingExtraUserInfo = userInfo.extrauserinfo
@@ -2367,7 +2367,7 @@ updateAppInfoUserDesc userId token appInfo descfield userInfo =
     in
     newAppInfo
 
-updateAppInfoUserEmail : SR.Types.UserId -> SR.Types.Token -> SR.Types.AppInfo -> String -> SR.Types.UserInfo -> SR.Types.AppInfo 
+updateAppInfoUserEmail : SR.Types.UserId -> Data.Users.Token -> SR.Types.AppInfo -> String -> SR.Types.UserInfo -> SR.Types.AppInfo 
 updateAppInfoUserEmail userId token appInfo emailfield userInfo =
     let
         existingExtraUserInfo = userInfo.extrauserinfo
@@ -2378,7 +2378,7 @@ updateAppInfoUserEmail userId token appInfo emailfield userInfo =
         newAppInfo
 
 
-updateAppInfoUserMobile : SR.Types.UserId -> SR.Types.Token -> SR.Types.AppInfo -> String -> SR.Types.UserInfo -> SR.Types.AppInfo 
+updateAppInfoUserMobile : SR.Types.UserId -> Data.Users.Token -> SR.Types.AppInfo -> String -> SR.Types.UserInfo -> SR.Types.AppInfo 
 updateAppInfoUserMobile userId token appInfo mobilefield userInfo =
     let
         existingExtraUserInfo = userInfo.extrauserinfo
@@ -2389,7 +2389,7 @@ updateAppInfoUserMobile userId token appInfo mobilefield userInfo =
         newAppInfo
 
 
-updatedForChallenge : Model -> List SR.Types.UserPlayer -> SR.Types.UserPlayer -> SR.Types.User -> Model
+updatedForChallenge : Model -> List SR.Types.UserPlayer -> SR.Types.UserPlayer -> Data.Users.User -> Model
 updatedForChallenge model luplayer opponentAsPlayer userMaybeCanDelete =
     case model of
         AppOps walletState dataState appInfo uiState subState  txRec ->
@@ -2548,7 +2548,7 @@ view model =
 
 -- view helpers
 
-generalLoginView : SR.Types.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
+generalLoginView : Data.Users.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
 generalLoginView userVal sUsers sGlobal =
     case userVal of 
         SR.Types.Guest ->
@@ -2635,7 +2635,7 @@ generalLoginView userVal sUsers sGlobal =
             Html.text "Irrelevant view"
     
 
-registerNewUserView : SR.Types.User -> Data.Users.Users -> Html Msg 
+registerNewUserView : Data.Users.User -> Data.Users.Users -> Html Msg 
 registerNewUserView userVal sUsers = 
     case userVal of
         SR.Types.Guest ->
@@ -2697,7 +2697,7 @@ registerNewUserView userVal sUsers =
 
     
 
-gotUserView : SR.Types.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
+gotUserView : Data.Users.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
 gotUserView userVal sUsers sGlobal =
     case userVal of
         SR.Types.Guest ->
@@ -2764,7 +2764,7 @@ failureView str =
                 ]
 
 
-displayForToken : SR.Types.User -> Data.Global.Global -> Element Msg 
+displayForToken : Data.Users.User -> Data.Global.Global -> Element Msg 
 displayForToken userVal sGlobal = 
     case userVal of
         SR.Types.Guest ->
@@ -2834,7 +2834,7 @@ greetingHeading greetingStr =
         ]
 
 
-ownedrankingbuttons : List SR.Types.UserRanking -> SR.Types.User -> Element Msg
+ownedrankingbuttons : List SR.Types.UserRanking -> Data.Users.User -> Element Msg
 ownedrankingbuttons urankingList user =
     case user of 
         SR.Types.Guest ->
@@ -2878,7 +2878,7 @@ ownedrankingbuttons urankingList user =
             ]
 
 
-determineOwnedRankingButtonsDisplay : List SR.Types.Ranking -> SR.Types.User -> List (Element Msg)
+determineOwnedRankingButtonsDisplay : List Data.Rankings.Ranking -> Data.Users.User -> List (Element Msg)
 determineOwnedRankingButtonsDisplay lranking user =
     if List.isEmpty lranking then
                     [
@@ -2897,7 +2897,7 @@ determineOwnedRankingButtonsDisplay lranking user =
         insertOwnedRankingList lranking user
 
 
-memberrankingbuttons : List SR.Types.UserRanking -> SR.Types.User -> Element Msg
+memberrankingbuttons : List SR.Types.UserRanking -> Data.Users.User -> Element Msg
 memberrankingbuttons urankingList user =
     let
         newRankingList =
@@ -2932,7 +2932,7 @@ memberrankingbuttons urankingList user =
             ]
 
 
-otherrankingbuttons : List SR.Types.UserRanking -> SR.Types.User -> Element Msg
+otherrankingbuttons : List SR.Types.UserRanking -> Data.Users.User -> Element Msg
 otherrankingbuttons urankingList user =
     case user of
         SR.Types.Guest ->
@@ -2968,7 +2968,7 @@ otherrankingbuttons urankingList user =
             ]
 
 
-insertOwnedRankingList : List SR.Types.Ranking -> SR.Types.User -> List (Element Msg)
+insertOwnedRankingList : List Data.Rankings.Ranking -> Data.Users.User -> List (Element Msg)
 insertOwnedRankingList lrankinginfo user =
     let
         mapOutRankingList =
@@ -2996,7 +2996,7 @@ insertOwnedRankingList lrankinginfo user =
             mapOutRankingList
 
 
-ownedRankingInfoBtn : SR.Types.Ranking -> Element Msg
+ownedRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
 ownedRankingInfoBtn rankingobj =
     Element.column Grid.simple <|
         [ Input.button (Button.fill ++ Color.primary) <|
@@ -3006,7 +3006,7 @@ ownedRankingInfoBtn rankingobj =
         ]
 
 
-insertMemberRankingList : List SR.Types.Ranking -> List (Element Msg)
+insertMemberRankingList : List Data.Rankings.Ranking -> List (Element Msg)
 insertMemberRankingList lrankinginfo =
     let
         mapOutRankingList =
@@ -3021,7 +3021,7 @@ insertMemberRankingList lrankinginfo =
         mapOutRankingList
 
 
-memberRankingInfoBtn : SR.Types.Ranking -> Element Msg
+memberRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
 memberRankingInfoBtn ranking =
     if ranking.rankingname /= "" then
         Element.column Grid.simple <|
@@ -3048,7 +3048,7 @@ memberRankingInfoBtn ranking =
             ]
 
 
-insertNeitherOwnerNorMemberRankingList : List SR.Types.Ranking -> List (Element Msg)
+insertNeitherOwnerNorMemberRankingList : List Data.Rankings.Ranking -> List (Element Msg)
 insertNeitherOwnerNorMemberRankingList rnkgInfoList =
     let
         mapOutRankingList =
@@ -3059,7 +3059,7 @@ insertNeitherOwnerNorMemberRankingList rnkgInfoList =
     mapOutRankingList
 
 
-neitherOwnerNorMemberRankingInfoBtn : SR.Types.Ranking -> Element Msg
+neitherOwnerNorMemberRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
 neitherOwnerNorMemberRankingInfoBtn rankingobj =
     Element.column Grid.simple <|
         [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "otherrankingbtn") ] ++ Button.fill ++ Color.primary) <|
@@ -3207,7 +3207,7 @@ insertPlayerList dataState appInfo =
                         [ Element.text "error2" ]
 
 
-selecteduserIsOwnerhomebutton : SR.Types.User -> Element Msg
+selecteduserIsOwnerhomebutton : Data.Users.User -> Element Msg
 selecteduserIsOwnerhomebutton user =
     -- case user of
     --     SR.Types.Guest ->
@@ -3280,7 +3280,7 @@ selecteduserIsOwnerhomebutton user =
         
 
 
-selecteduserIsPlayerHomebutton : SR.Types.User -> Element Msg
+selecteduserIsPlayerHomebutton : Data.Users.User -> Element Msg
 selecteduserIsPlayerHomebutton user =
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
@@ -3295,7 +3295,7 @@ selecteduserIsPlayerHomebutton user =
         ]
 
 
-selecteduserIsNeitherPlayerNorOwnerHomebutton : SR.Types.User -> Element Msg
+selecteduserIsNeitherPlayerNorOwnerHomebutton : Data.Users.User -> Element Msg
 selecteduserIsNeitherPlayerNorOwnerHomebutton user =
     Element.column Grid.section <|
         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
@@ -3311,7 +3311,7 @@ selecteduserIsNeitherPlayerNorOwnerHomebutton user =
         ]
 
 
-joinBtn : SR.Types.User -> Element Msg
+joinBtn : Data.Users.User -> Element Msg
 joinBtn user  =
     case user of
         SR.Types.Guest ->
@@ -3643,7 +3643,7 @@ userDescValidationErr str =
             (Element.text "20 characters max")
 
 
-ladderDescValidationErr : SR.Types.Ranking -> Element Msg
+ladderDescValidationErr : Data.Rankings.Ranking -> Element Msg
 ladderDescValidationErr rankingInfo =
     if isLadderDescValidated rankingInfo then
         Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "ladderdescValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "")
@@ -3665,7 +3665,7 @@ isUserDescValidated str =
         False
 
 
-isLadderDescValidated : SR.Types.Ranking -> Bool
+isLadderDescValidated : Data.Rankings.Ranking -> Bool
 isLadderDescValidated rankingInfo =
     case rankingInfo.rankingdesc of
         Nothing ->
@@ -3723,7 +3723,7 @@ mobileValidationErr str =
         Element.el [] <| Element.text ""
 
 
-newuserConfirmPanel : SR.Types.User -> List SR.Types.User -> Element Msg
+newuserConfirmPanel : Data.Users.User -> List Data.Users.User -> Element Msg
 newuserConfirmPanel  user luser =
         case user of
         SR.Types.Guest ->
@@ -3795,7 +3795,7 @@ newuserConfirmPanel  user luser =
 
 
 
--- existingUserConfirmPanel : SR.Types.User -> List SR.Types.User -> Element Msg
+-- existingUserConfirmPanel : Data.Users.User -> List Data.Users.User -> Element Msg
 -- existingUserConfirmPanel user luser =
 --     Element.column Grid.section <|
 --         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
@@ -3814,7 +3814,7 @@ newuserConfirmPanel  user luser =
 --         ]
 
 
-isValidatedForAllUserDetailsInput : SR.Types.User -> List SR.Types.User -> Bool -> Bool
+isValidatedForAllUserDetailsInput : Data.Users.User -> List Data.Users.User -> Bool -> Bool
 isValidatedForAllUserDetailsInput user luser isExistingUser =
     --todo: fix
     False
@@ -3851,7 +3851,7 @@ isValidatedForAllUserDetailsInput user luser isExistingUser =
 
 
 
-isValidatedForAllLadderDetailsInput : SR.Types.Ranking -> Data.Rankings -> Bool
+isValidatedForAllLadderDetailsInput : Data.Rankings.Ranking -> Data.Rankings -> Bool
 isValidatedForAllLadderDetailsInput rnkInfo sRanking =
     if
         Data.Rankings.isRankingNameValidated rnkInfo sRanking
@@ -3927,7 +3927,7 @@ enableButton enable =
 --             Element.text "Fail on inputNewUser"
 
 
-nameValidView : SR.Types.User -> Data.Users.Users -> Element Msg
+nameValidView : Data.Users.User -> Data.Users.Users -> Element Msg
 nameValidView userVal sUsers =
     case userVal of 
         SR.Types.Guest ->
@@ -4033,7 +4033,7 @@ inputNewLadder appInfo dataState =
                 ]
 
 
-handleGlobalNoTokenView : DataState -> SR.Types.User -> Html Msg
+handleGlobalNoTokenView : DataState -> Data.Users.User -> Html Msg
 handleGlobalNoTokenView dataState userVal =
     case (dataState, userVal) of
         (AllEmpty, _) -> 
@@ -4359,7 +4359,7 @@ selectedUserIsPlayerView dataState appInfo =
 --             Html.text "Error4"
 
 
-newOrExistingUserNameDisplay : SR.Types.User ->  Element msg
+newOrExistingUserNameDisplay : Data.Users.User ->  Element msg
 newOrExistingUserNameDisplay user =
     case user of 
         SR.Types.Guest ->
@@ -4436,7 +4436,7 @@ inputUserDetailsView dataState appInfo =
         Html.text "tbc"
 
                 
-displayRegisterNewUser :  SR.Types.User -> Data.Users.Users -> Element Msg 
+displayRegisterNewUser :  Data.Users.User -> Data.Users.Users -> Element Msg 
 displayRegisterNewUser userVal sUsers =
     case userVal of
         SR.Types.Guest ->
@@ -4933,7 +4933,7 @@ fetchedSingleRanking (Internal.Types.RankingId rankingId) =
     --     }
 
 
-addedUserAsFirstPlayerInNewList : SR.Types.User -> Cmd Msg
+addedUserAsFirstPlayerInNewList : Data.Users.User -> Cmd Msg
 addedUserAsFirstPlayerInNewList user =
     -- todo: fix
     Cmd.none
@@ -4963,11 +4963,11 @@ addedUserAsFirstPlayerInNewList user =
     --     }
 
 
-createNewUser : Data.Users.Users -> SR.Types.User -> Cmd Msg
+createNewUser : Data.Users.Users -> Data.Users.User -> Cmd Msg
 createNewUser sUsers newuserinfo =
     Cmd.none
     -- let
-    --     newUserToAdd : SR.Types.User
+    --     newUserToAdd : Data.Users.User
     --     newUserToAdd =
     --         Data.Users.newUser  
     --             newuserinfo.username 
@@ -5023,10 +5023,10 @@ httpUpdateUsers  updatedUsers =
     Cmd.none
 
 
--- jsonEncodeNewUsersList : List SR.Types.User -> Json.Encode.Value
+-- jsonEncodeNewUsersList : List Data.Users.User -> Json.Encode.Value
 -- jsonEncodeNewUsersList luserInfo =
 --     let
---         encodeNewUserObj : SR.Types.User -> Json.Encode.Value
+--         encodeNewUserObj : Data.Users.User -> Json.Encode.Value
 --         encodeNewUserObj userInfo =
 --             case userInfo.m_ethaddress of
 --                 Nothing ->
@@ -5063,7 +5063,7 @@ httpUpdateUsers  updatedUsers =
 --     encodedList
 
 
-httpAddCurrentUserToPlayerList : DataState -> SR.Types.User -> Cmd Msg
+httpAddCurrentUserToPlayerList : DataState -> Data.Users.User -> Cmd Msg
 httpAddCurrentUserToPlayerList dataState userRec =
     Cmd.none
     -- case dataState of
@@ -5098,7 +5098,7 @@ httpAddCurrentUserToPlayerList dataState userRec =
 
 
 
-httpPutRequestForAddGlobal : Json.Encode.Value -> List SR.Types.Ranking -> Cmd Msg
+httpPutRequestForAddGlobal : Json.Encode.Value -> List Data.Rankings.Ranking -> Cmd Msg
 httpPutRequestForAddGlobal newJsonEncodedList globalListWithJsonObjAdded =
     --AddedNewRankingToGlobalList is the Msg handled by update whenever a request is made
     --RemoteData is used throughout the module, including update
@@ -5206,7 +5206,7 @@ httpPlayerList dataState =
     
 
 
-httpUpdateUsersJoinRankings : String -> SR.Types.User -> List SR.Types.User -> Cmd Msg
+httpUpdateUsersJoinRankings : String -> Data.Users.User -> List Data.Users.User -> Cmd Msg
 httpUpdateUsersJoinRankings rankingId user lUser =
     Cmd.none
     -- let 

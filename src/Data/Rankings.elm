@@ -2,6 +2,7 @@
 
 module Data.Rankings exposing (Rankings
     , Ranking
+    , FRanking
     , gotRankingFromRankingList
     , stringListToRankingIdList
     , rankingIdListToStringList
@@ -57,12 +58,10 @@ type alias FRanking =
     , rankingownerid : String
     }
 
+
 fromScalarCodecId : SRdb.ScalarCodecs.Id -> String
 fromScalarCodecId (Id id) =
-    let
-        _ = Debug.log "id : " id
-    in
-        id
+    id
 
 empty : Rankings 
 empty = 

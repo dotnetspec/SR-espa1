@@ -70,9 +70,9 @@ playerFuzzer =
         Fuzz.string
 
 
-userFuzzer : Fuzzer SR.Types.User
+userFuzzer : Fuzzer Data.Users.User
 userFuzzer =
-    Fuzz.constant SR.Types.User
+    Fuzz.constant Data.Users.User
         |> Fuzz.andMap Fuzz.int
         |> Fuzz.andMap Fuzz.bool
         |> Fuzz.andMap Fuzz.string
@@ -100,10 +100,10 @@ testsortPlayerListByRank =
 
         listOfUserPlayers =
             [ { player = player
-              , user = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
+              , user = (Data.Users.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
               }
             , { player = challenger
-              , user = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
+              , user = (Data.Users.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
               }
             ]
 
@@ -121,10 +121,10 @@ testsortPlayerListByRank =
 
         output =
             [ { player = outputplayer
-              , user = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
+              , user = (Data.Users.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
               }
             , { player = outputchallenger
-              , user = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
+              , user = (Data.Users.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
               }
             ]
     in
@@ -153,10 +153,10 @@ userPlayerRankingOrderTest =
 
         listOfUserPlayers =
             [ { player = player
-              , user = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
+              , user = (Data.Users.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
               }
             , { player = challenger
-              , user = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
+              , user = (Data.Users.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
               }
             ]
 
@@ -174,10 +174,10 @@ userPlayerRankingOrderTest =
 
         output =
             [ { player = outputplayer
-              , user = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
+              , user = (Data.Users.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
               }
             , { player = outputchallenger
-              , user = (SR.Types.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
+              , user = (Data.Users.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
               }
             ]
     in

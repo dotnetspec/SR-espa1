@@ -15,8 +15,10 @@ import SR.Types
 import SR.Constants
 import Graphql.SelectionSet exposing (SelectionSet(..))
 import Eth.Types
+import Data.Rankings
+import Data.Users
 
-requestLoginUser : SR.Types.UserName -> SR.Types.Password -> Http.Request (SR.Types.Token)
+requestLoginUser : Data.Users.UserName -> Data.Users.Password -> Http.Request (Data.Users.Token)
 requestLoginUser user_name password =
     let
         requiredArgs = {username = user_name, password = password}
@@ -24,19 +26,19 @@ requestLoginUser user_name password =
         Http.queryRequest SR.Constants.endpointURL (queryLoginUser requiredArgs)
         |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
 
-gotToken : List String -> SR.Types.Token 
+gotToken : List String -> Data.Users.Token 
 gotToken lstring = 
     "fnED42KNUgACBwPPrxU00AYHx6mKEh6FP2HmKvQZ4ePZpk-VDhY"
 
 
-queryLoginUser : Query.LoginUserRequiredArguments -> SelectionSet (SR.Types.Token) RootQuery
+queryLoginUser : Query.LoginUserRequiredArguments -> SelectionSet (Data.Users.Token) RootQuery
 queryLoginUser requiredArgs =
     Query.loginUser requiredArgs
 
 
 
 mutationCreateAndOrLoginUser : (Mutation.CreateAndOrLoginUserOptionalArguments -> Mutation.CreateAndOrLoginUserOptionalArguments) 
-    -> SR.Types.UserName -> SR.Types.Password -> SelectionSet SR.Types.Token RootMutation
+    -> Data.Users.UserName -> Data.Users.Password -> SelectionSet Data.Users.Token RootMutation
 mutationCreateAndOrLoginUser fillInOptionals user_name password  =
     let
         -- filledInOptionals =
@@ -49,7 +51,7 @@ mutationCreateAndOrLoginUser fillInOptionals user_name password  =
 
 
 requestCreateAndOrLoginUser : (Mutation.CreateAndOrLoginUserOptionalArguments -> Mutation.CreateAndOrLoginUserOptionalArguments) ->
- SR.Types.UserName -> SR.Types.Password -> Http.Request SR.Types.Token
+ Data.Users.UserName -> Data.Users.Password -> Http.Request Data.Users.Token
 requestCreateAndOrLoginUser fillInOptionals user_name password =
     Http.mutationRequest SR.Constants.endpointURL (mutationCreateAndOrLoginUser fillInOptionals user_name password)
         |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
@@ -59,7 +61,7 @@ handleCreateAndOrLoginUserOptionalArguments fillInOptionals =
     --todo: make it handle the optionals
         fillInOptionals
 
-requestAllUserNames : SR.Types.Token -> Http.Request (List String)
+requestAllUserNames : Data.Users.Token -> Http.Request (List String)
 requestAllUserNames token =
     Http.queryRequest SR.Constants.endpointURL queryAllUserNames
         |> Http.withHeader "authorization" ("Bearer " ++ token)
@@ -68,9 +70,10 @@ queryAllUserNames : SelectionSet (List String) RootQuery
 queryAllUserNames =
     Query.allUserNames
 
-userSelectionSet : SelectionSet SR.Types.FUser SRdb.Object.User
+
+userSelectionSet : SelectionSet Data.Users.FUser SRdb.Object.User
 userSelectionSet =
-    Graphql.SelectionSet.succeed SR.Types.FUser
+    Graphql.SelectionSet.succeed Data.Users.FUser
         |> Graphql.SelectionSet.with SRdb.Object.User.id_
         |> Graphql.SelectionSet.with SRdb.Object.User.active
         |> Graphql.SelectionSet.with SRdb.Object.User.description
@@ -80,12 +83,12 @@ userSelectionSet =
         |> Graphql.SelectionSet.with SRdb.Object.User.username
 
        
-requestAllUsers : Http.Request (Maybe (List (Maybe SR.Types.FUser)))
+requestAllUsers : Http.Request (Maybe (List (Maybe Data.Users.FUser)))
 requestAllUsers  =
     Http.queryRequest SR.Constants.endpointURL (queryAllUsers userSelectionSet)
        |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
 
--- requestAllUsers : SR.Types.Token -> Http.Request (List String)
+-- requestAllUsers : Data.Users.Token -> Http.Request (List String)
 -- requestAllUsers token =
 --     Http.queryRequest SR.Constants.endpointURL queryAllUsers
 --         |> Http.withHeader "authorization" ("Bearer " ++ token)
@@ -103,22 +106,23 @@ queryAllUsers =
 --     |> ...
 -- MyLocalType is FRanking -> it can then be converted
        
-requestAllRankings : Http.Request (Maybe (List (Maybe SR.Types.FRanking)))
+requestAllRankings : Http.Request (Maybe (List (Maybe Data.Rankings.FRanking)))
 requestAllRankings  =
     Http.queryRequest SR.Constants.endpointURL (queryAllRankings rankingSelectionSet)
        |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
 
-rankingSelectionSet : SelectionSet SR.Types.FRanking SRdb.Object.Ranking
+
+rankingSelectionSet : SelectionSet Data.Rankings.FRanking SRdb.Object.Ranking
 rankingSelectionSet =
-        Graphql.SelectionSet.succeed SR.Types.FRanking
+        Graphql.SelectionSet.succeed Data.Rankings.FRanking
             |> Graphql.SelectionSet.with SRdb.Object.Ranking.id_
             |> Graphql.SelectionSet.with SRdb.Object.Ranking.active
             |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingname
             |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingdesc
             |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingownerid
 
-queryAllRankings : SelectionSet SR.Types.FRanking SRdb.Object.Ranking
-    -> SelectionSet (Maybe (List (Maybe SR.Types.FRanking))) RootQuery
+queryAllRankings : SelectionSet Data.Rankings.FRanking SRdb.Object.Ranking
+    -> SelectionSet (Maybe (List (Maybe Data.Rankings.FRanking))) RootQuery
 queryAllRankings rankingSelectSet =
         Query.allRankings rankingSelectSet
       

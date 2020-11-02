@@ -26,6 +26,7 @@ import SRdb.ScalarCodecs
 
 
 
+
 type Players = Players (EverySet Player)
 type PlayerNames = PlayerNames (EverySet String)
 
@@ -52,6 +53,27 @@ fromScalarCodecId : SRdb.ScalarCodecs.Id -> String
 fromScalarCodecId (Id id) =
     id
 
+
+createdMaybePlayerFromPlayer : Player -> Maybe Player
+createdMaybePlayerFromPlayer player =
+    Just
+        { rankingid = player.rankingid 
+        , uid = player.uid
+        , rank = player.rank
+        , challengerid = player.challengerid
+        }
+
+
+
+
+rankFromMaybeRank : Maybe Int -> Int
+rankFromMaybeRank int =
+    case int of
+        Nothing ->
+            0
+
+        Just a ->
+            a
 
 empty : Players 
 empty = 

@@ -129,7 +129,7 @@ standardUserList =
     ]
 
 
-remoteDataUsers : RemoteData.WebData (List SR.Types.User)
+remoteDataUsers : RemoteData.WebData (List Data.Users.User)
 remoteDataUsers =
     RemoteData.Success
         [ { datestamp = 1569839363942

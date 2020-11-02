@@ -17,13 +17,13 @@ import Data.Users
 import EverySet exposing (EverySet)
 
 
---userFuzzer : Fuzzer SR.Types.User -> Fuzzer (a -> b) -> Fuzzer b
+--userFuzzer : Fuzzer Data.Users.User -> Fuzzer (a -> b) -> Fuzzer b
 
 
-userFuzzer : Fuzzer SR.Types.User
+userFuzzer : Fuzzer Data.Users.User
 userFuzzer =
     Fuzz.map5
-        SR.Types.User
+        Data.Users.User
         Fuzz.int
         Fuzz.bool
         Fuzz.string
@@ -291,7 +291,7 @@ validatedUserListTest =
 -- this is used here to keep the original private
 
 
-isValidEthAddress : SR.Types.User -> Bool
+isValidEthAddress : Data.Users.User -> Bool
 isValidEthAddress user =
     if Eth.Utils.isAddress user.ethaddress then
         True

@@ -23,10 +23,10 @@ import Data.Global
 import Data.Global
 
 
-rankingInfoFuzzer : Fuzzer SR.Types.Ranking
+rankingInfoFuzzer : Fuzzer Data.Rankings.Ranking
 rankingInfoFuzzer =
     Fuzz.map5
-        SR.Types.Ranking
+        Data.Rankings.Ranking
         Fuzz.string
         Fuzz.bool
         Fuzz.string
@@ -60,7 +60,7 @@ rankingInfoFuzzer =
 -- this is used here to keep the original private
 
 
-isValidOwnerAddress : SR.Types.Ranking -> Bool
+isValidOwnerAddress : Data.Rankings.Ranking -> Bool
 isValidOwnerAddress rankInfo =
     let
         _ =

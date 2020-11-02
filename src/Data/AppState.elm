@@ -4,11 +4,12 @@ module Data.AppState exposing (AppState, updateAppState, releasePlayerForUI, rel
 import SR.Types
 import Internal.Types
 --import EverySet exposing (EverySet)
+import Data.Users
 
 -- First UserPlayer is current player, second is challenger
-type AppState = AppState (Maybe SR.Types.User) SR.Types.UserPlayer SR.Types.UserPlayer Internal.Types.RankingId
+type AppState = AppState (Maybe Data.Users.User) SR.Types.UserPlayer SR.Types.UserPlayer Internal.Types.RankingId
 
-updateAppState : (Maybe SR.Types.User) -> SR.Types.UserPlayer  -> SR.Types.UserPlayer ->  Internal.Types.RankingId -> AppState
+updateAppState : (Maybe Data.Users.User) -> SR.Types.UserPlayer  -> SR.Types.UserPlayer ->  Internal.Types.RankingId -> AppState
 updateAppState user uplayer uplayerChallenger rnkId = 
     AppState user uplayer uplayerChallenger rnkId
 

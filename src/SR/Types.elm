@@ -1,25 +1,15 @@
 module SR.Types exposing
     ( PlayerId, RankingId(..)
-    --, Player, 
     , Opponent, OpponentRelativeRank(..), Options, ResultOfMatch(..), WalletState(..)
     , UIState(..)
     , AppInfo, Colors, CreateNewLadderFormFields, FormValidations, LadderState(..), ModalState(..)
-    , NewRankingListServerResponse, ResultRadioOptions(..), User(..), UserListState(..), UserPlayer
+    , NewRankingListServerResponse, ResultRadioOptions(..)
+    , UserListState(..), UserPlayer
     , colors
     ,  AppState(..)
     , SelectedStatus(..)
     , SubState(..)
     , DeleteBinResponse
-    , FUser
-    , newUser
-    , FRanking
-    , newRanking
-    , fromScalarCodecId
-    , FPlayer
-    , newPlayer
-    , UserInfo
-    , ExtraUserInfo
-    , UserId
     )
 
 {-| Types
@@ -60,6 +50,7 @@ import SRdb.Scalar exposing (Id(..))
 import Data.Rankings
 import Data.Players
 import Data.Users
+import Data.Selected
 --import Json.Decode exposing (Decoder)
 
 
@@ -96,10 +87,6 @@ type alias PlayerId =
 
 type RankingId
     = RankingId String
-
-
-type alias Opponent =
-    UserPlayer
 
 
 type Username
@@ -153,16 +140,11 @@ type SubState
 
 
 type UserListState
-    = Success (List User)
+    = Success (List Data.Users.User)
     | Loading
     | NotAsked
     | Failure String
 
-
-type SelectedStatus
- = UserIsOwner
- | UserIsMember
- | UserIsNeitherOwnerNorMember
 
 type alias CreateNewLadderFormFields =
     { name : String
@@ -196,20 +178,11 @@ type OpponentRelativeRank
     -- | EthEnabledAndRegistered
 
 
-type alias UserPlayer =
-    { player : Data.Players.Player
-    , user : Data.Users.User
-    }
-
-
-
-
-
 type alias AppInfo =
     { selectedRanking : Data.Rankings.Ranking
     , player : UserPlayer
-    , user : User
-    , challenger : UserPlayer
+    , user : Data.Users.User
+    , challenger : Data.Selected.UserPlayer
     , appState : AppState
     }
 
