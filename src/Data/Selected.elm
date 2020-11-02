@@ -53,6 +53,7 @@ import Eth.Utils
 import Eth.Types
 --import Data.Global
 --import SRdb.Object.User exposing (ethaddress)
+--import Data.AppState
 
 
 
@@ -71,6 +72,21 @@ type SelectedStatus
  = UserIsOwner
  | UserIsMember
  | UserIsNeitherOwnerNorMember
+
+type Options
+    = MatchChallenge
+    | Result
+
+
+type ResultOfMatch
+    = Won
+    | Lost
+    | Undecided
+
+
+type OpponentRelativeRank
+    = OpponentRankHigher
+    | OpponentRankLower
 
 asSelected : EverySet UserPlayer -> Internal.Types.RankingId -> SelectedStatus -> Data.Players.Players -> Selected 
 asSelected esUserPlayer rnkId status sPlayers = 
@@ -593,13 +609,13 @@ sortedRank : List UserPlayer -> List UserPlayer
 sortedRank luplayer =
     let
         validatedMaybePlayerLst =
-            List.map Utils.MyUtils.splitPlayerFieldsToCreateMaybePlayer luplayer
+            List.map splitPlayerFieldsToCreateMaybePlayer luplayer
 
         filteredValidatedMaybePlayerLst =
             List.filter canPlayerBeInList validatedMaybePlayerLst
 
         convertedValidatedPlayerList =
-            List.map Utils.MyUtils.convertMaybePlayerToPlayer filteredValidatedMaybePlayerLst
+            List.map (\x -> (Maybe.withDefault Data.Players.empty x)) filteredValidatedMaybePlayerLst
 
         reorderedConvertedValidatedPlayerList =
             reorderPlayerListToStartAtOne
@@ -607,6 +623,14 @@ sortedRank luplayer =
     in
     List.sortBy extractRank reorderedConvertedValidatedPlayerList
 
+
+splitPlayerFieldsToCreateMaybePlayer : UserPlayer -> Maybe UserPlayer
+splitPlayerFieldsToCreateMaybePlayer uplayer =
+    if uplayer.player.rank > 0 && uplayer.player.rank < 50000 then
+        Just uplayer
+
+    else
+        Nothing
 
 
 reorderPlayerListToStartAtOne : List UserPlayer -> List UserPlayer
@@ -707,14 +731,6 @@ gotRankingOwnerAsPlayer selectedRanking luplayer =
             Just userPlayer ->
                 userPlayer.player
 
-
-    -- case existingUser of
-    --     Nothing ->
-    --         emptyUserPlayer
-
-    --     Just a ->
-    --         a
-
 filterPlayerOutOfPlayerList : String -> List UserPlayer -> List UserPlayer
 filterPlayerOutOfPlayerList addr lplayer =
     List.filterMap
@@ -732,24 +748,10 @@ doesPlayerAddrNOTMatchAddr addr player =
         Nothing
 
 
--- extractPlayersFromWebData : RemoteData.WebData (List Data.Players.Player) -> List Data.Players.Player
--- extractPlayersFromWebData remData =
---     case remData of
---         RemoteData.NotAsked ->
---             []
-
---         RemoteData.Loading ->
---             []
-
---         RemoteData.Success players ->
---             players
-
---         RemoteData.Failure httpError ->
---             []
-
 convertUserPlayersToPlayers : List UserPlayer -> List Data.Players.Player
 convertUserPlayersToPlayers luplayers =
-    List.map Data.Players.refEachPlayer luplayers
+    List.map refEachPlayer luplayers
+
 
 asUsers : Selected -> Data.Users.Users 
 asUsers sSelected =
@@ -759,6 +761,10 @@ asUsers sSelected =
 refEachUser : UserPlayer -> Data.Users.User
 refEachUser uplayer =
     uplayer.user
+
+refEachPlayer : UserPlayer -> Data.Players.Player
+refEachPlayer uplayer =
+    uplayer.player
 
 convertPlayersToUserPlayers : List Data.Players.Player -> List Data.Users.User -> List UserPlayer
 convertPlayersToUserPlayers lplayer luser =
@@ -779,14 +785,14 @@ convertEachPlayerToUserPlayer luser player =
     --{ player = player, user = Data.Users.gotUser (Data.Users.asUsers (EverySet.fromList luser)) player.uid }
 
 
-handleWon : Selected -> SR.Types.AppInfo -> Data.Users.Users -> (Selected, SR.Types.AppInfo)
+--handleWon : Selected -> SR.Types.AppInfo -> Data.Users.Users -> (Selected, SR.Types.AppInfo)
 handleWon (Selected esUPlayer rnkId status sPlayers ) appInfo sUsers =
             let
                 whoHigher =
                     isOpponentHigherRank appInfo.player appInfo.challenger
             in
             case whoHigher of
-                SR.Types.OpponentRankHigher ->
+                OpponentRankHigher ->
                     
                     let
                         
@@ -798,12 +804,12 @@ handleWon (Selected esUPlayer rnkId status sPlayers ) appInfo sUsers =
                             supdatedPlayer
                             |> changedRank appInfo.challenger (appInfo.challenger.player.rank + 1)
                             
-                        -- handling with AppState then handing back to AppInfo for now ...
-                        
-                            
-                        updatedUserPlayer = Data.AppState.releasePlayerForUI (Data.AppState.updateAppState (Just appInfo.user) 
-                            --appInfo.player appInfo.challenger (Data.Rankings.stringToRankingId appInfo.selectedRanking.id_))
-                            appInfo.player appInfo.challenger appInfo.selectedRanking.id_)
+                        -- tried 'handling with AppState then handing back to AppInfo for now ...'
+                        -- but Selected cannot import AppState without creating a loop (find another way)
+                        updatedUserPlayer = 
+                        --Data.AppState.releasePlayerForUI (Data.AppState.updateAppState (Just appInfo.user) 
+                            --appInfo.player appInfo.challenger (Data.Rankings.stringToRankingId appInfo.selectedRanking.id_)
+                            appInfo.player appInfo.challenger appInfo.selectedRanking.id_
 
                         newAppInfo =
                            
@@ -814,7 +820,7 @@ handleWon (Selected esUPlayer rnkId status sPlayers ) appInfo sUsers =
                         (supdatedPlayerAndChallenger, newAppInfo)
                         
 
-                SR.Types.OpponentRankLower ->
+                OpponentRankLower ->
 
                     let
                         --no ranking change - just update the player list for both players challenger to emptyPlayer, no rank change
@@ -845,14 +851,14 @@ handleWon (Selected esUPlayer rnkId status sPlayers ) appInfo sUsers =
                         (supdatedPlayerAndChallenger, newAppInfo)
 
 
-handleLost : Selected -> SR.Types.AppInfo -> (Selected, SR.Types.AppInfo)
+--handleLost : Selected -> SR.Types.AppInfo -> (Selected, SR.Types.AppInfo)
 handleLost (Selected esUPlayer rnkId status sPlayers ) appInfo =
     let
         whoHigher =
             isOpponentHigherRank appInfo.player appInfo.challenger
     in
     case whoHigher of
-        SR.Types.OpponentRankHigher ->
+        OpponentRankHigher ->
             let
                 supdatedPlayer =
                     changedRank appInfo.player appInfo.player.player.rank (asSelected esUPlayer rnkId status sPlayers)
@@ -881,7 +887,7 @@ handleLost (Selected esUPlayer rnkId status sPlayers ) appInfo =
             (supdatedPlayerAndChallenger, newAppInfo)
             
 
-        SR.Types.OpponentRankLower ->
+        OpponentRankLower ->
             --nb. higher rank is a lower number and vice versa!
             let
                 supdatedPlayer =  
@@ -912,7 +918,7 @@ handleLost (Selected esUPlayer rnkId status sPlayers ) appInfo =
             (supdatedPlayerAndChallenger, newAppInfo)
 
 
-handleUndecided : Selected -> SR.Types.AppInfo -> (Selected, SR.Types.AppInfo)
+--handleUndecided : Selected -> SR.Types.AppInfo -> (Selected, SR.Types.AppInfo)
 handleUndecided (Selected esUPlayer rnkId status sPlayers ) appInfo =
             let
                 supdatedPlayer =  
@@ -943,15 +949,15 @@ handleUndecided (Selected esUPlayer rnkId status sPlayers ) appInfo =
             (supdatedPlayerAndChallenger, newAppInfo)
 
 
-isOpponentHigherRank : UserPlayer -> SR.Types.Opponent -> SR.Types.OpponentRelativeRank
+--isOpponentHigherRank : UserPlayer -> SR.Types.Opponent -> SR.Types.OpponentRelativeRank
 isOpponentHigherRank uplayer opponent =
     -- nb. if player rank is 'higher' than opponent his rank integer will actually be 'less than' opponent
     -- we go by the integer ...
     if uplayer.player.rank > opponent.player.rank then
-        SR.Types.OpponentRankHigher
+        OpponentRankHigher
 
     else
-        SR.Types.OpponentRankLower
+        OpponentRankLower
 
 jsonEncodeNewSelectedRankingPlayerList : List UserPlayer -> Json.Encode.Value
 jsonEncodeNewSelectedRankingPlayerList luplayers =
@@ -972,11 +978,11 @@ jsonEncodeNewSelectedRankingPlayerList luplayers =
     in
     encodedList
 
-updateSelectedRankingOnChallenge : Selected -> SR.Types.AppInfo -> Selected
+--updateSelectedRankingOnChallenge : Selected -> SR.Types.AppInfo -> Selected
 updateSelectedRankingOnChallenge allSets appInfo =
     allSets
 
-assignChallengerAddrsForBOTHPlayers : Selected -> SR.Types.AppInfo -> Selected
+--assignChallengerAddrsForBOTHPlayers : Selected -> SR.Types.AppInfo -> Selected
 assignChallengerAddrsForBOTHPlayers sSelected appInfo =
     case sSelected of 
         Selected sselected rnkId status sPlayers  ->

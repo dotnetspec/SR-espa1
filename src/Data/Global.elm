@@ -60,18 +60,6 @@ emptyUserRanking =
         ,userInfo = Data.Users.empty
     }
 
-splitPlayerFieldsToCreateMaybePlayer : UserPlayer -> Maybe UserPlayer
-splitPlayerFieldsToCreateMaybePlayer uplayer =
-    if uplayer.player.rank > 0 && uplayer.player.rank < 50000 then
-        Just uplayer
-
-    else
-        Nothing
-
-refEachPlayer : UserPlayer -> Data.Players.Player
-refEachPlayer uplayer =
-    uplayer.player
-
 
 asGlobal : EverySet UserRanking -> Global 
 asGlobal esGlobal  = 
@@ -86,15 +74,6 @@ asEverySet (Global esGlobal)  =
 gotRanking : SR.Types.UserRanking -> Ranking
 gotRanking uranking =
     uranking.rankingInfo
-
-convertMaybePlayerToPlayer : Maybe SR.Types.UserPlayer -> SR.Types.UserPlayer
-convertMaybePlayerToPlayer mplayer =
-    case mplayer of
-        Nothing ->
-            SR.Defaults.emptyUserPlayer
-
-        Just a ->
-            a
 
 
 created : Data.Rankings.Rankings -> Data.Users.Users -> Global

@@ -1,12 +1,12 @@
 module SR.Types exposing
     ( PlayerId, RankingId(..)
-    , Opponent, OpponentRelativeRank(..), Options, ResultOfMatch(..), WalletState(..)
+    , WalletState(..)
     , UIState(..)
-    , AppInfo, Colors, CreateNewLadderFormFields, FormValidations, LadderState(..), ModalState(..)
+    , Colors, CreateNewLadderFormFields, FormValidations, LadderState(..), ModalState(..)
     , NewRankingListServerResponse, ResultRadioOptions(..)
     , UserListState(..), UserPlayer
     , colors
-    ,  AppState(..)
+    , AppState(..)
     , SelectedStatus(..)
     , SubState(..)
     , DeleteBinResponse
@@ -151,40 +151,6 @@ type alias CreateNewLadderFormFields =
     , desc : String
     }
 
-
-type Options
-    = MatchChallenge
-    | Result
-
-
-type ResultOfMatch
-    = Won
-    | Lost
-    | Undecided
-
-
-type OpponentRelativeRank
-    = OpponentRankHigher
-    | OpponentRankLower
-
-
---todo probably remove AccountState
--- type AccountState 
---     = 
-    --Guest 
-    --changed Registered to get to compile
-    --| Registered
-    -- EthEnabled
-    -- | EthEnabledAndRegistered
-
-
-type alias AppInfo =
-    { selectedRanking : Data.Rankings.Ranking
-    , player : UserPlayer
-    , user : Data.Users.User
-    , challenger : Data.Selected.UserPlayer
-    , appState : AppState
-    }
 
 type AppState
     = AppStateGeneral
