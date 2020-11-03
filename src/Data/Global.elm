@@ -108,7 +108,7 @@ isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
                     else
                         False
 
-                (Data.Users.Credited addr userId token userInfo) ->
+                (Data.Users.Credited addr userId token userInfo userState) ->
                     if a.rankingInfo.rankingownerid == userId then
                         True
 
@@ -256,7 +256,7 @@ gotMember sGlobal user =
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinrankings
         (Data.Users.NoCredit addr userId token userInfo) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinrankings
-        (Data.Users.Credited addr userId token userInfo) ->
+        (Data.Users.Credited addr userId token userInfo userState) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinrankings
 
 gotOthers : Global -> Data.Users.User -> Global
@@ -331,7 +331,7 @@ removedDeletedRankingsFromUserJoined user sGlobal =
                 Data.Users.NoWallet userId token userInfo
             (Data.Users.NoCredit addr userId token userInfo) ->
                 Data.Users.NoCredit addr userId token userInfo
-            (Data.Users.Credited addr userId token userInfo) ->
+            (Data.Users.Credited addr userId token userInfo userState) ->
                 Data.Users.Credited addr userId token userInfo
         --newUser
     
