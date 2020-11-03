@@ -2,7 +2,8 @@
 module Data.Selected exposing (Selected
     , UserPlayer
     , ResultOfMatch(..)
-    , SelectedStatus(..)
+    , SelectedOwnerStatus(..)
+    , SelectedState(..)
     , releasePlayerForUI
     , releaseChallengerForUI
     , asEverySet
@@ -84,7 +85,7 @@ type EnterResult =
 type alias Opponent =
     UserPlayer
 
-type SelectedStatus
+type SelectedOwnerStatus
  = UserIsOwner
  | UserIsMember
  | UserIsNeitherOwnerNorMember

@@ -27,10 +27,8 @@ import Json.Encode
 import Ports
 import RemoteData
 import SR.Constants
---import SR.Decode
 import SR.Defaults
 import SR.Elements
---import SR.Encode
 import SR.Types
 import Task
 import Time exposing (Posix)
@@ -38,7 +36,6 @@ import Utils.MyUtils
 import Utils.Validation.Validate
 import Validate
 import Data.Selected
-import Data.AppState
 import EverySet exposing (EverySet)
 import Data.Users
 import Data.Global
@@ -69,8 +66,9 @@ main =
 
 
 type Model
-    = AppOps SR.Types.WalletState DataState Data.Users.User SR.Types.UIState Data.AppState.AppState SR.Types.SubState TxRecord
+    = AppOps SR.Types.WalletState DataState Data.Users.User SR.Types.UIState SR.Types.SubState TxRecord
     | Failure String
+
 
 
 type DataState

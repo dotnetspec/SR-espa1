@@ -1,6 +1,7 @@
 -- Users will be mainly used to communicate externally to the jsonbin server
 module Data.Users exposing (Users
     , User(..)
+    , UserState(..)
     , FUser
     , UserInfo
     , UserId
@@ -56,8 +57,8 @@ type User =
 
 type UserState = 
     General
-    | CreateNewUser Data.Users.User
-    | UpdateProfile Data.Users.User
+    | CreateNewUser
+    | UpdateProfile
 
 -- Users (EverySet User) is not the same type as (EverySet User)
 -- Peter Damoc
@@ -100,26 +101,26 @@ type alias ExtraUserInfo =
 
 
 -- case user of
---         Guest ->
+--         Guest user ->
 --             Guest
---         (Registered userId token userInfo) ->
+--         (Registered userId token userInfo userState) ->
 --             Registered userId token userInfo
---         (NoWallet userId token userInfo) ->
+--         (NoWallet userId token userInfo userState) ->
 --             NoWallet userId token userInfo
---         (NoCredit addr userId token userInfo) ->
+--         (NoCredit addr userId token userInfo userState) ->
 --             NoCredit addr userId token userInfo
---         (Credited addr userId token userInfo) ->
+--         (Credited addr userId token userInfo userState) ->
 --             Credited addr userId token userInfo
 
 
 
 newUserFromFUser : FUser -> User 
 newUserFromFUser fuser = 
-    Registered (fromScalarCodecId fuser.id_) "5678" (UserInfo 1 True "" "" (ExtraUserInfo "" "" "") [""] 1)
+    Registered (fromScalarCodecId fuser.id_) "5678" (UserInfo 1 True "" "" (ExtraUserInfo "" "" "") [""] 1) General
 
 convertFUserToUser : FUser -> User 
 convertFUserToUser fuser =
-    Registered (fromScalarCodecId fuser.id_) "5678" (UserInfo 1 True "" "" (ExtraUserInfo "" "" "") [""] 1)
+    Registered (fromScalarCodecId fuser.id_) "5678" (UserInfo 1 True "" "" (ExtraUserInfo "" "" "") [""] 1) General
 
 type alias FUser = {
     id_ :  SRdb.ScalarCodecs.Id
@@ -138,7 +139,7 @@ fromScalarCodecId (Id id) =
 
 newUser : String -> String -> String -> String -> String -> User
 newUser username password desc email mobile =
-    Registered "" "" (UserInfo 10 True username password (ExtraUserInfo desc email mobile) [""] 0)
+    Registered "" "" (UserInfo 10 True username password (ExtraUserInfo desc email mobile) [""] 0) General
 
 --nb. this is not an EverySet, it's a Users type.
 empty : Users
@@ -158,30 +159,30 @@ asUsers esUser  =
 gotUserName : User -> String 
 gotUserName user = 
     case user of
-        Guest ->
+        Guest _ ->
             "Guest"
-        (Registered userId token userInfo) ->
+        (Registered userId token userInfo userState) ->
             userInfo.username
-        (NoWallet userId token userInfo) ->
+        (NoWallet userId token userInfo userState) ->
             userInfo.username
-        (NoCredit addr userId token userInfo) ->
+        (NoCredit addr userId token userInfo userState) ->
             userInfo.username
-        (Credited addr userId token userInfo) ->
+        (Credited addr userId token userInfo userState) ->
             userInfo.username
 
 removedDeletedRankingsFromUserJoined : User -> Data.Rankings.Rankings -> User 
 removedDeletedRankingsFromUserJoined user sRankings = 
     case user of
-        Guest ->
-            Guest
-        (Registered userId token userInfo) ->
-            Registered userId token (handleDeletionFromUserJoined userInfo sRankings)
-        (NoWallet userId token userInfo) ->
-            NoWallet userId token <| handleDeletionFromUserJoined userInfo sRankings
-        (NoCredit addr userId token userInfo) ->
-            NoCredit addr userId token <| handleDeletionFromUserJoined userInfo sRankings
-        (Credited addr userId token userInfo) ->
-            Credited addr userId token <| handleDeletionFromUserJoined userInfo sRankings
+        Guest _ ->
+            Guest General
+        (Registered userId token userInfo userState) ->
+            Registered userId token (handleDeletionFromUserJoined userInfo sRankings) userState
+        (NoWallet userId token userInfo userState) ->
+            NoWallet userId token (handleDeletionFromUserJoined userInfo sRankings) userState
+        (NoCredit addr userId token userInfo userState) ->
+            NoCredit addr userId token (handleDeletionFromUserJoined userInfo sRankings) userState
+        (Credited addr userId token userInfo userState) ->
+            Credited addr userId token (handleDeletionFromUserJoined userInfo sRankings) userState
 
 -- isUserNameValidated : String -> List User -> Bool
 -- isUserNameValidated username luser =
@@ -235,15 +236,15 @@ gotUser (Users susers) userId =
 gotUIDFromUser : User -> UserId
 gotUIDFromUser user = 
     case user of
-        Guest ->
+        Guest _ ->
             ""
-        (Registered userId _ _) ->
+        (Registered userId _ _ _) ->
             userId
-        (NoWallet userId _ _) ->
+        (NoWallet userId _ _ _) ->
             userId
-        (NoCredit _ userId _ _) ->
+        (NoCredit _ userId _ _ _) ->
             userId
-        (Credited _ userId _ _) ->
+        (Credited _ userId _ _ _) ->
             userId
 
 
@@ -287,7 +288,7 @@ addedNewJoinedRankingId rankingId user lUser =
     in
     --todo: temp fix
     --newUserList
-    [Guest]
+    [Guest General]
 
 
 removedInvalidRankingId : String -> Maybe String 
@@ -325,7 +326,7 @@ removedRankindIdFromUser  rnkId user =
     in
         --userUpdated
         -- todo: temp fix
-        Guest
+        Guest General
 
 filterRankingIds : String -> String -> Maybe String 
 filterRankingIds rnkIdToFilter currentRnkId =
@@ -383,16 +384,16 @@ updatedUserInSet : Users -> User -> Users
 updatedUserInSet susers updatedUser =
 --the user is 'Registered' for the purposes of updating the Set
     case updatedUser of
-        Guest ->
+        Guest user ->
             susers
-        (Registered userId token userInfo) ->
+        (Registered userId token userInfo userState) ->
             -- remove the original user, then add the new one
             addUser updatedUser <| removeUser (gotUser susers userId) susers
-        (NoWallet userId token userInfo) ->
+        (NoWallet userId token userInfo userState) ->
             addUser updatedUser <| removeUser (gotUser susers userId) susers
-        (NoCredit addr userId token userInfo) ->
+        (NoCredit addr userId token userInfo userState) ->
             addUser updatedUser <| removeUser (gotUser susers userId) susers
-        (Credited addr userId token userInfo) ->
+        (Credited addr userId token userInfo userState) ->
             addUser updatedUser <| removeUser (gotUser susers userId) susers
 
 
