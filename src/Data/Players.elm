@@ -1,6 +1,7 @@
 -- Players will be mainly used to communicate externally to the jsonbin server
 module Data.Players exposing (Players
     , Player
+    , FPlayer
     , gotAddress
     , validatedPlayerList
     , handleFetchedPlayers

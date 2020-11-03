@@ -1,6 +1,7 @@
 -- Selected will be mainly used to handle internal data of the selected ranking listing as it relates to the current user
 module Data.Selected exposing (Selected
     , UserPlayer
+    , ResultOfMatch
     , asEverySet
     , gotRankingOwnerAsPlayer
     , gotCurrentUserAsPlayerFromPlayerList

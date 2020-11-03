@@ -158,9 +158,9 @@ type Msg
     | ClickedCreateNewLadder
     | ClickedConfirmCreateNewLadder
     | ClickedNewChallengeConfirm
-    | ClickedChallengeOpponent SR.Types.UserPlayer
+    | ClickedChallengeOpponent Data.Selected.UserPlayer
     | ClickedJoinSelected
-    | ClickedChangedUIStateToEnterResult SR.Types.UserPlayer
+    | ClickedChangedUIStateToEnterResult Data.Selected.UserPlayer
     | ClickedDeleteRanking
     | ClickedDeleteRankingConfirmed
     | ClickedRemoveFromUserMemberRankings
@@ -185,8 +185,8 @@ type Msg
     | RegisteredNewUser (Result (GQLHttp.Error Data.Users.Token) Data.Users.Token)
     | ReceivedUserNames (Result (GQLHttp.Error (List String)) (List String))
     | ReceivedUsers (Result (GQLHttp.Error (Maybe (List (Maybe Data.Users.FUser)))) (Maybe (List (Maybe Data.Users.FUser))))
-    | ReceivedRankings (Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FRanking)))) (Maybe (List (Maybe SR.Types.FRanking))))
-    | ReceivedPlayersByRankingId (Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FPlayer)))) (Maybe (List (Maybe SR.Types.FPlayer)))) String
+    | ReceivedRankings (Result (GQLHttp.Error (Maybe (List (Maybe Data.Rankings.FRanking)))) (Maybe (List (Maybe Data.Rankings.FRanking))))
+    | ReceivedPlayersByRankingId (Result (GQLHttp.Error (Maybe (List (Maybe Data.Players.FPlayer)))) (Maybe (List (Maybe Data.Players.FPlayer)))) String
     | CreatedGlobal
       -- App Only Ops
     | MissingWalletInstructions
@@ -195,17 +195,17 @@ type Msg
     | SentResultToJsonbin (Result Http.Error ())
     | SentUserInfoAndDecodedResponseToNewUser (RemoteData.WebData (List Data.Users.User))
     | SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId (RemoteData.WebData SR.Types.RankingId)
-    | PlayersReceived (RemoteData.WebData (List SR.Types.Player))
-    | ReturnFromPlayerListUpdate (RemoteData.WebData (List SR.Types.Player))
+    | PlayersReceived (RemoteData.WebData (List Data.Players.Player))
+    | ReturnFromPlayerListUpdate (RemoteData.WebData (List Data.Players.Player))
     | ReturnFromUserListUpdate (RemoteData.WebData (List Data.Users.User))
     | ReturnedFromDeletedSelectedRankingFromJsonBin (RemoteData.WebData ( SR.Types.DeleteBinResponse))
     --| ReturnedFromDeletedRankingFromGlobalList (RemoteData.WebData (List Data.Rankings.Ranking))
     --| ReturnedFromDeletedRankingFromGlobalList (Result Http.Error SR.Types.)
-    | ReturnedFromDeletedRankingFromGlobalList (RemoteData.WebData (SR.Types.UpdateGlobalBinResponse))
-    | SentResultToWallet SR.Types.ResultOfMatch
+    | ReturnedFromDeletedRankingFromGlobalList (Result (GQLHttp.Error (Maybe (List (Maybe Data.Rankings.FRanking)))) (Maybe (List (Maybe Data.Rankings.FRanking))))
+    | SentResultToWallet Data.Selected.ResultOfMatch
     | AddedNewRankingToGlobalList (RemoteData.WebData (List Data.Rankings.Ranking))
     | TimeUpdated Posix
-    | ProcessResult SR.Types.ResultOfMatch
+    | ProcessResult Data.Selected.ResultOfMatch
       --Wallet Ops
     | WatchTxHash (Result String Eth.Types.TxHash)
     | WatchTx (Result String Eth.Types.Tx)
@@ -1845,7 +1845,7 @@ updateWithReceivedUsers model response =
 
 
 
-updateWithReceivedPlayersByRankingId : Model -> Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FPlayer)))) (Maybe (List (Maybe SR.Types.FPlayer))) -> String -> Model
+updateWithReceivedPlayersByRankingId : Model -> Result (GQLHttp.Error (Maybe (List (Maybe Data.Players.FPlayer)))) (Maybe (List (Maybe Data.Players.FPlayer))) -> String -> Model
 updateWithReceivedPlayersByRankingId model response rankingid =
     case (model, response) of -- AllEmpty, so fill the player set
         (AppOps walletState AllEmpty appInfo uiState subState txRec, Ok lplayers)  ->
@@ -1886,7 +1886,7 @@ updateWithReceivedPlayersByRankingId model response rankingid =
             (Failure "updateWithReceivedPlayersByRankingId18")
 
 
-updateWithReceivedRankings : Model -> Result (GQLHttp.Error (Maybe (List (Maybe SR.Types.FRanking)))) (Maybe (List (Maybe SR.Types.FRanking))) -> Model
+updateWithReceivedRankings : Model -> Result (GQLHttp.Error (Maybe (List (Maybe Data.Rankings.FRanking)))) (Maybe (List (Maybe Data.Rankings.FRanking))) -> Model
 updateWithReceivedRankings model response =
      case (model, response) of -- AllEmpty, so fill the Ranking set
         (AppOps walletState AllEmpty appInfo uiState subState txRec, Ok lrankings)  ->
@@ -1943,7 +1943,7 @@ updateWithReceivedRankings model response =
             (Failure "updateWithReceivedRankings18")
 
  
-updateWithReceivedRankingById : Model -> Result (GQLHttp.Error (Maybe SR.Types.FRanking)) (Maybe SR.Types.FRanking) -> Model
+updateWithReceivedRankingById : Model -> Result (GQLHttp.Error (Maybe Data.Rankings.FRanking)) (Maybe Data.Rankings.FRanking) -> Model
 updateWithReceivedRankingById model response =
      case (model, response) of -- AllEmpty, so fill the Ranking set
         (AppOps walletState AllEmpty appInfo uiState subState txRec, Ok _)  ->
@@ -2389,7 +2389,7 @@ updateAppInfoUserMobile userId token appInfo mobilefield userInfo =
         newAppInfo
 
 
-updatedForChallenge : Model -> List SR.Types.UserPlayer -> SR.Types.UserPlayer -> Data.Users.User -> Model
+updatedForChallenge : Model -> List Data.Selected.UserPlayer -> Data.Selected.UserPlayer -> Data.Users.User -> Model
 updatedForChallenge model luplayer opponentAsPlayer userMaybeCanDelete =
     case model of
         AppOps walletState dataState appInfo uiState subState  txRec ->
@@ -2448,7 +2448,7 @@ updatedForChallenge model luplayer opponentAsPlayer userMaybeCanDelete =
 
 
 
-updateSelectedRankingPlayerList : Model -> List SR.Types.UserPlayer -> Model
+updateSelectedRankingPlayerList : Model -> List Data.Selected.UserPlayer -> Model
 updateSelectedRankingPlayerList model luplayers =
     case model of
         AppOps walletState dataState appInfo uiState subState txRec ->
@@ -2479,7 +2479,7 @@ updateSelectedRankingPlayerList model luplayers =
             Failure <| "updateSelectedRankingPlayerList : "
 
 
--- populatedSelected : Model -> List SR.Types.UserPlayer -> Model
+-- populatedSelected : Model -> List Data.Selected.UserPlayer -> Model
 -- populatedSelected model luplayer =
 --     case model of
 --         AppOps walletState dataState appInfo uiState subState txRec ->
@@ -3102,7 +3102,7 @@ playerbuttons dataState appInfo =
 
 
 
-configureThenAddPlayerRankingBtns : Data.Selected.Selected -> Data.Users.Users -> SR.Types.AppInfo -> SR.Types.UserPlayer -> Element Msg
+configureThenAddPlayerRankingBtns : Data.Selected.Selected -> Data.Users.Users -> SR.Types.AppInfo -> Data.Selected.UserPlayer -> Element Msg
 configureThenAddPlayerRankingBtns sSelected sUsers appInfo uplayer =
    -- nb. 'uplayer' is the player that's being mapped cf. appInfo.player which is current user as player (single instance)
     let
