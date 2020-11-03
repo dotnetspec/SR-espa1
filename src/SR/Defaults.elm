@@ -1,8 +1,6 @@
 module SR.Defaults exposing
     ( 
-    emptyAppInfo, emptyFormValidations
-    --, emptyOwnedRanking
-    --, emptyUserPlayer
+    emptyFormValidations
     , emptyUserRanking, globalBinName
     , globalContainerId, secretKey, selectedBinName
     , selectedContainerId, userBinName, userContainerId
@@ -11,6 +9,7 @@ module SR.Defaults exposing
 
 {-| Default values.
 For those withDefault shenanigans.
+
 
 
 -}
@@ -50,13 +49,13 @@ emptyUserRanking =
 --     }
 
 
-emptyAppInfo =
-    { selectedRanking = (Data.Rankings.Ranking "" True "" Nothing "")
-    , player = {player = Data.Players.empty, user = Data.Users.empty}
-    , user = Data.Users.Guest
-    , challenger = {player = Data.Players.empty, user = Data.Users.empty}
-    , appState = AppStateGeneral
-    }
+-- emptyAppInfo =
+--     { selectedRanking = (Data.Rankings.Ranking "" True "" Nothing "")
+--     , player = {player = Data.Players.empty, user = Data.Users.empty}
+--     , user = Data.Users.Guest
+--     , challenger = {player = Data.Players.empty, user = Data.Users.empty}
+--     , appState = AppStateGeneral
+--     }
 
 
 

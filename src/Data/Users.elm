@@ -2,6 +2,7 @@
 module Data.Users exposing (Users
     , User(..)
     , FUser
+    , UserId
     , Token
     , UserName
     , Password
@@ -57,13 +58,8 @@ type alias UserInfo =
     , username : String
     , password : String
     , extrauserinfo : ExtraUserInfo
-    --, m_ethaddress : Maybe Eth.Types.Address
-    -- , description : String
-    -- , email : String
-    -- , mobile : String
     , userjoinrankings : List String
     , member_since : Int
-    --, m_token : Maybe Token
     }
 
 type alias UserId =

@@ -6,12 +6,12 @@ module SR.Types exposing
     , NewRankingListServerResponse, ResultRadioOptions(..)
     , UserListState(..)
     , colors
-    , AppState(..)
     , SubState(..)
     , DeleteBinResponse
     )
 
 {-| Types
+
 
 
 # Simple
@@ -149,16 +149,6 @@ type alias CreateNewLadderFormFields =
     { name : String
     , desc : String
     }
-
-
-type AppState
-    = AppStateGeneral
-    | AppStateCreateNewUser
-    | AppStateUpdateProfile
-    | AppStateCreateNewLadder 
-    | AppStateEnterWon 
-    | AppStateEnterLost 
-    | AppStateEnterUndecided
 
 
 type alias FormValidations =

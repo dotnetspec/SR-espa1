@@ -6,13 +6,28 @@ import Internal.Types
 --import EverySet exposing (EverySet)
 import Data.Users
 import Data.Selected
+import Data.Players
 
 -- First UserPlayer is current player, second is challenger
-type AppState = AppState (Maybe Data.Users.User) Data.Selected.UserPlayer Data.Selected.UserPlayer Internal.Types.RankingId
+--type AppState = AppState (Maybe Data.Users.User) Data.Selected.UserPlayer Data.Selected.UserPlayer Internal.Types.RankingId
+type AppState = General
+    | CreateNewUser Data.Users.User
+    | UpdateProfile Data.Users.User
+    | CreateNewLadder Data.Users.User Internal.Types.RankingId
+   
+   
 
-updateAppState : (Maybe Data.Users.User) -> Data.Selected.UserPlayer  -> Data.Selected.UserPlayer ->  Internal.Types.RankingId -> AppState
-updateAppState user uplayer uplayerChallenger rnkId = 
-    AppState user uplayer uplayerChallenger rnkId
+updateAppState : AppState -> AppState
+updateAppState appState = 
+    case appState of 
+        General ->
+            General
+        CreateNewUser _ ->
+            General
+        UpdateProfile _ ->
+            General
+        CreateNewLadder _ _ ->
+            General
 
 -- updateAppInfo : AppState -> SR.Types.AppInfo 
 -- updateAppInfo appState = 
@@ -26,30 +41,36 @@ updateAppState user uplayer uplayerChallenger rnkId =
 
 releasePlayerForUI : AppState -> Data.Selected.UserPlayer
 releasePlayerForUI appState =
-    case appState of 
-        AppState user uplayer uplayerChallenger rnkId ->
-            let
-                _ = Debug.log "uplayer" uplayer
-                newPlayer = uplayer.player
-                updatedPlayer = {newPlayer | challengerid = ""}
+    -- todo: fix
+    {player = Data.Players.Player "" "" 0 ""
+    , user = Data.Users.Guest}
+    -- case appState of 
+    --     AppState user uplayer uplayerChallenger rnkId ->
+    --         let
+    --             _ = Debug.log "uplayer" uplayer
+    --             newPlayer = uplayer.player
+    --             updatedPlayer = {newPlayer | challengerid = ""}
 
-                updatedUserPlayer = {uplayer | player = updatedPlayer}
+    --             updatedUserPlayer = {uplayer | player = updatedPlayer}
                 
-            in
+    --         in
       
-            updatedUserPlayer
+    --         updatedUserPlayer
 
 releaseChallengerForUI : AppState -> Data.Selected.UserPlayer
 releaseChallengerForUI appState =
-    case appState of 
-        AppState user uplayer uplayerChallenger rnkId ->
-            let
-                newChallenger = uplayerChallenger.player
-                updatedChallenger = {newChallenger | challengerid = ""}
+    -- todo: fix
+    {player = Data.Players.Player "" "" 0 ""
+    , user = Data.Users.Guest}
+    -- case appState of 
+    --     AppState user uplayer uplayerChallenger rnkId ->
+    --         let
+    --             newChallenger = uplayerChallenger.player
+    --             updatedChallenger = {newChallenger | challengerid = ""}
 
-                updatedUplayerChallenger = {uplayerChallenger | player = updatedChallenger}
-            in
-            updatedUplayerChallenger
+    --             updatedUplayerChallenger = {uplayerChallenger | player = updatedChallenger}
+    --         in
+    --         updatedUplayerChallenger
 
 
 

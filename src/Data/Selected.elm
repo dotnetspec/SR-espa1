@@ -67,6 +67,11 @@ type alias UserPlayer =
     , user : Data.Users.User
     }
 
+type EnterResult =
+    EnterWon (Maybe Data.Users.User) UserPlayer UserPlayer Internal.Types.RankingId
+    | EnterLost (Maybe Data.Users.User) UserPlayer UserPlayer Internal.Types.RankingId
+    | EnterUndecided (Maybe Data.Users.User) UserPlayer UserPlayer Internal.Types.RankingId
+
 type alias Opponent =
     UserPlayer
 

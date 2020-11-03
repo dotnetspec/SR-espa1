@@ -754,7 +754,7 @@ update msg model =
 
         (Cancel, AppOps walletState (StateFetched sUsers sRankings dKind) appInfo uiState subState txRec ) ->
             let
-                newAppInfo = {appInfo | appState = SR.Types.AppStateGeneral}
+                newAppInfo = {appInfo | appState = Data.AppState.General}
             in
                 ( AppOps walletState (StateFetched sUsers sRankings dKind) newAppInfo uiState SR.Types.StopSubscription emptyTxRecord, Cmd.none )
         
@@ -952,7 +952,7 @@ update msg model =
                                 (Data.Users.Registered userId token userInfo) ->
                                     let 
                                         newsUsers = Data.Users.updatedUserInSet sUsers 
-                                            (Data.Users.removedRankindIdFromUser (Utils.MyUtils.stringFromRankingId (Data.Selected.gotRankingId sSelected)) appInfo.user)
+                                            (Data.Users.removedRankindIdFromUser (Data.Rankings.stringFromRankingId (Data.Selected.gotRankingId sSelected)) appInfo.user)
                                         --removedRanking = Data.Rankings.removedById rnkId sRanking
                                         --todo: replace with a real set of rankings
                                         removedRanking = Data.Rankings.removedById (Data.Selected.gotRankingId sSelected) Data.Rankings.empty
@@ -1000,7 +1000,7 @@ update msg model =
                                     SR.Types.StopSubscription
                                     txRec
                                 , 
-                                    httpDeleteSelectedRankingFromJsonBin (Utils.MyUtils.stringFromRankingId (Data.Selected.gotRankingId sSelected))
+                                    httpDeleteSelectedRankingFromJsonBin (Data.Rankings.stringFromRankingId (Data.Selected.gotRankingId sSelected))
                             )
                         
                         Global sGlobal  ->
@@ -1425,7 +1425,7 @@ update msg model =
                                             Data.Players.extractPlayersFromWebData response
 
                                         --addedNewJoinedRankingId : String -> Data.Users.User -> List Data.Users.User -> List Data.Users.User
-                                        --newUserList = Data.Users.addedNewJoinedRankingId (Utils.MyUtils.stringFromRankingId rnkId) user (Data.Users.asList sUsers)
+                                        --newUserList = Data.Users.addedNewJoinedRankingId (Data.Rankings.stringFromRankingId rnkId) user (Data.Users.asList sUsers)
                                         newUserList = Data.Users.asList (Data.Selected.asUsers sSelected)
 
                                         convertedToUserPlayers =
@@ -1445,7 +1445,7 @@ update msg model =
                                                 (model, Cmd.none)
                                             (Data.Users.Registered userId token userInfo) ->
                                                  ( updateSelectedRankingPlayerList model convertedToUserPlayers
-                                                , httpUpdateUsersJoinRankings (Utils.MyUtils.stringFromRankingId (Data.Selected.gotRankingId sSelected)) appInfo.user newUserList )
+                                                , httpUpdateUsersJoinRankings (Data.Rankings.stringFromRankingId (Data.Selected.gotRankingId sSelected)) appInfo.user newUserList )
                                 
                                             (Data.Users.NoWallet userId token userInfo) ->
                                                 (model, Cmd.none)
@@ -2014,7 +2014,7 @@ updateFromLoggedInUser model response =
 
         (AppOps walletState dataState appInfo uiState subState  txRec, Err _) ->
             let
-                newAppInfo = { appInfo | appState = SR.Types.AppStateGeneral }
+                newAppInfo = { appInfo | appState = Data.AppState.General }
             in
                 AppOps walletState dataState newAppInfo uiState subState txRec
 
@@ -2056,7 +2056,7 @@ updateAppInfoOnRankingSelected appInfo rnkid rnkownerstr rnknamestr =
             appInfo.selectedRanking
 
         newRnkInfo =
-            { newSelectedRanking | id_ = Utils.MyUtils.stringFromRankingId rnkid, rankingownerid = rnkownerstr, rankingname = rnknamestr }
+            { newSelectedRanking | id_ = Data.Rankings.stringFromRankingId rnkid, rankingownerid = rnkownerstr, rankingname = rnknamestr }
 
         newAppInfo =
             { appInfo | selectedRanking = newRnkInfo }
@@ -2517,10 +2517,10 @@ view model =
                 (StateFetched sUsers sRankings dKind, userVal, SR.Types.AppStateCreateNewUser) ->
                     registerNewUserView userVal sUsers
 
-                (StateFetched sUsers sRankings (Global sGlobal ), userVal, SR.Types.AppStateGeneral) ->
+                (StateFetched sUsers sRankings (Global sGlobal ), userVal, Data.AppState.General) ->
                     gotUserView userVal sUsers sGlobal
                             
-                (StateFetched sUsers sRankings (Selected _ ), userVal, SR.Types.AppStateGeneral) ->
+                (StateFetched sUsers sRankings (Selected _ ), userVal, Data.AppState.General) ->
                      greetingView <| "ToDo: Select w/o a token should be possible"
                 
                 (StateFetched sUsers sRankings dKind, userVal, SR.Types.AppStateUpdateProfile) ->
@@ -3465,36 +3465,43 @@ confirmChallengebutton : Model -> Element Msg
 confirmChallengebutton model =
     case model of
         AppOps walletState dataState user uiState subState txRec ->
-            case (appInfo.user, appInfo.challenger.user) of
+            case (user, dataState) of
                 (Data.Users.Guest, _) ->
                     Element.text <| " No User3"
-                (Data.Users.Registered userId token userInfo, Data.Users.Registered _ _ challengerInfo) ->
-                    Element.column Grid.section <|
-                        [ Element.el Heading.h6 <| Element.text <| " Your opponent's details: "
-                        , Element.paragraph (Card.fill ++ Color.info) <|
-                            [ Element.el [] <| Element.text <| userInfo.username ++ " you are challenging " ++ challengerInfo.username
-                            ]
-                        , Element.el [] <| Element.text <| "Email: "
-                        , Element.paragraph (Card.fill ++ Color.info) <|
-                            [ Element.el [] <| Element.text <| challengerInfo.extrauserinfo.email
-                            ]
-                        , Element.el [] <| Element.text <| "Mobile: "
-                        , Element.paragraph (Card.fill ++ Color.info) <|
-                            [ Element.el [] <| Element.text <| challengerInfo.extrauserinfo.mobile
-                            ]
-                        , Element.column (Card.simple ++ Grid.simple) <|
-                            [ Element.wrappedRow Grid.simple <|
-                                [ Input.button (Button.simple ++ Color.simple) <|
-                                    { onPress = Just <| ResetToShowSelected
-                                    , label = Element.text "Cancel"
-                                    }
-                                , Input.button (Button.simple ++ Color.info) <|
-                                    { onPress = Just <| ClickedNewChallengeConfirm
-                                    , label = Element.text "Confirm"
-                                    }
-                                ]
-                            ]
-                        ]
+                (Data.Users.Registered userId token userInfo, AllEmpty) ->
+                    Element.text <| " No Data"
+                (Data.Users.Registered userId token userInfo, Selected sSelected) ->
+                    Element.text <| "implement here"
+
+                     -- Element.column Grid.section <|
+                    --     [ Element.el Heading.h6 <| Element.text <| " Your opponent's details: "
+                    --     , Element.paragraph (Card.fill ++ Color.info) <|
+                    --         [ Element.el [] <| Element.text <| userInfo.username ++ " you are challenging " ++ challengerInfo.username
+                    --         ]
+                    --     , Element.el [] <| Element.text <| "Email: "
+                    --     , Element.paragraph (Card.fill ++ Color.info) <|
+                    --         [ Element.el [] <| Element.text <| challengerInfo.extrauserinfo.email
+                    --         ]
+                    --     , Element.el [] <| Element.text <| "Mobile: "
+                    --     , Element.paragraph (Card.fill ++ Color.info) <|
+                    --         [ Element.el [] <| Element.text <| challengerInfo.extrauserinfo.mobile
+                    --         ]
+                    --     , Element.column (Card.simple ++ Grid.simple) <|
+                    --         [ Element.wrappedRow Grid.simple <|
+                    --             [ Input.button (Button.simple ++ Color.simple) <|
+                    --                 { onPress = Just <| ResetToShowSelected
+                    --                 , label = Element.text "Cancel"
+                    --                 }
+                    --             , Input.button (Button.simple ++ Color.info) <|
+                    --                 { onPress = Just <| ClickedNewChallengeConfirm
+                    --                 , label = Element.text "Confirm"
+                    --                 }
+                    --             ]
+                    --         ]
+                    --     ]
+                (Data.Users.Registered userId token userInfo, Global sGlobal) ->
+                    Element.text <| " Not in Selected"
+                   
 
                 (Data.Users.NoWallet userId token userInfo, _) ->
                     Element.text <| " No User3"
@@ -3502,14 +3509,14 @@ confirmChallengebutton model =
                     Element.text <| " No User3"
                 (Data.Users.Credited addr userId token userInfo, _) ->
                     Element.text <| " No User3"
-                ( Data.Users.Registered _ _ _, Data.Users.Guest ) ->
+                ( Data.Users.Registered _ _ _, _) ->
                     Element.text "No challenger"
-                ( Data.Users.Registered _ _ _, Data.Users.NoWallet _ _ _ )->
-                    Element.text "No challenger"
-                ( Data.Users.Registered _ _ _, Data.Users.NoCredit _ _ _ _ )->
-                    Element.text "No challenger"
-                ( Data.Users.Registered _ _ _, Data.Users.Credited _ _ _ _ )->
-                    Element.text "No challenger"
+                -- ( Data.Users.Registered _ _ _, Data.Users.NoWallet _ _ _ )->
+                --     Element.text "No challenger"
+                -- ( Data.Users.Registered _ _ _, Data.Users.NoCredit _ _ _ _ )->
+                --     Element.text "No challenger"
+                -- ( Data.Users.Registered _ _ _, Data.Users.Credited _ _ _ _ )->
+                    --Element.text "No challenger"
                     
         _ ->
             Element.text "Fail confirmChallengebutton"
@@ -3856,7 +3863,7 @@ isValidatedForAllUserDetailsInput user luser isExistingUser =
 
 
 
-isValidatedForAllLadderDetailsInput : Data.Rankings.Ranking -> Data.Rankings -> Bool
+isValidatedForAllLadderDetailsInput : Data.Rankings.Ranking -> Data.Rankings.Rankings -> Bool
 isValidatedForAllLadderDetailsInput rnkInfo sRanking =
     if
         Data.Rankings.isRankingNameValidated rnkInfo sRanking
@@ -3880,7 +3887,7 @@ enableButton enable =
 -- inputUpdateExistingUser model =
 --     case model of
 --         AppOps walletState dataState user uiState subState txRec ->
---             case appInfo.user of
+--             case user of
 --                 Nothing ->
 --                     Element.text "No User9"
 --                 Just userVal ->
@@ -3961,33 +3968,34 @@ nameValidView userVal sUsers =
             (Element.text """Validation View Error""")
 
 
-ladderNameValidationErr : SR.Types.AppInfo -> DataState -> Element Msg
-ladderNameValidationErr appInfo dataState =
-    case dataState of 
-        StateFetched sUsers sRankings dKind ->
-            case dKind of 
-                Global sGlobal  ->
-                    if Data.Rankings.isRankingNameValidated appInfo.selectedRanking (Data.Global.asList sGlobal) then
-                        Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "laddernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Ladder name OK!")
 
-                    else
-                        Element.el
-                            (List.append [ Element.htmlAttribute (Html.Attributes.id "laddernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
-                                ++ [ Element.moveLeft 0.0 ]
-                            )
-                            (Element.text """Must be unique (4-8 continuous chars)""")
+-- ladderNameValidationErr : SR.Types.AppInfo -> DataState -> Element Msg
+-- ladderNameValidationErr appInfo dataState =
+--     case dataState of 
+--         StateFetched sUsers sRankings dKind ->
+--             case dKind of 
+--                 Global sGlobal  ->
+--                     if Data.Rankings.isRankingNameValidated appInfo.selectedRanking (Data.Global.asList sGlobal) then
+--                         Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "laddernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Ladder name OK!")
 
-                _ -> 
-                    let 
-                        _ = Debug.log "dataState - should be Global" dataState
-                    in
-                        (Element.text "")
+--                     else
+--                         Element.el
+--                             (List.append [ Element.htmlAttribute (Html.Attributes.id "laddernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
+--                                 ++ [ Element.moveLeft 0.0 ]
+--                             )
+--                             (Element.text """Must be unique (4-8 continuous chars)""")
 
-        _ -> 
-                let 
-                    _ = Debug.log "dataState - ladderNameValidationErr" dataState
-                in
-                    (Element.text "") 
+--                 _ -> 
+--                     let 
+--                         _ = Debug.log "dataState - should be Global" dataState
+--                     in
+--                         (Element.text "")
+
+--         _ -> 
+--                 let 
+--                     _ = Debug.log "dataState - ladderNameValidationErr" dataState
+--                 in
+--                     (Element.text "") 
 
 
 
@@ -4010,32 +4018,32 @@ isMobileValidated str =
         False
         
 
-
-inputNewLadder : SR.Types.AppInfo -> DataState -> Element Msg
-inputNewLadder appInfo dataState =
-            Element.column Grid.section <|
-                [ Element.el Heading.h6 <| Element.text "New Ladder Details"
-                , Element.wrappedRow (Card.fill ++ Grid.simple)
-                    [ Element.column Grid.simple
-                        [ Input.text Input.simple
-                            { onChange = LadderNameInputChg
-                            , text = appInfo.selectedRanking.rankingname
-                            , placeholder = Nothing
-                            , label = Input.labelLeft Input.label <| Element.text "Name*:"
-                            }
-                        , ladderNameValidationErr appInfo dataState
-                            , Input.multiline Input.simple 
-                                {onChange = LadderDescInputChg
-                                , text =  Utils.Validation.Validate.validatedMaxTextLength (Maybe.withDefault "" appInfo.selectedRanking.rankingdesc) 20
-                                , placeholder = Nothing
-                                , label = Input.labelLeft Input.label <| Element.text "Desc:"
-                                , spellcheck = False
-                                }
-                        , Element.text "* Required"
-                        , ladderDescValidationErr appInfo.selectedRanking
-                        ]
-                    ]
-                ]
+-- --todo: fix:
+-- inputNewLadder : SR.Types.AppInfo -> DataState -> Element Msg
+-- inputNewLadder appInfo dataState =
+--             Element.column Grid.section <|
+--                 [ Element.el Heading.h6 <| Element.text "New Ladder Details"
+--                 , Element.wrappedRow (Card.fill ++ Grid.simple)
+--                     [ Element.column Grid.simple
+--                         [ Input.text Input.simple
+--                             { onChange = LadderNameInputChg
+--                             , text = appInfo.selectedRanking.rankingname
+--                             , placeholder = Nothing
+--                             , label = Input.labelLeft Input.label <| Element.text "Name*:"
+--                             }
+--                         , ladderNameValidationErr appInfo dataState
+--                             , Input.multiline Input.simple 
+--                                 {onChange = LadderDescInputChg
+--                                 , text =  Utils.Validation.Validate.validatedMaxTextLength (Maybe.withDefault "" appInfo.selectedRanking.rankingdesc) 20
+--                                 , placeholder = Nothing
+--                                 , label = Input.labelLeft Input.label <| Element.text "Desc:"
+--                                 , spellcheck = False
+--                                 }
+--                         , Element.text "* Required"
+--                         , ladderDescValidationErr appInfo.selectedRanking
+--                         ]
+--                     ]
+--                 ]
 
 
 handleGlobalNoTokenView : DataState -> Data.Users.User -> Html Msg
@@ -4394,7 +4402,7 @@ inputUserDetailsView dataState user =
                             Framework.container
                             [
                             Element.el Heading.h4 <| Element.text "No Users"
-                            , newuserConfirmPanel appInfo.user (Data.Users.asList sUsers)
+                            , newuserConfirmPanel user (Data.Users.asList sUsers)
                             ]
                     else
                         Framework.responsiveLayout [] <|
@@ -4404,7 +4412,7 @@ inputUserDetailsView dataState user =
                                 , Element.text "\n"
                                 , Element.el Heading.h4 <| Element.text "Create New User"
                                 , displayRegisterNewUser userVal sUsers
-                                , newuserConfirmPanel appInfo.user (Data.Users.asList sUsers)
+                                , newuserConfirmPanel user (Data.Users.asList sUsers)
                                 ]
                 _ ->
                     Html.text "tbc"
@@ -4418,7 +4426,7 @@ inputUserDetailsView dataState user =
                             Framework.container
                             [
                             Element.el Heading.h4 <| Element.text "No Users"
-                            , newuserConfirmPanel appInfo.user (Data.Users.asList sUsers)
+                            , newuserConfirmPanel user (Data.Users.asList sUsers)
                             ]
                     else
                         Framework.responsiveLayout [] <|
@@ -4428,7 +4436,7 @@ inputUserDetailsView dataState user =
                                 , Element.text "\n"
                                 , Element.el Heading.h4 <| Element.text "Create New User"
                                 , displayRegisterNewUser (Data.Users.Registered userId token userInfo) sUsers
-                                , newuserConfirmPanel appInfo.user (Data.Users.asList sUsers)
+                                , newuserConfirmPanel user (Data.Users.asList sUsers)
                                 ]
                 _ ->
                     Html.text "tbc"
@@ -5085,13 +5093,13 @@ httpAddCurrentUserToPlayerList dataState userRec =
     --                     -- the Decoder decodes what comes back in the response
     --                     Http.request
     --                         { body =
-    --                             Http.jsonBody <| Data.Selected.jsonEncodeNewSelectedRankingPlayerList (Data.Selected.userAdded sUsers (Utils.MyUtils.stringFromRankingId rnkId) (Data.Selected.asList sSelected) userRec)
+    --                             Http.jsonBody <| Data.Selected.jsonEncodeNewSelectedRankingPlayerList (Data.Selected.userAdded sUsers (Data.Rankings.stringFromRankingId rnkId) (Data.Selected.asList sSelected) userRec)
     --                         , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromPlayerListUpdate) SR.Decode.decodeNewPlayerListServerResponse
     --                         , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
     --                         , method = "PUT"
     --                         , timeout = Nothing
     --                         , tracker = Nothing
-    --                         , url = SR.Constants.jsonbinUrlStubForUpdateExistingBinAndRespond ++ (Utils.MyUtils.stringFromRankingId rnkId)
+    --                         , url = SR.Constants.jsonbinUrlStubForUpdateExistingBinAndRespond ++ (Data.Rankings.stringFromRankingId rnkId)
                             
     --                         }
     --                 _ -> 
@@ -5200,7 +5208,7 @@ httpPlayerList dataState =
 --                         , method = "PUT"
 --                         , timeout = Nothing
 --                         , tracker = Nothing
---                         , url = SR.Constants.jsonbinUrlStubForUpdateExistingBinAndRespond ++ (Utils.MyUtils.stringFromRankingId rnkId)
+--                         , url = SR.Constants.jsonbinUrlStubForUpdateExistingBinAndRespond ++ (Data.Rankings.stringFromRankingId rnkId)
 --                         }
 --                 _ -> 
 --                     let 
