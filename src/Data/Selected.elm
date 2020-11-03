@@ -68,7 +68,7 @@ type Selected = Selected (EverySet UserPlayer) Internal.Types.RankingId Selected
 type SelectedState = 
     DisplayRanking
     | EnteringResult
-    | EnteredResult
+    | EnteredResult EnterResult
     | CreateNewLadder Data.Users.User Internal.Types.RankingId
 
 type alias UserPlayer =
@@ -78,9 +78,9 @@ type alias UserPlayer =
 
 type EnterResult =
     NoResult
-    | EnterWon (Maybe Data.Users.User) UserPlayer UserPlayer Internal.Types.RankingId
-    | EnterLost (Maybe Data.Users.User) UserPlayer UserPlayer Internal.Types.RankingId
-    | EnterUndecided (Maybe Data.Users.User) UserPlayer UserPlayer Internal.Types.RankingId
+    | Won (Maybe Data.Users.User) UserPlayer UserPlayer Internal.Types.RankingId
+    | Lost (Maybe Data.Users.User) UserPlayer UserPlayer Internal.Types.RankingId
+    | Undecided (Maybe Data.Users.User) UserPlayer UserPlayer Internal.Types.RankingId
 
 type alias Opponent =
     UserPlayer
