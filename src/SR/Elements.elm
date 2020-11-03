@@ -112,6 +112,7 @@ globalHeading user =
                 ]
 
 
+
 selectedRankingHeaderEl : Data.Rankings.Ranking -> Element msg
 selectedRankingHeaderEl rnkInfo =
     Element.el Heading.h5 <| Element.text <| "Selected Ranking " ++ "-" ++ rnkInfo.rankingname

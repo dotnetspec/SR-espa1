@@ -2,6 +2,7 @@
 module Data.Selected exposing (Selected
     , UserPlayer
     , ResultOfMatch
+    , SelectedStatus(..)
     , asEverySet
     , gotRankingOwnerAsPlayer
     , gotCurrentUserAsPlayerFromPlayerList

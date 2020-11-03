@@ -1,6 +1,8 @@
 -- Global will be mainly used to handle internal data of the global rankings listing as it relates to the current user
 -- Global currently uses the UserRankings type
-module Data.Global exposing (Global, gotOthers
+module Data.Global exposing (Global
+    , UserRanking
+    , gotOthers
     , gotOwned
     , filteredSelected
     , createdPlayers

@@ -69,7 +69,7 @@ main =
 
 
 type Model
-    = AppOps SR.Types.WalletState DataState SR.Types.AppInfo SR.Types.UIState SR.Types.SubState TxRecord
+    = AppOps SR.Types.WalletState DataState SR.Types.UIState SR.Types.SubState TxRecord
     | Failure String
 
 
@@ -268,7 +268,7 @@ update msg model =
         (ClickedEnableEthereum, AppOps walletState dataState appInfo uiState subState txRec ) ->
             (model, Cmd.none)
             -- case accountState of
-            --     SR.Types.Guest ->
+            --     Data.Users.Guest ->
             --         (AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none)
             --     Data.Users.Registered _ _ _->
             --         (AppOps walletState dataState appInfo SR.Types.UIEnableEthereum SR.Types.StopSubscription txRec, Ports.log "eth_requestAccounts")
@@ -284,7 +284,7 @@ update msg model =
                     case dKind of
                         Selected sSelected ->
                             case appInfo.user of
-                                SR.Types.Guest ->
+                                Data.Users.Guest ->
                                     (Failure "Err", Cmd.none)
                                 (Data.Users.Registered userId token userInfo) ->
                                     let 
@@ -331,7 +331,7 @@ update msg model =
                     ( AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription txRec, Cmd.none )
                 SR.Types.WalletOpened ->
                     case newAppInfo.user of
-                        SR.Types.Guest ->
+                        Data.Users.Guest ->
                             ( AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription txRec, Cmd.none )
                         (Data.Users.Registered userId token userInfo) ->
                             (model, Cmd.none)
@@ -386,11 +386,11 @@ update msg model =
             --                                                                     newDataState = StateFetched sUsers sRankings newDataKind
             --                                                                 in
             --                                                                     case status of 
-            --                                                                         SR.Types.UserIsOwner ->     
+            --                                                                         Data.Selected.UserIsOwner ->     
             --                                                                             (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner SR.Types.StopSubscription emptyTxRecord, Cmd.none)
-            --                                                                         SR.Types.UserIsMember  ->
+            --                                                                         Data.Selected.UserIsMember  ->
             --                                                                             (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription emptyTxRecord, Cmd.none)
-            --                                                                         SR.Types.UserIsNeitherOwnerNorMember ->
+            --                                                                         Data.Selected.UserIsNeitherOwnerNorMember ->
             --                                                                             (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription emptyTxRecord, Cmd.none)
                     
             --                             _ ->
@@ -421,11 +421,11 @@ update msg model =
                             --                                         newDataState = StateFetched sUsers sRankings newDataKind
                             --                                     in
                             --                                         case status of 
-                            --                                             SR.Types.UserIsOwner ->     
+                            --                                             Data.Selected.UserIsOwner ->     
                             --                                                 (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsOwner SR.Types.StopSubscription emptyTxRecord, Cmd.none)
-                            --                                             SR.Types.UserIsMember  ->
+                            --                                             Data.Selected.UserIsMember  ->
                             --                                                 (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription emptyTxRecord, Cmd.none)
-                            --                                             SR.Types.UserIsNeitherOwnerNorMember ->
+                            --                                             Data.Selected.UserIsNeitherOwnerNorMember ->
                             --                                                 (AppOps walletState newDataState newAppChallengerAndPlayer SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription emptyTxRecord, Cmd.none)
                                                                             
                             --             _ ->
@@ -533,7 +533,7 @@ update msg model =
                                             appInfo.challenger ( rnkidstr)
 
 
-                                        --newDataKind = Selected Data.Selected.empty (Internal.Types.RankingId "") appInfo.user SR.Types.UserIsMember (Data.Players.empty)
+                                        --newDataKind = Selected Data.Selected.empty (Internal.Types.RankingId "") appInfo.user Data.Selected.UserIsMember (Data.Players.empty)
                                         --todo: we need to get the list of players from fauna
                                         newDataKind = Selected (Data.Selected.created [] sUsers rnkidstr)
                                         --todo: replace with real players
@@ -562,7 +562,7 @@ update msg model =
                             Data.AppState.updateAppState (Just appInfo.user) appInfo.player 
                             appInfo.challenger ( rnkidstr)
                         
-                        --newDataKind = Selected Data.Selected.empty rnkidstr appInfo.user SR.Types.UserIsNeitherOwnerNorMember (Data.Global.asRankings sGlobal)
+                        --newDataKind = Selected Data.Selected.empty rnkidstr appInfo.user Data.Selected.UserIsNeitherOwnerNorMember (Data.Global.asRankings sGlobal)
                         
                         newsSelected = Data.Selected.created [] sUsers rnkidstr
                         newDataKind = Selected newsSelected
@@ -761,7 +761,7 @@ update msg model =
                                 
         (Cancel, AppOps walletState (StateUpdated sUsers sRankings dKind) appInfo uiState subState txRec ) ->
             case appInfo.user of
-                SR.Types.Guest ->
+                Data.Users.Guest ->
                     (model, Cmd.none)
                 (Data.Users.Registered userId token userInfo) ->
                     let
@@ -788,11 +788,11 @@ update msg model =
                     case dKind of
                         Selected sSelected ->
                             case (Data.Selected.gotStatus sSelected) of 
-                                SR.Types.UserIsOwner ->
+                                Data.Selected.UserIsOwner ->
                                     (AppOps walletState dataState appInfo SR.Types.UISelectedRankingUserIsOwner SR.Types.StopSubscription emptyTxRecord, Cmd.none )
-                                SR.Types.UserIsMember ->
+                                Data.Selected.UserIsMember ->
                                     (AppOps walletState dataState appInfo SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription emptyTxRecord, Cmd.none )
-                                SR.Types.UserIsNeitherOwnerNorMember ->
+                                Data.Selected.UserIsNeitherOwnerNorMember ->
                                     (AppOps walletState dataState appInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription emptyTxRecord, Cmd.none )
                         _ -> 
                             (model, Cmd.none)
@@ -924,7 +924,7 @@ update msg model =
                     case dKind of 
                         Selected sSelected ->
                             case appInfo.user of
-                                SR.Types.Guest ->
+                                Data.Users.Guest ->
                                     (model, Cmd.none)
                                 (Data.Users.Registered userId token userInfo) ->
                                     ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer appInfo.user, Cmd.none )
@@ -946,7 +946,7 @@ update msg model =
                     case dKind of 
                         Selected sSelected ->
                             case appInfo.user of 
-                                SR.Types.Guest ->
+                                Data.Users.Guest ->
                                     (Failure "Err", Cmd.none)
 
                                 (Data.Users.Registered userId token userInfo) ->
@@ -1176,7 +1176,7 @@ update msg model =
                                     Global sGlobal  ->
                                         case appInfo.user of
                                         -- todo: fix
-                                            SR.Types.Guest ->
+                                            Data.Users.Guest ->
                                                 (model, Cmd.none)
                                             (Data.Users.Registered userId token userInfo) ->
                                                 (model, Cmd.none)
@@ -1224,7 +1224,7 @@ update msg model =
 
         (ResetRejectedNewUserToShowGlobal,  AppOps walletState dataState appInfo uiState subState txRec ) ->
             let 
-                newAppInfo = {appInfo | user = SR.Types.Guest}
+                newAppInfo = {appInfo | user = Data.Users.Guest}
             in 
             case walletState of 
                 SR.Types.WalletOperational ->
@@ -1248,7 +1248,7 @@ update msg model =
                                             -- Just user ->
                                             --     case user.m_ethaddress of
                                             -- todo: fix:
-                                                    SR.Types.Guest ->
+                                                    Data.Users.Guest ->
                                                         (model, Cmd.none)
                                                     (Data.Users.Registered userId token userInfo) ->
                                                         let
@@ -1360,7 +1360,7 @@ update msg model =
             --                 case dKind of 
             --                     Selected sSelected ->
             --                         case accountState of
-            --                             SR.Types.Guest -> 
+            --                             Data.Users.Guest -> 
             --                                 ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none )
             --                             Data.Users.Registered ->
             --                                 ( AppOps walletState dataState appInfo SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription txRec, Cmd.none )
@@ -1377,7 +1377,7 @@ update msg model =
             --                                             newLUPlayer = Data.Selected.userAdded sUsers appInfo.selectedRanking.id_ (Data.Selected.asList sSelected) userVal
             --                                             newSelected = Data.Selected.asSelected (EverySet.fromList newLUPlayer)
                                                         
-            --                                             newDataKind = Selected newSelected rnkId user SR.Types.UserIsMember Data.Players.empty
+            --                                             newDataKind = Selected newSelected rnkId user Data.Selected.UserIsMember Data.Players.empty
             --                                             newDataState = StateUpdated sUsers sRankings newDataKind
             --                                             updatedModel = AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription txRec
             --                                         in
@@ -1441,7 +1441,7 @@ update msg model =
                                     in
                                         case appInfo.user of
                                         -- todo: fix
-                                            SR.Types.Guest ->
+                                            Data.Users.Guest ->
                                                 (model, Cmd.none)
                                             (Data.Users.Registered userId token userInfo) ->
                                                  ( updateSelectedRankingPlayerList model convertedToUserPlayers
@@ -1530,7 +1530,7 @@ update msg model =
                 case appInfo.appState of
                     SR.Types.AppStateCreateNewLadder ->
                         case appInfo.user of 
-                            SR.Types.Guest ->
+                            Data.Users.Guest ->
                                 (model, Cmd.none)
                             (Data.Users.Registered userId token userInfo) ->
                                 ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel }
@@ -1544,7 +1544,7 @@ update msg model =
                     
                     SR.Types.AppStateCreateNewUser ->
                         case appInfo.user of 
-                            SR.Types.Guest ->
+                            Data.Users.Guest ->
                                 (model, Cmd.none)
                             (Data.Users.Registered userId token userInfo) ->
                                 let
@@ -1624,7 +1624,7 @@ update msg model =
             case model of 
                 AppOps walletState dataState appInfo uiState subState  txRec ->
                     case appInfo.user of 
-                        SR.Types.Guest ->
+                        Data.Users.Guest ->
                             (model, Cmd.none)
                         (Data.Users.Registered userId token userInfo) ->
                             (model, loginUser userInfo.username userInfo.password)
@@ -1956,7 +1956,7 @@ updateWithReceivedRankingById model response =
             let
                 --filteredFRanking = Maybe.withDefault (Data.Rankings.Ranking 0 True "" Nothing "") franking
                 -- need to convert from FRanking to Ranking (id_ needs to be a String)
-                --user = Maybe.withDefault SR.Types.Guest appInfo.user
+                --user = Maybe.withDefault Data.Users.Guest appInfo.user
 
                 --ethaddr = Maybe.withDefault "" (Just (Eth.Utils.addressToString user.m_ethaddress))
                 --fromFToRanking = SR.Types.newRanking filteredFRanking
@@ -1997,7 +1997,7 @@ updateFromLoggedInUser model response =
     case (model, response) of
         (AppOps walletState dataState appInfo uiState subState  txRec, Ok token) ->
             case appInfo.user of
-                SR.Types.Guest ->
+                Data.Users.Guest ->
                     model
                 (Data.Users.Registered userId _ userInfo) ->
                     let
@@ -2026,7 +2026,7 @@ updateFromRegisteredNewUser model response =
     case (response, model) of
         (Ok token, AppOps walletState dataState appInfo uiState subState  txRec) ->
             case appInfo.user of
-                SR.Types.Guest ->
+                Data.Users.Guest ->
                     model
                 (Data.Users.Registered userId _ userInfo) ->
                     let
@@ -2188,7 +2188,7 @@ gotWalletAddrApplyToUser appInfo uaddr =
         -- Just userVal ->
             
 
-            SR.Types.Guest ->
+            Data.Users.Guest ->
                 appInfo
             
             (Data.Users.Registered userId token userInfo) ->
@@ -2210,13 +2210,13 @@ gotWalletAddrApplyToUser appInfo uaddr =
 --         --(AppOps walletState dataState appInfo uiState subState  txRec, NewUserNameInputChg namefield) ->
 --         (AppOps walletState dataState appInfo uiState subState  txRec, NewUserNameInputChg namefield) ->
 --             let 
---                 newUser = Maybe.withDefault SR.Types.Guest appInfo.user
+--                 newUser = Maybe.withDefault Data.Users.Guest appInfo.user
 --             in
 --             -- case user of
 --             --     Nothing ->
 --                     let
 --                         -- create a new empty user
---                         --newUser = SR.Types.Guest
+--                         --newUser = Data.Users.Guest
 --                         newUserWithUpdatedNameField = 
 --                             { newUser | username = namefield }
 --                         newAppInfo =
@@ -2311,7 +2311,7 @@ handleUserInputs model msg appInfoToUpdate =
             model
         (AppOps walletState dataState appInfo uiState subState txRec, UserPasswordInputChg passwordfield, _) ->
             model
-        (AppOps walletState dataState appInfo uiState subState txRec, UserDescInputChg descfield, SR.Types.Guest) ->
+        (AppOps walletState dataState appInfo uiState subState txRec, UserDescInputChg descfield, Data.Users.Guest) ->
             model
         (AppOps walletState dataState appInfo uiState subState txRec, UserDescInputChg descfield, Data.Users.Registered userId token userInfo) ->
             AppOps walletState dataState (updateAppInfoUserDesc userId token appInfo descfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
@@ -2325,7 +2325,7 @@ handleUserInputs model msg appInfoToUpdate =
         (AppOps walletState dataState appInfo uiState subState txRec, UserDescInputChg descfield, Data.Users.Credited addr userId token userInfo) ->
                 AppOps walletState dataState (updateAppInfoUserDesc userId token appInfo descfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
-        (AppOps walletState dataState appInfo uiState subState txRec, UserEmailInputChg emailfield, SR.Types.Guest) ->
+        (AppOps walletState dataState appInfo uiState subState txRec, UserEmailInputChg emailfield, Data.Users.Guest) ->
             model
         (AppOps walletState dataState appInfo uiState subState txRec, UserEmailInputChg emailfield, Data.Users.Registered userId token userInfo) ->
             AppOps walletState dataState (updateAppInfoUserEmail userId token appInfo emailfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
@@ -2340,7 +2340,7 @@ handleUserInputs model msg appInfoToUpdate =
                 AppOps walletState dataState (updateAppInfoUserEmail userId token appInfo emailfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
         
-        (AppOps walletState dataState appInfo uiState subState txRec, UserMobileInputChg mobilefield, SR.Types.Guest) ->
+        (AppOps walletState dataState appInfo uiState subState txRec, UserMobileInputChg mobilefield, Data.Users.Guest) ->
             model
         (AppOps walletState dataState appInfo uiState subState txRec, UserMobileInputChg mobilefield, Data.Users.Registered userId token userInfo) ->
             AppOps walletState dataState (updateAppInfoUserMobile userId token appInfo mobilefield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
@@ -2402,7 +2402,7 @@ updatedForChallenge model luplayer opponentAsPlayer userMaybeCanDelete =
                     case dKind of 
                             Selected sSelected ->
                                 case appInfo.user of 
-                                    SR.Types.Guest ->
+                                    Data.Users.Guest ->
                                         Failure "updateChallenge fix"
                                     (Data.Users.Registered userId token userInfo) ->
                                         Failure "updateChallenge fix"
@@ -2526,7 +2526,7 @@ view model =
                 
                 (StateFetched sUsers sRankings dKind, userVal, SR.Types.AppStateUpdateProfile) ->
                     case userVal of 
-                        SR.Types.Guest ->
+                        Data.Users.Guest ->
                             handleGlobalNoTokenView dataState userVal
                         (Data.Users.Registered userId token userInfo) ->
                             inputUserDetailsView dataState appInfo
@@ -2551,19 +2551,19 @@ view model =
 resultView : Data.Selected.SelectedStatus -> SR.Types.UIState
 resultView  status = 
     case status of
-            UserIsOwner -> 
+            Data.Selected.UserIsOwner -> 
                 SR.Types.UISelectedRankingUserIsOwner
 
-            SR.Types.UserIsMember -> 
+            Data.Selected.UserIsMember -> 
                 SR.Types.UISelectedRankingUserIsPlayer
 
-            SR.Types.UserIsNeitherOwnerNorMember -> 
+            Data.Selected.UserIsNeitherOwnerNorMember -> 
                 SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
 
 generalLoginView : Data.Users.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
 generalLoginView userVal sUsers sGlobal =
     case userVal of 
-        SR.Types.Guest ->
+        Data.Users.Guest ->
             Framework.responsiveLayout [] <| Element.column Framework.container
             [ Element.el (Heading.h5) <|
                 Element.text ("SportRank - Welcome")
@@ -2598,7 +2598,7 @@ generalLoginView userVal sUsers sGlobal =
             , displayRegisterBtnIfNewUser
                 ""
                 ClickedRegister
-            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Types.Guest)) SR.Types.Guest
+            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal Data.Users.Guest)) Data.Users.Guest
             ]
 
         (Data.Users.Registered userId token userInfo) ->
@@ -2650,7 +2650,7 @@ generalLoginView userVal sUsers sGlobal =
 registerNewUserView : Data.Users.User -> Data.Users.Users -> Html Msg 
 registerNewUserView userVal sUsers = 
     case userVal of
-        SR.Types.Guest ->
+        Data.Users.Guest ->
             Html.text "Should have switched to Registered"
         (Data.Users.Registered userId token userInfo) ->
             Framework.responsiveLayout [] <|
@@ -2712,13 +2712,13 @@ registerNewUserView userVal sUsers =
 gotUserView : Data.Users.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
 gotUserView userVal sUsers sGlobal =
     case userVal of
-        SR.Types.Guest ->
+        Data.Users.Guest ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome Guest")
                     , displayEnableEthereumBtn
                     , displayForToken userVal sGlobal
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Types.Guest)) SR.Types.Guest
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal Data.Users.Guest)) Data.Users.Guest
                 ]
         (Data.Users.Registered userId token userInfo) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
@@ -2779,7 +2779,7 @@ failureView str =
 displayForToken : Data.Users.User -> Data.Global.Global -> Element Msg 
 displayForToken userVal sGlobal = 
     case userVal of
-        SR.Types.Guest ->
+        Data.Users.Guest ->
             Element.column Grid.section <|
                 [ Element.el [] <| Element.text ""
                 --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
@@ -2846,10 +2846,10 @@ greetingHeading greetingStr =
         ]
 
 
-ownedrankingbuttons : List SR.Types.UserRanking -> Data.Users.User -> Element Msg
+ownedrankingbuttons : List Data.Global.UserRanking -> Data.Users.User -> Element Msg
 ownedrankingbuttons urankingList user =
     case user of 
-        SR.Types.Guest ->
+        Data.Users.Guest ->
             Element.text ""
         (Data.Users.Registered userId token userInfo) ->
             Element.column Grid.section <|
@@ -2859,7 +2859,7 @@ ownedrankingbuttons urankingList user =
               else
                 Element.el Heading.h5 <| Element.text "Your Created Rankings:"
                 , Element.column (Card.simple ++ Grid.simple) <|
-                determineOwnedRankingButtonsDisplay (Data.Rankings.extractRankingList urankingList) user
+                determineOwnedRankingButtonsDisplay (Data.Global.rankingsAsList urankingList) user
             ]
         (Data.Users.NoWallet userId token userInfo) ->
             Element.column Grid.section <|
@@ -2868,7 +2868,7 @@ ownedrankingbuttons urankingList user =
               else
                 Element.el Heading.h5 <| Element.text "Your Created Rankings:"
                 , Element.column (Card.simple ++ Grid.simple) <|
-                determineOwnedRankingButtonsDisplay (Data.Rankings.extractRankingList urankingList) user
+                determineOwnedRankingButtonsDisplay (Data.Global.rankingsAsList urankingList) user
             ]
         (Data.Users.NoCredit addr userId token userInfo) ->
             Element.column Grid.section <|
@@ -2877,7 +2877,7 @@ ownedrankingbuttons urankingList user =
               else
                 Element.el Heading.h5 <| Element.text "Your Created Rankings:"
                 , Element.column (Card.simple ++ Grid.simple) <|
-                determineOwnedRankingButtonsDisplay (Data.Rankings.extractRankingList urankingList) user
+                determineOwnedRankingButtonsDisplay (Data.Global.rankingsAsList urankingList) user
             ]
         (Data.Users.Credited addr userId token userInfo) ->
             Element.column Grid.section <|
@@ -2886,7 +2886,7 @@ ownedrankingbuttons urankingList user =
               else
                 Element.el Heading.h5 <| Element.text "Your Created Rankings:"
                 , Element.column (Card.simple ++ Grid.simple) <|
-                determineOwnedRankingButtonsDisplay (Data.Rankings.extractRankingList urankingList) user
+                determineOwnedRankingButtonsDisplay (Data.Global.rankingsAsList urankingList) user
             ]
 
 
@@ -2909,74 +2909,74 @@ determineOwnedRankingButtonsDisplay lranking user =
         insertOwnedRankingList lranking user
 
 
-memberrankingbuttons : List SR.Types.UserRanking -> Data.Users.User -> Element Msg
+memberrankingbuttons : List Data.Global.UserRanking -> Data.Users.User -> Element Msg
 memberrankingbuttons urankingList user =
     let
         newRankingList =
-            Data.Rankings.extractRankingList urankingList
+            Data.Global.rankingsAsList urankingList
     in
     case user of
-        SR.Types.Guest ->
+        Data.Users.Guest ->
             Element.text ""
         (Data.Users.Registered userId token userInfo) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertMemberRankingList <| Data.Rankings.extractRankingList urankingList
+                insertMemberRankingList <| Data.Global.rankingsAsList urankingList
             ]
         (Data.Users.NoWallet userId token userInfo) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertMemberRankingList <| Data.Rankings.extractRankingList urankingList
+                insertMemberRankingList <| Data.Global.rankingsAsList urankingList
             ]
         (Data.Users.NoCredit addr userId token userInfo) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertMemberRankingList <| Data.Rankings.extractRankingList urankingList
+                insertMemberRankingList <| Data.Global.rankingsAsList urankingList
             ]
         (Data.Users.Credited addr userId token userInfo) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertMemberRankingList <| Data.Rankings.extractRankingList urankingList
+                insertMemberRankingList <| Data.Global.rankingsAsList urankingList
             ]
 
 
-otherrankingbuttons : List SR.Types.UserRanking -> Data.Users.User -> Element Msg
+otherrankingbuttons : List Data.Global.UserRanking -> Data.Users.User -> Element Msg
 otherrankingbuttons urankingList user =
     case user of
-        SR.Types.Guest ->
+        Data.Users.Guest ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "View Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList (Data.Rankings.extractRankingList urankingList)
+                insertNeitherOwnerNorMemberRankingList (Data.Global.rankingsAsList urankingList)
             ]
         (Data.Users.Registered userId token userInfo) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList (Data.Rankings.extractRankingList urankingList)
+                insertNeitherOwnerNorMemberRankingList (Data.Global.rankingsAsList urankingList)
             ]
 
         (Data.Users.NoWallet userId token userInfo) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList (Data.Rankings.extractRankingList urankingList)
+                insertNeitherOwnerNorMemberRankingList (Data.Global.rankingsAsList urankingList)
             ]
         (Data.Users.NoCredit addr userId token userInfo) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList (Data.Rankings.extractRankingList urankingList)
+                insertNeitherOwnerNorMemberRankingList (Data.Global.rankingsAsList urankingList)
             ]
         (Data.Users.Credited addr userId token userInfo) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList (Data.Rankings.extractRankingList urankingList)
+                insertNeitherOwnerNorMemberRankingList (Data.Global.rankingsAsList urankingList)
             ]
 
 
@@ -2989,7 +2989,7 @@ insertOwnedRankingList lrankinginfo user =
                 lrankinginfo
     in
     case user of
-        SR.Types.Guest ->
+        Data.Users.Guest ->
             [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
                     ++ Button.fill
                     ++ Button.simple 
@@ -3082,147 +3082,147 @@ neitherOwnerNorMemberRankingInfoBtn rankingobj =
 
 
 
-playerbuttons : DataState -> SR.Types.AppInfo -> Element Msg
-playerbuttons dataState appInfo =
-     case dataState of
-        StateFetched sUsers sRankings dKind -> 
-            case dKind of 
-                    Selected sSelected ->
-                        Element.column Grid.section <|
-                            [ SR.Elements.selectedRankingHeaderEl appInfo.selectedRanking
-                            , Element.column (Card.simple ++ Grid.simple) <|
-                                insertPlayerList dataState appInfo
-                            ]
+-- playerbuttons : DataState -> SR.Types.AppInfo -> Element Msg
+-- playerbuttons dataState appInfo =
+--      case dataState of
+--         StateFetched sUsers sRankings dKind -> 
+--             case dKind of 
+--                     Selected sSelected ->
+--                         Element.column Grid.section <|
+--                             [ SR.Elements.selectedRankingHeaderEl appInfo.selectedRanking
+--                             , Element.column (Card.simple ++ Grid.simple) <|
+--                                 insertPlayerList dataState appInfo
+--                             ]
 
-                    _ ->
-                        Element.text "Error1"
-        _ ->
-            Element.text "Error1"
-
-
+--                     _ ->
+--                         Element.text "Error1"
+--         _ ->
+--             Element.text "Error1"
 
 
-configureThenAddPlayerRankingBtns : Data.Selected.Selected -> Data.Users.Users -> SR.Types.AppInfo -> Data.Selected.UserPlayer -> Element Msg
-configureThenAddPlayerRankingBtns sSelected sUsers appInfo uplayer =
-   -- nb. 'uplayer' is the player that's being mapped cf. appInfo.player which is current user as player (single instance)
-    let
-        _ = Debug.log "configureThenAddPlayerRankingBtns" uplayer
-        printChallengerNameOrAvailable = Data.Selected.printChallengerNameOrAvailable sSelected sUsers uplayer
-    in
-        --case appInfo.user of
-        case (appInfo.user, uplayer.user) of
-            (SR.Types.Guest, _)  ->
-                Element.text "No User2"
 
-            (Data.Users.Registered userId token userInfo, Data.Users.Registered _ _ userPlayerInfo) ->
-                if Data.Selected.isUserPlayerMemberOfSelectedRanking sSelected appInfo.user then
+
+-- configureThenAddPlayerRankingBtns : Data.Selected.Selected -> Data.Users.Users -> SR.Types.AppInfo -> Data.Selected.UserPlayer -> Element Msg
+-- configureThenAddPlayerRankingBtns sSelected sUsers appInfo uplayer =
+--    -- nb. 'uplayer' is the player that's being mapped cf. appInfo.player which is current user as player (single instance)
+--     let
+--         _ = Debug.log "configureThenAddPlayerRankingBtns" uplayer
+--         printChallengerNameOrAvailable = Data.Selected.printChallengerNameOrAvailable sSelected sUsers uplayer
+--     in
+--         --case appInfo.user of
+--         case (appInfo.user, uplayer.user) of
+--             (Data.Users.Guest, _)  ->
+--                 Element.text "No User2"
+
+--             (Data.Users.Registered userId token userInfo, Data.Users.Registered _ _ userPlayerInfo) ->
+--                 if Data.Selected.isUserPlayerMemberOfSelectedRanking sSelected appInfo.user then
                     
-                    if Data.Selected.isPlayerCurrentUser appInfo.user uplayer then
-                        --if isCurrentUserInAChallenge then
-                        if Data.Selected.isChallenged sSelected sUsers uplayer then
-                            Element.column Grid.simple <|
-                                [ Input.button (Button.fill ++ Color.success) <|
-                                    { onPress = Just <| ClickedChangedUIStateToEnterResult appInfo.player
-                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
-                                    }
-                                ]
-                        else
-                        -- player is current user, but not in a challenge:
-                        let 
-                            _ = Debug.log "player is current user, but not in a challenge" "here"
-                        in
-                            Element.column Grid.simple <|
-                                [ Input.button (Button.fill ++ Color.info) <|
-                                    { onPress = Nothing
-                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
-                                    }
-                                ]
-                        -- else if - this uplayer isn't the current user but the current user is in a challenge so disable any other players
+--                     if Data.Selected.isPlayerCurrentUser appInfo.user uplayer then
+--                         --if isCurrentUserInAChallenge then
+--                         if Data.Selected.isChallenged sSelected sUsers uplayer then
+--                             Element.column Grid.simple <|
+--                                 [ Input.button (Button.fill ++ Color.success) <|
+--                                     { onPress = Just <| ClickedChangedUIStateToEnterResult appInfo.player
+--                                     , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+--                                     }
+--                                 ]
+--                         else
+--                         -- player is current user, but not in a challenge:
+--                         let 
+--                             _ = Debug.log "player is current user, but not in a challenge" "here"
+--                         in
+--                             Element.column Grid.simple <|
+--                                 [ Input.button (Button.fill ++ Color.info) <|
+--                                     { onPress = Nothing
+--                                     , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+--                                     }
+--                                 ]
+--                         -- else if - this uplayer isn't the current user but the current user is in a challenge so disable any other players
 
-                    --else if isCurrentUserInAChallenge then
-                    else if Data.Selected.isChallenged sSelected sUsers uplayer then
-                        Element.column Grid.simple <|
-                            [ Input.button (Button.fill ++ Color.disabled) <|
-                                { onPress = Nothing
-                                , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
-                                }
-                            ]
-                        -- else if - this uplayer isn't the current user but is being challenged
+--                     --else if isCurrentUserInAChallenge then
+--                     else if Data.Selected.isChallenged sSelected sUsers uplayer then
+--                         Element.column Grid.simple <|
+--                             [ Input.button (Button.fill ++ Color.disabled) <|
+--                                 { onPress = Nothing
+--                                 , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+--                                 }
+--                             ]
+--                         -- else if - this uplayer isn't the current user but is being challenged
 
-                    else if Data.Selected.isChallenged sSelected sUsers uplayer then
-                        Element.column Grid.simple <|
-                            [ Input.button (Button.fill ++ Color.disabled) <|
-                                { onPress = Nothing
-                                , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
-                                }
-                            ]
-                    else
-                    -- this uplayer isn't the current user and isn't challenged by anyone
-                        if not (Data.Selected.isChallenged sSelected sUsers uplayer) then
-                            Element.column Grid.simple <|
-                                [ Input.button (Button.fill ++ Color.light) <|
-                                    { onPress = Just <| ClickedChallengeOpponent uplayer
-                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
-                                    }
-                                ]
-                        else 
-                                Element.column Grid.simple <|
-                                [ Input.button (Button.fill ++ Color.disabled) <|
-                                    { onPress = Nothing
-                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
-                                    }
-                                ]
-                else
-                    -- the user isn't a member of this ranking so disable everything
-                    Element.column Grid.simple <|
-                        [ Input.button (Button.fill ++ Color.disabled) <|
-                            { onPress = Nothing
-                            , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
-                            }
-                        ]
+--                     else if Data.Selected.isChallenged sSelected sUsers uplayer then
+--                         Element.column Grid.simple <|
+--                             [ Input.button (Button.fill ++ Color.disabled) <|
+--                                 { onPress = Nothing
+--                                 , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+--                                 }
+--                             ]
+--                     else
+--                     -- this uplayer isn't the current user and isn't challenged by anyone
+--                         if not (Data.Selected.isChallenged sSelected sUsers uplayer) then
+--                             Element.column Grid.simple <|
+--                                 [ Input.button (Button.fill ++ Color.light) <|
+--                                     { onPress = Just <| ClickedChallengeOpponent uplayer
+--                                     , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+--                                     }
+--                                 ]
+--                         else 
+--                                 Element.column Grid.simple <|
+--                                 [ Input.button (Button.fill ++ Color.disabled) <|
+--                                     { onPress = Nothing
+--                                     , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+--                                     }
+--                                 ]
+--                 else
+--                     -- the user isn't a member of this ranking so disable everything
+--                     Element.column Grid.simple <|
+--                         [ Input.button (Button.fill ++ Color.disabled) <|
+--                             { onPress = Nothing
+--                             , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+--                             }
+--                         ]
 
-            (Data.Users.NoWallet userId token userInfo, _) ->
-                Element.text "No User3"
-            (Data.Users.NoCredit addr userId token userInfo, _) ->
-                Element.text "No User4"
-            (Data.Users.Credited addr userId token userInfo, _) ->
-                Element.text "No User5"
-            ( Data.Users.Registered _ _ _, SR.Types.Guest ) ->
-                Element.text "No challenger"
-            ( Data.Users.Registered _ _ _, Data.Users.NoWallet _ _ _ )->
-                Element.text "No challenger"
-            ( Data.Users.Registered _ _ _, Data.Users.NoCredit _ _ _ _ )->
-                Element.text "No challenger"
-            ( Data.Users.Registered _ _ _, Data.Users.Credited _ _ _ _ )->
-                Element.text "No challenger"
+--             (Data.Users.NoWallet userId token userInfo, _) ->
+--                 Element.text "No User3"
+--             (Data.Users.NoCredit addr userId token userInfo, _) ->
+--                 Element.text "No User4"
+--             (Data.Users.Credited addr userId token userInfo, _) ->
+--                 Element.text "No User5"
+--             ( Data.Users.Registered _ _ _, Data.Users.Guest ) ->
+--                 Element.text "No challenger"
+--             ( Data.Users.Registered _ _ _, Data.Users.NoWallet _ _ _ )->
+--                 Element.text "No challenger"
+--             ( Data.Users.Registered _ _ _, Data.Users.NoCredit _ _ _ _ )->
+--                 Element.text "No challenger"
+--             ( Data.Users.Registered _ _ _, Data.Users.Credited _ _ _ _ )->
+--                 Element.text "No challenger"
           
 
-insertPlayerList : DataState -> SR.Types.AppInfo -> List (Element Msg)
-insertPlayerList dataState appInfo =
-    case dataState of
-                    StateFetched sUsers sRankings dKind -> 
-                        case dKind of 
-                                Selected sSelected ->
-                                    let
+-- insertPlayerList : DataState -> SR.Types.AppInfo -> List (Element Msg)
+-- insertPlayerList dataState appInfo =
+--     case dataState of
+--                     StateFetched sUsers sRankings dKind -> 
+--                         case dKind of 
+--                                 Selected sSelected ->
+--                                     let
                                        
-                                        mapOutPlayerList =
-                                            List.map
-                                                (configureThenAddPlayerRankingBtns sSelected sUsers appInfo)
-                                                (Data.Selected.asList sSelected)
+--                                         mapOutPlayerList =
+--                                             List.map
+--                                                 (configureThenAddPlayerRankingBtns sSelected sUsers appInfo)
+--                                                 (Data.Selected.asList sSelected)
 
-                                    in
-                                    mapOutPlayerList
+--                                     in
+--                                     mapOutPlayerList
 
-                                _ ->
-                                    [ Element.text "error2" ]
-                    _ ->
-                        [ Element.text "error2" ]
+--                                 _ ->
+--                                     [ Element.text "error2" ]
+--                     _ ->
+--                         [ Element.text "error2" ]
 
 
 selecteduserIsOwnerhomebutton : Data.Users.User -> Element Msg
 selecteduserIsOwnerhomebutton user =
     -- case user of
-    --     SR.Types.Guest ->
+    --     Data.Users.Guest ->
     --         Element.text "Error"
     --     (Data.Users.Registered userId token userInfo) ->
             Element.column Grid.section <|
@@ -3326,7 +3326,7 @@ selecteduserIsNeitherPlayerNorOwnerHomebutton user =
 joinBtn : Data.Users.User -> Element Msg
 joinBtn user  =
     case user of
-        SR.Types.Guest ->
+        Data.Users.Guest ->
             Input.button ([ Element.htmlAttribute (Html.Attributes.id "existingUserJoinbtn") ] ++ Button.simple ++ Color.disabled) <|
             { onPress = Just ClickedRegister
             , label = Element.text "Join"
@@ -3356,85 +3356,85 @@ joinBtn user  =
        
 
 
-newrankingconfirmbutton : SR.Types.AppInfo -> DataState -> Element Msg
-newrankingconfirmbutton appInfo dataState =
-    case dataState of 
-            StateFetched sUsers sRankings dKind ->
-                 case dKind of 
-                    Global sGlobal  ->
-                        Element.column Grid.section <|
-                            [ Element.el Heading.h6 <| Element.text "Click to continue ..."
-                            , Element.column (Card.simple ++ Grid.simple) <|
-                                [ Element.wrappedRow Grid.simple <|
-                                    [ Input.button (Button.simple ++ Color.simple) <|
-                                        { onPress = Just <| Cancel
-                                        , label = Element.text "Cancel"
-                                        }
-                                    , Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput appInfo.selectedRanking sRankings)) <|
+-- newrankingconfirmbutton : SR.Types.AppInfo -> DataState -> Element Msg
+-- newrankingconfirmbutton appInfo dataState =
+--     case dataState of 
+--             StateFetched sUsers sRankings dKind ->
+--                  case dKind of 
+--                     Global sGlobal  ->
+--                         Element.column Grid.section <|
+--                             [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+--                             , Element.column (Card.simple ++ Grid.simple) <|
+--                                 [ Element.wrappedRow Grid.simple <|
+--                                     [ Input.button (Button.simple ++ Color.simple) <|
+--                                         { onPress = Just <| Cancel
+--                                         , label = Element.text "Cancel"
+--                                         }
+--                                     , Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput appInfo.selectedRanking sRankings)) <|
                                         
-                                        { onPress = Just <| ClickedConfirmCreateNewLadder
-                                        , label = Element.text "Confirm"
-                                        }
-                                    ]
-                                ]
-                            , SR.Elements.warningParagraph
-                            ]
-                    _ -> 
-                        let 
-                            _ = Debug.log "newrankingconfirmbutton - dataState should be global" dataState
-                        in
-                            Element.text ""
+--                                         { onPress = Just <| ClickedConfirmCreateNewLadder
+--                                         , label = Element.text "Confirm"
+--                                         }
+--                                     ]
+--                                 ]
+--                             , SR.Elements.warningParagraph
+--                             ]
+--                     _ -> 
+--                         let 
+--                             _ = Debug.log "newrankingconfirmbutton - dataState should be global" dataState
+--                         in
+--                             Element.text ""
                     
-            _ -> 
-                let 
-                    _ = Debug.log "newrankingconfirmbutton - dataState" dataState
-                in
-                    Element.text ""
+--             _ -> 
+--                 let 
+--                     _ = Debug.log "newrankingconfirmbutton - dataState" dataState
+--                 in
+--                     Element.text ""
 
 
-confirmDelRankingBtn : SR.Types.AppInfo -> DataState -> Element Msg
-confirmDelRankingBtn appInfo dataState =
+-- confirmDelRankingBtn : SR.Types.AppInfo -> DataState -> Element Msg
+-- confirmDelRankingBtn appInfo dataState =
     
-    case dataState of 
-            StateUpdated sUsers sRankings dKind ->
-                 case dKind of 
-                    Global sGlobal  ->
-                        let 
-                            m_userRanking = Data.Global.gotUserRankingByRankingId sGlobal appInfo.selectedRanking.id_
-                        in
-                            case m_userRanking of
-                                Nothing ->
-                                    Element.text "Cannot find the ranking"
-                                Just userRanking ->
-                                    Element.column Grid.section <|
-                                        [ 
-                                        Element.el Heading.h5 <| Element.text userRanking.rankingInfo.rankingname
-                                        , Element.el Heading.h6 <| Element.text "Click to continue ..."
-                                        , Element.column (Card.simple ++ Grid.simple) <|
-                                            [ Element.wrappedRow Grid.simple <|
-                                                [ Input.button (Button.simple ++ Color.simple) <|
-                                                    { onPress = Just <| Cancel
-                                                    , label = Element.text "Cancel"
-                                                    }
-                                                    , Input.button Button.simple <|
-                                                    { onPress = Just <| ClickedDeleteRankingConfirmed
-                                                    , label = Element.text "Confirm"
-                                                    }
-                                                ]
-                                            ]
-                                        , SR.Elements.permanentlyDeleteWarnPara
-                                        ]
-                    _ -> 
-                        let 
-                            _ = Debug.log "newrankingconfirmbutton - dataState should be global" dataState
-                        in
-                            Element.text ""
+--     case dataState of 
+--             StateUpdated sUsers sRankings dKind ->
+--                  case dKind of 
+--                     Global sGlobal  ->
+--                         let 
+--                             m_userRanking = Data.Global.gotUserRankingByRankingId sGlobal appInfo.selectedRanking.id_
+--                         in
+--                             case m_userRanking of
+--                                 Nothing ->
+--                                     Element.text "Cannot find the ranking"
+--                                 Just userRanking ->
+--                                     Element.column Grid.section <|
+--                                         [ 
+--                                         Element.el Heading.h5 <| Element.text userRanking.rankingInfo.rankingname
+--                                         , Element.el Heading.h6 <| Element.text "Click to continue ..."
+--                                         , Element.column (Card.simple ++ Grid.simple) <|
+--                                             [ Element.wrappedRow Grid.simple <|
+--                                                 [ Input.button (Button.simple ++ Color.simple) <|
+--                                                     { onPress = Just <| Cancel
+--                                                     , label = Element.text "Cancel"
+--                                                     }
+--                                                     , Input.button Button.simple <|
+--                                                     { onPress = Just <| ClickedDeleteRankingConfirmed
+--                                                     , label = Element.text "Confirm"
+--                                                     }
+--                                                 ]
+--                                             ]
+--                                         , SR.Elements.permanentlyDeleteWarnPara
+--                                         ]
+--                     _ -> 
+--                         let 
+--                             _ = Debug.log "newrankingconfirmbutton - dataState should be global" dataState
+--                         in
+--                             Element.text ""
                     
-            _ -> 
-                let 
-                    _ = Debug.log "newrankingconfirmbutton - dataState" dataState
-                in
-                    Element.text ""
+--             _ -> 
+--                 let 
+--                     _ = Debug.log "newrankingconfirmbutton - dataState" dataState
+--                 in
+--                     Element.text ""
 
 -- continueAfterDelRankingBtn : SR.Types.AppInfo -> DataState -> Element Msg
 -- continueAfterDelRankingBtn appInfo dataState =
@@ -3477,7 +3477,7 @@ confirmChallengebutton model =
     case model of
         AppOps walletState dataState appInfo uiState subState txRec ->
             case (appInfo.user, appInfo.challenger.user) of
-                (SR.Types.Guest, _) ->
+                (Data.Users.Guest, _) ->
                     Element.text <| " No User3"
                 (Data.Users.Registered userId token userInfo, Data.Users.Registered _ _ challengerInfo) ->
                     Element.column Grid.section <|
@@ -3513,7 +3513,7 @@ confirmChallengebutton model =
                     Element.text <| " No User3"
                 (Data.Users.Credited addr userId token userInfo, _) ->
                     Element.text <| " No User3"
-                ( Data.Users.Registered _ _ _, SR.Types.Guest ) ->
+                ( Data.Users.Registered _ _ _, Data.Users.Guest ) ->
                     Element.text "No challenger"
                 ( Data.Users.Registered _ _ _, Data.Users.NoWallet _ _ _ )->
                     Element.text "No challenger"
@@ -3528,118 +3528,122 @@ confirmChallengebutton model =
 
 confirmResultbutton : Model -> Element Msg
 confirmResultbutton model =
-    case model of
-        AppOps walletState dataState appInfo uiState subState txRec ->
-            case dataState of
-                StateFetched sUsers sRankings dKind -> 
-                    case dKind of 
-                        Selected sSelected ->
-                            let
-                                m_playerAsUser = Data.Users.gotUser sUsers appInfo.player.player.uid
-                            in
-                            case m_playerAsUser of
-                                Nothing ->
-                                    Element.text "No player"
-                                Just playerAsUser ->
-                                    let
-                                        m_challengerAsUser = Data.Users.gotUser sUsers appInfo.challenger.player.uid
-                                    in
-                                    case m_challengerAsUser of
-                                        Nothing ->
-                                            Element.text "No challenger"
-                                        Just challengerAsUser ->
-                                            -- challenger should always be registered
-                                            case (playerAsUser, challengerAsUser) of
-                                            (SR.Types.Guest, _) ->
-                                                Element.text "No challenger"
-                                            (Data.Users.Registered _ _ playerUserInfo, Data.Users.Registered userId token challengerUserInfo) ->
-                                                Element.column Grid.section <|
-                                                [ Element.column (Card.simple ++ Grid.simple) <|
-                                                    [ Element.wrappedRow Grid.simple <|
-                                                        [ Input.button (Button.simple ++ Color.simple) <|
-                                                            { onPress = Just <| ResetToShowSelected
-                                                            , label = Element.text "Cancel"
-                                                            }
-                                                        ]
-                                                    ]
-                                                , Element.paragraph (Card.fill ++ Color.info) <|
-                                                    [ Element.el [] <| Element.text <| playerUserInfo.username 
-                                                        ++ " you had a challenge match vs " ++ challengerUserInfo.username
-                                                    ]
-                                                , Element.el Heading.h6 <| Element.text <| "Please confirm your result: "
-                                                , Element.column (Card.simple ++ Grid.simple) <|
-                                                    [ Element.column Grid.simple <|
-                                                        [ Input.button (Button.simple  ++ Button.fill ++ Color.primary) <|
-                                                            { 
-                                                            onPress = Just <| SentResultToWallet SR.Types.Won
-                                                            , label = Element.text "Won"
-                                                            }
-                                                        , Input.button (Button.simple  ++ Button.fill ++ Color.primary) <|
-                                                            { onPress = Just <| SentResultToWallet SR.Types.Lost
-                                                            , label = Element.text "Lost"
-                                                            }
-                                                        , Input.button (Button.simple  ++ Button.fill ++ Color.primary) <|
-                                                            { onPress = Just <| ProcessResult SR.Types.Undecided
-                                                            , label = Element.text "Undecided"
-                                                            }
-                                                        ]
-                                                    ]
-                                                , SR.Elements.ethereumWalletWarning
-                                                , SR.Elements.footer
-                                                ]
-                                            (Data.Users.NoWallet userId token userInfo, _) ->
-                                                Element.text "No challenger"
-                                            (Data.Users.NoCredit addr userId token userInfo, _) ->
-                                                Element.text "No challenger"
-                                            (Data.Users.Credited addr userId token userInfo, _) ->
-                                                Element.text "No challenger"
-                                            ( Data.Users.Registered _ _ _, SR.Types.Guest ) ->
-                                                Element.text "No challenger"
-                                            ( Data.Users.Registered _ _ _, Data.Users.NoWallet _ _ _ )->
-                                                Element.text "No challenger"
-                                            ( Data.Users.Registered _ _ _, Data.Users.NoCredit _ _ _ _ )->
-                                                Element.text "No challenger"
-                                            ( Data.Users.Registered _ _ _, Data.Users.Credited _ _ _ _ )->
-                                                Element.text "No challenger"
+    -- todo: fix
+    Element.text "Fix confirmResultbutton"
+    -- case model of
+    --     AppOps walletState dataState appInfo uiState subState txRec ->
+    --         case dataState of
+    --             StateFetched sUsers sRankings dKind -> 
+    --                 case dKind of 
+    --                     Selected sSelected ->
+    --                         let
+    --                             m_playerAsUser = Data.Users.gotUser sUsers appInfo.player.player.uid
+    --                         in
+    --                         case m_playerAsUser of
+    --                             Nothing ->
+    --                                 Element.text "No player"
+    --                             Just playerAsUser ->
+    --                                 let
+    --                                     m_challengerAsUser = Data.Users.gotUser sUsers appInfo.challenger.player.uid
+    --                                 in
+    --                                 case m_challengerAsUser of
+    --                                     Nothing ->
+    --                                         Element.text "No challenger"
+    --                                     Just challengerAsUser ->
+    --                                         -- challenger should always be registered
+    --                                         case (playerAsUser, challengerAsUser) of
+    --                                         (Data.Users.Guest, _) ->
+    --                                             Element.text "No challenger"
+    --                                         (Data.Users.Registered _ _ playerUserInfo, Data.Users.Registered userId token challengerUserInfo) ->
+    --                                             Element.column Grid.section <|
+    --                                             [ Element.column (Card.simple ++ Grid.simple) <|
+    --                                                 [ Element.wrappedRow Grid.simple <|
+    --                                                     [ Input.button (Button.simple ++ Color.simple) <|
+    --                                                         { onPress = Just <| ResetToShowSelected
+    --                                                         , label = Element.text "Cancel"
+    --                                                         }
+    --                                                     ]
+    --                                                 ]
+    --                                             , Element.paragraph (Card.fill ++ Color.info) <|
+    --                                                 [ Element.el [] <| Element.text <| playerUserInfo.username 
+    --                                                     ++ " you had a challenge match vs " ++ challengerUserInfo.username
+    --                                                 ]
+    --                                             , Element.el Heading.h6 <| Element.text <| "Please confirm your result: "
+    --                                             , Element.column (Card.simple ++ Grid.simple) <|
+    --                                                 [ Element.column Grid.simple <|
+    --                                                     [ Input.button (Button.simple  ++ Button.fill ++ Color.primary) <|
+    --                                                         { 
+    --                                                         onPress = Just <| SentResultToWallet SR.Types.Won
+    --                                                         , label = Element.text "Won"
+    --                                                         }
+    --                                                     , Input.button (Button.simple  ++ Button.fill ++ Color.primary) <|
+    --                                                         { onPress = Just <| SentResultToWallet SR.Types.Lost
+    --                                                         , label = Element.text "Lost"
+    --                                                         }
+    --                                                     , Input.button (Button.simple  ++ Button.fill ++ Color.primary) <|
+    --                                                         { onPress = Just <| ProcessResult SR.Types.Undecided
+    --                                                         , label = Element.text "Undecided"
+    --                                                         }
+    --                                                     ]
+    --                                                 ]
+    --                                             , SR.Elements.ethereumWalletWarning
+    --                                             , SR.Elements.footer
+    --                                             ]
+    --                                         (Data.Users.NoWallet userId token userInfo, _) ->
+    --                                             Element.text "No challenger"
+    --                                         (Data.Users.NoCredit addr userId token userInfo, _) ->
+    --                                             Element.text "No challenger"
+    --                                         (Data.Users.Credited addr userId token userInfo, _) ->
+    --                                             Element.text "No challenger"
+    --                                         ( Data.Users.Registered _ _ _, Data.Users.Guest ) ->
+    --                                             Element.text "No challenger"
+    --                                         ( Data.Users.Registered _ _ _, Data.Users.NoWallet _ _ _ )->
+    --                                             Element.text "No challenger"
+    --                                         ( Data.Users.Registered _ _ _, Data.Users.NoCredit _ _ _ _ )->
+    --                                             Element.text "No challenger"
+    --                                         ( Data.Users.Registered _ _ _, Data.Users.Credited _ _ _ _ )->
+    --                                             Element.text "No challenger"
                                             
-                        _ ->
-                            Element.text "Fail confirmResultbutton"
-                _ ->
-                    Element.text "Fail confirmResultbutton"
-        _ ->
-            Element.text "Fail confirmResultbutton"
+    --                     _ ->
+    --                         Element.text "Fail confirmResultbutton"
+    --             _ ->
+    --                 Element.text "Fail confirmResultbutton"
+    --     _ ->
+    --         Element.text "Fail confirmResultbutton"
 
 
 acknoweldgeTxErrorbtn : Model -> Element Msg
 acknoweldgeTxErrorbtn model =
-    case model of
-        AppOps walletState dataState appInfo uiState subState txRec ->
-            Element.column Grid.section <|
-                [ 
-                Element.paragraph (Card.fill ++ Color.info) <|
-                    [ Element.el [] <| Element.text """ There was an error 
-                                                        processing your transaction. 
-                                                        It is unlikely to be 
-                                                        an issue with this 
-                                                        application 
-                                                        but rather your 
-                                                        wallet setup. Your results are unaffected and
-                                                        there will have been no charge against your wallet """
-                    ]
-                , Element.el Heading.h6 <| Element.text <| "Please click below to continue ... "
-                , Element.column (Card.simple ++ Grid.simple) <|
-                    [ Element.column Grid.simple <|
-                        [ Input.button (Button.simple ++ Color.primary) <|
-                            { onPress = Just <| ResetToShowSelected
-                            , label = Element.text "Continue ..."
-                            }
-                        ]
-                    ]
-                , SR.Elements.footer
-                ]
+    -- todo: fix
+    Element.text "fix"
+    -- case model of
+    --     AppOps walletState dataState appInfo uiState subState txRec ->
+    --         Element.column Grid.section <|
+    --             [ 
+    --             Element.paragraph (Card.fill ++ Color.info) <|
+    --                 [ Element.el [] <| Element.text """ There was an error 
+    --                                                     processing your transaction. 
+    --                                                     It is unlikely to be 
+    --                                                     an issue with this 
+    --                                                     application 
+    --                                                     but rather your 
+    --                                                     wallet setup. Your results are unaffected and
+    --                                                     there will have been no charge against your wallet """
+    --                 ]
+    --             , Element.el Heading.h6 <| Element.text <| "Please click below to continue ... "
+    --             , Element.column (Card.simple ++ Grid.simple) <|
+    --                 [ Element.column Grid.simple <|
+    --                     [ Input.button (Button.simple ++ Color.primary) <|
+    --                         { onPress = Just <| ResetToShowSelected
+    --                         , label = Element.text "Continue ..."
+    --                         }
+    --                     ]
+    --                 ]
+    --             , SR.Elements.footer
+    --             ]
 
-        _ ->
-            Element.text "Fail acknoweldgeTxErrorbtn"
+    --     _ ->
+    --         Element.text "Fail acknoweldgeTxErrorbtn"
 
 
 userDescValidationErr : String -> Element Msg
@@ -3738,7 +3742,7 @@ mobileValidationErr str =
 newuserConfirmPanel : Data.Users.User -> List Data.Users.User -> Element Msg
 newuserConfirmPanel  user luser =
         case user of
-        SR.Types.Guest ->
+        Data.Users.Guest ->
             if List.isEmpty luser then
                     Element.column Grid.section <|
                     [ SR.Elements.missingDataPara
@@ -3831,7 +3835,7 @@ isValidatedForAllUserDetailsInput user luser isExistingUser =
     --todo: fix
     False
 --     case user of
---         SR.Types.Guest ->
+--         Data.Users.Guest ->
 --             False
 --         (Data.Users.Registered userId token userInfo) ->
 --             if
@@ -3942,7 +3946,7 @@ enableButton enable =
 nameValidView : Data.Users.User -> Data.Users.Users -> Element Msg
 nameValidView userVal sUsers =
     case userVal of 
-        SR.Types.Guest ->
+        Data.Users.Guest ->
             Element.el
                 (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
                     ++ [ Element.moveLeft 0.0 ]
@@ -4052,7 +4056,7 @@ handleGlobalNoTokenView dataState userVal =
             Html.text ("No Data")
         (StateUpdated _ _ _, _) ->
             Html.text ("No User - No Update")
-        (StateFetched sUsers sRankings dKind, SR.Types.Guest) ->
+        (StateFetched sUsers sRankings dKind, Data.Users.Guest) ->
             case dKind of
                 Selected _ ->
                     Html.text ("Nothing should have been selected yet")
@@ -4092,7 +4096,7 @@ handleGlobalNoTokenView dataState userVal =
                                     ""
                                     ClickedRegister
                         , Element.text ("\n")
-                        , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Types.Guest)) SR.Types.Guest
+                        , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal Data.Users.Guest)) Data.Users.Guest
                         ]
 
         (StateFetched sUsers sRankings dKind, Data.Users.Registered userId token userInfo) ->
@@ -4165,7 +4169,7 @@ displayUpdateProfileBtnIfExistingUser uname  =
      ]
 
 
-displayCreateNewLadderBtnIfExistingUser : String -> List SR.Types.UserRanking -> Msg -> Element Msg
+displayCreateNewLadderBtnIfExistingUser : String -> List Data.Global.UserRanking -> Msg -> Element Msg
 displayCreateNewLadderBtnIfExistingUser uname luserRanking msg =
     if uname == "" || List.isEmpty luserRanking then
         Element.text ""
@@ -4217,133 +4221,133 @@ displayEnableEthereumBtn =
             , label = Element.text "Enable Ethereum"
             }
 
-selectedUserIsOwnerView : DataState -> SR.Types.AppInfo -> Html Msg
-selectedUserIsOwnerView dataState appInfo =
-    case dataState of
-        StateFetched sUsers sRankings dKind -> 
-            case dKind of 
-                Selected sSelected ->
-                    case appInfo.user of
-                            SR.Types.Guest ->
-                                Framework.responsiveLayout [] <|
-                                Element.column
-                                    Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - No User11"
-                                    , selecteduserIsOwnerhomebutton SR.Types.Guest
-                                    , playerbuttons dataState appInfo
-                                    ]
-                            (Data.Users.Registered userId token userInfo) ->
-                                Framework.responsiveLayout [] <| Element.column Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userInfo.username
-                                    , selecteduserIsOwnerhomebutton appInfo.user
-                                    , playerbuttons dataState appInfo
-                                    ]
-                            (Data.Users.NoWallet userId token userInfo) ->
-                                Framework.responsiveLayout [] <| Element.column Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userInfo.username
-                                    , selecteduserIsOwnerhomebutton appInfo.user
-                                    , playerbuttons dataState appInfo
-                                    ]
-                            (Data.Users.NoCredit addr userId token userInfo) ->
-                                Framework.responsiveLayout [] <| Element.column Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userInfo.username
-                                    , selecteduserIsOwnerhomebutton appInfo.user
-                                    , playerbuttons dataState appInfo
-                                    ]
-                            (Data.Users.Credited addr userId token userInfo) ->
-                                Framework.responsiveLayout [] <| Element.column Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userInfo.username
-                                    , selecteduserIsOwnerhomebutton appInfo.user
-                                    , playerbuttons dataState appInfo
-                                    ]
+-- selectedUserIsOwnerView : DataState -> SR.Types.AppInfo -> Html Msg
+-- selectedUserIsOwnerView dataState appInfo =
+--     case dataState of
+--         StateFetched sUsers sRankings dKind -> 
+--             case dKind of 
+--                 Selected sSelected ->
+--                     case appInfo.user of
+--                             Data.Users.Guest ->
+--                                 Framework.responsiveLayout [] <|
+--                                 Element.column
+--                                     Framework.container
+--                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - No User11"
+--                                     , selecteduserIsOwnerhomebutton Data.Users.Guest
+--                                     , playerbuttons dataState appInfo
+--                                     ]
+--                             (Data.Users.Registered userId token userInfo) ->
+--                                 Framework.responsiveLayout [] <| Element.column Framework.container
+--                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userInfo.username
+--                                     , selecteduserIsOwnerhomebutton appInfo.user
+--                                     , playerbuttons dataState appInfo
+--                                     ]
+--                             (Data.Users.NoWallet userId token userInfo) ->
+--                                 Framework.responsiveLayout [] <| Element.column Framework.container
+--                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userInfo.username
+--                                     , selecteduserIsOwnerhomebutton appInfo.user
+--                                     , playerbuttons dataState appInfo
+--                                     ]
+--                             (Data.Users.NoCredit addr userId token userInfo) ->
+--                                 Framework.responsiveLayout [] <| Element.column Framework.container
+--                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userInfo.username
+--                                     , selecteduserIsOwnerhomebutton appInfo.user
+--                                     , playerbuttons dataState appInfo
+--                                     ]
+--                             (Data.Users.Credited addr userId token userInfo) ->
+--                                 Framework.responsiveLayout [] <| Element.column Framework.container
+--                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userInfo.username
+--                                     , selecteduserIsOwnerhomebutton appInfo.user
+--                                     , playerbuttons dataState appInfo
+--                                     ]
 
-                _ ->
-                    Html.text "Fail selectedUserIsOwnerView"
-        _ ->
-            Html.text "Fail selectedUserIsOwnerView"
+--                 _ ->
+--                     Html.text "Fail selectedUserIsOwnerView"
+--         _ ->
+--             Html.text "Fail selectedUserIsOwnerView"
 
-selectedUserIsPlayerView : DataState -> SR.Types.AppInfo -> Html Msg
-selectedUserIsPlayerView dataState appInfo =
-    case dataState of
-        StateFetched sUsers sRankings dKind -> 
-            case dKind of 
-                Selected sSelected ->
-                    case appInfo.user of
-                            SR.Types.Guest ->
-                                Framework.responsiveLayout [] <| Element.column Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Guest"
-                                    ]
-                            (Data.Users.Registered userId token userInfo) ->
-                                Framework.responsiveLayout [] <| Element.column Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
-                                    , selecteduserIsPlayerHomebutton appInfo.user
-                                    , playerbuttons dataState appInfo
-                                    ]
-                            (Data.Users.NoWallet userId token userInfo) ->
-                                Framework.responsiveLayout [] <| Element.column Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
-                                    , selecteduserIsPlayerHomebutton appInfo.user
-                                    , playerbuttons dataState appInfo
-                                    ]
-                            (Data.Users.NoCredit addr userId token userInfo) ->
-                                Framework.responsiveLayout [] <| Element.column Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
-                                    , selecteduserIsPlayerHomebutton appInfo.user
-                                    , playerbuttons dataState appInfo
-                                    ]
-                            (Data.Users.Credited addr userId token userInfo) ->
-                                Framework.responsiveLayout [] <| Element.column Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
-                                    , selecteduserIsPlayerHomebutton appInfo.user
-                                    , playerbuttons dataState appInfo
-                                    ]
+-- selectedUserIsPlayerView : DataState -> SR.Types.AppInfo -> Html Msg
+-- selectedUserIsPlayerView dataState appInfo =
+--     case dataState of
+--         StateFetched sUsers sRankings dKind -> 
+--             case dKind of 
+--                 Selected sSelected ->
+--                     case appInfo.user of
+--                             Data.Users.Guest ->
+--                                 Framework.responsiveLayout [] <| Element.column Framework.container
+--                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Guest"
+--                                     ]
+--                             (Data.Users.Registered userId token userInfo) ->
+--                                 Framework.responsiveLayout [] <| Element.column Framework.container
+--                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
+--                                     , selecteduserIsPlayerHomebutton appInfo.user
+--                                     , playerbuttons dataState appInfo
+--                                     ]
+--                             (Data.Users.NoWallet userId token userInfo) ->
+--                                 Framework.responsiveLayout [] <| Element.column Framework.container
+--                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
+--                                     , selecteduserIsPlayerHomebutton appInfo.user
+--                                     , playerbuttons dataState appInfo
+--                                     ]
+--                             (Data.Users.NoCredit addr userId token userInfo) ->
+--                                 Framework.responsiveLayout [] <| Element.column Framework.container
+--                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
+--                                     , selecteduserIsPlayerHomebutton appInfo.user
+--                                     , playerbuttons dataState appInfo
+--                                     ]
+--                             (Data.Users.Credited addr userId token userInfo) ->
+--                                 Framework.responsiveLayout [] <| Element.column Framework.container
+--                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
+--                                     , selecteduserIsPlayerHomebutton appInfo.user
+--                                     , playerbuttons dataState appInfo
+--                                     ]
 
-                _ ->
-                    Html.text "Error3"
+--                 _ ->
+--                     Html.text "Error3"
 
-        StateUpdated sUsers sRankings dKind -> 
-            case dKind of 
-                Selected sSelected ->
-                    case appInfo.user of
-                            SR.Types.Guest ->
-                                Framework.responsiveLayout [] <| Element.column Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - No User13" 
-                                    , Element.text <| "No User17"
-                                    ]
-                            (Data.Users.Registered userId token userInfo) ->
-                                Framework.responsiveLayout [] <| Element.column Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
-                                    , Element.text <| "Challenge is On! Good luck!"
-                                    , selecteduserIsPlayerHomebutton appInfo.user
-                                    , playerbuttons dataState appInfo
-                                    ]
-                            (Data.Users.NoWallet userId token userInfo) ->
-                                Framework.responsiveLayout [] <| Element.column Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
-                                    , Element.text <| "Challenge is On! Good luck!"
-                                    , selecteduserIsPlayerHomebutton appInfo.user
-                                    , playerbuttons dataState appInfo
-                                    ]
-                            (Data.Users.NoCredit addr userId token userInfo) ->
-                                Framework.responsiveLayout [] <| Element.column Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
-                                    , Element.text <| "Challenge is On! Good luck!"
-                                    , selecteduserIsPlayerHomebutton appInfo.user
-                                    , playerbuttons dataState appInfo
-                                    ]
-                            (Data.Users.Credited addr userId token userInfo) ->
-                                Framework.responsiveLayout [] <| Element.column Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
-                                    , Element.text <| "Challenge is On! Good luck!"
-                                    , selecteduserIsPlayerHomebutton appInfo.user
-                                    , playerbuttons dataState appInfo
-                                    ]
+--         StateUpdated sUsers sRankings dKind -> 
+--             case dKind of 
+--                 Selected sSelected ->
+--                     case appInfo.user of
+--                             Data.Users.Guest ->
+--                                 Framework.responsiveLayout [] <| Element.column Framework.container
+--                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - No User13" 
+--                                     , Element.text <| "No User17"
+--                                     ]
+--                             (Data.Users.Registered userId token userInfo) ->
+--                                 Framework.responsiveLayout [] <| Element.column Framework.container
+--                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
+--                                     , Element.text <| "Challenge is On! Good luck!"
+--                                     , selecteduserIsPlayerHomebutton appInfo.user
+--                                     , playerbuttons dataState appInfo
+--                                     ]
+--                             (Data.Users.NoWallet userId token userInfo) ->
+--                                 Framework.responsiveLayout [] <| Element.column Framework.container
+--                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
+--                                     , Element.text <| "Challenge is On! Good luck!"
+--                                     , selecteduserIsPlayerHomebutton appInfo.user
+--                                     , playerbuttons dataState appInfo
+--                                     ]
+--                             (Data.Users.NoCredit addr userId token userInfo) ->
+--                                 Framework.responsiveLayout [] <| Element.column Framework.container
+--                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
+--                                     , Element.text <| "Challenge is On! Good luck!"
+--                                     , selecteduserIsPlayerHomebutton appInfo.user
+--                                     , playerbuttons dataState appInfo
+--                                     ]
+--                             (Data.Users.Credited addr userId token userInfo) ->
+--                                 Framework.responsiveLayout [] <| Element.column Framework.container
+--                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
+--                                     , Element.text <| "Challenge is On! Good luck!"
+--                                     , selecteduserIsPlayerHomebutton appInfo.user
+--                                     , playerbuttons dataState appInfo
+--                                     ]
                                     
-                _ ->
-                    Html.text "Error4"
+--                 _ ->
+--                     Html.text "Error4"
 
-        AllEmpty ->
-                    Html.text "Please refresh your browser"
+--         AllEmpty ->
+--                     Html.text "Please refresh your browser"
 
 
 --selectedUserIsNeitherOwnerNorPlayerView : DataState -> SR.Types.AppInfo ->  Html Msg
@@ -4355,8 +4359,8 @@ selectedUserIsPlayerView dataState appInfo =
 --                     Framework.responsiveLayout [] <|
 --                         Element.column
 --                             Framework.container
---                             [ newOrExistingUserNameDisplay SR.Types.Guest accountState
---                             , selecteduserIsNeitherPlayerNorOwnerHomebutton SR.Types.Guest accountState
+--                             [ newOrExistingUserNameDisplay Data.Users.Guest accountState
+--                             , selecteduserIsNeitherPlayerNorOwnerHomebutton Data.Users.Guest accountState
 --                             , playerbuttons  dataState appInfo
 --                             ]
 --                 Just userVal ->
@@ -4374,7 +4378,7 @@ selectedUserIsPlayerView dataState appInfo =
 newOrExistingUserNameDisplay : Data.Users.User ->  Element msg
 newOrExistingUserNameDisplay user =
     case user of 
-        SR.Types.Guest ->
+        Data.Users.Guest ->
             Element.el Heading.h4 <| Element.text <| "New User - Please Register and Enable Ethereum to join"
         (Data.Users.Registered userId token userInfo) ->
             Element.el Heading.h4 <| Element.text <| "Please Register and Enable Ethereum to join"
@@ -4389,11 +4393,11 @@ newOrExistingUserNameDisplay user =
 inputUserDetailsView : DataState -> SR.Types.AppInfo -> Html Msg
 inputUserDetailsView dataState appInfo =
     case appInfo.user of
-    SR.Types.Guest ->
+    Data.Users.Guest ->
         case dataState of
                 StateFetched sUsers sRankings dKind ->
                     let 
-                        userVal = SR.Types.Guest
+                        userVal = Data.Users.Guest
                     in
                     if Data.Users.isEmpty sUsers then
                         Framework.responsiveLayout [] <|
@@ -4451,7 +4455,7 @@ inputUserDetailsView dataState appInfo =
 displayRegisterNewUser :  Data.Users.User -> Data.Users.Users -> Element Msg 
 displayRegisterNewUser userVal sUsers =
     case userVal of
-        SR.Types.Guest ->
+        Data.Users.Guest ->
             Element.text "Should have switched to a Registered user already"
         
         (Data.Users.Registered userId token userInfo) ->
@@ -4602,38 +4606,38 @@ displayRegisterNewUser userVal sUsers =
 --             Html.text "Fail updateExistingUserView"
 
 
-inputNewLadderview : Model -> Html Msg
-inputNewLadderview model =
-    case model of
-        AppOps walletState dataState appInfo uiState subState txRec ->
-            Framework.responsiveLayout [] <|
-                Element.column
-                    Framework.container
-                    [ Element.el Heading.h4 <| Element.text "Create New Ladder Ranking"
-                    , inputNewLadder appInfo dataState
-                    , newrankingconfirmbutton appInfo dataState
-                    , SR.Elements.footer
-                    ]
+-- inputNewLadderview : Model -> Html Msg
+-- inputNewLadderview model =
+--     case model of
+--         AppOps walletState dataState appInfo uiState subState txRec ->
+--             Framework.responsiveLayout [] <|
+--                 Element.column
+--                     Framework.container
+--                     [ Element.el Heading.h4 <| Element.text "Create New Ladder Ranking"
+--                     , inputNewLadder appInfo dataState
+--                     , newrankingconfirmbutton appInfo dataState
+--                     , SR.Elements.footer
+--                     ]
 
-        _ ->
-            Html.text "Fail"
+--         _ ->
+--             Html.text "Fail"
 
-deleteRankingview : Model -> Html Msg
-deleteRankingview model =
-    case model of
-        AppOps walletState dataState appInfo uiState subState txRec ->
-            Framework.responsiveLayout [] <|
-                Element.column
-                    Framework.container
-                    [ Element.el Heading.h4 <| Element.text "Delete Ranking"
-                    --, inputNewLadder appInfo dataState
-                    , confirmDelRankingBtn appInfo dataState
-                    --, newrankingconfirmbutton appInfo dataState
-                    , SR.Elements.footer
-                    ]
+-- deleteRankingview : Model -> Html Msg
+-- deleteRankingview model =
+--     case model of
+--         AppOps walletState dataState appInfo uiState subState txRec ->
+--             Framework.responsiveLayout [] <|
+--                 Element.column
+--                     Framework.container
+--                     [ Element.el Heading.h4 <| Element.text "Delete Ranking"
+--                     --, inputNewLadder appInfo dataState
+--                     , confirmDelRankingBtn appInfo dataState
+--                     --, newrankingconfirmbutton appInfo dataState
+--                     , SR.Elements.footer
+--                     ]
 
-        _ ->
-            Html.text "Fail"
+--         _ ->
+--             Html.text "Fail"
 
 
 displayChallengeBeforeConfirmView : Model -> Html Msg
@@ -4641,7 +4645,7 @@ displayChallengeBeforeConfirmView model =
     case model of
         AppOps walletState dataState appInfo uiState subState txRec ->
             case appInfo.user of
-                SR.Types.Guest ->
+                Data.Users.Guest ->
                     Html.text "No User19"
                 (Data.Users.Registered userId token userInfo) ->
                     Framework.responsiveLayout [] <| Element.column Framework.container
@@ -4682,7 +4686,7 @@ displayResultBeforeConfirmView model =
                                 Html.text "No Player"
                             Just playerasuser ->
                                 case playerasuser of 
-                                    SR.Types.Guest ->
+                                    Data.Users.Guest ->
                                         Html.text "No Player"
                                     (Data.Users.Registered userId token userInfo) ->
                                         Framework.responsiveLayout [] <| Element.column Framework.container
@@ -4736,7 +4740,7 @@ txErrorView model =
 
                     Just playerAsUser ->
                         case playerAsUser of 
-                            SR.Types.Guest ->
+                            Data.Users.Guest ->
                                 Framework.responsiveLayout [] <| Element.column Framework.container
                                     [ Element.el Heading.h4 <| Element.text " Transaction Error"
                                     , acknoweldgeTxErrorbtn model
