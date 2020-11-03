@@ -1396,7 +1396,7 @@ update msg model =
                 --     in
                 --     (model, Cmd.none)
 
-        (ReturnFromPlayerListUpdate response,  AppOps walletState dataState user uiState subState txRec ) ->
+        (ReturnFromPlayerListUpdate response, AppOps walletState dataState user uiState subState txRec ) ->
             let
                 _ = Debug.log "ReturnFromPlayerListUpdate" walletState
             in
@@ -1425,7 +1425,7 @@ update msg model =
                                         --httpUpdateUsersJoinRankings is the http cmd that we need to do here
                                         
                                     in
-                                        case appInfo.user of
+                                        case user of
                                         -- todo: fix
                                             Data.Users.Guest userState->
                                                 (model, Cmd.none)
@@ -1514,8 +1514,11 @@ update msg model =
             if handleTxSubMsg subMsg then
                 case (user, dataState) of 
                     (Data.Users.Credited addr userId token userInfo userState (Data.Users.General)
-                        , StateFetched sUsers sRankings dKind 
-                            (Data.Selected.Selected sSelected rnkId ownerStatus sPlayers SelectedState (Data.Selected.EnteredResult resultEntered))) ->
+                        , StateFetched sUsers sRankings
+                        --nb. 'Selected' is a variant defined in Main (just a box or label), it is NOT a Set
+                        -- you're only specifying it to distinguish from Global as a dKind
+                        -- sSelected is the variable you're pattern matching on here
+                            (Selected sSelected (Data.Selected.Selected rnkId ownerStatus sPlayers (Data.Selected.EnteredResult resultEntered) ))) ->
                             case resultEntered of 
                                 Data.Selected.Won ->
                                         let 
@@ -1544,11 +1547,11 @@ update msg model =
                                 Data.Selected.NoResult ->
                                     (Failure "Tx problem Should have been a result", Cmd.none)
                         
-                    (Data.Users.Credited addr userId token userInfo userState (Data.Users.CreateNewUser), StateFetched sUsers sRankings dKind ) ->
+                    (Data.Users.Credited addr userId token userInfo Data.Users.CreateNewUser, StateFetched sUsers sRankings dKind ) ->
                         ( AppOps SR.Types.WalletOperational dataState user SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel }
                         , Cmd.batch [subCmd,  createNewUser sUsers user])
                     
-                    (Data.Users.Credited addr userId token userInfo userState (Data.Users.UpdateProfile), StateFetched sUsers sRankings dKind ) ->
+                    (Data.Users.Credited addr userId token userInfo Data.Users.UpdateProfile, StateFetched sUsers sRankings dKind ) ->
                         ( AppOps SR.Types.WalletOperational dataState user SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel }
                         , Cmd.batch [subCmd, addedUserAsFirstPlayerInNewList user] )
             
@@ -2455,30 +2458,41 @@ view : Model -> Html Msg
 view model =
     case model of
         AppOps walletState dataState user uiState subState txRec ->
-            case (dataState, user, appState) of 
-                (AllEmpty, _, _) ->
+            case (dataState, user) of 
+                (AllEmpty, _) ->
                     Html.text ("Loading ...")
 
-                (StateFetched sUsers sRankings dKind, userVal, Data.AppState.CreateNewUser _) ->
-                    registerNewUserView userVal sUsers
+                (StateFetched sUsers sRankings dKind, Data.Users.Guest Data.Users.CreateNewUser) ->
+                    registerNewUserView user sUsers
 
-                (StateFetched sUsers sRankings (Global sGlobal ), userVal, Data.AppState.General) ->
-                    gotUserView userVal sUsers sGlobal
+                (StateFetched sUsers sRankings (Global sGlobal ), _) ->
+                    gotUserView user sUsers sGlobal
                             
-                (StateFetched sUsers sRankings (Selected _ ), userVal, Data.AppState.General) ->
+                (StateFetched sUsers sRankings (Selected _ ), _) ->
                      greetingView <| "ToDo: Select w/o a token should be possible"
                 
-                (StateFetched sUsers sRankings dKind, userVal, Data.AppState.UpdateProfile _) ->
+                (StateFetched sUsers sRankings dKind, userVal) ->
                     handleGlobalNoTokenView dataState userVal
 
-                (StateUpdated _ _ _, _, _) ->
+                (StateUpdated _ _ _, _) ->
                     Html.text ("No User - No Update")
                 
-                (_, _, _) ->
+                (_, _) ->
                     Html.text ("View fell thru")
 
         Failure str ->
            failureView str
+
+--  Guest UserState
+--     | Registered UserId Token UserInfo UserState
+--     | NoWallet UserId Token UserInfo UserState
+--     | NoCredit Eth.Types.Address UserId Token UserInfo UserState
+--     | Credited Eth.Types.Address UserId Token UserInfo UserState
+
+-- type UserState = 
+--     General
+--     | CreateNewUser
+--     | UpdateProfile
 
 -- view helpers
 
