@@ -69,7 +69,7 @@ main =
 
 
 type Model
-    = AppOps SR.Types.WalletState DataState SR.Types.UIState SR.Types.SubState TxRecord
+    = AppOps SR.Types.WalletState DataState Data.Users.User SR.Types.UIState SR.Types.SubState TxRecord
     | Failure String
 
 
@@ -87,7 +87,7 @@ type DataKind
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( AppOps SR.Types.WalletStateLocked AllEmpty SR.Defaults.emptyAppInfo SR.Types.UILoading  SR.Types.Subscribe emptyTxRecord
+    ( AppOps SR.Types.WalletStateLocked AllEmpty Data.Users.Guest SR.Types.UILoading  SR.Types.Subscribe emptyTxRecord
     , Cmd.batch
         [ 
         allUsers
@@ -1622,7 +1622,7 @@ update msg model =
                 
         (ClickedLogInUser, model_) ->
             case model of 
-                AppOps walletState dataState appInfo uiState subState  txRec ->
+                AppOps walletState dataState user uiState subState txRec ->
                     case appInfo.user of 
                         Data.Users.Guest ->
                             (model, Cmd.none)
@@ -1753,7 +1753,7 @@ allRankings  =
 updateGlobal : Model -> Model 
 updateGlobal model = 
     case model of 
-        AppOps walletState dataState appInfo uiState subState  txRec ->
+        AppOps walletState dataState user uiState subState txRec ->
             case dataState of 
                 AllEmpty ->
                     model
@@ -2343,21 +2343,21 @@ handleUserInputs model msg appInfoToUpdate =
         (AppOps walletState dataState appInfo uiState subState txRec, UserMobileInputChg mobilefield, Data.Users.Guest) ->
             model
         (AppOps walletState dataState appInfo uiState subState txRec, UserMobileInputChg mobilefield, Data.Users.Registered userId token userInfo) ->
-            AppOps walletState dataState (updateAppInfoUserMobile userId token appInfo mobilefield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
+            AppOps walletState dataState (updateUserMobile userId token mobilefield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
         (AppOps walletState dataState appInfo uiState subState txRec, UserMobileInputChg mobilefield, Data.Users.NoWallet userId token userInfo) ->
-                AppOps walletState dataState (updateAppInfoUserMobile userId token appInfo mobilefield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
+                AppOps walletState dataState (updateUserMobile userId token mobilefield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
                 
         (AppOps walletState dataState appInfo uiState subState txRec, UserMobileInputChg mobilefield, Data.Users.NoCredit addr userId token userInfo) ->
-                AppOps walletState dataState (updateAppInfoUserMobile userId token appInfo mobilefield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
+                AppOps walletState dataState (updateUserMobile userId token mobilefield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
         (AppOps walletState dataState appInfo uiState subState txRec, UserMobileInputChg mobilefield, Data.Users.Credited addr userId token userInfo) ->
-                AppOps walletState dataState (updateAppInfoUserMobile userId token appInfo mobilefield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
+                AppOps walletState dataState (updateUserMobile userId token mobilefield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
         _ ->
             Failure "UserNameInputChg"
 
-updateAppInfoUserDesc : SR.Types.UserId -> Data.Users.Token -> SR.Types.AppInfo -> String -> SR.Types.UserInfo -> SR.Types.AppInfo
+updateAppInfoUserDesc : Data.Users.UserId -> Data.Users.Token -> SR.Types.AppInfo -> String -> SR.Types.UserInfo -> SR.Types.AppInfo
 updateAppInfoUserDesc userId token appInfo descfield userInfo =
     let
         existingExtraUserInfo = userInfo.extrauserinfo
@@ -2367,7 +2367,7 @@ updateAppInfoUserDesc userId token appInfo descfield userInfo =
     in
     newAppInfo
 
-updateAppInfoUserEmail : SR.Types.UserId -> Data.Users.Token -> SR.Types.AppInfo -> String -> SR.Types.UserInfo -> SR.Types.AppInfo 
+updateAppInfoUserEmail : Data.Users.UserId -> Data.Users.Token -> SR.Types.AppInfo -> String -> SR.Types.UserInfo -> SR.Types.AppInfo 
 updateAppInfoUserEmail userId token appInfo emailfield userInfo =
     let
         existingExtraUserInfo = userInfo.extrauserinfo
@@ -2378,21 +2378,20 @@ updateAppInfoUserEmail userId token appInfo emailfield userInfo =
         newAppInfo
 
 
-updateAppInfoUserMobile : SR.Types.UserId -> Data.Users.Token -> SR.Types.AppInfo -> String -> SR.Types.UserInfo -> SR.Types.AppInfo 
-updateAppInfoUserMobile userId token appInfo mobilefield userInfo =
+updateUserMobile : Data.Users.UserId -> Data.Users.Token -> String -> SR.Types.UserInfo
+updateUserMobile userId token mobilefield userInfo =
     let
         existingExtraUserInfo = userInfo.extrauserinfo
         newExtraInfo = {existingExtraUserInfo | mobile = mobilefield}
         newUserInfo = {userInfo | extrauserinfo = newExtraInfo}
-        newAppInfo = { appInfo | user = Data.Users.Registered userId token newUserInfo }
     in
-        newAppInfo
+        newUserInfo
 
 
 updatedForChallenge : Model -> List Data.Selected.UserPlayer -> Data.Selected.UserPlayer -> Data.Users.User -> Model
 updatedForChallenge model luplayer opponentAsPlayer userMaybeCanDelete =
     case model of
-        AppOps walletState dataState appInfo uiState subState  txRec ->
+        AppOps walletState dataState user uiState subState txRec ->
             let 
                 _ = Debug.log "updatedForChallenge 1 - dataState" dataState
 
@@ -2451,7 +2450,7 @@ updatedForChallenge model luplayer opponentAsPlayer userMaybeCanDelete =
 updateSelectedRankingPlayerList : Model -> List Data.Selected.UserPlayer -> Model
 updateSelectedRankingPlayerList model luplayers =
     case model of
-        AppOps walletState dataState appInfo uiState subState txRec ->
+        AppOps walletState dataState user uiState subState txRec ->
             case dataState of
                 StateUpdated sUsers sRankings dKind -> 
                     case dKind of 
@@ -2482,7 +2481,7 @@ updateSelectedRankingPlayerList model luplayers =
 -- populatedSelected : Model -> List Data.Selected.UserPlayer -> Model
 -- populatedSelected model luplayer =
 --     case model of
---         AppOps walletState dataState appInfo uiState subState txRec ->
+--         AppOps walletState dataState user uiState subState txRec ->
 --             case dataState of 
 --                 Selected sSelected sUsers _ ->
 --                     let
@@ -2510,8 +2509,8 @@ updateSelectedRankingPlayerList model luplayers =
 view : Model -> Html Msg
 view model =
     case model of
-        AppOps walletState dataState appInfo uiState subState  txRec ->
-            case (dataState, appInfo.user, appInfo.appState) of 
+        AppOps walletState dataState user uiState subState txRec ->
+            case (dataState, user, appInfo.appState) of 
                 (AllEmpty, _, _) ->
                     Html.text ("Loading ...")
 
@@ -2525,17 +2524,7 @@ view model =
                      greetingView <| "ToDo: Select w/o a token should be possible"
                 
                 (StateFetched sUsers sRankings dKind, userVal, SR.Types.AppStateUpdateProfile) ->
-                    case userVal of 
-                        Data.Users.Guest ->
-                            handleGlobalNoTokenView dataState userVal
-                        (Data.Users.Registered userId token userInfo) ->
-                            inputUserDetailsView dataState appInfo
-                        (Data.Users.NoWallet userId token userInfo) ->
-                            inputUserDetailsView dataState appInfo
-                        (Data.Users.NoCredit addr userId token userInfo) ->
-                            inputUserDetailsView dataState appInfo
-                        (Data.Users.Credited addr userId token userInfo) ->
-                            inputUserDetailsView dataState appInfo
+                    handleGlobalNoTokenView dataState userVal
 
                 (StateUpdated _ _ _, _, _) ->
                     Html.text ("No User - No Update")
@@ -3475,7 +3464,7 @@ joinBtn user  =
 confirmChallengebutton : Model -> Element Msg
 confirmChallengebutton model =
     case model of
-        AppOps walletState dataState appInfo uiState subState txRec ->
+        AppOps walletState dataState user uiState subState txRec ->
             case (appInfo.user, appInfo.challenger.user) of
                 (Data.Users.Guest, _) ->
                     Element.text <| " No User3"
@@ -3531,7 +3520,7 @@ confirmResultbutton model =
     -- todo: fix
     Element.text "Fix confirmResultbutton"
     -- case model of
-    --     AppOps walletState dataState appInfo uiState subState txRec ->
+    --     AppOps walletState dataState user uiState subState txRec ->
     --         case dataState of
     --             StateFetched sUsers sRankings dKind -> 
     --                 case dKind of 
@@ -3617,7 +3606,7 @@ acknoweldgeTxErrorbtn model =
     -- todo: fix
     Element.text "fix"
     -- case model of
-    --     AppOps walletState dataState appInfo uiState subState txRec ->
+    --     AppOps walletState dataState user uiState subState txRec ->
     --         Element.column Grid.section <|
     --             [ 
     --             Element.paragraph (Card.fill ++ Color.info) <|
@@ -3890,7 +3879,7 @@ enableButton enable =
 -- inputUpdateExistingUser : Model -> Element Msg
 -- inputUpdateExistingUser model =
 --     case model of
---         AppOps walletState dataState appInfo uiState subState txRec ->
+--         AppOps walletState dataState user uiState subState txRec ->
 --             case appInfo.user of
 --                 Nothing ->
 --                     Element.text "No User9"
@@ -4390,9 +4379,9 @@ newOrExistingUserNameDisplay user =
             Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Join?"
 
 
-inputUserDetailsView : DataState -> SR.Types.AppInfo -> Html Msg
-inputUserDetailsView dataState appInfo =
-    case appInfo.user of
+inputUserDetailsView : DataState -> Data.Users.User -> Html Msg
+inputUserDetailsView dataState user =
+    case user of
     Data.Users.Guest ->
         case dataState of
                 StateFetched sUsers sRankings dKind ->
@@ -4586,7 +4575,7 @@ displayRegisterNewUser userVal sUsers =
 -- updateExistingUserView : Model -> Html Msg
 -- updateExistingUserView model =
 --     case model of
---         AppOps walletState dataState appInfo uiState subState txRec ->
+--         AppOps walletState dataState user uiState subState txRec ->
 --             case dataState of 
 --                 StateFetched sUsers sRankings dKind -> 
 --                     case appInfo.user of
@@ -4609,7 +4598,7 @@ displayRegisterNewUser userVal sUsers =
 -- inputNewLadderview : Model -> Html Msg
 -- inputNewLadderview model =
 --     case model of
---         AppOps walletState dataState appInfo uiState subState txRec ->
+--         AppOps walletState dataState user uiState subState txRec ->
 --             Framework.responsiveLayout [] <|
 --                 Element.column
 --                     Framework.container
@@ -4625,7 +4614,7 @@ displayRegisterNewUser userVal sUsers =
 -- deleteRankingview : Model -> Html Msg
 -- deleteRankingview model =
 --     case model of
---         AppOps walletState dataState appInfo uiState subState txRec ->
+--         AppOps walletState dataState user uiState subState txRec ->
 --             Framework.responsiveLayout [] <|
 --                 Element.column
 --                     Framework.container
@@ -4643,8 +4632,8 @@ displayRegisterNewUser userVal sUsers =
 displayChallengeBeforeConfirmView : Model -> Html Msg
 displayChallengeBeforeConfirmView model =
     case model of
-        AppOps walletState dataState appInfo uiState subState txRec ->
-            case appInfo.user of
+        AppOps walletState dataState user uiState subState txRec ->
+            case user of
                 Data.Users.Guest ->
                     Html.text "No User19"
                 (Data.Users.Registered userId token userInfo) ->
@@ -4674,102 +4663,106 @@ displayChallengeBeforeConfirmView model =
 
 displayResultBeforeConfirmView : Model -> Html Msg
 displayResultBeforeConfirmView model =
-    case model of
-        AppOps walletState dataState appInfo uiState subState  txRec ->
-            case dataState of
-                StateFetched sUsers sRankings (Selected sSelected) -> 
-                    let
-                        m_playerAsUser = Data.Users.gotUser sUsers appInfo.player.player.uid
-                    in
-                        case m_playerAsUser of
-                            Nothing ->
-                                Html.text "No Player"
-                            Just playerasuser ->
-                                case playerasuser of 
-                                    Data.Users.Guest ->
-                                        Html.text "No Player"
-                                    (Data.Users.Registered userId token userInfo) ->
-                                        Framework.responsiveLayout [] <| Element.column Framework.container
-                                            [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Result"
-                                            , confirmResultbutton model
-                                            ]
-                                    (Data.Users.NoWallet userId token userInfo) ->
-                                        Framework.responsiveLayout [] <| Element.column Framework.container
-                                            [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Result"
-                                            , confirmResultbutton model
-                                            ]
-                                    (Data.Users.NoCredit addr userId token userInfo) ->
-                                        Framework.responsiveLayout [] <| Element.column Framework.container
-                                            [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Result"
-                                            , confirmResultbutton model
-                                            ]
-                                    (Data.Users.Credited addr userId token userInfo) ->
-                                        Framework.responsiveLayout [] <| Element.column Framework.container
-                                            [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Result"
-                                            , confirmResultbutton model
-                                            ]
+    -- todo: fix
+    Html.text "Error displayResultBeforeConfirmView"
+    -- case model of
+    --     AppOps walletState dataState user uiState subState txRec ->
+    --         case dataState of
+    --             StateFetched sUsers sRankings (Selected sSelected) -> 
+    --                 let
+    --                     m_playerAsUser = Data.Users.gotUser sUsers appInfo.player.player.uid
+    --                 in
+    --                     case m_playerAsUser of
+    --                         Nothing ->
+    --                             Html.text "No Player"
+    --                         Just playerasuser ->
+    --                             case playerasuser of 
+    --                                 Data.Users.Guest ->
+    --                                     Html.text "No Player"
+    --                                 (Data.Users.Registered userId token userInfo) ->
+    --                                     Framework.responsiveLayout [] <| Element.column Framework.container
+    --                                         [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Result"
+    --                                         , confirmResultbutton model
+    --                                         ]
+    --                                 (Data.Users.NoWallet userId token userInfo) ->
+    --                                     Framework.responsiveLayout [] <| Element.column Framework.container
+    --                                         [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Result"
+    --                                         , confirmResultbutton model
+    --                                         ]
+    --                                 (Data.Users.NoCredit addr userId token userInfo) ->
+    --                                     Framework.responsiveLayout [] <| Element.column Framework.container
+    --                                         [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Result"
+    --                                         , confirmResultbutton model
+    --                                         ]
+    --                                 (Data.Users.Credited addr userId token userInfo) ->
+    --                                     Framework.responsiveLayout [] <| Element.column Framework.container
+    --                                         [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Result"
+    --                                         , confirmResultbutton model
+    --                                         ]
                                 
-                _ ->
-                    Html.text "Error6.2"
-        _ ->
-            Html.text "Error6.2"
+    --             _ ->
+    --                 Html.text "Error6.2"
+    --     _ ->
+    --         Html.text "Error6.2"
 
 
 txErrorView : Model -> Html Msg
 txErrorView model =
-    case model of
-        AppOps walletState dataState appInfo uiState subState txRec ->
-            let
-                m_playerAsUser =
-                    --SR.ListOps.gotUserFromUserList (EverySet.fromList dataState) appInfo.player.player.uid
-                    case dataState of 
-                        StateFetched users rankings dKind ->
-                            Data.Users.gotUser users appInfo.player.player.uid
-                        _ ->
-                            Data.Users.gotUser Data.Users.empty appInfo.player.player.uid
+-- todo: fix
+    Html.text "Error txErrorView"
+    -- case model of
+    --     AppOps walletState dataState user uiState subState txRec ->
+    --         let
+    --             m_playerAsUser =
+    --                 --SR.ListOps.gotUserFromUserList (EverySet.fromList dataState) appInfo.player.player.uid
+    --                 case dataState of 
+    --                     StateFetched users rankings dKind ->
+    --                         Data.Users.gotUser users appInfo.player.player.uid
+    --                     _ ->
+    --                         Data.Users.gotUser Data.Users.empty appInfo.player.player.uid
 
-            in
-                case m_playerAsUser of 
-                    Nothing ->
-                        Framework.responsiveLayout [] <|
-                            Element.column
-                                Framework.container
-                                [ Element.el Heading.h4 <| Element.text " Transaction Error"
-                                , acknoweldgeTxErrorbtn model
-                                ]
+    --         in
+    --             case m_playerAsUser of 
+    --                 Nothing ->
+    --                     Framework.responsiveLayout [] <|
+    --                         Element.column
+    --                             Framework.container
+    --                             [ Element.el Heading.h4 <| Element.text " Transaction Error"
+    --                             , acknoweldgeTxErrorbtn model
+    --                             ]
 
-                    Just playerAsUser ->
-                        case playerAsUser of 
-                            Data.Users.Guest ->
-                                Framework.responsiveLayout [] <| Element.column Framework.container
-                                    [ Element.el Heading.h4 <| Element.text " Transaction Error"
-                                    , acknoweldgeTxErrorbtn model
-                                    ]
+    --                 Just playerAsUser ->
+    --                     case playerAsUser of 
+    --                         Data.Users.Guest ->
+    --                             Framework.responsiveLayout [] <| Element.column Framework.container
+    --                                 [ Element.el Heading.h4 <| Element.text " Transaction Error"
+    --                                 , acknoweldgeTxErrorbtn model
+    --                                 ]
 
-                            (Data.Users.Registered userId token userInfo) ->
-                                Framework.responsiveLayout [] <| Element.column Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " Transaction Error"
-                                    , acknoweldgeTxErrorbtn model
-                                    ]
-                            (Data.Users.NoWallet userId token userInfo) ->
-                                Framework.responsiveLayout [] <| Element.column Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " Transaction Error"
-                                    , acknoweldgeTxErrorbtn model
-                                    ]
-                            (Data.Users.NoCredit addr userId token userInfo) ->
-                                Framework.responsiveLayout [] <| Element.column Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " Transaction Error"
-                                    , acknoweldgeTxErrorbtn model
-                                    ]
-                            (Data.Users.Credited addr userId token userInfo) ->
-                                Framework.responsiveLayout [] <| Element.column Framework.container
-                                    [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " Transaction Error"
-                                    , acknoweldgeTxErrorbtn model
-                                    ]
+    --                         (Data.Users.Registered userId token userInfo) ->
+    --                             Framework.responsiveLayout [] <| Element.column Framework.container
+    --                                 [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " Transaction Error"
+    --                                 , acknoweldgeTxErrorbtn model
+    --                                 ]
+    --                         (Data.Users.NoWallet userId token userInfo) ->
+    --                             Framework.responsiveLayout [] <| Element.column Framework.container
+    --                                 [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " Transaction Error"
+    --                                 , acknoweldgeTxErrorbtn model
+    --                                 ]
+    --                         (Data.Users.NoCredit addr userId token userInfo) ->
+    --                             Framework.responsiveLayout [] <| Element.column Framework.container
+    --                                 [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " Transaction Error"
+    --                                 , acknoweldgeTxErrorbtn model
+    --                                 ]
+    --                         (Data.Users.Credited addr userId token userInfo) ->
+    --                             Framework.responsiveLayout [] <| Element.column Framework.container
+    --                                 [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " Transaction Error"
+    --                                 , acknoweldgeTxErrorbtn model
+    --                                 ]
                         
 
-        _ ->
-            Html.text "Error7"
+    --     _ ->
+    --         Html.text "Error7"
 
 
 greetingView : String -> Html Msg
