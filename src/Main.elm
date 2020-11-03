@@ -270,7 +270,7 @@ update msg model =
             -- case accountState of
             --     SR.Types.Guest ->
             --         (AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none)
-            --     SR.Types.Registered _ _ _->
+            --     Data.Users.Registered _ _ _->
             --         (AppOps walletState dataState appInfo SR.Types.UIEnableEthereum SR.Types.StopSubscription txRec, Ports.log "eth_requestAccounts")
             --     SR.Types.EthEnabled ->
             --         (AppOps walletState dataState appInfo SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription txRec, Cmd.none)
@@ -286,7 +286,7 @@ update msg model =
                             case appInfo.user of
                                 SR.Types.Guest ->
                                     (Failure "Err", Cmd.none)
-                                (SR.Types.Registered userId token userInfo) ->
+                                (Data.Users.Registered userId token userInfo) ->
                                     let 
                                         --_ = Debug.log "User: " appInfo.user
                                         --newUser = Data.Rankings.removedDeletedRankingsFromUserJoined user rankings
@@ -297,11 +297,11 @@ update msg model =
                                     in
                                      (AppOps walletState dataState appInfo uiState SR.Types.StopSubscription txRec, httpUpdateUsers updatedsUsers)
 
-                                (SR.Types.NoWallet userId token userInfo) ->
+                                (Data.Users.NoWallet userId token userInfo) ->
                                     (Failure "Err", Cmd.none)
-                                (SR.Types.NoCredit addr userId token userInfo) ->
+                                (Data.Users.NoCredit addr userId token userInfo) ->
                                     (Failure "Err", Cmd.none)
-                                (SR.Types.Credited addr userId token userInfo) ->
+                                (Data.Users.Credited addr userId token userInfo) ->
                                     (Failure "Err", Cmd.none)
                                
                         _ ->
@@ -333,13 +333,13 @@ update msg model =
                     case newAppInfo.user of
                         SR.Types.Guest ->
                             ( AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription txRec, Cmd.none )
-                        (SR.Types.Registered userId token userInfo) ->
+                        (Data.Users.Registered userId token userInfo) ->
                             (model, Cmd.none)
-                        (SR.Types.NoWallet userId token userInfo) ->
+                        (Data.Users.NoWallet userId token userInfo) ->
                             (model, Cmd.none)
-                        (SR.Types.NoCredit addr userId token userInfo) ->
+                        (Data.Users.NoCredit addr userId token userInfo) ->
                             ( AppOps SR.Types.WalletOperational dataState newAppInfo uiState SR.Types.StopSubscription txRec, Cmd.none )
-                        (SR.Types.Credited addr userId token userInfo) ->
+                        (Data.Users.Credited addr userId token userInfo) ->
                             ( AppOps SR.Types.WalletOperational dataState newAppInfo uiState SR.Types.StopSubscription txRec, Cmd.none )         
                 _ ->
                     (model, Cmd.none)
@@ -763,7 +763,7 @@ update msg model =
             case appInfo.user of
                 SR.Types.Guest ->
                     (model, Cmd.none)
-                (SR.Types.Registered userId token userInfo) ->
+                (Data.Users.Registered userId token userInfo) ->
                     let
                             newDataKind = Global Data.Global.empty
                             newDataState = StateFetched sUsers sRankings newDataKind
@@ -771,11 +771,11 @@ update msg model =
                             _ = Debug.log "toGlobal now" "stateupdated"
                         in
                         ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
-                (SR.Types.NoWallet userId token userInfo) ->
+                (Data.Users.NoWallet userId token userInfo) ->
                     (model, Cmd.none)
-                (SR.Types.NoCredit addr userId token userInfo) ->
+                (Data.Users.NoCredit addr userId token userInfo) ->
                     (model, Cmd.none)
-                (SR.Types.Credited addr userId token userInfo) ->
+                (Data.Users.Credited addr userId token userInfo) ->
                     (model, Cmd.none)
 
         (Cancel, AppOps walletState AllEmpty appInfo uiState subState txRec ) ->
@@ -926,13 +926,13 @@ update msg model =
                             case appInfo.user of
                                 SR.Types.Guest ->
                                     (model, Cmd.none)
-                                (SR.Types.Registered userId token userInfo) ->
+                                (Data.Users.Registered userId token userInfo) ->
                                     ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer appInfo.user, Cmd.none )
-                                (SR.Types.NoWallet userId token userInfo) ->
+                                (Data.Users.NoWallet userId token userInfo) ->
                                     ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer appInfo.user, Cmd.none )
-                                (SR.Types.NoCredit addr userId token userInfo) ->
+                                (Data.Users.NoCredit addr userId token userInfo) ->
                                     ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer appInfo.user, Cmd.none )
-                                (SR.Types.Credited addr userId token userInfo) ->
+                                (Data.Users.Credited addr userId token userInfo) ->
                                     ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer appInfo.user, Cmd.none )
                         _ ->
                             (model, Cmd.none)
@@ -949,7 +949,7 @@ update msg model =
                                 SR.Types.Guest ->
                                     (Failure "Err", Cmd.none)
 
-                                (SR.Types.Registered userId token userInfo) ->
+                                (Data.Users.Registered userId token userInfo) ->
                                     let 
                                         newsUsers = Data.Users.updatedUserInSet sUsers 
                                             (Data.Users.removedRankindIdFromUser (Utils.MyUtils.stringFromRankingId (Data.Selected.gotRankingId sSelected)) appInfo.user)
@@ -970,11 +970,11 @@ update msg model =
                                         , Cmd.none
                                         )
 
-                                (SR.Types.NoWallet userId token userInfo) ->
+                                (Data.Users.NoWallet userId token userInfo) ->
                                     (Failure "Err", Cmd.none)
-                                (SR.Types.NoCredit addr userId token userInfo) ->
+                                (Data.Users.NoCredit addr userId token userInfo) ->
                                     (Failure "Err", Cmd.none)
-                                (SR.Types.Credited addr userId token userInfo) ->
+                                (Data.Users.Credited addr userId token userInfo) ->
                                     (Failure "Err", Cmd.none)
                           
                         _ -> 
@@ -1178,13 +1178,13 @@ update msg model =
                                         -- todo: fix
                                             SR.Types.Guest ->
                                                 (model, Cmd.none)
-                                            (SR.Types.Registered userId token userInfo) ->
+                                            (Data.Users.Registered userId token userInfo) ->
                                                 (model, Cmd.none)
-                                            (SR.Types.NoWallet userId token userInfo) ->
+                                            (Data.Users.NoWallet userId token userInfo) ->
                                                 (model, Cmd.none)
-                                            (SR.Types.NoCredit addr userId token userInfo) ->
+                                            (Data.Users.NoCredit addr userId token userInfo) ->
                                                 (model, Cmd.none)
-                                            (SR.Types.Credited addr userId token userInfo) ->
+                                            (Data.Users.Credited addr userId token userInfo) ->
                                                 (model, Cmd.none)
                                             -- Nothing ->
                                             --     (model, Cmd.none)
@@ -1250,7 +1250,7 @@ update msg model =
                                             -- todo: fix:
                                                     SR.Types.Guest ->
                                                         (model, Cmd.none)
-                                                    (SR.Types.Registered userId token userInfo) ->
+                                                    (Data.Users.Registered userId token userInfo) ->
                                                         let
                                                             txParams =
                                                                 { to = txRec.account
@@ -1281,11 +1281,11 @@ update msg model =
                                                         --Cmd.batch [ sentryCmd, addedUserAsFirstPlayerInNewList appInfo.user ] )
                                                         ,sentryCmd)
 
-                                                    (SR.Types.NoWallet userId token userInfo) ->
+                                                    (Data.Users.NoWallet userId token userInfo) ->
                                                         (model, Cmd.none)
-                                                    (SR.Types.NoCredit addr userId token userInfo) ->
+                                                    (Data.Users.NoCredit addr userId token userInfo) ->
                                                         (model, Cmd.none)
-                                                    (SR.Types.Credited addr userId token userInfo) ->
+                                                    (Data.Users.Credited addr userId token userInfo) ->
                                                         (model, Cmd.none)
                                                     -- Nothing ->
                                                     --     ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription emptyTxRecord, Cmd.none )
@@ -1362,7 +1362,7 @@ update msg model =
             --                         case accountState of
             --                             SR.Types.Guest -> 
             --                                 ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none )
-            --                             SR.Types.Registered ->
+            --                             Data.Users.Registered ->
             --                                 ( AppOps walletState dataState appInfo SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription txRec, Cmd.none )
 
             --                             SR.Types.EthEnabled ->
@@ -1443,15 +1443,15 @@ update msg model =
                                         -- todo: fix
                                             SR.Types.Guest ->
                                                 (model, Cmd.none)
-                                            (SR.Types.Registered userId token userInfo) ->
+                                            (Data.Users.Registered userId token userInfo) ->
                                                  ( updateSelectedRankingPlayerList model convertedToUserPlayers
                                                 , httpUpdateUsersJoinRankings (Utils.MyUtils.stringFromRankingId (Data.Selected.gotRankingId sSelected)) appInfo.user newUserList )
                                 
-                                            (SR.Types.NoWallet userId token userInfo) ->
+                                            (Data.Users.NoWallet userId token userInfo) ->
                                                 (model, Cmd.none)
-                                            (SR.Types.NoCredit addr userId token userInfo) ->
+                                            (Data.Users.NoCredit addr userId token userInfo) ->
                                                 (model, Cmd.none)
-                                            (SR.Types.Credited addr userId token userInfo) ->
+                                            (Data.Users.Credited addr userId token userInfo) ->
                                                 (model, Cmd.none)
                                 _ -> 
                                     let 
@@ -1532,21 +1532,21 @@ update msg model =
                         case appInfo.user of 
                             SR.Types.Guest ->
                                 (model, Cmd.none)
-                            (SR.Types.Registered userId token userInfo) ->
+                            (Data.Users.Registered userId token userInfo) ->
                                 ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel }
                                 , Cmd.batch [subCmd, addedUserAsFirstPlayerInNewList appInfo.user] )
-                            (SR.Types.NoWallet userId token userInfo) ->
+                            (Data.Users.NoWallet userId token userInfo) ->
                                 (model, Cmd.none)
-                            (SR.Types.NoCredit addr userId token userInfo) ->
+                            (Data.Users.NoCredit addr userId token userInfo) ->
                                 (model, Cmd.none)
-                            (SR.Types.Credited addr userId token userInfo) ->
+                            (Data.Users.Credited addr userId token userInfo) ->
                                 (model, Cmd.none)
                     
                     SR.Types.AppStateCreateNewUser ->
                         case appInfo.user of 
                             SR.Types.Guest ->
                                 (model, Cmd.none)
-                            (SR.Types.Registered userId token userInfo) ->
+                            (Data.Users.Registered userId token userInfo) ->
                                 let
                                     userSet = case dataState of 
                                                 StateFetched users rankings dKind -> 
@@ -1559,11 +1559,11 @@ update msg model =
                                 ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel }
                                 , Cmd.batch [subCmd,  createNewUser userSet appInfo.user])
 
-                            (SR.Types.NoWallet userId token userInfo) ->
+                            (Data.Users.NoWallet userId token userInfo) ->
                                 (model, Cmd.none)
-                            (SR.Types.NoCredit addr userId token userInfo) ->
+                            (Data.Users.NoCredit addr userId token userInfo) ->
                                 (model, Cmd.none)
-                            (SR.Types.Credited addr userId token userInfo) ->
+                            (Data.Users.Credited addr userId token userInfo) ->
                                 (model, Cmd.none)
                             
                                 
@@ -1626,13 +1626,13 @@ update msg model =
                     case appInfo.user of 
                         SR.Types.Guest ->
                             (model, Cmd.none)
-                        (SR.Types.Registered userId token userInfo) ->
+                        (Data.Users.Registered userId token userInfo) ->
                             (model, loginUser userInfo.username userInfo.password)
-                        (SR.Types.NoWallet userId token userInfo) ->
+                        (Data.Users.NoWallet userId token userInfo) ->
                             (model, loginUser userInfo.username userInfo.password)
-                        (SR.Types.NoCredit addr userId token userInfo) ->
+                        (Data.Users.NoCredit addr userId token userInfo) ->
                             (model, loginUser userInfo.username userInfo.password)
-                        (SR.Types.Credited addr userId token userInfo) ->
+                        (Data.Users.Credited addr userId token userInfo) ->
                             (model, loginUser userInfo.username userInfo.password)
                     
                 Failure _ ->
@@ -1999,17 +1999,17 @@ updateFromLoggedInUser model response =
             case appInfo.user of
                 SR.Types.Guest ->
                     model
-                (SR.Types.Registered userId _ userInfo) ->
+                (Data.Users.Registered userId _ userInfo) ->
                     let
-                        updated_user = SR.Types.Registered userId token userInfo         
+                        updated_user = Data.Users.Registered userId token userInfo         
                         newAppInfo = { appInfo | user = updated_user }
                     in
                         AppOps walletState dataState newAppInfo uiState subState txRec
-                (SR.Types.NoWallet userId _ userInfo) ->
+                (Data.Users.NoWallet userId _ userInfo) ->
                     model
-                (SR.Types.NoCredit addr userId _ userInfo) ->
+                (Data.Users.NoCredit addr userId _ userInfo) ->
                     model
-                (SR.Types.Credited addr userId _ userInfo) ->
+                (Data.Users.Credited addr userId _ userInfo) ->
                     model
 
         (AppOps walletState dataState appInfo uiState subState  txRec, Err _) ->
@@ -2028,17 +2028,17 @@ updateFromRegisteredNewUser model response =
             case appInfo.user of
                 SR.Types.Guest ->
                     model
-                (SR.Types.Registered userId _ userInfo) ->
+                (Data.Users.Registered userId _ userInfo) ->
                     let
-                        updated_user = SR.Types.Registered userId token userInfo         
+                        updated_user = Data.Users.Registered userId token userInfo         
                         newAppInfo = { appInfo | user = updated_user }
                     in
                         AppOps walletState dataState newAppInfo uiState subState txRec
-                (SR.Types.NoWallet userId _ userInfo) ->
+                (Data.Users.NoWallet userId _ userInfo) ->
                     model
-                (SR.Types.NoCredit addr userId _ userInfo) ->
+                (Data.Users.NoCredit addr userId _ userInfo) ->
                     model
-                (SR.Types.Credited addr userId _ userInfo) ->
+                (Data.Users.Credited addr userId _ userInfo) ->
                     model
 
         ( Ok _, Failure _ ) ->
@@ -2191,16 +2191,16 @@ gotWalletAddrApplyToUser appInfo uaddr =
             SR.Types.Guest ->
                 appInfo
             
-            (SR.Types.Registered userId token userInfo) ->
-                { appInfo | user = SR.Types.NoCredit uaddr userId token userInfo }
+            (Data.Users.Registered userId token userInfo) ->
+                { appInfo | user = Data.Users.NoCredit uaddr userId token userInfo }
 
-            (SR.Types.NoWallet userId token userInfo) ->
-                    { appInfo | user = SR.Types.NoCredit uaddr userId token userInfo }
+            (Data.Users.NoWallet userId token userInfo) ->
+                    { appInfo | user = Data.Users.NoCredit uaddr userId token userInfo }
                 
-            (SR.Types.NoCredit addr userId token userInfo) ->
+            (Data.Users.NoCredit addr userId token userInfo) ->
                 appInfo
 
-            (SR.Types.Credited addr userId token userInfo) ->
+            (Data.Users.Credited addr userId token userInfo) ->
                 appInfo
 
 
@@ -2313,45 +2313,45 @@ handleUserInputs model msg appInfoToUpdate =
             model
         (AppOps walletState dataState appInfo uiState subState txRec, UserDescInputChg descfield, SR.Types.Guest) ->
             model
-        (AppOps walletState dataState appInfo uiState subState txRec, UserDescInputChg descfield, SR.Types.Registered userId token userInfo) ->
+        (AppOps walletState dataState appInfo uiState subState txRec, UserDescInputChg descfield, Data.Users.Registered userId token userInfo) ->
             AppOps walletState dataState (updateAppInfoUserDesc userId token appInfo descfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
-        (AppOps walletState dataState appInfo uiState subState txRec, UserDescInputChg descfield, SR.Types.NoWallet userId token userInfo) ->
+        (AppOps walletState dataState appInfo uiState subState txRec, UserDescInputChg descfield, Data.Users.NoWallet userId token userInfo) ->
                 AppOps walletState dataState (updateAppInfoUserDesc userId token appInfo descfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
                 
-        (AppOps walletState dataState appInfo uiState subState txRec, UserDescInputChg descfield, SR.Types.NoCredit addr userId token userInfo) ->
+        (AppOps walletState dataState appInfo uiState subState txRec, UserDescInputChg descfield, Data.Users.NoCredit addr userId token userInfo) ->
                 AppOps walletState dataState (updateAppInfoUserDesc userId token appInfo descfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
-        (AppOps walletState dataState appInfo uiState subState txRec, UserDescInputChg descfield, SR.Types.Credited addr userId token userInfo) ->
+        (AppOps walletState dataState appInfo uiState subState txRec, UserDescInputChg descfield, Data.Users.Credited addr userId token userInfo) ->
                 AppOps walletState dataState (updateAppInfoUserDesc userId token appInfo descfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
         (AppOps walletState dataState appInfo uiState subState txRec, UserEmailInputChg emailfield, SR.Types.Guest) ->
             model
-        (AppOps walletState dataState appInfo uiState subState txRec, UserEmailInputChg emailfield, SR.Types.Registered userId token userInfo) ->
+        (AppOps walletState dataState appInfo uiState subState txRec, UserEmailInputChg emailfield, Data.Users.Registered userId token userInfo) ->
             AppOps walletState dataState (updateAppInfoUserEmail userId token appInfo emailfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
-        (AppOps walletState dataState appInfo uiState subState txRec, UserEmailInputChg emailfield, SR.Types.NoWallet userId token userInfo) ->
+        (AppOps walletState dataState appInfo uiState subState txRec, UserEmailInputChg emailfield, Data.Users.NoWallet userId token userInfo) ->
                 AppOps walletState dataState (updateAppInfoUserEmail userId token appInfo emailfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
                 
-        (AppOps walletState dataState appInfo uiState subState txRec, UserEmailInputChg emailfield, SR.Types.NoCredit addr userId token userInfo) ->
+        (AppOps walletState dataState appInfo uiState subState txRec, UserEmailInputChg emailfield, Data.Users.NoCredit addr userId token userInfo) ->
                 AppOps walletState dataState (updateAppInfoUserEmail userId token appInfo emailfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
-        (AppOps walletState dataState appInfo uiState subState txRec, UserEmailInputChg emailfield, SR.Types.Credited addr userId token userInfo) ->
+        (AppOps walletState dataState appInfo uiState subState txRec, UserEmailInputChg emailfield, Data.Users.Credited addr userId token userInfo) ->
                 AppOps walletState dataState (updateAppInfoUserEmail userId token appInfo emailfield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
         
         (AppOps walletState dataState appInfo uiState subState txRec, UserMobileInputChg mobilefield, SR.Types.Guest) ->
             model
-        (AppOps walletState dataState appInfo uiState subState txRec, UserMobileInputChg mobilefield, SR.Types.Registered userId token userInfo) ->
+        (AppOps walletState dataState appInfo uiState subState txRec, UserMobileInputChg mobilefield, Data.Users.Registered userId token userInfo) ->
             AppOps walletState dataState (updateAppInfoUserMobile userId token appInfo mobilefield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
-        (AppOps walletState dataState appInfo uiState subState txRec, UserMobileInputChg mobilefield, SR.Types.NoWallet userId token userInfo) ->
+        (AppOps walletState dataState appInfo uiState subState txRec, UserMobileInputChg mobilefield, Data.Users.NoWallet userId token userInfo) ->
                 AppOps walletState dataState (updateAppInfoUserMobile userId token appInfo mobilefield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
                 
-        (AppOps walletState dataState appInfo uiState subState txRec, UserMobileInputChg mobilefield, SR.Types.NoCredit addr userId token userInfo) ->
+        (AppOps walletState dataState appInfo uiState subState txRec, UserMobileInputChg mobilefield, Data.Users.NoCredit addr userId token userInfo) ->
                 AppOps walletState dataState (updateAppInfoUserMobile userId token appInfo mobilefield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
-        (AppOps walletState dataState appInfo uiState subState txRec, UserMobileInputChg mobilefield, SR.Types.Credited addr userId token userInfo) ->
+        (AppOps walletState dataState appInfo uiState subState txRec, UserMobileInputChg mobilefield, Data.Users.Credited addr userId token userInfo) ->
                 AppOps walletState dataState (updateAppInfoUserMobile userId token appInfo mobilefield userInfo) SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec
 
         _ ->
@@ -2363,7 +2363,7 @@ updateAppInfoUserDesc userId token appInfo descfield userInfo =
         existingExtraUserInfo = userInfo.extrauserinfo
         newExtraInfo = {existingExtraUserInfo | description = descfield}
         newUserInfo = {userInfo | extrauserinfo = newExtraInfo}
-        newAppInfo = { appInfo | user = SR.Types.Registered userId token newUserInfo }
+        newAppInfo = { appInfo | user = Data.Users.Registered userId token newUserInfo }
     in
     newAppInfo
 
@@ -2373,7 +2373,7 @@ updateAppInfoUserEmail userId token appInfo emailfield userInfo =
         existingExtraUserInfo = userInfo.extrauserinfo
         newExtraInfo = {existingExtraUserInfo | email = emailfield}
         newUserInfo = {userInfo | extrauserinfo = newExtraInfo}
-        newAppInfo = { appInfo | user = SR.Types.Registered userId token newUserInfo }
+        newAppInfo = { appInfo | user = Data.Users.Registered userId token newUserInfo }
     in
         newAppInfo
 
@@ -2384,7 +2384,7 @@ updateAppInfoUserMobile userId token appInfo mobilefield userInfo =
         existingExtraUserInfo = userInfo.extrauserinfo
         newExtraInfo = {existingExtraUserInfo | mobile = mobilefield}
         newUserInfo = {userInfo | extrauserinfo = newExtraInfo}
-        newAppInfo = { appInfo | user = SR.Types.Registered userId token newUserInfo }
+        newAppInfo = { appInfo | user = Data.Users.Registered userId token newUserInfo }
     in
         newAppInfo
 
@@ -2404,13 +2404,13 @@ updatedForChallenge model luplayer opponentAsPlayer userMaybeCanDelete =
                                 case appInfo.user of 
                                     SR.Types.Guest ->
                                         Failure "updateChallenge fix"
-                                    (SR.Types.Registered userId token userInfo) ->
+                                    (Data.Users.Registered userId token userInfo) ->
                                         Failure "updateChallenge fix"
-                                    (SR.Types.NoWallet userId token userInfo) ->
+                                    (Data.Users.NoWallet userId token userInfo) ->
                                         Failure "updateChallenge fix"
-                                    (SR.Types.NoCredit addr userId token userInfo) ->
+                                    (Data.Users.NoCredit addr userId token userInfo) ->
                                         Failure "updateChallenge fix"
-                                    (SR.Types.Credited addr userId token userInfo) ->
+                                    (Data.Users.Credited addr userId token userInfo) ->
                                         Failure "updateChallenge fix"
                                     -- Nothing ->
                                     --     Failure "updateChallenge" 
@@ -2528,13 +2528,13 @@ view model =
                     case userVal of 
                         SR.Types.Guest ->
                             handleGlobalNoTokenView dataState userVal
-                        (SR.Types.Registered userId token userInfo) ->
+                        (Data.Users.Registered userId token userInfo) ->
                             inputUserDetailsView dataState appInfo
-                        (SR.Types.NoWallet userId token userInfo) ->
+                        (Data.Users.NoWallet userId token userInfo) ->
                             inputUserDetailsView dataState appInfo
-                        (SR.Types.NoCredit addr userId token userInfo) ->
+                        (Data.Users.NoCredit addr userId token userInfo) ->
                             inputUserDetailsView dataState appInfo
-                        (SR.Types.Credited addr userId token userInfo) ->
+                        (Data.Users.Credited addr userId token userInfo) ->
                             inputUserDetailsView dataState appInfo
 
                 (StateUpdated _ _ _, _, _) ->
@@ -2547,6 +2547,18 @@ view model =
            failureView str
 
 -- view helpers
+
+resultView : Data.Selected.SelectedStatus -> SR.Types.UIState
+resultView  status = 
+    case status of
+            UserIsOwner -> 
+                SR.Types.UISelectedRankingUserIsOwner
+
+            SR.Types.UserIsMember -> 
+                SR.Types.UISelectedRankingUserIsPlayer
+
+            SR.Types.UserIsNeitherOwnerNorMember -> 
+                SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
 
 generalLoginView : Data.Users.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
 generalLoginView userVal sUsers sGlobal =
@@ -2589,7 +2601,7 @@ generalLoginView userVal sUsers sGlobal =
             , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Types.Guest)) SR.Types.Guest
             ]
 
-        (SR.Types.Registered userId token userInfo) ->
+        (Data.Users.Registered userId token userInfo) ->
             Framework.responsiveLayout [] <| Element.column Framework.container
             [ Element.el (Heading.h5) <|
                 Element.text ("SportRank - Welcome")
@@ -2624,14 +2636,14 @@ generalLoginView userVal sUsers sGlobal =
             , displayRegisterBtnIfNewUser
                 ""
                 ClickedRegister
-            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (SR.Types.Registered userId token userInfo))) (SR.Types.Registered userId token userInfo) 
+            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Registered userId token userInfo))) (Data.Users.Registered userId token userInfo) 
             ]
 
-        (SR.Types.NoWallet userId token userInfo) ->
+        (Data.Users.NoWallet userId token userInfo) ->
             Html.text "Irrelevant view"
-        (SR.Types.NoCredit addr userId token userInfo) ->
+        (Data.Users.NoCredit addr userId token userInfo) ->
             Html.text "Irrelevant view"
-        (SR.Types.Credited addr userId token userInfo) ->
+        (Data.Users.Credited addr userId token userInfo) ->
             Html.text "Irrelevant view"
     
 
@@ -2640,7 +2652,7 @@ registerNewUserView userVal sUsers =
     case userVal of
         SR.Types.Guest ->
             Html.text "Should have switched to Registered"
-        (SR.Types.Registered userId token userInfo) ->
+        (Data.Users.Registered userId token userInfo) ->
             Framework.responsiveLayout [] <|
             Element.column Grid.section <|
                 [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
@@ -2688,11 +2700,11 @@ registerNewUserView userVal sUsers =
                 , newuserConfirmPanel userVal (Data.Users.asList sUsers)
                 ]
 
-        (SR.Types.NoWallet userId token userInfo) ->
+        (Data.Users.NoWallet userId token userInfo) ->
             Html.text "Irrelevant view"
-        (SR.Types.NoCredit addr userId token userInfo) ->
+        (Data.Users.NoCredit addr userId token userInfo) ->
             Html.text "Irrelevant view"
-        (SR.Types.Credited addr userId token userInfo) ->
+        (Data.Users.Credited addr userId token userInfo) ->
             Html.text "Irrelevant view"
 
     
@@ -2708,7 +2720,7 @@ gotUserView userVal sUsers sGlobal =
                     , displayForToken userVal sGlobal
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Types.Guest)) SR.Types.Guest
                 ]
-        (SR.Types.Registered userId token userInfo) ->
+        (Data.Users.Registered userId token userInfo) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
@@ -2716,7 +2728,7 @@ gotUserView userVal sUsers sGlobal =
                     , displayForToken userVal sGlobal
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal)) userVal
                 ]
-        (SR.Types.NoWallet userId token userInfo) ->
+        (Data.Users.NoWallet userId token userInfo) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
@@ -2724,7 +2736,7 @@ gotUserView userVal sUsers sGlobal =
                     , displayForToken userVal sGlobal
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal)) userVal
                 ]
-        (SR.Types.NoCredit addr userId token userInfo) ->
+        (Data.Users.NoCredit addr userId token userInfo) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
@@ -2732,7 +2744,7 @@ gotUserView userVal sUsers sGlobal =
                     , displayForToken userVal sGlobal
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal)) userVal
                 ]
-        (SR.Types.Credited addr userId token userInfo) ->
+        (Data.Users.Credited addr userId token userInfo) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
@@ -2797,25 +2809,25 @@ displayForToken userVal sGlobal =
                     ClickedRegister
                 ]
             
-        (SR.Types.Registered userId token userInfo) ->
+        (Data.Users.Registered userId token userInfo) ->
             Element.column Grid.section <|
                 [Element.text ("\n")
                 , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
                 , memberrankingbuttons (Data.Global.gotMember sGlobal userVal) userVal
                 ]
-        (SR.Types.NoWallet userId token userInfo) ->
+        (Data.Users.NoWallet userId token userInfo) ->
             Element.column Grid.section <|
                 [Element.text ("\n")
                 , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
                 , memberrankingbuttons (Data.Global.gotMember sGlobal userVal) userVal
                 ]
-        (SR.Types.NoCredit addr userId token userInfo) ->
+        (Data.Users.NoCredit addr userId token userInfo) ->
             Element.column Grid.section <|
                 [Element.text ("\n")
                 , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
                 , memberrankingbuttons (Data.Global.gotMember sGlobal userVal) userVal
                 ]
-        (SR.Types.Credited addr userId token userInfo) ->
+        (Data.Users.Credited addr userId token userInfo) ->
             Element.column Grid.section <|
                 [Element.text ("\n")
                 , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
@@ -2839,7 +2851,7 @@ ownedrankingbuttons urankingList user =
     case user of 
         SR.Types.Guest ->
             Element.text ""
-        (SR.Types.Registered userId token userInfo) ->
+        (Data.Users.Registered userId token userInfo) ->
             Element.column Grid.section <|
             [ if List.isEmpty urankingList then
                 -- the button will be in the "Your Created Rankings" section instead
@@ -2849,7 +2861,7 @@ ownedrankingbuttons urankingList user =
                 , Element.column (Card.simple ++ Grid.simple) <|
                 determineOwnedRankingButtonsDisplay (Data.Rankings.extractRankingList urankingList) user
             ]
-        (SR.Types.NoWallet userId token userInfo) ->
+        (Data.Users.NoWallet userId token userInfo) ->
             Element.column Grid.section <|
             [ if List.isEmpty urankingList then
                 Element.el [] <| Element.text ""
@@ -2858,7 +2870,7 @@ ownedrankingbuttons urankingList user =
                 , Element.column (Card.simple ++ Grid.simple) <|
                 determineOwnedRankingButtonsDisplay (Data.Rankings.extractRankingList urankingList) user
             ]
-        (SR.Types.NoCredit addr userId token userInfo) ->
+        (Data.Users.NoCredit addr userId token userInfo) ->
             Element.column Grid.section <|
             [ if List.isEmpty urankingList then
                 Element.el [] <| Element.text ""
@@ -2867,7 +2879,7 @@ ownedrankingbuttons urankingList user =
                 , Element.column (Card.simple ++ Grid.simple) <|
                 determineOwnedRankingButtonsDisplay (Data.Rankings.extractRankingList urankingList) user
             ]
-        (SR.Types.Credited addr userId token userInfo) ->
+        (Data.Users.Credited addr userId token userInfo) ->
             Element.column Grid.section <|
             [ if List.isEmpty urankingList then
                 Element.el [] <| Element.text ""
@@ -2906,25 +2918,25 @@ memberrankingbuttons urankingList user =
     case user of
         SR.Types.Guest ->
             Element.text ""
-        (SR.Types.Registered userId token userInfo) ->
+        (Data.Users.Registered userId token userInfo) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
                 insertMemberRankingList <| Data.Rankings.extractRankingList urankingList
             ]
-        (SR.Types.NoWallet userId token userInfo) ->
+        (Data.Users.NoWallet userId token userInfo) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
                 insertMemberRankingList <| Data.Rankings.extractRankingList urankingList
             ]
-        (SR.Types.NoCredit addr userId token userInfo) ->
+        (Data.Users.NoCredit addr userId token userInfo) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
                 insertMemberRankingList <| Data.Rankings.extractRankingList urankingList
             ]
-        (SR.Types.Credited addr userId token userInfo) ->
+        (Data.Users.Credited addr userId token userInfo) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
@@ -2941,26 +2953,26 @@ otherrankingbuttons urankingList user =
             , Element.column (Card.simple ++ Grid.simple) <|
                 insertNeitherOwnerNorMemberRankingList (Data.Rankings.extractRankingList urankingList)
             ]
-        (SR.Types.Registered userId token userInfo) ->
+        (Data.Users.Registered userId token userInfo) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
                 insertNeitherOwnerNorMemberRankingList (Data.Rankings.extractRankingList urankingList)
             ]
 
-        (SR.Types.NoWallet userId token userInfo) ->
+        (Data.Users.NoWallet userId token userInfo) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
                 insertNeitherOwnerNorMemberRankingList (Data.Rankings.extractRankingList urankingList)
             ]
-        (SR.Types.NoCredit addr userId token userInfo) ->
+        (Data.Users.NoCredit addr userId token userInfo) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
                 insertNeitherOwnerNorMemberRankingList (Data.Rankings.extractRankingList urankingList)
             ]
-        (SR.Types.Credited addr userId token userInfo) ->
+        (Data.Users.Credited addr userId token userInfo) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
@@ -2986,13 +2998,13 @@ insertOwnedRankingList lrankinginfo user =
                     , label = Element.text "Create New Ladder"
                     }
                 ]
-        (SR.Types.Registered userId token userInfo) ->
+        (Data.Users.Registered userId token userInfo) ->
             mapOutRankingList
-        (SR.Types.NoWallet userId token userInfo) ->
+        (Data.Users.NoWallet userId token userInfo) ->
             mapOutRankingList
-        (SR.Types.NoCredit addr userId token userInfo) ->
+        (Data.Users.NoCredit addr userId token userInfo) ->
             mapOutRankingList
-        (SR.Types.Credited addr userId token userInfo) ->
+        (Data.Users.Credited addr userId token userInfo) ->
             mapOutRankingList
 
 
@@ -3102,7 +3114,7 @@ configureThenAddPlayerRankingBtns sSelected sUsers appInfo uplayer =
             (SR.Types.Guest, _)  ->
                 Element.text "No User2"
 
-            (SR.Types.Registered userId token userInfo, SR.Types.Registered _ _ userPlayerInfo) ->
+            (Data.Users.Registered userId token userInfo, Data.Users.Registered _ _ userPlayerInfo) ->
                 if Data.Selected.isUserPlayerMemberOfSelectedRanking sSelected appInfo.user then
                     
                     if Data.Selected.isPlayerCurrentUser appInfo.user uplayer then
@@ -3169,19 +3181,19 @@ configureThenAddPlayerRankingBtns sSelected sUsers appInfo uplayer =
                             }
                         ]
 
-            (SR.Types.NoWallet userId token userInfo, _) ->
+            (Data.Users.NoWallet userId token userInfo, _) ->
                 Element.text "No User3"
-            (SR.Types.NoCredit addr userId token userInfo, _) ->
+            (Data.Users.NoCredit addr userId token userInfo, _) ->
                 Element.text "No User4"
-            (SR.Types.Credited addr userId token userInfo, _) ->
+            (Data.Users.Credited addr userId token userInfo, _) ->
                 Element.text "No User5"
-            ( SR.Types.Registered _ _ _, SR.Types.Guest ) ->
+            ( Data.Users.Registered _ _ _, SR.Types.Guest ) ->
                 Element.text "No challenger"
-            ( SR.Types.Registered _ _ _, SR.Types.NoWallet _ _ _ )->
+            ( Data.Users.Registered _ _ _, Data.Users.NoWallet _ _ _ )->
                 Element.text "No challenger"
-            ( SR.Types.Registered _ _ _, SR.Types.NoCredit _ _ _ _ )->
+            ( Data.Users.Registered _ _ _, Data.Users.NoCredit _ _ _ _ )->
                 Element.text "No challenger"
-            ( SR.Types.Registered _ _ _, SR.Types.Credited _ _ _ _ )->
+            ( Data.Users.Registered _ _ _, Data.Users.Credited _ _ _ _ )->
                 Element.text "No challenger"
           
 
@@ -3212,7 +3224,7 @@ selecteduserIsOwnerhomebutton user =
     -- case user of
     --     SR.Types.Guest ->
     --         Element.text "Error"
-    --     (SR.Types.Registered userId token userInfo) ->
+    --     (Data.Users.Registered userId token userInfo) ->
             Element.column Grid.section <|
                 [ Element.el Heading.h6 <| Element.text "Click to continue ..."
                 , Element.column (Card.simple ++ Grid.simple) <|
@@ -3228,7 +3240,7 @@ selecteduserIsOwnerhomebutton user =
                         ]
                     ]
                 ]
-        -- (SR.Types.NoWallet userId token userInfo) ->
+        -- (Data.Users.NoWallet userId token userInfo) ->
         --      Element.column Grid.section <|
         --         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         --         , Element.column (Card.simple ++ Grid.simple) <|
@@ -3244,7 +3256,7 @@ selecteduserIsOwnerhomebutton user =
         --                 ]
         --             ]
         --         ]
-        -- (SR.Types.NoCredit addr userId token userInfo) ->
+        -- (Data.Users.NoCredit addr userId token userInfo) ->
         --     Element.column Grid.section <|
         --         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         --         , Element.column (Card.simple ++ Grid.simple) <|
@@ -3260,7 +3272,7 @@ selecteduserIsOwnerhomebutton user =
         --                 ]
         --             ]
         --         ]
-        -- (SR.Types.Credited addr userId token userInfo) ->
+        -- (Data.Users.Credited addr userId token userInfo) ->
         --     Element.column Grid.section <|
         --         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
         --         , Element.column (Card.simple ++ Grid.simple) <|
@@ -3319,22 +3331,22 @@ joinBtn user  =
             { onPress = Just ClickedRegister
             , label = Element.text "Join"
             }
-        (SR.Types.Registered userId token userInfo) ->
+        (Data.Users.Registered userId token userInfo) ->
             Input.button ([ Element.htmlAttribute (Html.Attributes.id "newUserJoinbtn") ] ++ Button.simple ++ Color.disabled) <|
             { onPress = Nothing
             , label = Element.text "Join"
             }
-        (SR.Types.NoWallet userId token userInfo) ->
+        (Data.Users.NoWallet userId token userInfo) ->
             Input.button ([ Element.htmlAttribute (Html.Attributes.id "newUserJoinbtn") ] ++ Button.simple ++ Color.disabled) <|
             { onPress = Just ClickedRegister
             , label = Element.text "Join"
             }
-        (SR.Types.NoCredit addr userId token userInfo) ->
+        (Data.Users.NoCredit addr userId token userInfo) ->
             Input.button ([ Element.htmlAttribute (Html.Attributes.id "newUserJoinbtn") ] ++ Button.simple ++ Color.disabled) <|
             { onPress = Just ClickedRegister
             , label = Element.text "Join"
             }
-        (SR.Types.Credited addr userId token userInfo) ->
+        (Data.Users.Credited addr userId token userInfo) ->
             Input.button ([ Element.htmlAttribute (Html.Attributes.id "newUserJoinbtn") ] ++ Button.simple ++ Color.info) <|
             { onPress = Just ClickedJoinSelected
             , label = Element.text "Join"
@@ -3467,7 +3479,7 @@ confirmChallengebutton model =
             case (appInfo.user, appInfo.challenger.user) of
                 (SR.Types.Guest, _) ->
                     Element.text <| " No User3"
-                (SR.Types.Registered userId token userInfo, SR.Types.Registered _ _ challengerInfo) ->
+                (Data.Users.Registered userId token userInfo, Data.Users.Registered _ _ challengerInfo) ->
                     Element.column Grid.section <|
                         [ Element.el Heading.h6 <| Element.text <| " Your opponent's details: "
                         , Element.paragraph (Card.fill ++ Color.info) <|
@@ -3495,19 +3507,19 @@ confirmChallengebutton model =
                             ]
                         ]
 
-                (SR.Types.NoWallet userId token userInfo, _) ->
+                (Data.Users.NoWallet userId token userInfo, _) ->
                     Element.text <| " No User3"
-                (SR.Types.NoCredit addr userId token userInfo, _) ->
+                (Data.Users.NoCredit addr userId token userInfo, _) ->
                     Element.text <| " No User3"
-                (SR.Types.Credited addr userId token userInfo, _) ->
+                (Data.Users.Credited addr userId token userInfo, _) ->
                     Element.text <| " No User3"
-                ( SR.Types.Registered _ _ _, SR.Types.Guest ) ->
+                ( Data.Users.Registered _ _ _, SR.Types.Guest ) ->
                     Element.text "No challenger"
-                ( SR.Types.Registered _ _ _, SR.Types.NoWallet _ _ _ )->
+                ( Data.Users.Registered _ _ _, Data.Users.NoWallet _ _ _ )->
                     Element.text "No challenger"
-                ( SR.Types.Registered _ _ _, SR.Types.NoCredit _ _ _ _ )->
+                ( Data.Users.Registered _ _ _, Data.Users.NoCredit _ _ _ _ )->
                     Element.text "No challenger"
-                ( SR.Types.Registered _ _ _, SR.Types.Credited _ _ _ _ )->
+                ( Data.Users.Registered _ _ _, Data.Users.Credited _ _ _ _ )->
                     Element.text "No challenger"
                     
         _ ->
@@ -3540,7 +3552,7 @@ confirmResultbutton model =
                                             case (playerAsUser, challengerAsUser) of
                                             (SR.Types.Guest, _) ->
                                                 Element.text "No challenger"
-                                            (SR.Types.Registered _ _ playerUserInfo, SR.Types.Registered userId token challengerUserInfo) ->
+                                            (Data.Users.Registered _ _ playerUserInfo, Data.Users.Registered userId token challengerUserInfo) ->
                                                 Element.column Grid.section <|
                                                 [ Element.column (Card.simple ++ Grid.simple) <|
                                                     [ Element.wrappedRow Grid.simple <|
@@ -3575,19 +3587,19 @@ confirmResultbutton model =
                                                 , SR.Elements.ethereumWalletWarning
                                                 , SR.Elements.footer
                                                 ]
-                                            (SR.Types.NoWallet userId token userInfo, _) ->
+                                            (Data.Users.NoWallet userId token userInfo, _) ->
                                                 Element.text "No challenger"
-                                            (SR.Types.NoCredit addr userId token userInfo, _) ->
+                                            (Data.Users.NoCredit addr userId token userInfo, _) ->
                                                 Element.text "No challenger"
-                                            (SR.Types.Credited addr userId token userInfo, _) ->
+                                            (Data.Users.Credited addr userId token userInfo, _) ->
                                                 Element.text "No challenger"
-                                            ( SR.Types.Registered _ _ _, SR.Types.Guest ) ->
+                                            ( Data.Users.Registered _ _ _, SR.Types.Guest ) ->
                                                 Element.text "No challenger"
-                                            ( SR.Types.Registered _ _ _, SR.Types.NoWallet _ _ _ )->
+                                            ( Data.Users.Registered _ _ _, Data.Users.NoWallet _ _ _ )->
                                                 Element.text "No challenger"
-                                            ( SR.Types.Registered _ _ _, SR.Types.NoCredit _ _ _ _ )->
+                                            ( Data.Users.Registered _ _ _, Data.Users.NoCredit _ _ _ _ )->
                                                 Element.text "No challenger"
-                                            ( SR.Types.Registered _ _ _, SR.Types.Credited _ _ _ _ )->
+                                            ( Data.Users.Registered _ _ _, Data.Users.Credited _ _ _ _ )->
                                                 Element.text "No challenger"
                                             
                         _ ->
@@ -3754,7 +3766,7 @@ newuserConfirmPanel  user luser =
                             ]
                         ]
 
-        (SR.Types.Registered userId token userInfo) ->
+        (Data.Users.Registered userId token userInfo) ->
             if List.isEmpty luser then
                     Element.column Grid.section <|
                         [ SR.Elements.missingDataPara
@@ -3778,7 +3790,7 @@ newuserConfirmPanel  user luser =
                                 { onPress = Just <| Cancel
                                 , label = Element.text "Cancel"
                                 }
-                            , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput (SR.Types.Registered userId token userInfo)  luser False)) <|
+                            , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput (Data.Users.Registered userId token userInfo)  luser False)) <|
                                 { onPress = Just <| ClickedConfirmedRegisterNewUser
                                 , label = Element.text "Register"
                                 }
@@ -3786,11 +3798,11 @@ newuserConfirmPanel  user luser =
                         ]
                     ]
         
-        (SR.Types.NoWallet userId token userInfo) ->
+        (Data.Users.NoWallet userId token userInfo) ->
             Element.text "newuserConfirmPanel Err"
-        (SR.Types.NoCredit addr userId token userInfo) ->
+        (Data.Users.NoCredit addr userId token userInfo) ->
             Element.text "newuserConfirmPanel Err"
-        (SR.Types.Credited addr userId token userInfo) ->
+        (Data.Users.Credited addr userId token userInfo) ->
             Element.text "newuserConfirmPanel Err"
 
 
@@ -3821,7 +3833,7 @@ isValidatedForAllUserDetailsInput user luser isExistingUser =
 --     case user of
 --         SR.Types.Guest ->
 --             False
---         (SR.Types.Registered userId token userInfo) ->
+--         (Data.Users.Registered userId token userInfo) ->
 --             if
 --                 isExistingUser
 --                     && isUserDescValidated userInfo.extrauserinfo.description
@@ -3841,12 +3853,12 @@ isValidatedForAllUserDetailsInput user luser isExistingUser =
 --             else
 --                 False
 
---         (SR.Types.NoWallet userId token userInfo) ->
---             SR.Types.NoWallet userId token userInfo
---         (SR.Types.NoCredit addr userId token userInfo) ->
---             SR.Types.NoCredit addr userId token userInfo
---         (SR.Types.Credited addr userId token userInfo) ->
---             SR.Types.Credited addr userId token userInfo
+--         (Data.Users.NoWallet userId token userInfo) ->
+--             Data.Users.NoWallet userId token userInfo
+--         (Data.Users.NoCredit addr userId token userInfo) ->
+--             Data.Users.NoCredit addr userId token userInfo
+--         (Data.Users.Credited addr userId token userInfo) ->
+--             Data.Users.Credited addr userId token userInfo
     
 
 
@@ -3937,7 +3949,7 @@ nameValidView userVal sUsers =
                 )
                 (Element.text """Must be unique (4-8 continuous chars)""")
         
-        (SR.Types.Registered userId token userInfo) ->
+        (Data.Users.Registered userId token userInfo) ->
             if Data.Users.isNameValid userInfo.username sUsers then 
                 Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
 
@@ -3948,11 +3960,11 @@ nameValidView userVal sUsers =
                     )
                     (Element.text """Must be unique (4-8 continuous chars)""")
 
-        (SR.Types.NoWallet userId token userInfo) ->
+        (Data.Users.NoWallet userId token userInfo) ->
             (Element.text """Validation View Error""")
-        (SR.Types.NoCredit addr userId token userInfo) ->
+        (Data.Users.NoCredit addr userId token userInfo) ->
             (Element.text """Validation View Error""")
-        (SR.Types.Credited addr userId token userInfo) ->
+        (Data.Users.Credited addr userId token userInfo) ->
             (Element.text """Validation View Error""")
 
 
@@ -4083,7 +4095,7 @@ handleGlobalNoTokenView dataState userVal =
                         , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal SR.Types.Guest)) SR.Types.Guest
                         ]
 
-        (StateFetched sUsers sRankings dKind, SR.Types.Registered userId token userInfo) ->
+        (StateFetched sUsers sRankings dKind, Data.Users.Registered userId token userInfo) ->
             case dKind of
                 Selected _ ->
                     Html.text ("Nothing should have been selected yet")
@@ -4123,7 +4135,7 @@ handleGlobalNoTokenView dataState userVal =
                                     ""
                                     ClickedRegister
                         , Element.text ("\n")
-                        , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (SR.Types.Registered userId token userInfo))) (SR.Types.Registered userId token userInfo)
+                        , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Registered userId token userInfo))) (Data.Users.Registered userId token userInfo)
                         ]
         (_, _) ->
             Html.text ("Already have a token")
@@ -4220,25 +4232,25 @@ selectedUserIsOwnerView dataState appInfo =
                                     , selecteduserIsOwnerhomebutton SR.Types.Guest
                                     , playerbuttons dataState appInfo
                                     ]
-                            (SR.Types.Registered userId token userInfo) ->
+                            (Data.Users.Registered userId token userInfo) ->
                                 Framework.responsiveLayout [] <| Element.column Framework.container
                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userInfo.username
                                     , selecteduserIsOwnerhomebutton appInfo.user
                                     , playerbuttons dataState appInfo
                                     ]
-                            (SR.Types.NoWallet userId token userInfo) ->
+                            (Data.Users.NoWallet userId token userInfo) ->
                                 Framework.responsiveLayout [] <| Element.column Framework.container
                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userInfo.username
                                     , selecteduserIsOwnerhomebutton appInfo.user
                                     , playerbuttons dataState appInfo
                                     ]
-                            (SR.Types.NoCredit addr userId token userInfo) ->
+                            (Data.Users.NoCredit addr userId token userInfo) ->
                                 Framework.responsiveLayout [] <| Element.column Framework.container
                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userInfo.username
                                     , selecteduserIsOwnerhomebutton appInfo.user
                                     , playerbuttons dataState appInfo
                                     ]
-                            (SR.Types.Credited addr userId token userInfo) ->
+                            (Data.Users.Credited addr userId token userInfo) ->
                                 Framework.responsiveLayout [] <| Element.column Framework.container
                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userInfo.username
                                     , selecteduserIsOwnerhomebutton appInfo.user
@@ -4261,25 +4273,25 @@ selectedUserIsPlayerView dataState appInfo =
                                 Framework.responsiveLayout [] <| Element.column Framework.container
                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Guest"
                                     ]
-                            (SR.Types.Registered userId token userInfo) ->
+                            (Data.Users.Registered userId token userInfo) ->
                                 Framework.responsiveLayout [] <| Element.column Framework.container
                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
                                     , selecteduserIsPlayerHomebutton appInfo.user
                                     , playerbuttons dataState appInfo
                                     ]
-                            (SR.Types.NoWallet userId token userInfo) ->
+                            (Data.Users.NoWallet userId token userInfo) ->
                                 Framework.responsiveLayout [] <| Element.column Framework.container
                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
                                     , selecteduserIsPlayerHomebutton appInfo.user
                                     , playerbuttons dataState appInfo
                                     ]
-                            (SR.Types.NoCredit addr userId token userInfo) ->
+                            (Data.Users.NoCredit addr userId token userInfo) ->
                                 Framework.responsiveLayout [] <| Element.column Framework.container
                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
                                     , selecteduserIsPlayerHomebutton appInfo.user
                                     , playerbuttons dataState appInfo
                                     ]
-                            (SR.Types.Credited addr userId token userInfo) ->
+                            (Data.Users.Credited addr userId token userInfo) ->
                                 Framework.responsiveLayout [] <| Element.column Framework.container
                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
                                     , selecteduserIsPlayerHomebutton appInfo.user
@@ -4298,28 +4310,28 @@ selectedUserIsPlayerView dataState appInfo =
                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - No User13" 
                                     , Element.text <| "No User17"
                                     ]
-                            (SR.Types.Registered userId token userInfo) ->
+                            (Data.Users.Registered userId token userInfo) ->
                                 Framework.responsiveLayout [] <| Element.column Framework.container
                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
                                     , Element.text <| "Challenge is On! Good luck!"
                                     , selecteduserIsPlayerHomebutton appInfo.user
                                     , playerbuttons dataState appInfo
                                     ]
-                            (SR.Types.NoWallet userId token userInfo) ->
+                            (Data.Users.NoWallet userId token userInfo) ->
                                 Framework.responsiveLayout [] <| Element.column Framework.container
                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
                                     , Element.text <| "Challenge is On! Good luck!"
                                     , selecteduserIsPlayerHomebutton appInfo.user
                                     , playerbuttons dataState appInfo
                                     ]
-                            (SR.Types.NoCredit addr userId token userInfo) ->
+                            (Data.Users.NoCredit addr userId token userInfo) ->
                                 Framework.responsiveLayout [] <| Element.column Framework.container
                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
                                     , Element.text <| "Challenge is On! Good luck!"
                                     , selecteduserIsPlayerHomebutton appInfo.user
                                     , playerbuttons dataState appInfo
                                     ]
-                            (SR.Types.Credited addr userId token userInfo) ->
+                            (Data.Users.Credited addr userId token userInfo) ->
                                 Framework.responsiveLayout [] <| Element.column Framework.container
                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
                                     , Element.text <| "Challenge is On! Good luck!"
@@ -4364,13 +4376,13 @@ newOrExistingUserNameDisplay user =
     case user of 
         SR.Types.Guest ->
             Element.el Heading.h4 <| Element.text <| "New User - Please Register and Enable Ethereum to join"
-        (SR.Types.Registered userId token userInfo) ->
+        (Data.Users.Registered userId token userInfo) ->
             Element.el Heading.h4 <| Element.text <| "Please Register and Enable Ethereum to join"
-        (SR.Types.NoWallet userId token userInfo) ->
+        (Data.Users.NoWallet userId token userInfo) ->
             Element.el Heading.h4 <| Element.text <| "Please Register and Enable Ethereum to join"
-        (SR.Types.NoCredit addr userId token userInfo) ->
+        (Data.Users.NoCredit addr userId token userInfo) ->
             Element.el Heading.h4 <| Element.text <| "Please Register and Enable Ethereum to join"
-        (SR.Types.Credited addr userId token userInfo) ->
+        (Data.Users.Credited addr userId token userInfo) ->
             Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Join?"
 
 
@@ -4404,7 +4416,7 @@ inputUserDetailsView dataState appInfo =
                 _ ->
                     Html.text "tbc"
 
-    (SR.Types.Registered userId token userInfo) ->
+    (Data.Users.Registered userId token userInfo) ->
         case dataState of
                 StateFetched sUsers sRankings dKind ->
                     if Data.Users.isEmpty sUsers then
@@ -4422,17 +4434,17 @@ inputUserDetailsView dataState appInfo =
                                 [ displayEnableEthereumBtn
                                 , Element.text "\n"
                                 , Element.el Heading.h4 <| Element.text "Create New User"
-                                , displayRegisterNewUser (SR.Types.Registered userId token userInfo) sUsers
+                                , displayRegisterNewUser (Data.Users.Registered userId token userInfo) sUsers
                                 , newuserConfirmPanel appInfo.user (Data.Users.asList sUsers)
                                 ]
                 _ ->
                     Html.text "tbc"
     
-    (SR.Types.NoWallet userId token userInfo) ->
+    (Data.Users.NoWallet userId token userInfo) ->
         Html.text "tbc"
-    (SR.Types.NoCredit addr userId token userInfo) ->
+    (Data.Users.NoCredit addr userId token userInfo) ->
         Html.text "tbc"
-    (SR.Types.Credited addr userId token userInfo) ->
+    (Data.Users.Credited addr userId token userInfo) ->
         Html.text "tbc"
 
                 
@@ -4442,7 +4454,7 @@ displayRegisterNewUser userVal sUsers =
         SR.Types.Guest ->
             Element.text "Should have switched to a Registered user already"
         
-        (SR.Types.Registered userId token userInfo) ->
+        (Data.Users.Registered userId token userInfo) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
             , Element.wrappedRow (Card.fill ++ Grid.simple)
@@ -4489,11 +4501,11 @@ displayRegisterNewUser userVal sUsers =
             , newuserConfirmPanel (userVal) (Data.Users.asList sUsers)
             ]
 
-        (SR.Types.NoWallet userId token userInfo) ->
+        (Data.Users.NoWallet userId token userInfo) ->
             Element.text "Should be a Registered user"
-        (SR.Types.NoCredit addr userId token userInfo) ->
+        (Data.Users.NoCredit addr userId token userInfo) ->
             Element.text "Should be a Registered user"
-        (SR.Types.Credited addr userId token userInfo) ->
+        (Data.Users.Credited addr userId token userInfo) ->
             Element.text "Should be a Registered user"
     
     
@@ -4631,22 +4643,22 @@ displayChallengeBeforeConfirmView model =
             case appInfo.user of
                 SR.Types.Guest ->
                     Html.text "No User19"
-                (SR.Types.Registered userId token userInfo) ->
+                (Data.Users.Registered userId token userInfo) ->
                     Framework.responsiveLayout [] <| Element.column Framework.container
                     [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Confirm Challenge"
                     , confirmChallengebutton model
                     ]
-                (SR.Types.NoWallet userId token userInfo) ->
+                (Data.Users.NoWallet userId token userInfo) ->
                     Framework.responsiveLayout [] <| Element.column Framework.container
                     [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Confirm Challenge"
                     , confirmChallengebutton model
                     ]
-                (SR.Types.NoCredit addr userId token userInfo) ->
+                (Data.Users.NoCredit addr userId token userInfo) ->
                     Framework.responsiveLayout [] <| Element.column Framework.container
                     [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Confirm Challenge"
                     , confirmChallengebutton model
                     ]
-                (SR.Types.Credited addr userId token userInfo) ->
+                (Data.Users.Credited addr userId token userInfo) ->
                     Framework.responsiveLayout [] <| Element.column Framework.container
                     [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Confirm Challenge"
                     , confirmChallengebutton model
@@ -4672,22 +4684,22 @@ displayResultBeforeConfirmView model =
                                 case playerasuser of 
                                     SR.Types.Guest ->
                                         Html.text "No Player"
-                                    (SR.Types.Registered userId token userInfo) ->
+                                    (Data.Users.Registered userId token userInfo) ->
                                         Framework.responsiveLayout [] <| Element.column Framework.container
                                             [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Result"
                                             , confirmResultbutton model
                                             ]
-                                    (SR.Types.NoWallet userId token userInfo) ->
+                                    (Data.Users.NoWallet userId token userInfo) ->
                                         Framework.responsiveLayout [] <| Element.column Framework.container
                                             [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Result"
                                             , confirmResultbutton model
                                             ]
-                                    (SR.Types.NoCredit addr userId token userInfo) ->
+                                    (Data.Users.NoCredit addr userId token userInfo) ->
                                         Framework.responsiveLayout [] <| Element.column Framework.container
                                             [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Result"
                                             , confirmResultbutton model
                                             ]
-                                    (SR.Types.Credited addr userId token userInfo) ->
+                                    (Data.Users.Credited addr userId token userInfo) ->
                                         Framework.responsiveLayout [] <| Element.column Framework.container
                                             [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Result"
                                             , confirmResultbutton model
@@ -4730,22 +4742,22 @@ txErrorView model =
                                     , acknoweldgeTxErrorbtn model
                                     ]
 
-                            (SR.Types.Registered userId token userInfo) ->
+                            (Data.Users.Registered userId token userInfo) ->
                                 Framework.responsiveLayout [] <| Element.column Framework.container
                                     [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " Transaction Error"
                                     , acknoweldgeTxErrorbtn model
                                     ]
-                            (SR.Types.NoWallet userId token userInfo) ->
+                            (Data.Users.NoWallet userId token userInfo) ->
                                 Framework.responsiveLayout [] <| Element.column Framework.container
                                     [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " Transaction Error"
                                     , acknoweldgeTxErrorbtn model
                                     ]
-                            (SR.Types.NoCredit addr userId token userInfo) ->
+                            (Data.Users.NoCredit addr userId token userInfo) ->
                                 Framework.responsiveLayout [] <| Element.column Framework.container
                                     [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " Transaction Error"
                                     , acknoweldgeTxErrorbtn model
                                     ]
-                            (SR.Types.Credited addr userId token userInfo) ->
+                            (Data.Users.Credited addr userId token userInfo) ->
                                 Framework.responsiveLayout [] <| Element.column Framework.container
                                     [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " Transaction Error"
                                     , acknoweldgeTxErrorbtn model

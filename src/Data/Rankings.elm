@@ -12,6 +12,7 @@ module Data.Rankings exposing (Rankings
     , isEmpty
     , extractRankingsFromWebData
     , empty
+    , emptyRanking
     , updateAddr
     , addRanking
     , remove
@@ -42,6 +43,10 @@ type alias Ranking =
     , rankingdesc : Maybe String
     , rankingownerid : String
     }
+
+emptyRanking : Ranking 
+emptyRanking =
+    Ranking "" False "" Nothing ""
 
 type Rankings = Rankings (EverySet Ranking)
 

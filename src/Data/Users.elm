@@ -8,19 +8,12 @@ module Data.Users exposing (Users
     , newUser
     , newUserFromFUser
     , updatedUserInSet
-    --, validatedUserList
     , addedNewJoinedRankingId
     , removedRankingIdFromAll
     , removedRankindIdFromUser
-    --, removeCurrentUserEntryFromUserList
-    --, removedDuplicateUserFromUserList
-    --, isRegistered
-    --, isUniqueUserName
     , isEmpty
-    --, gotUserListFromRemData
     , isNameValid
     , extractUsersFromWebData
-    --, gotUserFromUserList
     , empty
     , addUser
     , removeUser
@@ -28,7 +21,6 @@ module Data.Users exposing (Users
     , asUsers
     , gotUser
     , userSetLength
-    --, isUserNameValidated
     , removedInvalidRankingId
     , handleDeletionFromUserJoined
     , removedDeletedRankingsFromUserJoined
@@ -114,10 +106,6 @@ type User =
 --             Credited addr userId token userInfo
 
 
--- new empty User:
--- User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
-
-
 
 newUserFromFUser : FUser -> User 
 newUserFromFUser fuser = 
@@ -142,9 +130,10 @@ newUser : String -> String -> String -> String -> String -> User
 newUser username password desc email mobile =
     Registered "" "" (UserInfo 10 True username password (ExtraUserInfo desc email mobile) [""] 0)
 
-empty : Users 
+--nb. this is not an EverySet, it's a Users type.
+empty : Users
 empty = 
-    Users (EverySet.empty)
+    Users (EverySet.empty) 
 
 isEmpty : Users -> Bool
 -- 'Users' is a tag containing a box (of EverySet)

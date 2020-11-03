@@ -4,7 +4,6 @@ module Data.Global exposing (Global, gotOthers
     , gotOwned
     , filteredSelected
     , createdPlayers
-    , gotRankingOwner
     , rankingsAsList
     , usersAsList
     , asRankings
@@ -16,7 +15,6 @@ module Data.Global exposing (Global, gotOthers
     , gotMember, addUserRanking, removeUserRanking, asList
     , removedUserRankingByRankingId
     , removedDeletedRankingsFromUserJoined
-    , gotUpdatedFromWebData
     , gotNewRankingIdFromWebData)
 
 
@@ -56,8 +54,8 @@ empty =
 emptyUserRanking : UserRanking
 emptyUserRanking =
     {
-        rankingInfo = Data.Rankings.empty
-        ,userInfo = Data.Users.empty
+        rankingInfo = Data.Rankings.emptyRanking
+        ,userInfo = Data.Users.Guest
     }
 
 
@@ -71,7 +69,56 @@ asEverySet (Global esGlobal)  =
      esGlobal
 
 
-gotRanking : SR.Types.UserRanking -> Ranking
+--although this refers to 'selected' the data types all relate to Global - so use here
+isUserOwnerOfSelectedUserRanking : Data.Rankings.Ranking -> List UserRanking -> Data.Users.User -> Bool
+isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
+    let
+        filteredRec =
+            extractSelectedUserRankingFromGlobalList lurnkInfo rnkInfo.id_
+    in
+    case filteredRec of
+        Nothing ->
+            False
+
+        Just a ->
+            case user of
+                Data.Users.Guest ->
+                    False
+
+                (Data.Users.Registered userId token userInfo) ->
+                    if a.rankingInfo.rankingownerid == userId then
+                        True
+
+                    else
+                        False
+
+                (Data.Users.NoWallet userId token userInfo) ->
+                    if a.rankingInfo.rankingownerid == userId then
+                        True
+
+                    else
+                        False
+
+                (Data.Users.NoCredit addr userId token userInfo) ->
+                    if a.rankingInfo.rankingownerid == userId then
+                        True
+
+                    else
+                        False
+
+                (Data.Users.Credited addr userId token userInfo) ->
+                    if a.rankingInfo.rankingownerid == userId then
+                        True
+
+                    else
+                        False
+
+extractSelectedUserRankingFromGlobalList : List UserRanking -> String -> Maybe UserRanking
+extractSelectedUserRankingFromGlobalList luranking rnkId =
+    List.head (EverySet.toList (EverySet.filter (isUserRankingIdInList rnkId) (EverySet.fromList luranking)))
+
+
+gotRanking : UserRanking -> Data.Rankings.Ranking
 gotRanking uranking =
     uranking.rankingInfo
 
@@ -148,12 +195,12 @@ gotOwned global user =
 isOwned : Data.Users.User -> UserRanking -> Maybe UserRanking
 isOwned user ownedrnk =
     case user of
-        SR.Types.Guest ->
+        Data.Users.Guest ->
             Nothing
         --UserRanking.userInfo will always be Registered only
-        SR.Types.Registered userId _ _ ->
+        Data.Users.Registered userId _ _ ->
             case ownedrnk.userInfo of 
-                SR.Types.Registered owneruserId _ _ ->
+                Data.Users.Registered owneruserId _ _ ->
                     if owneruserId == userId then
                         Just ownedrnk
                     else
@@ -162,9 +209,9 @@ isOwned user ownedrnk =
                 _ ->
                     Nothing 
 
-        (SR.Types.NoWallet userId _ _) ->
+        (Data.Users.NoWallet userId _ _) ->
             case ownedrnk.userInfo of 
-                SR.Types.Registered owneruserId _ _ ->
+                Data.Users.Registered owneruserId _ _ ->
                     if owneruserId == userId then
                         Just ownedrnk
                     else
@@ -173,9 +220,9 @@ isOwned user ownedrnk =
                 _ ->
                     Nothing 
 
-        (SR.Types.NoCredit addr userId _ _) ->
+        (Data.Users.NoCredit addr userId _ _) ->
             case ownedrnk.userInfo of 
-                SR.Types.Registered owneruserId _ _ ->
+                Data.Users.Registered owneruserId _ _ ->
                     if owneruserId == userId then
                         Just ownedrnk
                     else
@@ -184,9 +231,9 @@ isOwned user ownedrnk =
                 _ ->
                     Nothing
 
-        (SR.Types.Credited addr userId _ _) ->
+        (Data.Users.Credited addr userId _ _) ->
             case ownedrnk.userInfo of 
-                SR.Types.Registered owneruserId _ _ ->
+                Data.Users.Registered owneruserId _ _ ->
                     if owneruserId == userId then
                         Just ownedrnk
                     else
@@ -199,15 +246,15 @@ isOwned user ownedrnk =
 gotMember : Global -> Data.Users.User -> List UserRanking
 gotMember sGlobal user = 
     case user of
-        SR.Types.Guest ->
+        Data.Users.Guest ->
             []
-        (SR.Types.Registered _ _ userInfo) ->
+        (Data.Users.Registered _ _ userInfo) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinrankings
-        (SR.Types.NoWallet userId token userInfo) ->
+        (Data.Users.NoWallet userId token userInfo) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinrankings
-        (SR.Types.NoCredit addr userId token userInfo) ->
+        (Data.Users.NoCredit addr userId token userInfo) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinrankings
-        (SR.Types.Credited addr userId token userInfo) ->
+        (Data.Users.Credited addr userId token userInfo) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinrankings
 
 gotOthers : Global -> Data.Users.User -> Global
@@ -266,24 +313,24 @@ toUser uRanking =
 removedDeletedRankingsFromUserJoined : Data.Users.User -> Global -> Data.Users.User 
 removedDeletedRankingsFromUserJoined user sGlobal = 
         case user of 
-            SR.Types.Guest ->
-                SR.Types.Guest
+            Data.Users.Guest ->
+                Data.Users.Guest
 
-            (SR.Types.Registered userId token userInfo) ->
+            (Data.Users.Registered userId token userInfo) ->
                 let
-                    lwithDeletedRankingIdsRemoved = List.filter (Data.Rankings.isIdInSet (asRankings sGlobal)) (Utils.MyUtils.stringListToRankingIdList userInfo.userjoinrankings)
+                    lwithDeletedRankingIdsRemoved = List.filter (Data.Rankings.isIdInSet (asRankings sGlobal)) (Data.Rankings.stringListToRankingIdList userInfo.userjoinrankings)
 
-                    newUserInfo = {userInfo | userjoinrankings = Utils.MyUtils.rankingIdListToStringList lwithDeletedRankingIdsRemoved}
+                    newUserInfo = {userInfo | userjoinrankings = Data.Rankings.rankingIdListToStringList lwithDeletedRankingIdsRemoved}
                 in
-                    SR.Types.Registered userId token newUserInfo
+                    Data.Users.Registered userId token newUserInfo
 
             --todo: as above for the others or refactor
-            (SR.Types.NoWallet userId token userInfo) ->
-                SR.Types.NoWallet userId token userInfo
-            (SR.Types.NoCredit addr userId token userInfo) ->
-                SR.Types.NoCredit addr userId token userInfo
-            (SR.Types.Credited addr userId token userInfo) ->
-                SR.Types.Credited addr userId token userInfo
+            (Data.Users.NoWallet userId token userInfo) ->
+                Data.Users.NoWallet userId token userInfo
+            (Data.Users.NoCredit addr userId token userInfo) ->
+                Data.Users.NoCredit addr userId token userInfo
+            (Data.Users.Credited addr userId token userInfo) ->
+                Data.Users.Credited addr userId token userInfo
         --newUser
     
 
@@ -299,10 +346,8 @@ gotUserRankingByRankingId : Global -> String -> Maybe UserRanking
 gotUserRankingByRankingId sGlobal rnkId = 
     case sGlobal of 
         Global userRankings ->
-            let 
-                lranking = List.head (EverySet.toList (EverySet.filter (isUserRankingIdInList rnkId) userRankings))
-            in
-                lranking
+            List.head (EverySet.toList (EverySet.filter (isUserRankingIdInList rnkId) userRankings))
+            
            
     
 
@@ -433,41 +478,6 @@ gotNewRankingIdFromWebData rankingIdremdata =
                     "BadBody " ++ s
 
 
-gotUpdatedFromWebData : RemoteData.WebData SR.Types.UpdateGlobalBinResponse -> String
-gotUpdatedFromWebData  rdugbinresponse =
-    case rdugbinresponse of
-        RemoteData.Success a ->
-            let
-                _ = Debug.log "in success " a
-            in
-            "success in gotUpdatedFromWebData"
-
-        RemoteData.NotAsked ->
-            "Initialising."
-
-        RemoteData.Loading ->
-            "Loading."
-
-        RemoteData.Failure err ->
-            case err of
-                Http.BadUrl s ->
-                    "Bad Url"
-
-                Http.Timeout ->
-                    "Timeout"
-
-                Http.NetworkError ->
-                    "Network Err"
-
-                Http.BadStatus statuscode ->
-                    String.fromInt <| statuscode
-
-                Http.BadBody s ->
-                    "BadBody " ++ s
-
-
-
-
 
 -- we have a function within a function - this may be simplified ?
 newJsonEncodedList : List Data.Rankings.Ranking -> Json.Encode.Value
@@ -492,11 +502,11 @@ newJsonEncodedList lotherrankingInfo =
     in
     encodedList
 
-
-gotRankingOwner : Data.Rankings.Ranking -> List UserRanking -> List SR.Types.UserPlayer -> SR.Types.UserPlayer
-gotRankingOwner selectedRanking luranking luplayer =
-    -- todo: fix
-        SR.Defaults.emptyUserPlayer
+-- todo: find another way to get a ranking owner ...
+-- gotRankingOwner : Data.Rankings.Ranking -> List UserRanking -> List UserPlayer -> UserPlayer
+-- gotRankingOwner selectedRanking luranking luplayer =
+--     -- todo: fix
+--         
     -- let
     --     rankingOwnerAsUser =
     --         (gotUserRankingFromUserRankingList luranking (Internal.Types.RankingId selectedRanking.id)).userInfo
@@ -511,7 +521,7 @@ gotRankingOwner selectedRanking luranking luplayer =
 gotUserRankingFromUserRankingList : List UserRanking -> Internal.Types.RankingId -> UserRanking
 gotUserRankingFromUserRankingList urankingList (Internal.Types.RankingId rnkid) =
     -- todo: fix
-        SR.Defaults.emptyUserRanking
+        emptyUserRanking
     -- let
     --     existingRanking =
     --         List.head <|
@@ -520,14 +530,12 @@ gotUserRankingFromUserRankingList urankingList (Internal.Types.RankingId rnkid) 
     -- in
     -- case existingRanking of
     --     Nothing ->
-    --         SR.Defaults.emptyUserRanking
+    --         emptyUserRanking
 
     --     Just a ->
     --         a
 
-gotRankingOwnerAsPlayer : String -> List Data.Selected.UserPlayer -> Data.Players.Player
-gotRankingOwnerAsPlayer selectedRanking luplayer =
-    (gotUserPlayerFromPlayerListStrAddress luplayer selectedRanking).player
+
 
 
 createdPlayers : List Data.Rankings.Ranking -> List Data.Users.User -> List UserRanking
@@ -547,7 +555,7 @@ createdUserRankingPlayerRanking luser rankingInfo =
     -- in
     -- newOwnedRanking
     --todo: fix
-    SR.Defaults.emptyUserRanking
+    emptyUserRanking
 
 convertMaybeUserRankingListToList : Maybe (List UserRanking) -> List UserRanking
 convertMaybeUserRankingListToList luRanking =

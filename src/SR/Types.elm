@@ -4,10 +4,9 @@ module SR.Types exposing
     , UIState(..)
     , Colors, CreateNewLadderFormFields, FormValidations, LadderState(..), ModalState(..)
     , NewRankingListServerResponse, ResultRadioOptions(..)
-    , UserListState(..), UserPlayer
+    , UserListState(..)
     , colors
     , AppState(..)
-    , SelectedStatus(..)
     , SubState(..)
     , DeleteBinResponse
     )
