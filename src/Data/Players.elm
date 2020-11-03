@@ -11,7 +11,8 @@ module Data.Players exposing (Players
     , removePlayer
     , asList
     , asPlayers
-    , playersetLength)
+    , playersetLength
+    , convertPlayerFromFPlayer)
 
 
 --import SR.Types
@@ -46,8 +47,8 @@ type alias FPlayer =
     , challengerid : String
     }
 
-newPlayer : FPlayer -> Player 
-newPlayer fplayer = 
+convertPlayerFromFPlayer : FPlayer -> Player 
+convertPlayerFromFPlayer fplayer = 
     Player (fromScalarCodecId fplayer.id_) fplayer.address fplayer.rank fplayer.challengerid
 
 fromScalarCodecId : SRdb.ScalarCodecs.Id -> String

@@ -2,10 +2,12 @@
 module Data.Users exposing (Users
     , User(..)
     , FUser
+    , UserInfo
     , UserId
     , Token
     , UserName
     , Password
+    , convertFUserToUser
     , newUser
     , newUserFromFUser
     , updatedUserInSet
@@ -43,6 +45,19 @@ import Data.Rankings
 import SRdb.Scalar exposing (Id(..))
 import SRdb.ScalarCodecs
 
+
+
+type User =
+    Guest UserState
+    | Registered UserId Token UserInfo UserState
+    | NoWallet UserId Token UserInfo UserState
+    | NoCredit Eth.Types.Address UserId Token UserInfo UserState
+    | Credited Eth.Types.Address UserId Token UserInfo UserState
+
+type UserState = 
+    General
+    | CreateNewUser Data.Users.User
+    | UpdateProfile Data.Users.User
 
 -- Users (EverySet User) is not the same type as (EverySet User)
 -- Peter Damoc
@@ -82,12 +97,7 @@ type alias ExtraUserInfo =
     }
 
 
-type User =
-    Guest
-    | Registered UserId Token UserInfo
-    | NoWallet UserId Token UserInfo
-    | NoCredit Eth.Types.Address UserId Token UserInfo
-    | Credited Eth.Types.Address UserId Token UserInfo
+
 
 -- case user of
 --         Guest ->
@@ -105,6 +115,10 @@ type User =
 
 newUserFromFUser : FUser -> User 
 newUserFromFUser fuser = 
+    Registered (fromScalarCodecId fuser.id_) "5678" (UserInfo 1 True "" "" (ExtraUserInfo "" "" "") [""] 1)
+
+convertFUserToUser : FUser -> User 
+convertFUserToUser fuser =
     Registered (fromScalarCodecId fuser.id_) "5678" (UserInfo 1 True "" "" (ExtraUserInfo "" "" "") [""] 1)
 
 type alias FUser = {

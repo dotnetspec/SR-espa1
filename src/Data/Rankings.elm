@@ -3,6 +3,7 @@
 module Data.Rankings exposing (Rankings
     , Ranking
     , FRanking
+    , convertFRankingToRanking
     , gotRankingFromRankingList
     , stringListToRankingIdList
     , rankingIdListToStringList
@@ -50,8 +51,8 @@ emptyRanking =
 
 type Rankings = Rankings (EverySet Ranking)
 
-newRanking : FRanking -> Ranking 
-newRanking franking = 
+convertFRankingToRanking : FRanking -> Ranking 
+convertFRankingToRanking franking = 
     Ranking (fromScalarCodecId franking.id_) True franking.rankingname franking.rankingdesc franking.rankingownerid
 
 type alias FRanking =
@@ -195,11 +196,11 @@ gotRankingById (Rankings sRankings) rnkId =
 --         newRankingJoinRankings =
 --             rankingId :: RankingJoinRankings
 
---         newRanking =
+--         convertFRankingToRanking =
 --             { Ranking | Rankingjoinrankings = newRankingJoinRankings }
 
 --         newRankingList =
---             newRanking :: lRanking
+--             convertFRankingToRanking :: lRanking
 --     in
 --     newRankingList
 

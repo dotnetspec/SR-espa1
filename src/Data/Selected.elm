@@ -1,8 +1,10 @@
 -- Selected will be mainly used to handle internal data of the selected ranking listing as it relates to the current user
 module Data.Selected exposing (Selected
     , UserPlayer
-    , ResultOfMatch
+    , ResultOfMatch(..)
     , SelectedStatus(..)
+    , releasePlayerForUI
+    , releaseChallengerForUI
     , asEverySet
     , gotRankingOwnerAsPlayer
     , gotCurrentUserAsPlayerFromPlayerList
@@ -60,7 +62,13 @@ import Eth.Types
 
 
 -- the relevant Users are picked out with the Create function and for the UserPlayer EverySet (no need for Users assoc data)
-type Selected = Selected (EverySet UserPlayer) Internal.Types.RankingId SelectedStatus Data.Players.Players
+type Selected = Selected (EverySet UserPlayer) Internal.Types.RankingId SelectedStatus Data.Players.Players SelectedState
+
+type SelectedState = 
+    DisplayRanking
+    | EnteringResult
+    | EnteredResult
+    | CreateNewLadder Data.Users.User Internal.Types.RankingId
 
 type alias UserPlayer =
     { player : Data.Players.Player
@@ -68,7 +76,8 @@ type alias UserPlayer =
     }
 
 type EnterResult =
-    EnterWon (Maybe Data.Users.User) UserPlayer UserPlayer Internal.Types.RankingId
+    NoResult
+    | EnterWon (Maybe Data.Users.User) UserPlayer UserPlayer Internal.Types.RankingId
     | EnterLost (Maybe Data.Users.User) UserPlayer UserPlayer Internal.Types.RankingId
     | EnterUndecided (Maybe Data.Users.User) UserPlayer UserPlayer Internal.Types.RankingId
 
@@ -976,3 +985,26 @@ extractAndSortPlayerList rdlPlayer luser =
 --     (gotUserPlayerFromPlayerListStrAddress luplayer selectedRanking).player
 
 
+releasePlayerForUI : AppState -> Data.Selected.UserPlayer
+releasePlayerForUI appState =
+    -- todo: fix
+    {player = Data.Players.Player "" "" 0 ""
+    , user = Data.Users.Guest}
+    -- case appState of 
+    --     AppState user uplayer uplayerChallenger rnkId ->
+    --         let
+    --             _ = Debug.log "uplayer" uplayer
+    --             newPlayer = uplayer.player
+    --             updatedPlayer = {newPlayer | challengerid = ""}
+
+    --             updatedUserPlayer = {uplayer | player = updatedPlayer}
+                
+    --         in
+      
+    --         updatedUserPlayer
+
+releaseChallengerForUI : AppState -> Data.Selected.UserPlayer
+releaseChallengerForUI appState =
+    -- todo: fix
+    {player = Data.Players.Player "" "" 0 ""
+    , user = Data.Users.Guest}
