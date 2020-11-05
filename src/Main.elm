@@ -845,19 +845,19 @@ update msg model =
         -- currently expecting user to be 'Registered' at this point for the purpose of inputting/updating details
         -- might create a new 'Registering' variant(?). Or sort user type before you get here:
         (UserNameInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-            (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | username = updateField}) uiState subState txRec, Cmd.none)
+            (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | username = updateField} userState) uiState subState txRec, Cmd.none)
     
         (UserPasswordInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-            (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | password = updateField}) uiState subState txRec, Cmd.none)
+            (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | password = updateField} userState) uiState subState txRec, Cmd.none)
 
         (UserDescInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-           (AppOps walletState dataState (Data.Users.Registered userId token (Data.Users.updatedDesc updateField)) uiState subState txRec, Cmd.none)
+           (AppOps walletState dataState (Data.Users.Registered userId token (Data.Users.updatedDesc updateField) userState) uiState subState txRec, Cmd.none)
 
         (UserEmailInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-            (AppOps walletState dataState (Data.Users.Registered userId token (Data.Users.updatedDesc updateField)) uiState subState txRec, Cmd.none)
+            (AppOps walletState dataState (Data.Users.Registered userId token (Data.Users.updatedDesc updateField) userState) uiState subState txRec, Cmd.none)
 
         (UserMobileInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-            (AppOps walletState dataState (Data.Users.Registered userId token (Data.Users.updatedDesc updateField)) uiState subState txRec, Cmd.none)
+            (AppOps walletState dataState (Data.Users.Registered userId token (Data.Users.updatedDesc updateField) userState) uiState subState txRec, Cmd.none)
 
         -- currently if the User is not 'Registered' do nothing
         (UserMobileInputChg updateField, AppOps walletState dataState _ uiState subState txRec) ->
@@ -1006,6 +1006,7 @@ update msg model =
                             in 
                                 ( AppOps walletState
                                     newDataState
+                                    user
                                     uiState
                                     SR.Types.StopSubscription
                                     txRec
@@ -1215,9 +1216,9 @@ update msg model =
             case walletState of 
                 SR.Types.WalletOpened ->
                     case dataState of 
-                        StateFetched sUsers sRankings dKind ->
-                                case dKind of 
-                                    Global sGlobal ->
+                        StateFetched sUsers sRankings (Global sGlobal) ->
+                                case sGlobal of 
+                                    Data.Global.Global esUserRanking globalState ->
                                         --if Data.Users.isRegistered (Data.Users.asList sUsers) appInfo.user then
                                         case user of
                                             -- Nothing ->
@@ -1248,12 +1249,13 @@ update msg model =
                                                                     , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
                                                                     }
                                                                     txParams
-                                                            
-                                                           -- _ = Debug.log "global with useradd" user.m_ethaddress
-                                                            newDataKind = Global sGlobal Data.Global.CreatedNewLadder user rnkId
+                                                       
+                                                            newDataKind = Data.Global.asGlobal esUserRanking (Data.Global.CreatedNewLadder user rnkId)
                                                             newDataState = StateFetched sUsers sRankings newDataKind
                                                             
                                                         in
+                                      
+
                                                         ( AppOps SR.Types.WalletWaitingForTransactionReceipt newDataState user SR.Types.UIRenderAllRankings SR.Types.Subscribe { txRec | txSentry = newSentry }
                                                         ,sentryCmd)
 
@@ -1817,7 +1819,7 @@ updateWithReceivedRankings model response =
                         filteredFRankingList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lrankings)
                         -- need to convert from FRanking to Ranking (id_ needs to be a String)
                         --lFromFToRanking = List.map Data.Rankings.convertFRankingToRanking filteredFRankingList
-                        lFromFToRanking = Data.Rankings.convertFRankingToRanking filteredFRankingList
+                        lFromFToRanking = List.map Data.Rankings.convertFRankingToRanking filteredFRankingList
                         --_ = Debug.log "lFromFToRanking : " lFromFToRanking
                         sRankings = Data.Rankings.asRankings (EverySet.fromList lFromFToRanking)
                         newDataState = StateFetched Data.Users.empty sRankings (Global Data.Global.empty)
@@ -1923,7 +1925,7 @@ updateFromLoggedInUser model response =
                     model
                 (Data.Users.Registered userId _ userInfo userState) ->
                     let
-                        updated_user = Data.Users.Registered userId token userInfo         
+                        updated_user = Data.Users.Registered userId token userInfo userState         
                     in
                         AppOps walletState dataState updated_user uiState subState txRec
                 (Data.Users.NoWallet userId _ userInfo userState) ->
@@ -1948,7 +1950,7 @@ updateFromRegisteredNewUser model response =
                     model
                 (Data.Users.Registered userId _ userInfo userState) ->
                     let
-                        updated_user = Data.Users.Registered userId token userInfo         
+                        updated_user = Data.Users.Registered userId token userInfo userState
                         --newAppInfo = { appInfo | user = updated_user }
                     in
                         AppOps walletState dataState updated_user uiState subState txRec
@@ -2332,7 +2334,7 @@ updateSelectedRankingPlayerList model luplayers =
                                     (Data.Selected.gotRankingId sSelected))
                                 newDataState = StateUpdated sUsers sRankings newDataKind 
                             in
-                                AppOps walletState newDataState uiState SR.Types.StopSubscription txRec
+                                AppOps walletState newDataState user uiState SR.Types.StopSubscription txRec
 
                         _ -> 
                             let
@@ -2822,32 +2824,32 @@ otherrankingbuttons urankingList user =
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "View Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList (Data.Global.rankingsAsList urankingList)
+                insertNeitherOwnerNorMemberRankingList (Data.Global.asRankings urankingList)
             ]
         (Data.Users.Registered userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList (Data.Global.rankingsAsList urankingList)
+                insertNeitherOwnerNorMemberRankingList (Data.Global.asRankings urankingList)
             ]
 
         (Data.Users.NoWallet userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList (Data.Global.rankingsAsList urankingList)
+                insertNeitherOwnerNorMemberRankingList (Data.Global.asRankings urankingList)
             ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList (Data.Global.rankingsAsList urankingList)
+                insertNeitherOwnerNorMemberRankingList (Data.Global.asRankings urankingList)
             ]
         (Data.Users.Credited addr userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList (Data.Global.rankingsAsList urankingList)
+                insertNeitherOwnerNorMemberRankingList (Data.Global.asRankings urankingList)
             ]
 
 

@@ -1,6 +1,6 @@
 -- Global will be mainly used to handle internal data of the global rankings listing as it relates to the current user
 -- Global currently uses the UserRankings type
-module Data.Global exposing (Global
+module Data.Global exposing (Global(..)
     , UserRanking
     , GlobalState(..)
     , gotOthers
@@ -67,9 +67,9 @@ emptyUserRanking =
     }
 
 
-asGlobal : EverySet UserRanking -> Global 
-asGlobal esGlobal  = 
-    Global esGlobal DisplayGlobal
+asGlobal : EverySet UserRanking -> GlobalState -> Global 
+asGlobal esUserRanking  gState = 
+    Global esUserRanking gState
 
 
 asEverySet : Global -> EverySet UserRanking
@@ -139,7 +139,7 @@ created sRankings sUser =
                         |> Utils.MyUtils.removeNothingFromList
                         |> EverySet.fromList 
     in
-        asGlobal esUserRanking
+        asGlobal esUserRanking DisplayGlobal
     
 
 createdUserRanking : List Data.Users.User -> Data.Rankings.Ranking -> Maybe UserRanking
@@ -192,63 +192,59 @@ isRnkIdMatch rankingid rnk =
         False
 
 gotOwned : Global -> Data.Users.User -> Global 
-gotOwned global user = 
-    asGlobal (
-        EverySet.fromList (List.filterMap
-        (isOwned
-            user
-        )
-        (asList global)))
+gotOwned (Global esUP gState ) user = 
+    asGlobal (EverySet.filter (isOwned user) esUP) gState
+
         
-isOwned : Data.Users.User -> UserRanking -> Maybe UserRanking
+isOwned : Data.Users.User -> UserRanking -> Bool
 isOwned user ownedrnk =
     case user of
         Data.Users.Guest _ ->
-            Nothing
+            False
         --UserRanking.userInfo will always be Registered only
         Data.Users.Registered userId _ _ _->
             case ownedrnk.userInfo of 
                 Data.Users.Registered owneruserId _ _ _ ->
                     if owneruserId == userId then
-                        Just ownedrnk
+                        True
                     else
-                        Nothing
+                        False
 
                 _ ->
-                    Nothing 
+                    False 
 
         (Data.Users.NoWallet userId _ _ _) ->
             case ownedrnk.userInfo of 
                 Data.Users.Registered owneruserId _ _ _ ->
                     if owneruserId == userId then
-                        Just ownedrnk
+                        True
                     else
-                        Nothing
+                        False
 
                 _ ->
-                    Nothing 
+                    False 
 
         (Data.Users.NoCredit addr userId _ _ _) ->
             case ownedrnk.userInfo of 
                 Data.Users.Registered owneruserId _ _ _ ->
                     if owneruserId == userId then
-                        Just ownedrnk
+                        True
                     else
-                        Nothing
+                        False
 
                 _ ->
-                    Nothing
+                    False
 
         (Data.Users.Credited addr userId _ _ _) ->
             case ownedrnk.userInfo of 
                 Data.Users.Registered owneruserId _ _ _ ->
                     if owneruserId == userId then
-                        Just ownedrnk
+                        True
                     else
-                        Nothing
+                        False
 
                 _ ->
-                    Nothing 
+                    False 
 
 
 gotMember : Global -> Data.Users.User -> List UserRanking
@@ -266,20 +262,19 @@ gotMember sGlobal user =
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinrankings
 
 gotOthers : Global -> Data.Users.User -> Global
-gotOthers global user = 
+gotOthers (Global esUP gState) user = 
     let
-        esOfAll = asEverySet global
-        esOfOwned = asEverySet (gotOwned global user)
+        --esOfAll = asEverySet global
+        esOfOwned = asEverySet (gotOwned (asGlobal esUP gState) user)
 
-        esWithOwnedRemoved = EverySet.filter (isNotMember esOfOwned ) esOfAll
+        esWithOwnedRemoved = EverySet.filter (isNotMember esOfOwned ) esUP
 
-        esOfMember = EverySet.fromList (gotMember global user)
+        esOfMember = EverySet.fromList (gotMember (asGlobal esUP gState) user)
 
         esWithMemberRemoved = EverySet.filter (isNotMember esOfMember) esWithOwnedRemoved
 
     in
-        esWithMemberRemoved
-        |> asGlobal
+        asGlobal esWithMemberRemoved gState
 
 
 isMember : EverySet UserRanking -> UserRanking -> Bool
@@ -293,11 +288,11 @@ isNotMember esURanking uranking =
         False 
     else True
 
-removeUserRanking :  Global -> UserRanking -> Global
-removeUserRanking  sGlobal uRanking = 
+removeUserRanking :  Global -> UserRanking -> GlobalState -> Global
+removeUserRanking  sGlobal uRanking gState = 
     case sGlobal of 
         Global rankedUserRankings _ ->
-         asGlobal (EverySet.remove uRanking rankedUserRankings)
+         asGlobal (EverySet.remove uRanking rankedUserRankings) gState
 
 removedUserRankingByRankingId : Global -> Internal.Types.RankingId -> Global 
 removedUserRankingByRankingId sGlobal rnkId = 
@@ -397,9 +392,7 @@ isUserRankingIdInList rankingid urnk =
 
 
 asList : Global -> List UserRanking 
-asList srank = 
-    case srank of 
-        Global rankedUserRankings _ ->
+asList (Global rankedUserRankings _) =
             rankedUserRankings
            |> EverySet.toList
 
