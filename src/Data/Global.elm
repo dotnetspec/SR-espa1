@@ -2,6 +2,7 @@
 -- Global currently uses the UserRankings type
 module Data.Global exposing (Global
     , UserRanking
+    , GlobalState(..)
     , gotOthers
     , gotOwned
     , filteredSelected

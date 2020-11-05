@@ -154,7 +154,7 @@ type Msg
     | ClickedUpdateExistingUser
     | ClickedConfirmedUpdateExistingUser
     | ClickedCreateNewLadder
-    | ClickedConfirmCreateNewLadder
+    | ClickedConfirmCreateNewLadder String
     | ClickedNewChallengeConfirm String
     | ClickedChallengeOpponent Data.Selected.UserPlayer
     | ClickedJoinSelected
@@ -940,7 +940,7 @@ update msg model =
                                     in
                                         ( AppOps walletState
                                             newDataState
-                                            appInfo
+                                            user
                                             SR.Types.UIDeleteRankingConfirm
                                             SR.Types.StopSubscription
                                             txRec
@@ -972,12 +972,14 @@ update msg model =
                         Selected sSelected ->
                              ( AppOps walletState
                                     dataState
-                                    appInfo
+                                    user
                                     uiState
                                     SR.Types.StopSubscription
                                     txRec
                                 , 
-                                    httpDeleteSelectedRankingFromJsonBin (Data.Rankings.stringFromRankingId (Data.Selected.gotRankingId sSelected))
+                                    --httpDeleteSelectedRankingFromJsonBin (Data.Rankings.stringFromRankingId (Data.Selected.gotRankingId sSelected))
+                                    -- todo: fix for fauna
+                                    Cmd.none
                             )
                         
                         Global sGlobal  ->
@@ -1215,7 +1217,7 @@ update msg model =
                     case dataState of 
                         StateFetched sUsers sRankings dKind ->
                                 case dKind of 
-                                    Global sGlobal globalState ->
+                                    Global sGlobal ->
                                         --if Data.Users.isRegistered (Data.Users.asList sUsers) appInfo.user then
                                         case user of
                                             -- Nothing ->
@@ -1248,7 +1250,7 @@ update msg model =
                                                                     txParams
                                                             
                                                            -- _ = Debug.log "global with useradd" user.m_ethaddress
-                                                            newDataKind = Global sGlobal Data.Gobal.CreatedNewLadder user rnkId
+                                                            newDataKind = Global sGlobal Data.Global.CreatedNewLadder user rnkId
                                                             newDataState = StateFetched sUsers sRankings newDataKind
                                                             
                                                         in
@@ -1512,29 +1514,14 @@ update msg model =
                         -- sSelected is the variable you're pattern matching on here
                             (Selected  (Data.Selected.SelectedRanking sSelected rnkId ownerStatus sPlayers (Data.Selected.EnteredResult resultEntered) ))) ->
                             case resultEntered of 
-                                Data.Selected.Won ->
-                                        let 
-                                            newDataState = StateUpdated sUsers sRankings dKind
-                                            _ =
-                                                Debug.log "handleTxSubMsg subMsg  dataState" newDataState
-                                        in
-                                            (AppOps walletState newDataState user SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel } |> update (ProcessResult Data.Selected.Won) )
+                                Data.Selected.Won _ _ ->
+                                    (AppOps walletState dataState user SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel } |> update (ProcessResult Data.Selected.Won) )
 
-                                Data.Selected.Lost ->
-                                        let
-                                            _ =
-                                                Debug.log "in AppStateEnterLost" "yes"
-
-                                            newDataState = StateUpdated sUsers sRankings dKind
-                                        in
-                                            (AppOps SR.Types.WalletOperational newDataState user SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel } |> update (ProcessResult Data.Selected.Lost))
+                                Data.Selected.Lost _ _ ->
+                                    (AppOps SR.Types.WalletOperational dataState user SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel } |> update (ProcessResult Data.Selected.Lost))
                                     
-                            
-                                Data.Selected.Undecided ->
-                                        let
-                                            newDataState = StateUpdated sUsers sRankings dKind
-                                        in
-                                            ( AppOps SR.Types.WalletOperational newDataState user SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel } |> update (ProcessResult Data.Selected.Undecided))
+                                Data.Selected.Undecided _ _ ->
+                                    ( AppOps SR.Types.WalletOperational dataState user SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel } |> update (ProcessResult Data.Selected.Undecided))
                                 
                                 Data.Selected.NoResult ->
                                     (Failure "Tx problem Should have been a result", Cmd.none)
