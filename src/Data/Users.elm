@@ -102,26 +102,26 @@ type alias ExtraUserInfo =
 
 
 updatedDesc : UserInfo -> String -> UserInfo 
-updatedDesc uInfo str = 
+updatedDesc userInfo str = 
     let
-        newExtrUserInfo = uInfo.extrauserinfo
-        updatedExtraUserInfo = {extrauserinfo | description = str}
+        newExtrUserInfo = userInfo.extrauserinfo
+        updatedExtraUserInfo = {newExtrUserInfo | description = str}
     in
         {userInfo | extrauserinfo = updatedExtraUserInfo}
 
 updatedEmail : UserInfo -> String -> UserInfo 
-updatedEmail uInfo str = 
+updatedEmail userInfo str = 
     let
-        newExtrUserInfo = uInfo.extrauserinfo
-        updatedExtraUserInfo = {extrauserinfo | email = str}
+        newExtrUserInfo = userInfo.extrauserinfo
+        updatedExtraUserInfo = {newExtrUserInfo | email = str}
     in
         {userInfo | extrauserinfo = updatedExtraUserInfo}
 
-updatedMobile -> String -> UserInfo 
-updatedMobile uInfo str = 
+updatedMobile : UserInfo -> String -> UserInfo 
+updatedMobile userInfo str = 
     let
-        newExtrUserInfo = uInfo.extrauserinfo
-        updatedExtraUserInfo = {extrauserinfo | mobile = str}
+        newExtrUserInfo = userInfo.extrauserinfo
+        updatedExtraUserInfo = {newExtrUserInfo | mobile = str}
     in
         {userInfo | extrauserinfo = updatedExtraUserInfo}
 
