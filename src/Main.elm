@@ -851,16 +851,16 @@ update msg model =
             (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | password = updateField}) uiState subState txRec, Cmd.none)
 
         (UserDescInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-           (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | description = updateField}) uiState subState txRec, Cmd.none)
+           (AppOps walletState dataState (Data.Users.Registered userId token (Data.Users.updatedDesc updateField)) uiState subState txRec, Cmd.none)
 
         (UserEmailInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-            (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | email = updateField}) uiState subState txRec, Cmd.none)
+            (AppOps walletState dataState (Data.Users.Registered userId token (Data.Users.updatedDesc updateField)) uiState subState txRec, Cmd.none)
 
         (UserMobileInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-            (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | mobile = updateField}) uiState subState txRec, Cmd.none)
+            (AppOps walletState dataState (Data.Users.Registered userId token (Data.Users.updatedDesc updateField)) uiState subState txRec, Cmd.none)
 
         -- currently if the User is not 'Registered' do nothing
-        (UserMobileInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
+        (UserMobileInputChg updateField, AppOps walletState dataState _ uiState subState txRec) ->
             (model, Cmd.none)
 
 

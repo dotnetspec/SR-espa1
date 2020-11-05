@@ -8,6 +8,9 @@ module Data.Users exposing (Users
     , Token
     , UserName
     , Password
+    , updatedDesc
+    , updatedEmail
+    , updatedMobile
     , convertFUserToUser
     , newUser
     , newUserFromFUser
@@ -98,7 +101,29 @@ type alias ExtraUserInfo =
     }
 
 
+updatedDesc : UserInfo -> String -> UserInfo 
+updatedDesc uInfo str = 
+    let
+        newExtrUserInfo = uInfo.extrauserinfo
+        updatedExtraUserInfo = {extrauserinfo | description = str}
+    in
+        {userInfo | extrauserinfo = updatedExtraUserInfo}
 
+updatedEmail : UserInfo -> String -> UserInfo 
+updatedEmail uInfo str = 
+    let
+        newExtrUserInfo = uInfo.extrauserinfo
+        updatedExtraUserInfo = {extrauserinfo | email = str}
+    in
+        {userInfo | extrauserinfo = updatedExtraUserInfo}
+
+updatedMobile -> String -> UserInfo 
+updatedMobile uInfo str = 
+    let
+        newExtrUserInfo = uInfo.extrauserinfo
+        updatedExtraUserInfo = {extrauserinfo | mobile = str}
+    in
+        {userInfo | extrauserinfo = updatedExtraUserInfo}
 
 -- case user of
 --         Guest user ->
@@ -378,6 +403,8 @@ handleDeletionFromUserJoined userInfo sRankings =
 --                         { user | m_ethaddress = address }
 --             in 
 --             addUser updatedUserAddr userRemoved
+
+
 
 
 updatedUserInSet : Users -> User -> Users
