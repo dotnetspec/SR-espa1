@@ -38,7 +38,7 @@ import Data.Selected
 --import GlobalRankingsTests exposing (userOwner)
 -- Global came from Selected - there are many functions etc. not relevant to Global in here currently (even if renamed)
 
-type Global = Global (EverySet UserRanking)
+type Global = Global (EverySet UserRanking) GlobalState
 
 --UserRanking.userInfo will always be Registered only
 type alias UserRanking =
@@ -46,12 +46,17 @@ type alias UserRanking =
     , userInfo : Data.Users.User
     }
 
+type GlobalState =
+    DisplayGlobal
+    | CreatingNewLadder Data.Users.User
+    | CreatedNewLadder Data.Users.User Internal.Types.RankingId
+
 -- newUserRanking ranking user =
 --     UserRanking ranking user
 
 empty : Global 
 empty = 
-    Global (EverySet.empty)
+    Global (EverySet.empty) DisplayGlobal
 
 emptyUserRanking : UserRanking
 emptyUserRanking =
@@ -63,11 +68,11 @@ emptyUserRanking =
 
 asGlobal : EverySet UserRanking -> Global 
 asGlobal esGlobal  = 
-    Global esGlobal 
+    Global esGlobal DisplayGlobal
 
 
 asEverySet : Global -> EverySet UserRanking
-asEverySet (Global esGlobal)  = 
+asEverySet (Global esGlobal globalState)  = 
      esGlobal
 
 
@@ -290,7 +295,7 @@ isNotMember esURanking uranking =
 removeUserRanking :  Global -> UserRanking -> Global
 removeUserRanking  sGlobal uRanking = 
     case sGlobal of 
-        Global rankedUserRankings->
+        Global rankedUserRankings _ ->
          asGlobal (EverySet.remove uRanking rankedUserRankings)
 
 removedUserRankingByRankingId : Global -> Internal.Types.RankingId -> Global 
@@ -347,7 +352,7 @@ gotAllRankindIds userRanking =
 gotUserRankingByRankingId : Global -> String -> Maybe UserRanking 
 gotUserRankingByRankingId sGlobal rnkId = 
     case sGlobal of 
-        Global userRankings ->
+        Global userRankings _ ->
             List.head (EverySet.toList (EverySet.filter (isUserRankingIdInList rnkId) userRankings))
             
            
@@ -377,7 +382,7 @@ addUserRanking sGlobal newrnkId rnkInfo user =
 
     -- in
     --     case sGlobal of 
-    --         Global rankedUserRankings->
+    --         Global rankedUserRankings _ ->
     --             asGlobal (EverySet.insert newUserRanking rankedUserRankings)
 
 
@@ -393,21 +398,21 @@ isUserRankingIdInList rankingid urnk =
 asList : Global -> List UserRanking 
 asList srank = 
     case srank of 
-        Global rankedUserRankings ->
+        Global rankedUserRankings _ ->
             rankedUserRankings
            |> EverySet.toList
 
 rankingsAsList : Global -> List Data.Rankings.Ranking
 rankingsAsList sGlobal = 
     case sGlobal of 
-        Global rankedUserRankings ->
+        Global rankedUserRankings _ ->
             EverySet.map removeUser rankedUserRankings
             |> EverySet.toList
 
 rankingsAsSet : Global -> Data.Rankings.Rankings
 rankingsAsSet sGlobal = 
     case sGlobal of 
-        Global rankedUserRankings ->
+        Global rankedUserRankings _ ->
             Data.Rankings.asRankings (EverySet.map removeUser rankedUserRankings)
 
 removeUser : UserRanking -> Data.Rankings.Ranking
@@ -417,14 +422,14 @@ removeUser uranking =
 usersAsList : Global -> List Data.Users.User
 usersAsList sGlobal = 
     case sGlobal of 
-        Global rankedUserRankings ->
+        Global rankedUserRankings _ ->
             EverySet.map removeRanking rankedUserRankings
             |> EverySet.toList
 
 usersAsSet : Global -> Data.Users.Users
 usersAsSet sGlobal = 
     case sGlobal of 
-        Global rankedUserRankings ->
+        Global rankedUserRankings _ ->
             Data.Users.asUsers (EverySet.map removeRanking rankedUserRankings)
 
 removeRanking : UserRanking -> Data.Users.User
@@ -435,16 +440,8 @@ removeRanking uranking =
 asRankings : Global -> Data.Rankings.Rankings
 asRankings sGlobal = 
     case sGlobal of 
-        Global rankedUserRankings ->
+        Global rankedUserRankings _ ->
             Data.Rankings.asRankings (EverySet.map removeUser rankedUserRankings)
-
-
-
-
-
-
-
-
 
 gotNewRankingIdFromWebData : RemoteData.WebData SR.Types.RankingId -> String
 gotNewRankingIdFromWebData rankingIdremdata =

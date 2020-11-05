@@ -1,5 +1,5 @@
 -- Selected will be mainly used to handle internal data of the selected ranking listing as it relates to the current user
-module Data.Selected exposing (Selected
+module Data.Selected exposing (Selected(..)
     , UserPlayer
     , ResultOfMatch(..)
     , SelectedOwnerStatus(..)
@@ -13,7 +13,7 @@ module Data.Selected exposing (Selected
     , gotUserAsPlayer
     , gotOpponent
     , empty
-    , assignChallengerAddrsForBOTHPlayers
+    , assignedChallengerUIDForBOTHPlayers
     , updateSelectedRankingOnChallenge
     , jsonEncodeNewSelectedRankingPlayerList
     , gotRankingId
@@ -68,9 +68,9 @@ type Selected =
 
 type SelectedState = 
     DisplayRanking
+    --| CreatingChallenge
     | EnteringResult
     | EnteredResult ResultOfMatch
-    | CreateNewLadder Data.Users.User Internal.Types.RankingId
 
 type alias UserPlayer =
     { player : Data.Players.Player
@@ -79,9 +79,9 @@ type alias UserPlayer =
 
 type ResultOfMatch =
     NoResult
-    | Won Data.Users.User UserPlayer UserPlayer Internal.Types.RankingId
-    | Lost Data.Users.User UserPlayer UserPlayer Internal.Types.RankingId
-    | Undecided Data.Users.User UserPlayer UserPlayer Internal.Types.RankingId
+    | Won UserPlayer UserPlayer
+    | Lost UserPlayer UserPlayer
+    | Undecided UserPlayer UserPlayer
 
 type alias Opponent =
     UserPlayer
@@ -722,71 +722,73 @@ convertEachPlayerToUserPlayer luser player =
     --{ player = player, user = Data.Users.gotUser (Data.Users.asUsers (EverySet.fromList luser)) player.uid }
 
 
---handleWon : Selected -> SR.Types.AppInfo -> Data.Users.Users -> (Selected, SR.Types.AppInfo)
-handleWon (SelectedRanking esUPlayer rnkId status sPlayers sState) appInfo sUsers =
-            let
-                whoHigher =
-                    isOpponentHigherRank appInfo.player appInfo.challenger
-            in
-            case whoHigher of
-                OpponentRankHigher ->
+handleWon : Selected -> UserPlayer -> UserPlayer -> Data.Users.Users -> Selected
+handleWon (SelectedRanking esUPlayer rnkId status sPlayers sState)  uplayer upChallenger sUsers =
+    -- todo: fix
+    empty
+            -- let
+            --     whoHigher =
+            --         isOpponentHigherRank appInfo.player appInfo.challenger
+            -- in
+            -- case whoHigher of
+            --     OpponentRankHigher ->
                     
-                    let
+            --         let
                         
-                        supdatedPlayer =  
-                            changedRank appInfo.player appInfo.challenger.player.rank (asSelected esUPlayer rnkId status sPlayers sState)
+            --             supdatedPlayer =  
+            --                 changedRank appInfo.player appInfo.challenger.player.rank (asSelected esUPlayer rnkId status sPlayers sState)
                            
 
-                        supdatedPlayerAndChallenger =
-                            supdatedPlayer
-                            |> changedRank appInfo.challenger (appInfo.challenger.player.rank + 1)
+            --             supdatedPlayerAndChallenger =
+            --                 supdatedPlayer
+            --                 |> changedRank appInfo.challenger (appInfo.challenger.player.rank + 1)
                             
-                        -- tried 'handling with AppState then handing back to AppInfo for now ...'
-                        -- but Selected cannot import AppState without creating a loop (find another way)
-                        -- todo: fix - not sure what this should be currently:
-                        updatedUserPlayer = emptyUserPlayer
-                        --Data.AppState.releasePlayerForUI (Data.AppState.updateAppState (Just appInfo.user) 
-                            --appInfo.player appInfo.challenger (Data.Rankings.stringToRankingId appInfo.selectedRanking.id_)
-                            --appInfo.player appInfo.challenger appInfo.selectedRanking.id_
+            --             -- tried 'handling with AppState then handing back to AppInfo for now ...'
+            --             -- but Selected cannot import AppState without creating a loop (find another way)
+            --             -- todo: fix - not sure what this should be currently:
+            --             updatedUserPlayer = emptyUserPlayer
+            --             --Data.AppState.releasePlayerForUI (Data.AppState.updateAppState (Just appInfo.user) 
+            --                 --appInfo.player appInfo.challenger (Data.Rankings.stringToRankingId appInfo.selectedRanking.id_)
+            --                 --appInfo.player appInfo.challenger appInfo.selectedRanking.id_
 
-                        newAppInfo =
+            --             newAppInfo =
                            
-                            { appInfo | player = updatedUserPlayer, challenger = emptyUserPlayer }
+            --                 { appInfo | player = updatedUserPlayer, challenger = emptyUserPlayer }
            
-                    in
-                    --nb. higher rank is a lower number and vice versa!
-                        (supdatedPlayerAndChallenger, newAppInfo)
+            --         in
+            --         --nb. higher rank is a lower number and vice versa!
+            --             (supdatedPlayerAndChallenger, newAppInfo)
                         
 
-                OpponentRankLower ->
+            --     OpponentRankLower ->
 
-                    let
-                        --no ranking change - just update the player list for both players challenger to emptyPlayer, no rank change
-                        supdatedPlayer =
-                            changedRank appInfo.player appInfo.player.player.rank (asSelected esUPlayer rnkId status sPlayers sState)
+            --         let
+            --             --no ranking change - just update the player list for both players challenger to emptyPlayer, no rank change
+            --             supdatedPlayer =
+            --                 changedRank appInfo.player appInfo.player.player.rank (asSelected esUPlayer rnkId status sPlayers sState)
 
-                        supdatedPlayerAndChallenger =
-                            changedRank  appInfo.challenger appInfo.challenger.player.rank  supdatedPlayer
+            --             supdatedPlayerAndChallenger =
+            --                 changedRank  appInfo.challenger appInfo.challenger.player.rank  supdatedPlayer
 
-                        --update current player now
-                        newUserPlayerPlayer =
-                            appInfo.player.player
+            --             --update current player now
+            --             newUserPlayerPlayer =
+            --                 appInfo.player.player
 
-                        newUserPlayerPlayerUpdated =
-                            { newUserPlayerPlayer | uid = "" }
+            --             newUserPlayerPlayerUpdated =
+            --                 { newUserPlayerPlayer | uid = "" }
 
-                        newAppInfoPlayer =
-                            appInfo.player
+            --             newAppInfoPlayer =
+            --                 appInfo.player
 
-                        newAppInfoUserPlayer =
-                            { newAppInfoPlayer | player = newUserPlayerPlayerUpdated }
+            --             newAppInfoUserPlayer =
+            --                 { newAppInfoPlayer | player = newUserPlayerPlayerUpdated }
 
-                        newAppInfo =
-                            { appInfo | player = newAppInfoUserPlayer, challenger = emptyUserPlayer }
+            --             newAppInfo =
+            --                 { appInfo | player = newAppInfoUserPlayer, challenger = emptyUserPlayer }
 
-                    in
-                    --nb. higher rank is a lower number and vice versa!
-                        (supdatedPlayerAndChallenger, newAppInfo)
+            --         in
+            --         --nb. higher rank is a lower number and vice versa!
+            --             (supdatedPlayerAndChallenger, newAppInfo)
 
 
 --handleLost : Selected -> SR.Types.AppInfo -> (Selected, SR.Types.AppInfo)
@@ -921,14 +923,28 @@ updateSelectedRankingOnChallenge allSets appInfo =
     allSets
 
 --assignChallengerAddrsForBOTHPlayers : Selected -> SR.Types.AppInfo -> Selected
-assignChallengerAddrsForBOTHPlayers sSelected appInfo =
-    case sSelected of 
-        SelectedRanking sselected rnkId status sPlayers sState ->
-            let
-                sUserUpdated = assignChallengerAddr (asSelected sselected rnkId status sPlayers sState) appInfo.player appInfo.challenger.player.uid
-                sChallengerUpdated = assignChallengerAddr sUserUpdated appInfo.challenger appInfo.player.player.uid --sUsers rnkId
-            in 
-                sChallengerUpdated
+-- assignChallengerAddrsForBOTHPlayers sSelected appInfo =
+--     case sSelected of 
+--         SelectedRanking sselected rnkId status sPlayers sState ->
+--             let
+--                 sUserUpdated = assignChallengerAddr (asSelected sselected rnkId status sPlayers sState) appInfo.player appInfo.challenger.player.uid
+--                 sChallengerUpdated = assignChallengerAddr sUserUpdated appInfo.challenger appInfo.player.player.uid --sUsers rnkId
+--             in 
+--                 sChallengerUpdated
+
+assignedChallengerUIDForBOTHPlayers : Selected -> Data.Users.User -> String -> Selected
+assignedChallengerUIDForBOTHPlayers sSelected user challengerUID =
+    -- todo: fix
+    empty
+    -- case sSelected of 
+    --     SelectedRanking sselected rnkId status sPlayers sState ->
+    --         let
+    --             sUserUpdated = assignChallengerAddr (asSelected sselected rnkId status sPlayers sState) appInfo.player challengerUID
+    --             sChallengerUpdated = assignChallengerAddr sUserUpdated appInfo.challenger appInfo.player.player.uid --sUsers rnkId
+    --         in 
+    --             sChallengerUpdated
+
+
 
 extractAndSortPlayerList : RemoteData.WebData (List Data.Players.Player) -> List Data.Users.User -> List UserPlayer
 extractAndSortPlayerList rdlPlayer luser =

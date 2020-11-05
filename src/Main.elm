@@ -155,7 +155,7 @@ type Msg
     | ClickedConfirmedUpdateExistingUser
     | ClickedCreateNewLadder
     | ClickedConfirmCreateNewLadder
-    | ClickedNewChallengeConfirm
+    | ClickedNewChallengeConfirm String
     | ClickedChallengeOpponent Data.Selected.UserPlayer
     | ClickedJoinSelected
     | ClickedChangedUIStateToEnterResult Data.Selected.UserPlayer
@@ -165,7 +165,7 @@ type Msg
     | ClickedEnableEthereum
     | Cancel
     | ResetToShowSelected
-    | ResetRejectedNewUserToShowGlobal
+    --| ResetRejectedNewUserToShowGlobal
     | LadderNameInputChg String
     | LadderDescInputChg String
     | NewUserNameInputChg String
@@ -226,13 +226,13 @@ update msg model =
                         Rinkeby ->
                             case walletSentry_.account of
                                 Nothing ->
-                                    ( AppOps SR.Types.WalletStateLocked dataState user uiState Data.AppState.General subState emptyTxRecord
+                                    ( AppOps SR.Types.WalletStateLocked dataState user uiState subState emptyTxRecord
                                     , Cmd.none
                                     )
 
                                 Just uaddr ->
                                     let
-                                        newModel = AppOps SR.Types.WalletOpened dataState (gotWalletAddrApplyToUser user uaddr) uiState Data.AppState.General subState emptyTxRecord
+                                        newModel = AppOps SR.Types.WalletOpened dataState (gotWalletAddrApplyToUser user uaddr) uiState subState emptyTxRecord
                                     in
                                     (newModel, Cmd.none)
                         _ ->
@@ -267,13 +267,13 @@ update msg model =
             (model, Cmd.none)
             -- case accountState of
             --     Data.Users.Guest userState->
-            --         (AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none)
+            --         (AppOps walletState dataState user SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none)
             --     Data.Users.Registered _ _ _->
-            --         (AppOps walletState dataState appInfo SR.Types.UIEnableEthereum SR.Types.StopSubscription txRec, Ports.log "eth_requestAccounts")
+            --         (AppOps walletState dataState user SR.Types.UIEnableEthereum SR.Types.StopSubscription txRec, Ports.log "eth_requestAccounts")
             --     SR.Types.EthEnabled ->
-            --         (AppOps walletState dataState appInfo SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription txRec, Cmd.none)
+            --         (AppOps walletState dataState user SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription txRec, Cmd.none)
             --     SR.Types.EthEnabledAndRegistered ->
-            --         (AppOps walletState dataState appInfo SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription txRec, Cmd.none)
+            --         (AppOps walletState dataState user SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription txRec, Cmd.none)
             
 
         (ClickedRemoveFromUserMemberRankings, AppOps walletState dataState user uiState subState txRec ) ->
@@ -309,7 +309,7 @@ update msg model =
                     (model, Cmd.none)
 
 
-        (ClickedConfirmedRegisterNewUser, AppOps walletState dataState user uiState appState subState txRec) ->
+        (ClickedConfirmedRegisterNewUser, AppOps walletState dataState user uiState subState txRec) ->
             ( AppOps walletState dataState user uiState SR.Types.StopSubscription txRec, Cmd.none )
                 
 
@@ -343,7 +343,7 @@ update msg model =
                     (model, Cmd.none)
 
 
-        (PlayersReceived response, AppOps walletState dataState user uiState appState subState txRec )  ->
+        (PlayersReceived response, AppOps walletState dataState user uiState subState txRec )  ->
             (model, Cmd.none)
             -- let 
             --     --_ = Debug.log "players received " (Tuple.second (Data.Players.handleFetchedPlayers response))
@@ -441,7 +441,7 @@ update msg model =
                     --         StateFetched sUsers sRankings dKind -> 
                     --             case dKind of 
                     --                     Selected sSelected ->
-                    --                         (AppOps walletState dataState appInfo SR.Types.UIOwnerDeletedRanking SR.Types.StopSubscription emptyTxRecord, Cmd.none)
+                    --                         (AppOps walletState dataState user SR.Types.UIOwnerDeletedRanking SR.Types.StopSubscription emptyTxRecord, Cmd.none)
                     --                     _ ->
                     --                         (model, Cmd.none)
                     --         _ ->
@@ -455,7 +455,7 @@ update msg model =
                     --         StateFetched sUsers sRankings dKind -> 
                     --             case dKind of 
                     --                     Selected sSelected ->
-                    --                         (AppOps walletState dataState appInfo SR.Types.UIOwnerDeletedRanking SR.Types.StopSubscription emptyTxRecord, Cmd.none)
+                    --                         (AppOps walletState dataState user SR.Types.UIOwnerDeletedRanking SR.Types.StopSubscription emptyTxRecord, Cmd.none)
                     --                     _ ->
                     --                         (model, Cmd.none)
                     --         _ ->
@@ -467,7 +467,7 @@ update msg model =
         ( PlayersReceived _, Failure _ ) ->
             (model, Cmd.none)
 
-        (ClickedSelectedOwnedRanking rnkidstr rnkownerstr rnknamestr, AppOps walletState dataState user uiState appState subState txRec )  ->
+        (ClickedSelectedOwnedRanking rnkidstr rnkownerstr rnknamestr, AppOps walletState dataState user uiState subState txRec )  ->
             let
                 _ = Debug.log "selected ranking is : " rnkidstr
             in
@@ -476,14 +476,14 @@ update msg model =
                         case dKind of 
                             Global sGlobal  ->
                                 let                                                     
-                                    newAppInfo =
-                                        createSelectedOnRankingSelected rnkidstr rnkownerstr rnknamestr
+                                    -- newAppInfo =
+                                    --     createSelectedOnRankingSelected rnkidstr rnkownerstr rnknamestr
 
                                     newDataKind = Selected (Data.Selected.created [] sUsers rnkidstr)
                                     newDataState = StateFetched sUsers sRankings newDataKind
                             
                                 in
-                                    ( AppOps SR.Types.WalletOpened newDataState newAppInfo SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, 
+                                    ( AppOps SR.Types.WalletOpened newDataState SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, 
                                     fetchedSingleRanking rnkidstr )
 
                             _ ->
@@ -496,11 +496,6 @@ update msg model =
                                         let
                                             newAppInfo =
                                                 createSelectedOnRankingSelected rnkidstr rnkownerstr rnknamestr
-
-                                        -- re-factor from appInfo to AppState over time
-                                            initAppState = Data.AppState.updateAppState Data.AppState.General
-                                                -- Data.AppState.updateAppState (Just appInfo.user) appInfo.player 
-                                                -- appInfo.challenger (rnkidstr)
 
                                             --todo: replace with real players
                                             newDataKind = Selected (Data.Selected.created [] sUsers rnkidstr)
@@ -523,10 +518,10 @@ update msg model =
                     case dKind of 
                         Global sGlobal  ->
                                     let
-                                        newAppInfo = createSelectedOnRankingSelected rnkidstr rnkownerstr rnknamestr
+                                        -- newAppInfo = createSelectedOnRankingSelected rnkidstr rnkownerstr rnknamestr
 
-                                        -- re-factor from appInfo to AppState over time
-                                        initAppState = Data.AppState.updateAppState Data.AppState.General
+                                        -- -- re-factor from appInfo to AppState over time
+                                        -- initAppState = Data.AppState.updateAppState
                                             -- Data.AppState.updateAppState (Just appInfo.user) appInfo.player 
                                             -- appInfo.challenger ( rnkidstr)
 
@@ -545,19 +540,19 @@ update msg model =
                                 (model, Cmd.none)
 
         --todo: below will be handled differently. clicking will fetch a set of players from fauna first, then replace newsSelected with real set of players
-        (ClickedSelectedNeitherOwnerNorMember rnkidstr rnkownerstr rnknamestr, AppOps walletState dataState user uiState appState subState txRec)  ->
+        (ClickedSelectedNeitherOwnerNorMember rnkidstr rnkownerstr rnknamestr, AppOps walletState dataState user uiState subState txRec)  ->
             let 
                 _ = Debug.log "rnkid1" rnkidstr
             in
             case dataState of
                 (StateFetched sUsers sRankings (Global sGlobal )) ->
                     let
-                        newAppInfo =
-                            createSelectedOnRankingSelected rnkidstr rnkownerstr rnknamestr
+                        -- newAppInfo =
+                        --     createSelectedOnRankingSelected rnkidstr rnkownerstr rnknamestr
 
-                        initAppState = 
-                            --Data.AppState.updateAppState (Just appInfo.user) appInfo.player 
-                            Data.AppState.updateAppState Data.AppState.General
+                        -- initAppState = 
+                        --     --Data.AppState.updateAppState (Just appInfo.user) appInfo.player 
+                        --     Data.AppState.updateAppState
                             --appInfo.challenger ( rnkidstr)
                         
                         --newDataKind = Selected Data.Selected.empty rnkidstr appInfo.user Data.Selected.UserIsNeitherOwnerNorMember (Data.Global.asRankings sGlobal)
@@ -581,11 +576,11 @@ update msg model =
         
 
 
-        (ClickedChangedUIStateToEnterResult player, AppOps walletState dataState user uiState appState subState txRec)  ->
-            ( AppOps walletState dataState user SR.Types.UIEnterResult SR.Types.StopSubscription appState emptyTxRecord, Cmd.none )
+        (ClickedChangedUIStateToEnterResult player, AppOps walletState dataState user uiState subState txRec)  ->
+            ( AppOps walletState dataState user SR.Types.UIEnterResult SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
 
-        (SentResultToWallet result, AppOps walletState dataState user uiState appState subState txRec)  ->
+        (SentResultToWallet result, AppOps walletState dataState user uiState subState txRec)  ->
             let
                 _ =
                     Debug.log "SentResultToWallet" result
@@ -610,47 +605,50 @@ update msg model =
                         txParams
                 _ =
                     Debug.log "about to switch to " "SR.Types.WalletWaitingForTransactionReceipt"
+
+                -- todo: we may need to make a change here:
+                -- newDataKind = SelectedRanking (EverySet UserPlayer) Internal.Types.RankingId SelectedOwnerStatus Data.Players.Players SelectedState
+                --         newDataState = StateUpdated sUsers sRankings newDataKind
             in
-            case result of
-                Data.Selected.Won ->
-                        ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState user SR.Types.UIWaitingForTxReceipt Data.AppState.EnteredResult SR.Types.StopSubscription { txRec | txSentry = newSentry }
+            case (result) of
+                (Data.Selected.Won playerUP challengerUP) ->
+                        ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState user 
+                        SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = newSentry }
                         , sentryCmd
                         )
                         
-                Data.Selected.Lost ->                                     
-                    let
-                            newAppInfo = {appInfo | appState = SR.Types.AppStateEnterLost }
-                    in
-                        ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIWaitingForTxReceipt Data.AppState.EnteredResult SR.Types.StopSubscription { txRec | txSentry = newSentry }
+                (Data.Selected.Lost playerUP challengerUP) ->                                     
+                        ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState SR.Types.UIWaitingForTxReceipt 
+                         SR.Types.StopSubscription { txRec | txSentry = newSentry }
                         , sentryCmd
                         )
-                Data.Selected.Undecided -> 
-                    let
-                            newAppInfo = {appInfo | appState = SR.Types.AppStateEnterUndecided }
-                    in
-                        ( AppOps walletState dataState newAppInfo SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription emptyTxRecord
+                
+                (Data.Selected.Undecided playerUP challengerUP) -> 
+                        ( AppOps walletState dataState user SR.Types.UIEnterResultTxProblem 
+                        SR.Types.StopSubscription emptyTxRecord
                             , sentryCmd
                             )
 
 
-        (ProcessResult result, AppOps walletState dataState user uiState appState subState txRec )  ->               
+        (ProcessResult result, AppOps walletState dataState user uiState subState txRec )  ->               
             let
                 _ =
                     Debug.log "process result" result
             in
             case result of
-                Data.Selected.Won ->
+                (Data.Selected.Won playerUP challengerUP) ->
                     case dataState of
                         StateUpdated sUsers sRankings dKind -> 
                             case dKind of 
                                 Selected sSelected ->
                                     let 
-                                        handleWonTuple = Data.Selected.handleWon sSelected appInfo sUsers
-                                        newDataKind = Selected (Tuple.first handleWonTuple)
+                                        newDataKind = Selected (Data.Selected.handleWon sSelected playerUP challengerUP sUsers)
                                         newDataState = StateUpdated sUsers sRankings newDataKind
                                         newModel = 
-                                                AppOps walletState newDataState (Tuple.second handleWonTuple)  
-                                                (Data.Selected.resultView (Data.Selected.gotStatus sSelected)) SR.Types.StopSubscription txRec
+                                                AppOps walletState newDataState 
+                                                --(Data.Selected.resultView (Data.Selected.gotStatus sSelected)) 
+                                                uiState
+                                                SR.Types.StopSubscription txRec
                                     in
                                             (newModel, httpPlayerList newDataState) 
                                 
@@ -666,18 +664,19 @@ update msg model =
                                 (model, Cmd.none)
 
 
-                Data.Selected.Lost ->
+                (Data.Selected.Lost playerUP challengerUP) ->
                     case dataState of
                         StateUpdated sUsers sRankings dKind -> 
                             case dKind of 
                                 Selected sSelected ->
                                     let 
-                                        handleLostTuple = Data.Selected.handleLost sSelected appInfo
-                                        newDataKind = Selected (Tuple.first handleLostTuple)
+                                        newDataKind = Selected (Data.Selected.handleLost sSelected playerUP challengerUP sUsers)
                                         newDataState = StateUpdated sUsers sRankings newDataKind
                                         newModel = 
-                                                AppOps walletState newDataState (Tuple.second handleLostTuple)  
-                                                (Data.Selected.resultView (Data.Selected.gotStatus sSelected)) SR.Types.StopSubscription txRec
+                                                AppOps walletState newDataState  
+                                                --(Data.Selected.resultView (Data.Selected.gotStatus sSelected)) 
+                                                uiState
+                                                SR.Types.StopSubscription txRec
                                     in
                                             (newModel, httpPlayerList newDataState) 
                                 _ -> 
@@ -692,18 +691,19 @@ update msg model =
                                 (model, Cmd.none)
 
 
-                Data.Selected.Undecided ->
+                (Data.Selected.Undecided playerUP challengerUP) ->
                     case dataState of
                         StateUpdated sUsers sRankings dKind -> 
                             case dKind of 
                                 Selected sSelected ->
-                                    let 
-                                        handleUndecidedTuple = Data.Selected.handleUndecided sSelected appInfo
-                                        newDataKind = Selected (Tuple.first handleUndecidedTuple)
+                                    let
+                                        newDataKind = Selected (Data.Selected.handleUndecided sSelected  sSelected playerUP challengerUP sUsers)
                                         newDataState = StateUpdated sUsers sRankings newDataKind
                                         newModel = 
-                                                AppOps walletState newDataState (Tuple.second handleUndecidedTuple)  
-                                                (Data.Selected.resultView (Data.Selected.gotStatus sSelected)) SR.Types.StopSubscription txRec
+                                                AppOps walletState newDataState
+                                                uiState
+                                                --(Data.Selected.resultView (Data.Selected.gotStatus sSelected)) 
+                                                SR.Types.StopSubscription txRec
                                     in
                                             (newModel, httpPlayerList newDataState) 
 
@@ -721,32 +721,32 @@ update msg model =
 
 
         (ClickedCreateNewLadder, AppOps walletState dataState appState uiState subState txRec) ->
-            let
-                newSelectedRanking =
-                    appInfo.selectedRanking
+            -- todo: fix
+                -- case dataState of
+                --     StateFetched sUsers sRankings (Global sGlobal) ->
+                --         let
+                --             newDataKind = Selected (sSelected 0 Data.Selected.UserIsOwner [] Data.Selected.DisplayRanking)
+                --             newDataState = StateUpdated sUsers sRankings newDataKind
+                --             newModel = 
+                --                     AppOps walletState newDataState
+                --                     uiState 
+                --                     SR.Types.StopSubscription emptyTxRecord
+                --         in
+                --             (newModel, Cmd.none)
+                --     _ ->
+                        (model, Cmd.none)
 
 
-                clearedNameFieldInSelectedRanking =
-                    { newSelectedRanking | rankingname = "" }
-
-
-                clearedNameFieldAppInfo =
-                    { appInfo | selectedRanking = clearedNameFieldInSelectedRanking }
-
-                _ = Debug.log "ClickedCreateNewLadder" dataState
-            in
-            ( AppOps walletState dataState clearedNameFieldAppInfo SR.Types.UICreateNewLadder SR.Types.StopSubscription emptyTxRecord, Cmd.none )
-
-
-        (Cancel, AppOps walletState (StateFetched sUsers sRankings dKind) user uiState appState subState txRec ) ->
-            let
-                newAppInfo = {appInfo | appState = Data.AppState.General}
-            in
-                ( AppOps walletState (StateFetched sUsers sRankings dKind) newAppInfo uiState SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+        (Cancel, AppOps walletState (StateFetched sUsers sRankings dKind) user uiState subState txRec ) ->
+            (model, Cmd.none)
+            -- let
+            --     newAppInfo = {appInfo | appState =}
+            -- in
+            --     ( AppOps walletState (StateFetched sUsers sRankings dKind) newAppInfo uiState SR.Types.StopSubscription emptyTxRecord, Cmd.none )
         
                                 
-        (Cancel, AppOps walletState (StateUpdated sUsers sRankings dKind) user uiState appState subState txRec ) ->
-            case appInfo.user of
+        (Cancel, AppOps walletState (StateUpdated sUsers sRankings dKind) user uiState subState txRec ) ->
+            case user of
                 Data.Users.Guest userState->
                     (model, Cmd.none)
                 (Data.Users.Registered userId token userInfo userState) ->
@@ -756,7 +756,7 @@ update msg model =
 
                             _ = Debug.log "toGlobal now" "stateupdated"
                         in
-                        ( AppOps walletState newDataState appInfo SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+                        ( AppOps walletState newDataState SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
                 (Data.Users.NoWallet userId token userInfo userState) ->
                     (model, Cmd.none)
                 (Data.Users.NoCredit addr userId token userInfo userState) ->
@@ -775,106 +775,96 @@ update msg model =
                         Selected sSelected ->
                             case (Data.Selected.gotStatus sSelected) of 
                                 Data.Selected.UserIsOwner ->
-                                    (AppOps walletState dataState appInfo SR.Types.UISelectedRankingUserIsOwner SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+                                    (AppOps walletState dataState user SR.Types.UISelectedRankingUserIsOwner SR.Types.StopSubscription emptyTxRecord, Cmd.none )
                                 Data.Selected.UserIsMember ->
-                                    (AppOps walletState dataState appInfo SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+                                    (AppOps walletState dataState user SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription emptyTxRecord, Cmd.none )
                                 Data.Selected.UserIsNeitherOwnerNorMember ->
-                                    (AppOps walletState dataState appInfo SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+                                    (AppOps walletState dataState user SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription emptyTxRecord, Cmd.none )
                         _ -> 
                             (model, Cmd.none)
                 _ -> 
                     (model, Cmd.none)
 
 
+
         (ClickedUpdateExistingUser, AppOps walletState dataState user uiState subState txRec ) ->
-            let 
-                _ = Debug.log "ClickedUpdateExistingUser " walletState
-                --newDataState = StateFetched sUsers sRankings dKind
-                --
-            in
-            -- if user already did an update, need to ensure we start with StateFetched again
-            case dataState of
-                StateUpdated sUsers sRankings user ->
-                    let 
-                        newDataState = StateFetched sUsers sRankings user
-                    in
-                        ( AppOps walletState newDataState appInfo SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec, Cmd.none )
-                _ ->
-                    ( AppOps walletState dataState appInfo SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec, Cmd.none )
+            -- todo: fix
+            (model, Cmd.none)
+            -- let 
+            --     _ = Debug.log "ClickedUpdateExistingUser " walletState
+            --     --newDataState = StateFetched sUsers sRankings dKind
+            --     --
+            -- in
+            -- -- if user already did an update, need to ensure we start with StateFetched again
+            -- case dataState of
+            --     StateUpdated sUsers sRankings dKind ->
+            --         let 
+            --             newDataState = StateFetched sUsers sRankings user
+            --         in
+            --             ( AppOps walletState newDataState appInfo SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec, Cmd.none )
+            --     _ ->
+            --         ( AppOps walletState dataState user SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec, Cmd.none )
 
 
         (LadderNameInputChg namefield, AppOps walletState dataState user uiState subState txRec ) ->
-            let
-                newSelectedRanking =
-                    appInfo.selectedRanking
+            -- todo: fix
+            (model, Cmd.none)
+            -- let
+            --     newSelectedRanking =
+            --         appInfo.selectedRanking
 
 
-                updatedSelectedRanking =
-                    { newSelectedRanking | rankingname = namefield }
+            --     updatedSelectedRanking =
+            --         { newSelectedRanking | rankingname = namefield }
 
 
-                newAppInfo =
-                    { appInfo | selectedRanking = updatedSelectedRanking }
-            in
-            ( AppOps walletState dataState newAppInfo SR.Types.UICreateNewLadder SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+            --     newAppInfo =
+            --         { appInfo | selectedRanking = updatedSelectedRanking }
+            -- in
+            -- ( AppOps walletState dataState newAppInfo SR.Types.UICreateNewLadder SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
 
         (LadderDescInputChg descfield, AppOps walletState dataState user uiState subState txRec ) ->
-            let
-                newSelectedRanking =
-                    appInfo.selectedRanking
+            -- todo: fix
+            (model, Cmd.none)
+            -- let
+            --     newSelectedRanking =
+            --         appInfo.selectedRanking
 
 
-                updatedSelectedRanking =
-                    { newSelectedRanking | rankingdesc = (Just descfield) }
+            --     updatedSelectedRanking =
+            --         { newSelectedRanking | rankingdesc = (Just descfield) }
 
 
-                newAppInfo =
-                    { appInfo | selectedRanking = updatedSelectedRanking }
-            in
-            ( AppOps walletState dataState newAppInfo SR.Types.UICreateNewLadder SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+            --     newAppInfo =
+            --         { appInfo | selectedRanking = updatedSelectedRanking }
+            -- in
+            -- ( AppOps walletState dataState newAppInfo SR.Types.UICreateNewLadder SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
 
-        
-        -- (NewUserNameInputChg updateField, _) ->
-        --     ( handleNewUserInputs model (NewUserNameInputChg updateField), Cmd.none )
+        -- currently expecting user to be 'Registered' at this point for the purpose of inputting/updating details
+        -- might create a new 'Registering' variant(?). Or sort user type before you get here:
+        (UserNameInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
+            (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | username = updateField}) uiState subState txRec, Cmd.none)
+    
+        (UserPasswordInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
+            (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | password = updateField}) uiState subState txRec, Cmd.none)
 
-        -- (NewUserPasswordInputChg updateField, _) ->
-        --     ( handleNewUserInputs model (NewUserPasswordInputChg updateField), Cmd.none )
+        (UserDescInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
+           (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | description = updateField}) uiState subState txRec, Cmd.none)
 
+        (UserEmailInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
+            (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | email = updateField}) uiState subState txRec, Cmd.none)
 
-        -- (NewUserDescInputChg updateField, _) ->
-        --     ( handleNewUserInputs model (NewUserDescInputChg updateField), Cmd.none )
+        (UserMobileInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
+            (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | mobile = updateField}) uiState subState txRec, Cmd.none)
 
-
-        -- (NewUserEmailInputChg updateField, _) ->
-        --     ( handleNewUserInputs model (NewUserEmailInputChg updateField), Cmd.none )
-
-
-        -- (NewUserMobileInputChg updateField, _) ->
-        --     ( handleNewUserInputs model (NewUserMobileInputChg updateField), Cmd.none )
-
-
-        (UserNameInputChg updateField, AppOps walletState dataState appState uiState subState txRec) ->
-            ( handleUserInputs model (UserNameInputChg updateField) appState, Cmd.none )
-
-        (UserPasswordInputChg updateField, AppOps walletState dataState appState uiState subState txRec) ->
-            ( handleUserInputs model (UserPasswordInputChg updateField) appState, Cmd.none )
+        -- currently if the User is not 'Registered' do nothing
+        (UserMobileInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
+            (model, Cmd.none)
 
 
-        (UserDescInputChg updateField, AppOps walletState dataState appState uiState subState txRec) ->
-            ( handleUserInputs model (UserDescInputChg updateField) appState, Cmd.none )
-
-
-        (UserEmailInputChg updateField, AppOps walletState dataState appState uiState subState txRec) ->
-            ( handleUserInputs model (UserEmailInputChg updateField) appState, Cmd.none )
-
-
-        (UserMobileInputChg updateField, AppOps walletState dataState appState uiState subState txRec) ->
-            ( handleUserInputs model (UserMobileInputChg updateField) appState, Cmd.none )
-
-
-        (ClickedConfirmedUpdateExistingUser, AppOps walletState dataState user uiState appState subState txRec )  ->
+        (ClickedConfirmedUpdateExistingUser, AppOps walletState dataState user uiState subState txRec )  ->
             --todo: fix
             (model, Cmd.none)
             -- case dataState of
@@ -883,12 +873,12 @@ update msg model =
             --                     _ = Debug.log "14.1" dataState
             --                     newDataState = StateUpdated sUsers sRankings user
             --         in
-            --         case appInfo.user of
+            --         case user of
             --             Nothing ->
             --                 (model, Cmd.none)
             --             Just userVal ->
-            --                 --( AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription txRec, updateExistingUser (Data.Users.asList sUsers) userVal )
-            --                 ( AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription txRec, 
+            --                 --( AppOps walletState newDataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription txRec, updateExistingUser (Data.Users.asList sUsers) userVal )
+            --                 ( AppOps walletState newDataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription txRec, 
             --                 --updateExistingUser (Data.Users.asList sUsers) userVal
             --                 updateExistingUser <| Data.Users.updatedUserInSet sUsers userVal
             --                 )
@@ -900,45 +890,46 @@ update msg model =
             --                     (model, Cmd.none)
 
 
-        (SentUserInfoAndDecodedResponseToNewUser serverResponse, AppOps walletState dataState user uiState appState subState txRec )  ->
-            (AppOps walletState dataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+        (SentUserInfoAndDecodedResponseToNewUser serverResponse, AppOps walletState dataState user uiState subState txRec )  ->
+            (AppOps walletState dataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
 
-        (ClickedChallengeOpponent opponentAsPlayer, AppOps walletState dataState user uiState appState subState txRec )  ->
+        (ClickedChallengeOpponent opponentAsPlayer, AppOps walletState dataState user uiState subState txRec )  ->
             case dataState of
                 StateFetched sUsers sRankings dKind ->                   
                     case dKind of 
                         Selected sSelected ->
-                            case appInfo.user of
+                            case user of
                                 Data.Users.Guest userState->
                                     (model, Cmd.none)
                                 (Data.Users.Registered userId token userInfo userState) ->
-                                    ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer appInfo.user, Cmd.none )
+                                    ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer user, Cmd.none )
                                 (Data.Users.NoWallet userId token userInfo userState) ->
-                                    ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer appInfo.user, Cmd.none )
+                                    ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer user, Cmd.none )
                                 (Data.Users.NoCredit addr userId token userInfo userState) ->
-                                    ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer appInfo.user, Cmd.none )
+                                    ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer user, Cmd.none )
                                 (Data.Users.Credited addr userId token userInfo userState) ->
-                                    ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer appInfo.user, Cmd.none )
+                                    ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer user, Cmd.none )
                         _ ->
                             (model, Cmd.none)
                 _ ->
                     (model, Cmd.none)
 
 
-        (ClickedDeleteRanking, AppOps walletState dataState user uiState appState subState txRec )  ->
+        (ClickedDeleteRanking, AppOps walletState dataState user uiState subState txRec )  ->
             case dataState of 
                 StateFetched sUsers sRankings dKind ->
                     case dKind of 
                         Selected sSelected ->
-                            case appInfo.user of 
+                            case user of 
                                 Data.Users.Guest userState->
                                     (Failure "Err", Cmd.none)
 
                                 (Data.Users.Registered userId token userInfo userState) ->
                                     let 
-                                        newsUsers = Data.Users.updatedUserInSet sUsers 
-                                            (Data.Users.removedRankindIdFromUser (Data.Rankings.stringFromRankingId (Data.Selected.gotRankingId sSelected)) appInfo.user)
+                                        newsUsers = Data.Users.updatedUserInSet sUsers user
+                                            --(Data.Users.removedRankindIdFromUser (Data.Rankings.stringFromRankingId (Data.Selected.gotRankingId sSelected)) appInfo.user)
+                                         
                                         --removedRanking = Data.Rankings.removedById rnkId sRanking
                                         --todo: replace with a real set of rankings
                                         removedRanking = Data.Rankings.removedById (Data.Selected.gotRankingId sSelected) Data.Rankings.empty
@@ -974,7 +965,7 @@ update msg model =
                             in
                                 (model, Cmd.none)
         
-        (ClickedDeleteRankingConfirmed, AppOps walletState dataState user uiState appState subState txRec )  ->
+        (ClickedDeleteRankingConfirmed, AppOps walletState dataState user uiState subState txRec )  ->
             case dataState of 
                 StateUpdated sUsers sRankings dKind ->
                     case dKind of 
@@ -995,7 +986,7 @@ update msg model =
                     ( model, Cmd.none )
 
 
-        (ReturnedFromDeletedSelectedRankingFromJsonBin result, AppOps walletState dataState user uiState appState subState txRec )  ->
+        (ReturnedFromDeletedSelectedRankingFromJsonBin result, AppOps walletState dataState user uiState subState txRec )  ->
             -- nb. you haven't used the result
             let 
                 _= Debug.log "result"  result
@@ -1013,7 +1004,6 @@ update msg model =
                             in 
                                 ( AppOps walletState
                                     newDataState
-                                    appInfo
                                     uiState
                                     SR.Types.StopSubscription
                                     txRec
@@ -1026,7 +1016,7 @@ update msg model =
                     ( model, Cmd.none )
 
 
-        (ReturnedFromDeletedRankingFromGlobalList response, AppOps walletState dataState user uiState appState subState txRec )  ->
+        (ReturnedFromDeletedRankingFromGlobalList response, AppOps walletState dataState user uiState subState txRec )  ->
             let 
                 _ = Debug.log "Result response " response
             in
@@ -1043,7 +1033,7 @@ update msg model =
                                                 _ = Debug.log "Ranking removed on return from list updated? " Data.Global.asList sGlobal
                                                 
                                             in
-                                                ( AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+                                                ( AppOps walletState newDataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription emptyTxRecord, Cmd.none )
                                         
                                 _ -> 
                                             let 
@@ -1058,7 +1048,7 @@ update msg model =
                             StateUpdated sUsers sRankings dKind -> 
                                 case dKind of 
                                         Global sGlobal  ->
-                                            (AppOps walletState dataState appInfo SR.Types.UIUnableToFindGlobalRankings SR.Types.StopSubscription emptyTxRecord, Cmd.none)
+                                            (AppOps walletState dataState user SR.Types.UIUnableToFindGlobalRankings SR.Types.StopSubscription emptyTxRecord, Cmd.none)
                                         _ ->
                                             (model, Cmd.none)
                             _ ->
@@ -1076,7 +1066,7 @@ update msg model =
                     in
                     case walletState of 
                         SR.Types.WalletOperational -> 
-                            ( AppOps walletState dataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription { txRec | txHash = Just txHash }, Cmd.none )
+                            ( AppOps walletState dataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription { txRec | txHash = Just txHash }, Cmd.none )
                         _ ->
                             (model, Cmd.none)
 
@@ -1087,7 +1077,7 @@ update msg model =
             in
                 case walletState of 
                     SR.Types.WalletOperational -> 
-                        ( AppOps SR.Types.WalletStateMissing dataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
+                        ( AppOps SR.Types.WalletStateMissing dataState SR.Types.UIRenderAllRankings SR.Types.StopSubscription { txRec | errors = ("Error Retrieving TxHash: " ++ err) :: txRec.errors }, Cmd.none )
                     _ -> 
                         (model, Cmd.none)
         
@@ -1099,7 +1089,7 @@ update msg model =
             in
             case walletState of 
                 SR.Types.WalletOperational -> 
-                    AppOps walletState dataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription { txRec | tx = Just tx } |> update (ProcessResult Data.Selected.Won)
+                    AppOps walletState dataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription { txRec | tx = Just tx } |> update (ProcessResult Data.Selected.Won)
                 _ ->
                     (model, Cmd.none)
 
@@ -1110,7 +1100,7 @@ update msg model =
             in
             case walletState of 
                 SR.Types.WalletOperational ->
-                    ( AppOps SR.Types.WalletStateLocked dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | errors = ("Error Retrieving Tx: " ++ err) :: txRec.errors }, Cmd.none )
+                    ( AppOps SR.Types.WalletStateLocked dataState user SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | errors = ("Error Retrieving Tx: " ++ err) :: txRec.errors }, Cmd.none )
                 _ -> 
                     (model, Cmd.none)
         
@@ -1122,7 +1112,7 @@ update msg model =
             in
             case walletState of 
                 SR.Types.WalletOperational ->
-                    AppOps walletState dataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription emptyTxRecord
+                    AppOps walletState dataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription emptyTxRecord
                         |> update (ProcessResult Data.Selected.Won)
                 _ -> 
                     (model, Cmd.none)
@@ -1134,7 +1124,7 @@ update msg model =
             in
             case walletState of 
                 SR.Types.WalletOperational ->
-                    ( AppOps walletState dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
+                    ( AppOps walletState dataState user SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
                 _ ->
                     (model, Cmd.none)
         
@@ -1145,7 +1135,7 @@ update msg model =
             in
             case walletState of 
                 SR.Types.WalletOperational ->
-                    ( AppOps walletState dataState appInfo SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | blockDepth = Just blockDepth }, Cmd.none )
+                    ( AppOps walletState dataState user SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | blockDepth = Just blockDepth }, Cmd.none )
                 _ -> 
                     (model, Cmd.none)
 
@@ -1160,7 +1150,7 @@ update msg model =
                             StateFetched sUsers sRankings dKind ->
                                 case dKind of 
                                     Global sGlobal  ->
-                                        case appInfo.user of
+                                        case user of
                                         -- todo: fix
                                             Data.Users.Guest userState->
                                                 (model, Cmd.none)
@@ -1198,7 +1188,7 @@ update msg model =
                                         let 
                                             _ = Debug.log "6 - dataState SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId" dataState
                                         in
-                                            (AppOps SR.Types.WalletOpened dataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription emptyTxRecord, Cmd.none)
+                                            (AppOps SR.Types.WalletOpened dataState SR.Types.UIRenderAllRankings SR.Types.StopSubscription emptyTxRecord, Cmd.none)
                                     _ -> 
                                         (model, Cmd.none)
 
@@ -1208,26 +1198,26 @@ update msg model =
                 _ -> 
                     (model, Cmd.none)
 
-        (ResetRejectedNewUserToShowGlobal,  AppOps walletState dataState user uiState subState txRec ) ->
-            let 
-                newAppInfo = {appInfo | user = Data.Users.Guest}
-            in 
-            case walletState of 
-                SR.Types.WalletOperational ->
-                    ( AppOps SR.Types.WalletOperational dataState newAppInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription emptyTxRecord, allRankings )
-                _ -> 
-                    (model, Cmd.none)
+        -- (ResetRejectedNewUserToShowGlobal,  AppOps walletState dataState user uiState subState txRec ) ->
+        --     let 
+        --         newAppInfo = {appInfo | user = Data.Users.Guest}
+        --     in 
+        --     case walletState of 
+        --         SR.Types.WalletOperational ->
+        --             ( AppOps SR.Types.WalletOperational dataState newAppInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription emptyTxRecord, allRankings )
+        --         _ -> 
+        --             (model, Cmd.none)
 
 
-        (ClickedConfirmCreateNewLadder,  AppOps walletState dataState user uiState subState txRec ) ->
+        (ClickedConfirmCreateNewLadder rnkId,  AppOps walletState dataState user uiState subState txRec ) ->
             case walletState of 
                 SR.Types.WalletOpened ->
                     case dataState of 
                         StateFetched sUsers sRankings dKind ->
                                 case dKind of 
-                                    Global sGlobal  ->
+                                    Global sGlobal globalState ->
                                         --if Data.Users.isRegistered (Data.Users.asList sUsers) appInfo.user then
-                                        case appInfo.user of
+                                        case user of
                                             -- Nothing ->
                                             --     (model, Cmd.none)
                                             
@@ -1256,15 +1246,13 @@ update msg model =
                                                                     , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
                                                                     }
                                                                     txParams
-
-                                                            newAppInfo =
-                                                                    { appInfo | appState = Data.AppState.AppStateCreateNewLadder }
                                                             
                                                            -- _ = Debug.log "global with useradd" user.m_ethaddress
+                                                            newDataKind = Global sGlobal Data.Gobal.CreatedNewLadder user rnkId
+                                                            newDataState = StateFetched sUsers sRankings newDataKind
                                                             
                                                         in
-                                                        ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState newAppInfo SR.Types.UIRenderAllRankings SR.Types.Subscribe { txRec | txSentry = newSentry }
-                                                        --Cmd.batch [ sentryCmd, addedUserAsFirstPlayerInNewList appInfo.user ] )
+                                                        ( AppOps SR.Types.WalletWaitingForTransactionReceipt newDataState user SR.Types.UIRenderAllRankings SR.Types.Subscribe { txRec | txSentry = newSentry }
                                                         ,sentryCmd)
 
                                                     (Data.Users.NoWallet userId token userInfo userState) ->
@@ -1300,21 +1288,24 @@ update msg model =
             -- I think the global set has already been updated
             case walletState of 
                 SR.Types.WalletOperational ->
-                    ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+                    ( AppOps SR.Types.WalletOperational dataState SR.Types.UIRenderAllRankings SR.Types.StopSubscription emptyTxRecord, Cmd.none )
                 _ ->
                     (model, Cmd.none)
             
-        (ClickedNewChallengeConfirm,  AppOps walletState dataState user uiState subState txRec ) ->
-            case walletState of 
-                SR.Types.WalletOperational ->
+        (ClickedNewChallengeConfirm challengerUID,  AppOps walletState dataState user uiState subState txRec ) ->
+            case user of 
+                Data.Users.Guest _ ->
+                    (model, Cmd.none)
+
+                _ ->
                     case dataState of
                         StateFetched sUsers sRankings dKind -> 
                             case dKind of 
                                 Selected sSelected ->
                                     let
-                                        newDataKind = Selected (Data.Selected.assignChallengerAddrsForBOTHPlayers sSelected appInfo)
+                                        newDataKind = Selected (Data.Selected.assignedChallengerUIDForBOTHPlayers sSelected user challengerUID)
                                         newDataState = StateUpdated sUsers sRankings newDataKind
-                                        updatedModel = AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription txRec
+                                        updatedModel = AppOps walletState newDataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription txRec
                                     in 
                                         ( updatedModel, httpPlayerList (newDataState))
 
@@ -1347,15 +1338,15 @@ update msg model =
             --                     Selected sSelected ->
             --                         case accountState of
             --                             Data.Users.Guest userState-> 
-            --                                 ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none )
+            --                                 ( AppOps walletState dataState user SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none )
             --                             Data.Users.Registered ->
-            --                                 ( AppOps walletState dataState appInfo SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription txRec, Cmd.none )
+            --                                 ( AppOps walletState dataState user SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription txRec, Cmd.none )
 
             --                             SR.Types.EthEnabled ->
-            --                                 ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none )
+            --                                 ( AppOps walletState dataState user SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none )
 
             --                             SR.Types.EthEnabledAndRegistered ->
-            --                                 case appInfo.user of
+            --                                 case user of
             --                                     Nothing ->
             --                                         (model, Cmd.none)
             --                                     Just userVal ->
@@ -1365,7 +1356,7 @@ update msg model =
                                                         
             --                                             newDataKind = Selected newSelected rnkId user Data.Selected.UserIsMember Data.Players.empty
             --                                             newDataState = StateUpdated sUsers sRankings newDataKind
-            --                                             updatedModel = AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription txRec
+            --                                             updatedModel = AppOps walletState newDataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription txRec
             --                                         in
             --                                             ( updatedModel, httpPlayerList (newDataState))
 
@@ -1382,13 +1373,13 @@ update msg model =
             --                             (model, Cmd.none)
 
                 -- SR.Types.WalletStopSub ->
-                --     ( AppOps walletState dataState appInfo SR.Types.UIEnableEthereum SR.Types.StopSubscription txRec, Cmd.none )
+                --     ( AppOps walletState dataState user SR.Types.UIEnableEthereum SR.Types.StopSubscription txRec, Cmd.none )
 
                 -- SR.Types.WalletStateLocked ->
-                --     ( AppOps walletState dataState appInfo SR.Types.UIEnableEthereum SR.Types.StopSubscription txRec, Cmd.none )
+                --     ( AppOps walletState dataState user SR.Types.UIEnableEthereum SR.Types.StopSubscription txRec, Cmd.none )
 
                 -- SR.Types.WalletOpenedNoUserAccount ->
-                --     ( AppOps walletState dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none )
+                --     ( AppOps walletState dataState user SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none )
 
                 -- _ -> 
                 --     let 
@@ -1431,7 +1422,8 @@ update msg model =
                                                 (model, Cmd.none)
                                             (Data.Users.Registered userId token userInfo userState) ->
                                                  ( updateSelectedRankingPlayerList model convertedToUserPlayers
-                                                , httpUpdateUsersJoinRankings (Data.Rankings.stringFromRankingId (Data.Selected.gotRankingId sSelected)) appInfo.user newUserList )
+                                                , httpUpdateUsersJoinRankings (Data.Rankings.stringListToRankingIdList (Data.Selected.gotRankingId sSelected)) 
+                                                user newUserList )
                                 
                                             (Data.Users.NoWallet userId token userInfo userState) ->
                                                 (model, Cmd.none)
@@ -1471,7 +1463,7 @@ update msg model =
                                         newDataKind = Global newGlobal
                                         newDataState = StateFetched (Data.Users.asUsers (EverySet.fromList lusers)) sRankings newDataKind
                                     in
-                                    (AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription txRec, Cmd.none)
+                                    (AppOps walletState newDataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription txRec, Cmd.none)
                                 _ -> 
                                     (model, Cmd.none)
                         
@@ -1484,7 +1476,7 @@ update msg model =
                                             newDataKind = Global newGlobal
                                             newDataState = StateUpdated (Data.Users.asUsers (EverySet.fromList lusers)) sRankings newDataKind
                                         in
-                                        (AppOps walletState newDataState appInfo SR.Types.UIRenderAllRankings SR.Types.StopSubscription txRec, Cmd.none)
+                                        (AppOps walletState newDataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription txRec, Cmd.none)
                                     _ -> 
                                         (model, Cmd.none)
                         AllEmpty ->
@@ -1513,12 +1505,12 @@ update msg model =
             in
             if handleTxSubMsg subMsg then
                 case (user, dataState) of 
-                    (Data.Users.Credited addr userId token userInfo userState (Data.Users.General)
+                    (Data.Users.Credited addr userId token userInfo userState
                         , StateFetched sUsers sRankings
                         --nb. 'Selected' is a variant defined in Main (just a box or label), it is NOT a Set
                         -- you're only specifying it to distinguish from Global as a dKind
                         -- sSelected is the variable you're pattern matching on here
-                            (Selected sSelected (Data.Selected.Selected rnkId ownerStatus sPlayers (Data.Selected.EnteredResult resultEntered) ))) ->
+                            (Selected  (Data.Selected.SelectedRanking sSelected rnkId ownerStatus sPlayers (Data.Selected.EnteredResult resultEntered) ))) ->
                             case resultEntered of 
                                 Data.Selected.Won ->
                                         let 
@@ -1897,7 +1889,7 @@ updateWithReceivedRankingById model response =
         (AppOps walletState (StateUpdated sUsers sRankings dKind) user uiState subState txRec, Ok lrankings) ->
             model
 
-        (AppOps walletState (StateFetched sUsers sRankings (Global sGlobal)) user uiState appState subState txRec, Ok franking) ->
+        (AppOps walletState (StateFetched sUsers sRankings (Global sGlobal)) user uiState subState txRec, Ok franking) ->
             let
                 --filteredFRanking = Maybe.withDefault (Data.Rankings.Ranking 0 True "" Nothing "") franking
                 -- need to convert from FRanking to Ranking (id_ needs to be a String)
@@ -1951,11 +1943,11 @@ updateFromLoggedInUser model response =
                     model
                 (Data.Users.NoCredit addr userId _ userInfo userState) ->
                     model
-                (Data.Users.Credited addr userId _ userInfo) ->
+                (Data.Users.Credited addr userId _ userInfo userState) ->
                     model
 
         (AppOps walletState dataState user uiState subState txRec, Err _) ->
-                AppOps walletState dataState user uiState Data.AppState.General subState txRec
+                AppOps walletState dataState user uiState subState txRec
 
         (Failure _, _) ->
             model
@@ -1977,7 +1969,7 @@ updateFromRegisteredNewUser model response =
                     model
                 (Data.Users.NoCredit addr userId _ userInfo userState) ->
                     model
-                (Data.Users.Credited addr userId _ userInfo) ->
+                (Data.Users.Credited addr userId _ userInfo userState) ->
                     model
 
         ( Ok _, Failure _ ) ->
@@ -2146,8 +2138,8 @@ gotWalletAddrApplyToUser user uaddr =
 -- handleNewUserInputs : Model -> Msg -> Model
 -- handleNewUserInputs model msg =
 --     case (model, msg) of
---         --(AppOps walletState dataState user uiState appState subState txRec), NewUserNameInputChg namefield) ->
---         (AppOps walletState dataState user uiState appState subState txRec), NewUserNameInputChg namefield) ->
+--         --(AppOps walletState dataState user uiState subState txRec), NewUserNameInputChg namefield) ->
+--         (AppOps walletState dataState user uiState subState txRec), NewUserNameInputChg namefield) ->
 --             let 
 --                 newUser = Maybe.withDefault Data.Users.Guest appInfo.user
 --             in
@@ -2175,8 +2167,8 @@ gotWalletAddrApplyToUser user uaddr =
 
             
             
---         (AppOps walletState dataState user uiState appState subState txRec), NewUserPasswordInputChg passwordfield) ->
---             case appInfo.user of
+--         (AppOps walletState dataState user uiState subState txRec), NewUserPasswordInputChg passwordfield) ->
+--             case user of
 --                 Nothing ->
 --                     model
 --                 Just userVal ->
@@ -2192,8 +2184,8 @@ gotWalletAddrApplyToUser user uaddr =
 --                         AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription txRec
             
 
---         (AppOps walletState dataState user uiState appState subState txRec),  NewUserDescInputChg descfield) ->
---             case appInfo.user of
+--         (AppOps walletState dataState user uiState subState txRec),  NewUserDescInputChg descfield) ->
+--             case user of
 --                 Nothing ->
 --                     model
 --                 Just userVal ->
@@ -2208,8 +2200,8 @@ gotWalletAddrApplyToUser user uaddr =
 --                     in
 --                         AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec
 
---         (AppOps walletState dataState user uiState appState subState txRec), NewUserEmailInputChg emailfield) ->
---             case appInfo.user of
+--         (AppOps walletState dataState user uiState subState txRec), NewUserEmailInputChg emailfield) ->
+--             case user of
 --                 Nothing ->
 --                     model
 --                 Just userVal ->
@@ -2223,8 +2215,8 @@ gotWalletAddrApplyToUser user uaddr =
 --                         AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec
             
 
---         (AppOps walletState dataState user uiState appState subState txRec), NewUserMobileInputChg mobilefield) ->
---             case appInfo.user of
+--         (AppOps walletState dataState user uiState subState txRec), NewUserMobileInputChg mobilefield) ->
+--             case user of
 --                 Nothing ->
 --                     model
 --                 Just userVal ->
@@ -2243,71 +2235,15 @@ gotWalletAddrApplyToUser user uaddr =
 --             Failure "NewUserNameInputChg"
 
 
-handleUserInputs : Model -> Msg -> Model
-handleUserInputs model msg  =
-    case (model, msg) of
-        (AppOps walletState dataState user uiState subState txRec, UserNameInputChg namefield) ->
-            model
-        (AppOps walletState dataState user uiState subState txRec, UserPasswordInputChg passwordfield) ->
-            model
-        (AppOps walletState dataState user uiState subState txRec, UserDescInputChg descfield) ->
-            case user of
-                Data.Users.Guest Data.Users.General ->
-                    model
-                Data.Users.Guest Data.Users.CreateNewUser ->
-                    model
-                Data.Users.Guest Data.Users.General ->
-                    model
-                _ ->
-                    model
-
-        (AppOps walletState dataState user uiState subState txRec, UserDescInputChg descfield, Data.AppState.CreateNewUser (Data.Users.Registered userId token userInfo)) ->
-            AppOps walletState dataState (updateAppInfoUserDesc userId token descfield userInfo) uiState appState subState txRec
-
-        (AppOps walletState dataState user uiState subState txRec, UserDescInputChg descfield, Data.AppState.CreateNewUser (Data.Users.NoWallet userId token userInfo)) ->
-                AppOps walletState dataState (updateAppInfoUserDesc userId token descfield userInfo) uiState appState subState txRec
-                
-        (AppOps walletState dataState user uiState subState txRec, UserDescInputChg descfield, Data.AppState.CreateNewUser (Data.Users.NoCredit addr userId token userInfo)) ->
-                AppOps walletState dataState (updateAppInfoUserDesc userId token descfield userInfo) uiState appState subState txRec
-
-        (AppOps walletState dataState user uiState subState txRec, UserDescInputChg descfield, Data.AppState.CreateNewUser (Data.Users.Credited addr userId token userInfo userState)) ->
-                AppOps walletState dataState (updateAppInfoUserDesc userId token descfield userInfo) uiState appState subState txRec
-
-        (AppOps walletState dataState user uiState subState txRec, UserEmailInputChg emailfield, Data.Users.Guest) ->
-            model
-        (AppOps walletState dataState user uiState subState txRec, UserEmailInputChg emailfield, Data.Users.Registered userId token userInfo userState) ->
-            AppOps walletState dataState (updateAppInfoUserEmail userId token emailfield userInfo) uiState appState subState txRec
-
-        (AppOps walletState dataState user uiState subState txRec, UserEmailInputChg emailfield, Data.Users.NoWallet userId token userInfo) ->
-                AppOps walletState dataState (updateAppInfoUserEmail userId token emailfield userInfo) uiState appState subState txRec
-                
-        (AppOps walletState dataState user uiState subState txRec, UserEmailInputChg emailfield, Data.Users.NoCredit addr userId token userInfo) ->
-                AppOps walletState dataState (updateAppInfoUserEmail userId token emailfield userInfo) uiState appState subState txRec
-
-        (AppOps walletState dataState user uiState subState txRec, UserEmailInputChg emailfield, Data.Users.Credited addr userId token userInfo userState) ->
-                AppOps walletState dataState (updateAppInfoUserEmail userId token emailfield userInfo) uiState appState subState txRec
-
-        
-        (AppOps walletState dataState user uiState subState txRec, UserMobileInputChg mobilefield, Data.Users.Guest) ->
-            model
-        (AppOps walletState dataState user uiState subState txRec, UserMobileInputChg mobilefield, Data.Users.Registered userId token userInfo userState) ->
-            AppOps walletState dataState (updateUserMobile userId token mobilefield userInfo) uiState appState subState txRec
-
-        (AppOps walletState dataState user uiState subState txRec, UserMobileInputChg mobilefield, Data.Users.NoWallet userId token userInfo) ->
-                AppOps walletState dataState (updateUserMobile userId token mobilefield userInfo) uiState appState subState txRec
-                
-        (AppOps walletState dataState user uiState subState txRec, UserMobileInputChg mobilefield, Data.Users.NoCredit addr userId token userInfo) ->
-                AppOps walletState dataState (updateUserMobile userId token mobilefield userInfo) uiState appState subState txRec
-
-        (AppOps walletState dataState user uiState subState txRec, UserMobileInputChg mobilefield, Data.Users.Credited addr userId token userInfo userState) ->
-                AppOps walletState dataState (updateUserMobile userId token mobilefield userInfo) uiState appState subState txRec
 
 
-        _ ->
-            Failure "UserNameInputChg"
+updateUserName : String -> Data.Users.UserInfo -> Data.Users.UserInfo
+updateUserName newusername userInfo =
+    {userInfo | username = newusername}
 
-updateAppInfoUserDesc : Data.Users.UserId -> Data.Users.Token -> String -> Data.Users.UserInfo -> Data.Users.UserInfo
-updateAppInfoUserDesc userId token descfield userInfo =
+
+updateAppInfoUserDesc : String -> Data.Users.UserInfo -> Data.Users.UserInfo
+updateAppInfoUserDesc descfield userInfo =
     let
         existingExtraUserInfo = userInfo.extrauserinfo
         newExtraInfo = {existingExtraUserInfo | description = descfield}
@@ -2316,8 +2252,8 @@ updateAppInfoUserDesc userId token descfield userInfo =
     in
         newUserInfo
 
-updateAppInfoUserEmail : Data.Users.UserId -> Data.Users.Token -> String -> Data.Users.UserInfo -> Data.Users.UserInfo 
-updateAppInfoUserEmail userId token emailfield userInfo =
+updateAppInfoUserEmail : String -> Data.Users.UserInfo -> Data.Users.UserInfo 
+updateAppInfoUserEmail emailfield userInfo =
     let
         existingExtraUserInfo = userInfo.extrauserinfo
         newExtraInfo = {existingExtraUserInfo | email = emailfield}
@@ -2326,8 +2262,8 @@ updateAppInfoUserEmail userId token emailfield userInfo =
         newUserInfo
 
 
-updateUserMobile : Data.Users.UserId -> Data.Users.Token -> String -> Data.Users.UserInfo -> Data.Users.UserInfo
-updateUserMobile userId token mobilefield userInfo =
+updateUserMobile : String -> Data.Users.UserInfo -> Data.Users.UserInfo
+updateUserMobile mobilefield userInfo =
     let
         existingExtraUserInfo = userInfo.extrauserinfo
         newExtraInfo = {existingExtraUserInfo | mobile = mobilefield}
@@ -3057,7 +2993,7 @@ neitherOwnerNorMemberRankingInfoBtn rankingobj =
 --         _ = Debug.log "configureThenAddPlayerRankingBtns" uplayer
 --         printChallengerNameOrAvailable = Data.Selected.printChallengerNameOrAvailable sSelected sUsers uplayer
 --     in
---         --case appInfo.user of
+--         --case user of
 --         case (appInfo.user, uplayer.user) of
 --             (Data.Users.Guest, _)  ->
 --                 Element.text "No User2"
@@ -4183,7 +4119,7 @@ displayEnableEthereumBtn =
 --         StateFetched sUsers sRankings dKind -> 
 --             case dKind of 
 --                 Selected sSelected ->
---                     case appInfo.user of
+--                     case user of
 --                             Data.Users.Guest userState->
 --                                 Framework.responsiveLayout [] <|
 --                                 Element.column
@@ -4228,7 +4164,7 @@ displayEnableEthereumBtn =
 --         StateFetched sUsers sRankings dKind -> 
 --             case dKind of 
 --                 Selected sSelected ->
---                     case appInfo.user of
+--                     case user of
 --                             Data.Users.Guest userState->
 --                                 Framework.responsiveLayout [] <| Element.column Framework.container
 --                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Guest"
@@ -4264,7 +4200,7 @@ displayEnableEthereumBtn =
 --         StateUpdated sUsers sRankings dKind -> 
 --             case dKind of 
 --                 Selected sSelected ->
---                     case appInfo.user of
+--                     case user of
 --                             Data.Users.Guest userState->
 --                                 Framework.responsiveLayout [] <| Element.column Framework.container
 --                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - No User13" 
@@ -4310,7 +4246,7 @@ displayEnableEthereumBtn =
 -- selectedUserIsNeitherOwnerNorPlayerView  dataState appInfo accountState =
 --     case dataState of
 --         StateFetched sUsers sRankings (Selected sSelected) ->
---             case appInfo.user of
+--             case user of
 --                 Nothing ->
 --                     Framework.responsiveLayout [] <|
 --                         Element.column
@@ -4475,7 +4411,7 @@ displayRegisterNewUser userVal sUsers =
     --     StateFetched sUsers sRankings dKind ->
     --         case walletState of 
     --             SR.Types.WalletOpened ->
-    --                 -- case appInfo.user of
+    --                 -- case user of
     --                 --     Nothing ->
     --                 --         Html.text "No User14"
     --                 --     Just userVal ->
@@ -4487,7 +4423,7 @@ displayRegisterNewUser userVal sUsers =
     --                                 , newuserConfirmPanel walletState appInfo.user (Data.Users.asList sUsers)
     --                                 ]
     --             SR.Types.WalletStateLocked ->
-    --                 -- case appInfo.user of
+    --                 -- case user of
     --                 --     Nothing ->
     --                 --         Html.text "No User15"
     --                 --     Just userVal ->
@@ -4502,7 +4438,7 @@ displayRegisterNewUser userVal sUsers =
     --                                 ]
                 
     --             SR.Types.WalletOperational ->
-    --                 -- case appInfo.user of
+    --                 -- case user of
     --                 --     Nothing ->
     --                 --         Html.text "No User16"
     --                 --     Just userVal ->
@@ -4517,7 +4453,7 @@ displayRegisterNewUser userVal sUsers =
     --                                 ]
 
     --             SR.Types.WalletOpenedNoUserAccount ->
-    --                 -- case appInfo.user of
+    --                 -- case user of
     --                 --     Nothing ->
     --                 --         Html.text "No User17"
     --                 --     Just userVal ->
@@ -4545,7 +4481,7 @@ displayRegisterNewUser userVal sUsers =
 --         AppOps walletState dataState user uiState subState txRec ->
 --             case dataState of 
 --                 StateFetched sUsers sRankings dKind -> 
---                     case appInfo.user of
+--                     case user of
 --                         Nothing ->
 --                             Html.text "No User18"
 --                         Just userVal ->
