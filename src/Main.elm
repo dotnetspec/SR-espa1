@@ -85,7 +85,7 @@ type DataKind
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( AppOps SR.Types.WalletStateLocked AllEmpty (Data.Users.Guest Data.Users.General) SR.Types.UILoading  SR.Types.Subscribe emptyTxRecord
+    ( AppOps SR.Types.WalletStateLocked AllEmpty (Data.Users.Guest Data.Users.General) SR.Types.UILoading  SR.Types.StopSubscription emptyTxRecord
     , Cmd.batch
         [ 
         allUsers
