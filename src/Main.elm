@@ -2747,64 +2747,113 @@ ownedrankingbuttons : List Data.Global.UserRanking -> Data.Users.User -> Element
 ownedrankingbuttons urankingList user =
     case user of 
         Data.Users.Guest userState->
-            Element.text ""
-        (Data.Users.Registered userId token userInfo userState) ->
             Element.column Grid.section <|
             [ if List.isEmpty urankingList then
                 -- the button will be in the "Your Created Rankings" section instead
-                Element.el [] <| Element.text ""
+                Element.el [] <| 
+                    Input.button
+                        ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
+                            ++ Button.fill
+                            ++ Button.simple
+                            ++ Color.info
+                        )
+                    <|
+                        { onPress = Nothing
+                        , label = Element.text "Register To Create New Ladder"
+                        }
               else
+              
                 Element.el Heading.h5 <| Element.text "Your Created Rankings:"
-                , Element.column (Card.simple ++ Grid.simple) <|
-                determineOwnedRankingButtonsDisplay (Data.Global.rankingsAsList (Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal)) user
+                , List.map (\ur -> ur.rankingInfo) urankingList
+                |> List.map ownedRankingInfoBtn
+                |> Element.column (Card.simple ++ Grid.simple)
+            ]
+        
+        (Data.Users.Registered userId token userInfo userState) ->
+            Element.column Grid.section <|
+            [ if List.isEmpty urankingList then
+                Element.el [] <| 
+                    Input.button
+                        ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
+                            ++ Button.fill
+                            ++ Button.simple
+                            ++ Color.info
+                        )
+                    <|
+                        { onPress = Just <| ClickedCreateNewLadder
+                        , label = Element.text "Create New Ladder"
+                        }
+              else
+
+                Element.el Heading.h5 <| Element.text "Your Created Rankings:"
+                , List.map (\ur -> ur.rankingInfo) urankingList
+                |> List.map ownedRankingInfoBtn
+                |> Element.column (Card.simple ++ Grid.simple)
             ]
 
         (Data.Users.NoWallet userId token userInfo userState) ->
             Element.column Grid.section <|
             [ if List.isEmpty urankingList then
-                Element.el [] <| Element.text ""
+                Element.el [] <| 
+                    Input.button
+                        ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
+                            ++ Button.fill
+                            ++ Button.simple
+                            ++ Color.info
+                        )
+                    <|
+                        { onPress = Just <| ClickedCreateNewLadder
+                        , label = Element.text "Create New Ladder"
+                        }
               else
+
                 Element.el Heading.h5 <| Element.text "Your Created Rankings:"
-                , Element.column (Card.simple ++ Grid.simple) <|
-                determineOwnedRankingButtonsDisplay (Data.Global.rankingsAsList (Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal)) user
+                , List.map (\ur -> ur.rankingInfo) urankingList
+                |> List.map ownedRankingInfoBtn
+                |> Element.column (Card.simple ++ Grid.simple)
             ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
             Element.column Grid.section <|
             [ if List.isEmpty urankingList then
-                Element.el [] <| Element.text ""
+                Element.el [] <| 
+                    Input.button
+                        ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
+                            ++ Button.fill
+                            ++ Button.simple
+                            ++ Color.info
+                        )
+                    <|
+                        { onPress = Just <| ClickedCreateNewLadder
+                        , label = Element.text "Create New Ladder"
+                        }
               else
+
                 Element.el Heading.h5 <| Element.text "Your Created Rankings:"
-                , Element.column (Card.simple ++ Grid.simple) <|
-                determineOwnedRankingButtonsDisplay (Data.Global.rankingsAsList (Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal)) user
+                , List.map (\ur -> ur.rankingInfo) urankingList
+                |> List.map ownedRankingInfoBtn
+                |> Element.column (Card.simple ++ Grid.simple)
             ]
         (Data.Users.Credited addr userId token userInfo userState) ->
             Element.column Grid.section <|
             [ if List.isEmpty urankingList then
-                Element.el [] <| Element.text ""
+                Element.el [] <| 
+                    Input.button
+                        ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
+                            ++ Button.fill
+                            ++ Button.simple
+                            ++ Color.info
+                        )
+                    <|
+                        { onPress = Just <| ClickedCreateNewLadder
+                        , label = Element.text "Create New Ladder"
+                        }
               else
+
                 Element.el Heading.h5 <| Element.text "Your Created Rankings:"
-                , Element.column (Card.simple ++ Grid.simple) <|
-                determineOwnedRankingButtonsDisplay (Data.Global.rankingsAsList (Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal)) user
+                , List.map (\ur -> ur.rankingInfo) urankingList
+                |> List.map ownedRankingInfoBtn
+                |> Element.column (Card.simple ++ Grid.simple)
             ]
-
-
-determineOwnedRankingButtonsDisplay : List Data.Rankings.Ranking -> Data.Users.User -> List (Element Msg)
-determineOwnedRankingButtonsDisplay lranking user =
-    if List.isEmpty lranking then
-                    [
-                        Input.button
-                            ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
-                                ++ Button.fill
-                                ++ Button.simple
-                                ++ Color.info
-                            )
-                        <|
-                            { onPress = Just <| ClickedCreateNewLadder
-                            , label = Element.text "Create New Ladder"
-                            }
-                    ]
-    else
-        insertOwnedRankingList lranking user
 
 
 memberrankingbuttons : List Data.Global.UserRanking -> Data.Users.User -> Element Msg
@@ -2814,65 +2863,43 @@ memberrankingbuttons urankingList user =
             Element.text ""
         (Data.Users.Registered userId token userInfo userState) ->
             Element.column Grid.section <|
-            [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
-            , Element.column (Card.simple ++ Grid.simple) <|
-                insertMemberRankingList <| (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
-            ]
+                [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
+                , List.map (\ur -> ur.rankingInfo) urankingList
+                |> List.map memberRankingInfoBtn
+                |> Element.column (Card.simple ++ Grid.simple)
+                ]
+
         (Data.Users.NoWallet userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
-            , Element.column (Card.simple ++ Grid.simple) <|
-                insertMemberRankingList <| (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
+            , List.map (\ur -> ur.rankingInfo) urankingList
+                |> List.map memberRankingInfoBtn
+                |> Element.column (Card.simple ++ Grid.simple)
             ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
-            , Element.column (Card.simple ++ Grid.simple) <|
-                insertMemberRankingList <| (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
+            , List.map (\ur -> ur.rankingInfo) urankingList
+                |> List.map memberRankingInfoBtn
+                |> Element.column (Card.simple ++ Grid.simple)
             ]
         (Data.Users.Credited addr userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
-            , Element.column (Card.simple ++ Grid.simple) <|
-                insertMemberRankingList <| (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
+            , List.map (\ur -> ur.rankingInfo) urankingList
+                |> List.map memberRankingInfoBtn
+                |> Element.column (Card.simple ++ Grid.simple)
             ]
 
 
 otherrankingbuttons : List Data.Global.UserRanking -> Element Msg
 otherrankingbuttons urankingList =
-            Element.column Grid.section <|
-            [ Element.el Heading.h5 <| Element.text "View Rankings: "
-            , List.map (\ur -> ur.rankingInfo) urankingList
-                |> List.map neitherOwnerNorMemberRankingInfoBtn
-                |> Element.column (Card.simple ++ Grid.simple) 
-            ]
-
-insertOwnedRankingList : List Data.Rankings.Ranking -> Data.Users.User -> List (Element Msg)
-insertOwnedRankingList lrankinginfo user =
-    let
-        mapOutRankingList =
-            List.map
-                ownedRankingInfoBtn
-                lrankinginfo
-    in
-    case user of
-        Data.Users.Guest userState->
-            [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
-                    ++ Button.fill
-                    ++ Button.simple 
-                    ++ Color.info) <|
-                    { onPress = Just <| ClickedCreateNewLadder
-                    , label = Element.text "Create New Ladder"
-                    }
-                ]
-        (Data.Users.Registered userId token userInfo userState) ->
-            mapOutRankingList
-        (Data.Users.NoWallet userId token userInfo userState) ->
-            mapOutRankingList
-        (Data.Users.NoCredit addr userId token userInfo userState) ->
-            mapOutRankingList
-        (Data.Users.Credited addr userId token userInfo userState) ->
-            mapOutRankingList
+    Element.column Grid.section <|
+    [ Element.el Heading.h5 <| Element.text "View Rankings: "
+    , List.map (\ur -> ur.rankingInfo) urankingList
+        |> List.map neitherOwnerNorMemberRankingInfoBtn
+        |> Element.column (Card.simple ++ Grid.simple) 
+    ]
 
 
 ownedRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
@@ -2883,21 +2910,6 @@ ownedRankingInfoBtn rankingobj =
             , label = Element.text rankingobj.rankingname
             }
         ]
-
-
-insertMemberRankingList : List Data.Rankings.Ranking -> List (Element Msg)
-insertMemberRankingList lrankinginfo =
-    let
-        mapOutRankingList =
-            List.map
-                memberRankingInfoBtn
-                lrankinginfo
-    in
-    if List.isEmpty lrankinginfo then
-        [ Element.text "Please Click On A \nRanking Below To View or Join:" ]
-
-    else
-        mapOutRankingList
 
 
 memberRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
