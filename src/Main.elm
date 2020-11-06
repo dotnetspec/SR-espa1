@@ -2753,8 +2753,9 @@ ownedrankingbuttons urankingList user =
               else
                 Element.el Heading.h5 <| Element.text "Your Created Rankings:"
                 , Element.column (Card.simple ++ Grid.simple) <|
-                determineOwnedRankingButtonsDisplay (Data.Global.rankingsAsList urankingList) user
+                determineOwnedRankingButtonsDisplay (Data.Global.rankingsAsList (Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal)) user
             ]
+
         (Data.Users.NoWallet userId token userInfo userState) ->
             Element.column Grid.section <|
             [ if List.isEmpty urankingList then
@@ -2762,7 +2763,7 @@ ownedrankingbuttons urankingList user =
               else
                 Element.el Heading.h5 <| Element.text "Your Created Rankings:"
                 , Element.column (Card.simple ++ Grid.simple) <|
-                determineOwnedRankingButtonsDisplay (Data.Global.rankingsAsList urankingList) user
+                determineOwnedRankingButtonsDisplay (Data.Global.rankingsAsList (Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal)) user
             ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
             Element.column Grid.section <|
@@ -2771,7 +2772,7 @@ ownedrankingbuttons urankingList user =
               else
                 Element.el Heading.h5 <| Element.text "Your Created Rankings:"
                 , Element.column (Card.simple ++ Grid.simple) <|
-                determineOwnedRankingButtonsDisplay (Data.Global.rankingsAsList urankingList) user
+                determineOwnedRankingButtonsDisplay (Data.Global.rankingsAsList (Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal)) user
             ]
         (Data.Users.Credited addr userId token userInfo userState) ->
             Element.column Grid.section <|
@@ -2780,7 +2781,7 @@ ownedrankingbuttons urankingList user =
               else
                 Element.el Heading.h5 <| Element.text "Your Created Rankings:"
                 , Element.column (Card.simple ++ Grid.simple) <|
-                determineOwnedRankingButtonsDisplay (Data.Global.rankingsAsList urankingList) user
+                determineOwnedRankingButtonsDisplay (Data.Global.rankingsAsList (Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal)) user
             ]
 
 
@@ -4039,7 +4040,7 @@ handleGlobalNoTokenView dataState userVal =
                                     ""
                                     ClickedRegister
                         , Element.text ("\n")
-                        , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Registered userId token userInfo))) (Data.Users.Registered userId token userInfo)
+                        , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Registered userId token userInfo userState))) (Data.Users.Registered userId token userInfo userState)
                         ]
         (_, _) ->
             Html.text ("Already have a token")
@@ -4297,7 +4298,7 @@ inputUserDetailsView dataState user =
         case dataState of
                 StateFetched sUsers sRankings dKind ->
                     let 
-                        userVal = Data.Users.Guest
+                        userVal = Data.Users.Guest userState
                     in
                     if Data.Users.isEmpty sUsers then
                         Framework.responsiveLayout [] <|
@@ -4338,7 +4339,7 @@ inputUserDetailsView dataState user =
                                 [ displayEnableEthereumBtn
                                 , Element.text "\n"
                                 , Element.el Heading.h4 <| Element.text "Create New User"
-                                , displayRegisterNewUser (Data.Users.Registered userId token userInfo) sUsers
+                                , displayRegisterNewUser (Data.Users.Registered userId token userInfo userState) sUsers
                                 , newuserConfirmPanel user (Data.Users.asList sUsers)
                                 ]
                 _ ->
