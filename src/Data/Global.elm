@@ -3,6 +3,7 @@
 module Data.Global exposing (Global(..)
     , UserRanking
     , GlobalState(..)
+    , listUserRankingsToGlobal
     , gotOthers
     , gotOwned
     , filteredSelected
@@ -75,6 +76,10 @@ asGlobal esUserRanking  gState =
 asEverySet : Global -> EverySet UserRanking
 asEverySet (Global esGlobal globalState)  = 
      esGlobal
+
+listUserRankingsToGlobal : List UserRanking -> GlobalState -> Global 
+listUserRankingsToGlobal lUR gState =
+    Global (EverySet.fromList lUR) gState
 
 
 --although this refers to 'selected' the data types all relate to Global - so use here

@@ -674,7 +674,7 @@ update msg model =
                                         newDataState = StateUpdated sUsers sRankings newDataKind
                                         newModel = 
                                                 AppOps walletState newDataState  
-                                                --(Data.Selected.resultView (Data.Selected.gotStatus sSelected)) 
+                                                user 
                                                 uiState
                                                 SR.Types.StopSubscription txRec
                                     in
@@ -697,10 +697,10 @@ update msg model =
                             case dKind of 
                                 Selected sSelected ->
                                     let
-                                        newDataKind = Selected (Data.Selected.handleUndecided sSelected  sSelected playerUP challengerUP sUsers)
+                                        newDataKind = Selected (Data.Selected.handleUndecided sSelected playerUP challengerUP)
                                         newDataState = StateUpdated sUsers sRankings newDataKind
                                         newModel = 
-                                                AppOps walletState newDataState
+                                                AppOps walletState newDataState user
                                                 uiState
                                                 --(Data.Selected.resultView (Data.Selected.gotStatus sSelected)) 
                                                 SR.Types.StopSubscription txRec
@@ -756,7 +756,8 @@ update msg model =
 
                             _ = Debug.log "toGlobal now" "stateupdated"
                         in
-                        ( AppOps walletState newDataState SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+                        ( AppOps walletState newDataState user SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+
                 (Data.Users.NoWallet userId token userInfo userState) ->
                     (model, Cmd.none)
                 (Data.Users.NoCredit addr userId token userInfo userState) ->
@@ -851,13 +852,13 @@ update msg model =
             (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | password = updateField} userState) uiState subState txRec, Cmd.none)
 
         (UserDescInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-           (AppOps walletState dataState (Data.Users.Registered userId token (Data.Users.updatedDesc updateField) userState) uiState subState txRec, Cmd.none)
+           (AppOps walletState dataState (Data.Users.Registered userId token (Data.Users.updatedDesc userInfo updateField) userState) uiState subState txRec, Cmd.none)
 
         (UserEmailInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-            (AppOps walletState dataState (Data.Users.Registered userId token (Data.Users.updatedDesc updateField) userState) uiState subState txRec, Cmd.none)
+            (AppOps walletState dataState (Data.Users.Registered userId token (Data.Users.updatedDesc userInfo updateField) userState) uiState subState txRec, Cmd.none)
 
         (UserMobileInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-            (AppOps walletState dataState (Data.Users.Registered userId token (Data.Users.updatedDesc updateField) userState) uiState subState txRec, Cmd.none)
+            (AppOps walletState dataState (Data.Users.Registered userId token (Data.Users.updatedDesc userInfo updateField) userState) uiState subState txRec, Cmd.none)
 
         -- currently if the User is not 'Registered' do nothing
         (UserMobileInputChg updateField, AppOps walletState dataState _ uiState subState txRec) ->
@@ -1020,46 +1021,48 @@ update msg model =
 
 
         (ReturnedFromDeletedRankingFromGlobalList response, AppOps walletState dataState user uiState subState txRec )  ->
-            let 
-                _ = Debug.log "Result response " response
-            in
-            case (Data.Rankings.handleServerDeletedRanking response) of
-                (sRanking, "Success") ->
-                    case dataState of 
-                        StateUpdated sUsers sRankings dKind ->
-                            case dKind of
-                                Global sGlobal  ->
-                                            let
-                                                newDataKind = Global sGlobal 
-                                                newDataState = StateFetched sUsers sRankings newDataKind
+            (model, Cmd.none)
+            -- todo: fix for fauna
+            -- let 
+            --     _ = Debug.log "Result response " response
+            -- in
+            -- case (Data.Rankings.handleServerDeletedRanking response) of
+            --     (sRanking, "Success") ->
+            --         case dataState of 
+            --             StateUpdated sUsers sRankings dKind ->
+            --                 case dKind of
+            --                     Global sGlobal  ->
+            --                                 let
+            --                                     newDataKind = Global sGlobal 
+            --                                     newDataState = StateFetched sUsers sRankings newDataKind
                                                 
-                                                _ = Debug.log "Ranking removed on return from list updated? " Data.Global.asList sGlobal
+            --                                     _ = Debug.log "Ranking removed on return from list updated? " Data.Global.asList sGlobal
                                                 
-                                            in
-                                                ( AppOps walletState newDataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+            --                                 in
+            --                                     ( AppOps walletState newDataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription emptyTxRecord, Cmd.none )
                                         
-                                _ -> 
-                                            let 
-                                                _ = Debug.log "11 - dataState should be Global" dataState
-                                            in
-                                                (model, Cmd.none)
-                        _ -> 
-                            (model, Cmd.none)
+            --                     _ -> 
+            --                                 let 
+            --                                     _ = Debug.log "11 - dataState should be Global" dataState
+            --                                 in
+            --                                     (model, Cmd.none)
+            --             _ -> 
+            --                 (model, Cmd.none)
 
-                (sRanking, "404") ->
-                        case dataState of
-                            StateUpdated sUsers sRankings dKind -> 
-                                case dKind of 
-                                        Global sGlobal  ->
-                                            (AppOps walletState dataState user SR.Types.UIUnableToFindGlobalRankings SR.Types.StopSubscription emptyTxRecord, Cmd.none)
-                                        _ ->
-                                            (model, Cmd.none)
-                            _ ->
-                                (model, Cmd.none)
+            --     (sRanking, "404") ->
+            --             case dataState of
+            --                 StateUpdated sUsers sRankings dKind -> 
+            --                     case dKind of 
+            --                             Global sGlobal  ->
+            --                                 (AppOps walletState dataState user SR.Types.UIUnableToFindGlobalRankings SR.Types.StopSubscription emptyTxRecord, Cmd.none)
+            --                             _ ->
+            --                                 (model, Cmd.none)
+            --                 _ ->
+            --                     (model, Cmd.none)
                 
-                -- todo: add more error conditions
-                (_, _) ->
-                    (model, Cmd.none)    
+            --     -- todo: add more error conditions
+            --     (_, _) ->
+            --         (model, Cmd.none)    
                 
 
         (WatchTxHash (Ok txHash), AppOps walletState dataState user uiState subState txRec ) ->
@@ -2797,10 +2800,6 @@ determineOwnedRankingButtonsDisplay lranking user =
 
 memberrankingbuttons : List Data.Global.UserRanking -> Data.Users.User -> Element Msg
 memberrankingbuttons urankingList user =
-    let
-        newRankingList =
-            Data.Global.rankingsAsList urankingList
-    in
     case user of
         Data.Users.Guest userState->
             Element.text ""
@@ -2808,25 +2807,25 @@ memberrankingbuttons urankingList user =
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertMemberRankingList <| Data.Global.rankingsAsList urankingList
+                insertMemberRankingList <| (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
             ]
         (Data.Users.NoWallet userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertMemberRankingList <| Data.Global.rankingsAsList urankingList
+                insertMemberRankingList <| (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
             ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertMemberRankingList <| Data.Global.rankingsAsList urankingList
+                insertMemberRankingList <| (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
             ]
         (Data.Users.Credited addr userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertMemberRankingList <| Data.Global.rankingsAsList urankingList
+                insertMemberRankingList <| (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
             ]
 
 
@@ -2837,32 +2836,33 @@ otherrankingbuttons urankingList user =
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "View Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList (Data.Global.asRankings urankingList)
+            --List Data.Rankings.Ranking 
+                insertNeitherOwnerNorMemberRankingList (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
             ]
         (Data.Users.Registered userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList (Data.Global.asRankings urankingList)
+                insertNeitherOwnerNorMemberRankingList (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
             ]
 
         (Data.Users.NoWallet userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList (Data.Global.asRankings urankingList)
+                insertNeitherOwnerNorMemberRankingList (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
             ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList (Data.Global.asRankings urankingList)
+                insertNeitherOwnerNorMemberRankingList (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
             ]
         (Data.Users.Credited addr userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList (Data.Global.asRankings urankingList)
+                insertNeitherOwnerNorMemberRankingList (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
             ]
 
 

@@ -792,101 +792,103 @@ handleWon (SelectedRanking esUPlayer rnkId status sPlayers sState)  uplayer upCh
 
 
 --handleLost : Selected -> SR.Types.AppInfo -> (Selected, SR.Types.AppInfo)
-handleLost (SelectedRanking esUPlayer rnkId status sPlayers sState) appInfo =
-    let
-        whoHigher =
-            isOpponentHigherRank appInfo.player appInfo.challenger
-    in
-    case whoHigher of
-        OpponentRankHigher ->
-            let
-                supdatedPlayer =
-                    changedRank appInfo.player appInfo.player.player.rank (asSelected esUPlayer rnkId status sPlayers sState)
+--handleLost (SelectedRanking esUPlayer rnkId status sPlayers sState) appInfo =
+handleLost : Selected -> UserPlayer -> UserPlayer -> Data.Users.Users -> Selected
+handleLost (SelectedRanking esUPlayer rnkId status sPlayers sState)  uplayer upChallenger sUsers =
+--todo: fix
+    empty
+    -- let
+    --     whoHigher =
+    --         isOpponentHigherRank appInfo.player appInfo.challenger
+    -- in
+    -- case whoHigher of
+    --     OpponentRankHigher ->
+    --         let
+    --             supdatedPlayer =
+    --                 changedRank appInfo.player appInfo.player.player.rank (asSelected esUPlayer rnkId status sPlayers sState)
 
-                supdatedPlayerAndChallenger =
-                    changedRank  appInfo.challenger appInfo.challenger.player.rank  supdatedPlayer
+    --             supdatedPlayerAndChallenger =
+    --                 changedRank  appInfo.challenger appInfo.challenger.player.rank  supdatedPlayer
 
-                --update current player now
-                newUserPlayer =
-                    appInfo.player
+    --             --update current player now
+    --             newUserPlayer =
+    --                 appInfo.player
 
-                newUserPlayerPlayer =
-                    appInfo.player.player
+    --             newUserPlayerPlayer =
+    --                 appInfo.player.player
 
-                newPlayerUpdated =
-                    { newUserPlayerPlayer | uid = "" }
+    --             newPlayerUpdated =
+    --                 { newUserPlayerPlayer | uid = "" }
 
-                newUserPlayerUpdated =
-                    { newUserPlayer | player = newPlayerUpdated }
+    --             newUserPlayerUpdated =
+    --                 { newUserPlayer | player = newPlayerUpdated }
 
-                newAppInfo =
-                    { appInfo | player = newUserPlayerUpdated, challenger = emptyUserPlayer }
+    --             newAppInfo =
+    --                 { appInfo | player = newUserPlayerUpdated, challenger = emptyUserPlayer }
 
-            in
-            --nb. higher rank is a lower number and vice versa!
-            (supdatedPlayerAndChallenger, newAppInfo)
+    --         in
+    --         --nb. higher rank is a lower number and vice versa!
+    --         (supdatedPlayerAndChallenger, newAppInfo)
             
 
-        OpponentRankLower ->
-            --nb. higher rank is a lower number and vice versa!
-            let
-                supdatedPlayer =  
-                    changedRank appInfo.player appInfo.challenger.player.rank (asSelected esUPlayer rnkId status sPlayers sState)
+    --     OpponentRankLower ->
+    --         --nb. higher rank is a lower number and vice versa!
+    --         let
+    --             supdatedPlayer =  
+    --                 changedRank appInfo.player appInfo.challenger.player.rank (asSelected esUPlayer rnkId status sPlayers sState)
                     
 
-                supdatedPlayerAndChallenger =
-                    supdatedPlayer
-                    |> changedRank appInfo.challenger (appInfo.challenger.player.rank + 1)
+    --             supdatedPlayerAndChallenger =
+    --                 supdatedPlayer
+    --                 |> changedRank appInfo.challenger (appInfo.challenger.player.rank + 1)
 
-                --update current player now
-                newUserPlayer =
-                    appInfo.player
+    --             --update current player now
+    --             newUserPlayer =
+    --                 appInfo.player
 
-                newUserPlayerPlayer =
-                    appInfo.player.player
+    --             newUserPlayerPlayer =
+    --                 appInfo.player.player
 
-                newUserPlayerPlayerUpdated =
-                    { newUserPlayerPlayer | uid = "" }
+    --             newUserPlayerPlayerUpdated =
+    --                 { newUserPlayerPlayer | uid = "" }
 
-                newUserPlayerUpdated =
-                    { newUserPlayer | player = newUserPlayerPlayerUpdated }
+    --             newUserPlayerUpdated =
+    --                 { newUserPlayer | player = newUserPlayerPlayerUpdated }
 
-                newAppInfo =
-                    { appInfo | player = newUserPlayerUpdated, challenger = emptyUserPlayer }
+    --             newAppInfo =
+    --                 { appInfo | player = newUserPlayerUpdated, challenger = emptyUserPlayer }
 
-            in
-            (supdatedPlayerAndChallenger, newAppInfo)
+    --         in
+    --         (supdatedPlayerAndChallenger, newAppInfo)
 
 
---handleUndecided : Selected -> SR.Types.AppInfo -> (Selected, SR.Types.AppInfo)
-handleUndecided (SelectedRanking esUPlayer rnkId status sPlayers sState) appInfo =
+handleUndecided : Selected -> UserPlayer -> UserPlayer -> Selected
+handleUndecided (SelectedRanking esUPlayer rnkId ownerStatus sPlayers sState) playerUP challengerUP =
             let
+
+                originalSelectedSet = (SelectedRanking esUPlayer rnkId ownerStatus sPlayers sState)
                 supdatedPlayer =  
-                            changedRank appInfo.player appInfo.player.player.rank (asSelected esUPlayer rnkId status sPlayers sState)
+                    changedRank playerUP playerUP.player.rank (asSelected esUPlayer rnkId ownerStatus sPlayers sState)
                            
                 supdatedPlayerAndChallenger =
                     supdatedPlayer
-                    |> changedRank appInfo.challenger (appInfo.challenger.player.rank)
-
-
-                --update current player now
-                newUserPlayer =
-                    appInfo.player
+                    |> changedRank challengerUP (challengerUP.player.rank)
 
                 newUserPlayerPlayer =
-                    appInfo.player.player
+                    playerUP.player
 
                 newPlayerPlayerUpdated =
-                    { newUserPlayerPlayer | uid = "" }
+                    { newUserPlayerPlayer | challengerid = "" }
 
                 newUserPlayerUpdated =
-                    { newUserPlayer | player = newPlayerPlayerUpdated }
+                    { playerUP | player = newPlayerPlayerUpdated }
 
-                newAppInfo =
-                    { appInfo | player = newUserPlayerUpdated, challenger = emptyUserPlayer }
-
+                updatedSet = removeUserPlayer playerUP originalSelectedSet
+                    |> addUserPlayer newUserPlayerUpdated
+                    |> asEverySet
+                    
             in
-            (supdatedPlayerAndChallenger, newAppInfo)
+                SelectedRanking updatedSet rnkId ownerStatus sPlayers sState
 
 
 --isOpponentHigherRank : UserPlayer -> SR.Types.Opponent -> SR.Types.OpponentRelativeRank
