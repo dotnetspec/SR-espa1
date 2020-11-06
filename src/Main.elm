@@ -483,7 +483,7 @@ update msg model =
                                     newDataState = StateFetched sUsers sRankings newDataKind
                             
                                 in
-                                    ( AppOps SR.Types.WalletOpened newDataState SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, 
+                                    ( AppOps SR.Types.WalletOpened newDataState user SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, 
                                     fetchedSingleRanking rnkidstr )
 
                             _ ->
@@ -618,7 +618,7 @@ update msg model =
                         )
                         
                 (Data.Selected.Lost playerUP challengerUP) ->                                     
-                        ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState SR.Types.UIWaitingForTxReceipt 
+                        ( AppOps SR.Types.WalletWaitingForTransactionReceipt dataState user SR.Types.UIWaitingForTxReceipt 
                          SR.Types.StopSubscription { txRec | txSentry = newSentry }
                         , sentryCmd
                         )
@@ -645,7 +645,7 @@ update msg model =
                                         newDataKind = Selected (Data.Selected.handleWon sSelected playerUP challengerUP sUsers)
                                         newDataState = StateUpdated sUsers sRankings newDataKind
                                         newModel = 
-                                                AppOps walletState newDataState 
+                                                AppOps walletState newDataState user
                                                 --(Data.Selected.resultView (Data.Selected.gotStatus sSelected)) 
                                                 uiState
                                                 SR.Types.StopSubscription txRec
@@ -2049,9 +2049,12 @@ handleWalletWaitingForUserInput msg walletState dataState user txRec =
                 _ =
                     Debug.log "handleWalletWaitingForUserInput tx ok" txReceipt
             in
-            AppOps walletState dataState user SR.Types.UIRenderAllRankings 
-            SR.Types.StopSubscription { txRec | txReceipt = Just txReceipt } 
-            |> update (ProcessResult Data.Selected.Won)
+                case (dataState) of
+                    StateFetched  sUsers sRankings 
+                        (Selected (Data.Selected.SelectedRanking esUP rnkId ownerStatus sPlayers (Data.Selected.EnteredResult resultOfMatch))) ->
+                            AppOps walletState dataState user SR.Types.UIRenderAllRankings 
+                            SR.Types.StopSubscription { txRec | txReceipt = Just txReceipt } 
+                            |> update (ProcessResult resultOfMatch)
 
 
         WatchTxReceipt (Err err) ->
