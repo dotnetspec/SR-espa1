@@ -2420,14 +2420,22 @@ view model =
                 (StateFetched sUsers sRankings dKind, Data.Users.Guest Data.Users.CreateNewUser) ->
                     registerNewUserView user sUsers
 
-                (StateFetched sUsers sRankings (Global sGlobal ), _) ->
+                (StateFetched sUsers sRankings (Global sGlobal ), Data.Users.Guest Data.Users.General) ->
                     gotUserView user sUsers sGlobal
                             
                 (StateFetched sUsers sRankings (Selected _ ), _) ->
                      greetingView <| "ToDo: Select w/o a token should be possible"
-                
-                -- (StateFetched sUsers sRankings dKind, userVal) ->
-                --     handleGlobalNoTokenView dataState userVal
+      
+                ( StateFetched _ _ (Global _), Data.Users.Registered _ _ _ _ ) ->
+                    Html.text ("Not yet implemented")
+                ( StateFetched _ _ (Global _), Data.Users.NoWallet _ _ _ _ ) ->
+                    Html.text ("Not yet implemented")
+                ( StateFetched _ _ (Global _), Data.Users.NoCredit _ _ _ _ _ ) ->
+                    Html.text ("Not yet implemented")
+                ( StateFetched _ _ (Global _), Data.Users.Credited _ _ _ _ _ ) ->
+                    Html.text ("Not yet implemented")
+                ( StateFetched _ _ (Global _), Data.Users.Guest Data.Users.UpdateProfile ) ->
+                    Html.text ("Not yet implemented")
 
                 (StateUpdated _ _ _, _) ->
                     Html.text ("No User - No Update")
