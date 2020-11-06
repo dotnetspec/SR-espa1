@@ -2845,33 +2845,33 @@ otherrankingbuttons urankingList user =
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "View Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-            --List Data.Rankings.Ranking 
-                insertNeitherOwnerNorMemberRankingList (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
+                List.map neitherOwnerNorMemberRankingInfoBtn 
+                    (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
             ]
         (Data.Users.Registered userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
+                List.map neitherOwnerNorMemberRankingInfoBtn  (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
             ]
 
         (Data.Users.NoWallet userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
+                List.map neitherOwnerNorMemberRankingInfoBtn  (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
             ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
+                List.map neitherOwnerNorMemberRankingInfoBtn  (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
             ]
         (Data.Users.Credited addr userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Other Rankings: "
             , Element.column (Card.simple ++ Grid.simple) <|
-                insertNeitherOwnerNorMemberRankingList (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
+                List.map neitherOwnerNorMemberRankingInfoBtn  (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
             ]
 
 
@@ -2953,18 +2953,6 @@ memberRankingInfoBtn ranking =
                             (Element.text  "              Deleted")
                 }
             ]
-
-
-insertNeitherOwnerNorMemberRankingList : List Data.Rankings.Ranking -> List (Element Msg)
-insertNeitherOwnerNorMemberRankingList rnkgInfoList =
-    let
-        mapOutRankingList =
-            List.map
-                neitherOwnerNorMemberRankingInfoBtn
-                rnkgInfoList
-    in
-    mapOutRankingList
-
 
 neitherOwnerNorMemberRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
 neitherOwnerNorMemberRankingInfoBtn rankingobj =
