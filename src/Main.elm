@@ -2612,7 +2612,7 @@ gotUserView userVal sUsers sGlobal =
                     Element.text ("SportRank - Welcome Guest")
                     , displayEnableEthereumBtn
                     , displayForToken userVal sGlobal
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal Data.Users.Guest)) Data.Users.Guest
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userState))) (Data.Users.Guest userState)
                 ]
         (Data.Users.Registered userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
