@@ -85,7 +85,7 @@ type DataKind
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( AppOps SR.Types.WalletStateLocked AllEmpty Data.Users.Guest SR.Types.UILoading  SR.Types.Subscribe emptyTxRecord
+    ( AppOps SR.Types.WalletStateLocked AllEmpty (Data.Users.Guest Data.Users.General) SR.Types.UILoading  SR.Types.Subscribe emptyTxRecord
     , Cmd.batch
         [ 
         allUsers
@@ -2126,15 +2126,17 @@ handleTxSubMsg subMsg =
 
 gotWalletAddrApplyToUser : Data.Users.User -> Eth.Types.Address -> Data.Users.User
 gotWalletAddrApplyToUser user uaddr =
+    -- todo: fix - no  idea what's happening here currently
+    -- go from addr to UID
     case user of
             Data.Users.Guest userState->
                 user
             
             (Data.Users.Registered userId token userInfo userState) ->
-                { user | user = Data.Users.NoCredit uaddr userId token userInfo }
+                Data.Users.NoCredit uaddr userId token userInfo userState
 
             (Data.Users.NoWallet userId token userInfo userState) ->
-                    { user | user = Data.Users.NoCredit uaddr userId token userInfo }
+                Data.Users.NoCredit uaddr userId token userInfo userState
                 
             (Data.Users.NoCredit addr userId token userInfo userState) ->
                 user
@@ -2490,7 +2492,7 @@ generalLoginView userVal sUsers sGlobal =
             , displayRegisterBtnIfNewUser
                 ""
                 ClickedRegister
-            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal Data.Users.Guest)) Data.Users.Guest
+            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userState))) (Data.Users.Guest userState)
             ]
 
         (Data.Users.Registered userId token userInfo userState) ->
@@ -2528,7 +2530,7 @@ generalLoginView userVal sUsers sGlobal =
             , displayRegisterBtnIfNewUser
                 ""
                 ClickedRegister
-            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Registered userId token userInfo))) (Data.Users.Registered userId token userInfo) 
+            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Registered userId token userInfo userState))) (Data.Users.Registered userId token userInfo userState) 
             ]
 
         (Data.Users.NoWallet userId token userInfo userState) ->
@@ -3370,7 +3372,7 @@ confirmChallengebutton model =
                     Element.text <| " No User3"
                 (Data.Users.Registered userId token userInfo userState, AllEmpty) ->
                     Element.text <| " No Data"
-                (Data.Users.Registered userId token userInfo userState, Selected sSelected) ->
+                (Data.Users.Registered userId token userInfo userState, StateFetched sUsers sRankings (Selected sSelected)) ->
                     Element.text <| "implement here"
 
                      -- Element.column Grid.section <|
@@ -3399,7 +3401,7 @@ confirmChallengebutton model =
                     --             ]
                     --         ]
                     --     ]
-                (Data.Users.Registered userId token userInfo userState, Global sGlobal) ->
+                (Data.Users.Registered userId token userInfo userState, StateFetched sUsers sRankings (Global sGlobal)) ->
                     Element.text <| " Not in Selected"
                    
 
@@ -3690,7 +3692,8 @@ newuserConfirmPanel  user luser =
                                 { onPress = Just <| Cancel
                                 , label = Element.text "Cancel"
                                 }
-                            , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput (Data.Users.Registered userId token userInfo)  luser False)) <|
+                            , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput 
+                            (Data.Users.Registered userId token userInfo userState)  luser False)) <|
                                 { onPress = Just <| ClickedConfirmedRegisterNewUser
                                 , label = Element.text "Register"
                                 }
@@ -3993,8 +3996,7 @@ handleGlobalNoTokenView dataState userVal =
                                     ""
                                     ClickedRegister
                         , Element.text ("\n")
-                        --, otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal Data.Users.Guest)) Data.Users.Guest
-                        , otherrankingbuttons (Data.Global.gotOthers sGlobal Data.Users.Guest) Data.Users.Guest
+                        , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userState))) (Data.Users.Guest userState)
                         ]
 
         (StateFetched sUsers sRankings dKind, Data.Users.Registered userId token userInfo userState) ->
