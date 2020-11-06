@@ -629,6 +629,9 @@ update msg model =
                             , sentryCmd
                             )
 
+                Data.Selected.NoResult ->
+                    (Failure "No Result", Cmd.none)
+
 
         (ProcessResult result, AppOps walletState dataState user uiState subState txRec )  ->               
             let
@@ -718,6 +721,9 @@ update msg model =
                                 _ = Debug.log "5 - dataState in undecided" dataState
                             in
                                 (model, Cmd.none)
+
+                Data.Selected.NoResult ->
+                    (Failure "No Result", Cmd.none)
 
 
         (ClickedCreateNewLadder, AppOps walletState dataState appState uiState subState txRec) ->
@@ -1285,11 +1291,6 @@ update msg model =
                                         -- else
                                         --     ( AppOps SR.Types.WalletOperational dataState appInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
-                                    _ -> 
-                                        let 
-                                            _ = Debug.log "6 - dataState should be Global" dataState
-                                        in
-                                            (model, Cmd.none)
                         _ -> 
                                     let 
                                         _ = Debug.log "6 - dataState" dataState
@@ -1333,8 +1334,6 @@ update msg model =
                                         _ = Debug.log "7.1 - dataState" dataState
                                     in
                                         (model, Cmd.none)
-                _ -> 
-                    (model, Cmd.none)
 
 
         (ClickedJoinSelected,  AppOps walletState dataState user uiState subState txRec ) ->
@@ -2432,23 +2431,9 @@ view model =
 
                 (StateUpdated _ _ _, _) ->
                     Html.text ("No User - No Update")
-                
-                (_, _) ->
-                    Html.text ("View fell thru")
-
+           
         Failure str ->
            failureView str
-
---  Guest UserState
---     | Registered UserId Token UserInfo UserState
---     | NoWallet UserId Token UserInfo UserState
---     | NoCredit Eth.Types.Address UserId Token UserInfo UserState
---     | Credited Eth.Types.Address UserId Token UserInfo UserState
-
--- type UserState = 
---     General
---     | CreateNewUser
---     | UpdateProfile
 
 -- view helpers
 
