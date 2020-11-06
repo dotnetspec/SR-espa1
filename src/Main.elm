@@ -2495,7 +2495,7 @@ generalLoginView userVal sUsers sGlobal =
             , displayRegisterBtnIfNewUser
                 ""
                 ClickedRegister
-            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userState))) (Data.Users.Guest userState)
+            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userState)))
             ]
 
         (Data.Users.Registered userId token userInfo userState) ->
@@ -2533,7 +2533,7 @@ generalLoginView userVal sUsers sGlobal =
             , displayRegisterBtnIfNewUser
                 ""
                 ClickedRegister
-            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Registered userId token userInfo userState))) (Data.Users.Registered userId token userInfo userState) 
+            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Registered userId token userInfo userState))) 
             ]
 
         (Data.Users.NoWallet userId token userInfo userState) ->
@@ -2615,7 +2615,7 @@ gotUserView userVal sUsers sGlobal =
                     Element.text ("SportRank - Welcome Guest")
                     , displayEnableEthereumBtn
                     , displayForToken userVal sGlobal
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userState))) (Data.Users.Guest userState)
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userState)))
                 ]
         (Data.Users.Registered userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
@@ -2623,7 +2623,7 @@ gotUserView userVal sUsers sGlobal =
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
                     , displayForToken userVal sGlobal
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal)) userVal
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
         (Data.Users.NoWallet userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
@@ -2631,7 +2631,7 @@ gotUserView userVal sUsers sGlobal =
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
                     , displayForToken userVal sGlobal
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal)) userVal
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
@@ -2639,7 +2639,7 @@ gotUserView userVal sUsers sGlobal =
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
                     , displayForToken userVal sGlobal
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal)) userVal
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
         (Data.Users.Credited addr userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
@@ -2647,7 +2647,7 @@ gotUserView userVal sUsers sGlobal =
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
                     , displayForToken userVal sGlobal
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal)) userVal
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
     
 
@@ -2838,42 +2838,14 @@ memberrankingbuttons urankingList user =
             ]
 
 
-otherrankingbuttons : List Data.Global.UserRanking -> Data.Users.User -> Element Msg
-otherrankingbuttons urankingList user =
-    case user of
-        Data.Users.Guest userState->
+otherrankingbuttons : List Data.Global.UserRanking -> Element Msg
+otherrankingbuttons urankingList =
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "View Rankings: "
-            , Element.column (Card.simple ++ Grid.simple) <|
-                List.map neitherOwnerNorMemberRankingInfoBtn 
-                    (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
+            , List.map (\ur -> ur.rankingInfo) urankingList
+                |> List.map neitherOwnerNorMemberRankingInfoBtn
+                |> Element.column (Card.simple ++ Grid.simple) 
             ]
-        (Data.Users.Registered userId token userInfo userState) ->
-            Element.column Grid.section <|
-            [ Element.el Heading.h5 <| Element.text "Other Rankings: "
-            , Element.column (Card.simple ++ Grid.simple) <|
-                List.map neitherOwnerNorMemberRankingInfoBtn  (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
-            ]
-
-        (Data.Users.NoWallet userId token userInfo userState) ->
-            Element.column Grid.section <|
-            [ Element.el Heading.h5 <| Element.text "Other Rankings: "
-            , Element.column (Card.simple ++ Grid.simple) <|
-                List.map neitherOwnerNorMemberRankingInfoBtn  (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
-            ]
-        (Data.Users.NoCredit addr userId token userInfo userState) ->
-            Element.column Grid.section <|
-            [ Element.el Heading.h5 <| Element.text "Other Rankings: "
-            , Element.column (Card.simple ++ Grid.simple) <|
-                List.map neitherOwnerNorMemberRankingInfoBtn  (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
-            ]
-        (Data.Users.Credited addr userId token userInfo userState) ->
-            Element.column Grid.section <|
-            [ Element.el Heading.h5 <| Element.text "Other Rankings: "
-            , Element.column (Card.simple ++ Grid.simple) <|
-                List.map neitherOwnerNorMemberRankingInfoBtn  (Data.Rankings.asList ( Data.Global.asRankings <| Data.Global.listUserRankingsToGlobal urankingList Data.Global.DisplayGlobal))
-            ]
-
 
 insertOwnedRankingList : List Data.Rankings.Ranking -> Data.Users.User -> List (Element Msg)
 insertOwnedRankingList lrankinginfo user =
@@ -3988,7 +3960,7 @@ handleGlobalNoTokenView dataState userVal =
                                     ""
                                     ClickedRegister
                         , Element.text ("\n")
-                        , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userState))) (Data.Users.Guest userState)
+                        , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userState)))
                         ]
 
         (StateFetched sUsers sRankings dKind, Data.Users.Registered userId token userInfo userState) ->
@@ -4031,7 +4003,7 @@ handleGlobalNoTokenView dataState userVal =
                                     ""
                                     ClickedRegister
                         , Element.text ("\n")
-                        , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Registered userId token userInfo userState))) (Data.Users.Registered userId token userInfo userState)
+                        , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Registered userId token userInfo userState)))
                         ]
         (_, _) ->
             Html.text ("Already have a token")

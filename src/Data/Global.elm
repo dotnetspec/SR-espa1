@@ -77,6 +77,7 @@ asEverySet : Global -> EverySet UserRanking
 asEverySet (Global esGlobal globalState)  = 
      esGlobal
 
+
 listUserRankingsToGlobal : List UserRanking -> GlobalState -> Global 
 listUserRankingsToGlobal lUR gState =
     Global (EverySet.fromList lUR) gState
