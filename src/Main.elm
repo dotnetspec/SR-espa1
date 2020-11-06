@@ -2055,6 +2055,16 @@ handleWalletWaitingForUserInput msg walletState dataState user txRec =
                             AppOps walletState dataState user SR.Types.UIRenderAllRankings 
                             SR.Types.StopSubscription { txRec | txReceipt = Just txReceipt } 
                             |> update (ProcessResult resultOfMatch)
+                    AllEmpty ->
+                        (Failure "WatchTxReceipt", Cmd.none)
+                    StateUpdated _ _ _ ->
+                        (Failure "WatchTxReceipt", Cmd.none)
+                    StateFetched _ _ (Global _) ->
+                        (Failure "WatchTxReceipt", Cmd.none)
+                    StateFetched _ _ (Selected (Data.Selected.SelectedRanking _ _ _ _ Data.Selected.DisplayRanking)) ->
+                        (Failure "WatchTxReceipt", Cmd.none)
+                    StateFetched _ _ (Selected (Data.Selected.SelectedRanking _ _ _ _ Data.Selected.EnteringResult)) ->
+                        (Failure "WatchTxReceipt", Cmd.none)
 
 
         WatchTxReceipt (Err err) ->
@@ -2417,8 +2427,8 @@ view model =
                 (StateFetched sUsers sRankings (Selected _ ), _) ->
                      greetingView <| "ToDo: Select w/o a token should be possible"
                 
-                (StateFetched sUsers sRankings dKind, userVal) ->
-                    handleGlobalNoTokenView dataState userVal
+                -- (StateFetched sUsers sRankings dKind, userVal) ->
+                --     handleGlobalNoTokenView dataState userVal
 
                 (StateUpdated _ _ _, _) ->
                     Html.text ("No User - No Update")
