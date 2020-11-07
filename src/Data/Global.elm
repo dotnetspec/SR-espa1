@@ -24,6 +24,7 @@ module Data.Global exposing (Global(..)
 
 import SR.Types
 import EverySet exposing (EverySet)
+import Set exposing (Set)
 import Internal.Types
 import Utils.MyUtils
 import SR.Defaults
@@ -140,37 +141,37 @@ gotRanking uranking =
 created : Data.Rankings.Rankings -> Data.Users.Users -> Global
 created sRankings sUser =
     let
-        luser = Data.Users.asList sUser
-        esUserRanking = List.map (createdUserRanking luser) (Data.Rankings.asList sRankings)
+        esUserRanking = List.map (createdUserRanking sUser) (Data.Rankings.asList sRankings)
                         |> Utils.MyUtils.removeNothingFromList
                         |> EverySet.fromList 
     in
         asGlobal esUserRanking DisplayGlobal
     
 
-createdUserRanking : List Data.Users.User -> Data.Rankings.Ranking -> Maybe UserRanking
-createdUserRanking luser ranking =
+createdUserRanking : Data.Users.Users -> Data.Rankings.Ranking -> Maybe UserRanking
+createdUserRanking sUser ranking =
     let
-        --todo: fix
-        userOwner = Nothing
-            --Data.Users.gotUserFromUserList luser ranking.rankingownerid
-            
-            
+        luserId = List.map (\x -> Data.Users.gotUserIdFromUser x ) <| Data.Users.asList sUser
+        userOwnerId = List.filter (\x -> x == ranking.rankingownerid) <| luserId
     in
-        case userOwner of
-            Nothing ->
-                Nothing 
-            Just uOwner ->  
+        case userOwnerId of
+            id :: nothingHere ->
                 let
-                     newOwnedRanking =
-                        { rankingInfo = ranking
-                        , userInfo = uOwner
-                        }
+                    m_user = Data.Users.gotUser sUser (Data.Users.convertedStrToUserId id)
                 in
-                    Just newOwnedRanking
-
-    
-
+                    case m_user of
+                        Nothing ->
+                            Nothing 
+                        Just user -> 
+                            let
+                                newOwnedRanking =
+                                    { rankingInfo = ranking
+                                    , userInfo = user
+                                    }
+                            in 
+                                Just newOwnedRanking
+            [] ->
+                Nothing
 
 filteredSelected : String -> List Data.Rankings.Ranking -> List Data.Rankings.Ranking
 filteredSelected rankingid lrankinginfo =

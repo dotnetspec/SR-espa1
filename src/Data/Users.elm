@@ -2,12 +2,14 @@
 module Data.Users exposing (Users
     , User(..)
     , UserState(..)
+    , UserId
     , FUser
     , UserInfo
-    , UserId
     , Token
     , UserName
     , Password
+    , gotUserIdFromUser
+    , convertedStrToUserId
     , updatedDesc
     , updatedEmail
     , updatedMobile
@@ -99,6 +101,25 @@ type alias ExtraUserInfo =
     , email : String
     , mobile : String
     }
+
+convertedStrToUserId : String -> UserId 
+convertedStrToUserId uid =
+    uid
+
+gotUserIdFromUser : User -> String 
+gotUserIdFromUser user = 
+    case user of 
+        Guest _ ->
+            ""
+        Registered uid _ _ _ ->
+            uid
+        NoWallet uid _ _ _ ->
+            uid
+        NoCredit _ uid _ _ _ ->
+            uid
+        Credited _ uid _ _ _ ->
+            uid
+
 
 
 updatedDesc : UserInfo -> String -> UserInfo 

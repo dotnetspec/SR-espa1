@@ -1756,7 +1756,9 @@ updateWithReceivedUsers model response =
                         --lFromFToUser = List.map Data.Users.convertFUserToUser filteredFUserList
                         lFromFToUser = List.map Data.Users.convertFUserToUser filteredFUserList
                         newsUsers = Data.Users.asUsers (EverySet.fromList lFromFToUser)
+                        
                         newDataKind = Global (Data.Global.created sRankings newsUsers)
+                        
                         newDataState = StateFetched newsUsers sRankings newDataKind
                     in
                         AppOps walletState newDataState user uiState subState txRec
