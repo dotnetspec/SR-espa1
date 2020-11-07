@@ -168,7 +168,6 @@ type Msg
     --| ResetRejectedNewUserToShowGlobal
     | LadderNameInputChg String
     | LadderDescInputChg String
-    --| UserNameInputChg String
     | NewUserPasswordInputChg String
     | NewUserDescInputChg String
     | NewUserEmailInputChg String
@@ -852,13 +851,13 @@ update msg model =
         -- currently expecting user to be 'Registered' at this point for the purpose of inputting/updating details
         -- might create a new 'Registering' variant(?). Or sort user type before you get here:
         (UserNameInputChg updateField, AppOps walletState dataState (Data.Users.Guest userInfo userState) uiState subState txRec) ->
-            (AppOps walletState dataState (Data.Users.Guest {userInfo | username = updateField} userState) uiState subState txRec, Cmd.none)
+            (AppOps walletState dataState (Data.Users.Guest {userInfo | username = userInfo.username ++ updateField} userState) uiState subState txRec, Cmd.none)
 
         (UserNameInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-            (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | username = updateField} userState) uiState subState txRec, Cmd.none)
+            (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | username = userInfo.username ++ updateField} userState) uiState subState txRec, Cmd.none)
     
         (UserPasswordInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-            (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | password = updateField} userState) uiState subState txRec, Cmd.none)
+            (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | password = userInfo.username ++ updateField} userState) uiState subState txRec, Cmd.none)
 
         (UserDescInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
            (AppOps walletState dataState (Data.Users.Registered userId token (Data.Users.updatedDesc userInfo updateField) userState) uiState subState txRec, Cmd.none)
@@ -2426,7 +2425,7 @@ view model =
                     registerNewUserView user sUsers
 
                 (StateFetched sUsers sRankings (Global sGlobal ), Data.Users.Guest userInfo Data.Users.General) ->
-                    gotUserView user sUsers sGlobal
+                    generalLoginView user sUsers sGlobal
                             
                 (StateFetched sUsers sRankings (Selected _ ), _) ->
                      greetingView <| "ToDo: Select w/o a token should be possible"
@@ -2462,92 +2461,51 @@ resultView  status =
             Data.Selected.UserIsNeitherOwnerNorMember -> 
                 SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
 
+
 generalLoginView : Data.Users.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
 generalLoginView userVal sUsers sGlobal =
-    case userVal of 
+    case userVal of
         Data.Users.Guest userInfo userState ->
-            Framework.responsiveLayout [] <| Element.column Framework.container
-            [ Element.el (Heading.h5) <|
-                Element.text ("SportRank - Welcome")
-            , displayEnableEthereumBtn
-            , Element.text ("\n")
-            --, Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
-            , Element.column Grid.section <|
-                [ Element.el [] <| Element.text ""
-                --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-                , Element.wrappedRow (Card.fill ++ Grid.simple)
-                    [ Element.column
-                        Grid.simple
-                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                            { onChange = UserNameInputChg
-                            , text = ""
-                            --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
-                            , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
-                            }
-                        --, nameValidView appInfo sUsers
-                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                            { onChange = NewUserPasswordInputChg
-                            , text = ""
-                            , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                            }
-                        ]
-                    ]
+            Framework.responsiveLayout [] <| Element.column Framework.container 
+                [ Element.el (Heading.h5) <|
+                    Element.text ("SportRank - Welcome Guest")
+                    , displayEnableEthereumBtn
+                    , displayForToken userVal sGlobal
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userInfo userState)))
                 ]
-            , infoBtn "Log In" ClickedLogInUser
-            , Element.text ("\n")
-            , displayRegisterBtnIfNewUser
-                ""
-                ClickedRegister
-            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userInfo userState)))
-            ]
-
         (Data.Users.Registered userId token userInfo userState) ->
-            Framework.responsiveLayout [] <| Element.column Framework.container
-            [ Element.el (Heading.h5) <|
-                Element.text ("SportRank - Welcome")
-            , displayEnableEthereumBtn
-            , Element.text ("\n")
-            --, Element.el [ Font.color SR.Types.colors.red, Font.alignLeft ] <| Element.text ("\n Please Register Below:")
-            , Element.column Grid.section <|
-                [ Element.el [] <| Element.text ""
-                --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-                , Element.wrappedRow (Card.fill ++ Grid.simple)
-                    [ Element.column
-                        Grid.simple
-                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                            { onChange = UserNameInputChg
-                            , text = userInfo.username
-                            --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
-                            , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
-                            }
-                        --, nameValidView appInfo sUsers
-                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                            { onChange = NewUserPasswordInputChg
-                            , text = userInfo.password
-                            , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                            }
-                        ]
-                    ]
+            Framework.responsiveLayout [] <| Element.column Framework.container 
+                [ Element.el (Heading.h5) <|
+                    Element.text ("SportRank - Welcome " ++ userInfo.username)
+                    , displayEnableEthereumBtn
+                    , displayForToken userVal sGlobal
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
-            , infoBtn "Log In" ClickedLogInUser
-            , Element.text ("\n")
-            , displayRegisterBtnIfNewUser
-                ""
-                ClickedRegister
-            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Registered userId token userInfo userState))) 
-            ]
-
         (Data.Users.NoWallet userId token userInfo userState) ->
-            Html.text "Irrelevant view"
+            Framework.responsiveLayout [] <| Element.column Framework.container 
+                [ Element.el (Heading.h5) <|
+                    Element.text ("SportRank - Welcome " ++ userInfo.username)
+                    , displayEnableEthereumBtn
+                    , displayForToken userVal sGlobal
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
-            Html.text "Irrelevant view"
+            Framework.responsiveLayout [] <| Element.column Framework.container 
+                [ Element.el (Heading.h5) <|
+                    Element.text ("SportRank - Welcome " ++ userInfo.username)
+                    , displayEnableEthereumBtn
+                    , displayForToken userVal sGlobal
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                ]
         (Data.Users.Credited addr userId token userInfo userState) ->
-            Html.text "Irrelevant view"
-    
+            Framework.responsiveLayout [] <| Element.column Framework.container 
+                [ Element.el (Heading.h5) <|
+                    Element.text ("SportRank - Welcome " ++ userInfo.username)
+                    , displayEnableEthereumBtn
+                    , displayForToken userVal sGlobal
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                ]
+                
 
 registerNewUserView : Data.Users.User -> Data.Users.Users -> Html Msg 
 registerNewUserView userVal sUsers = 
@@ -2611,49 +2569,6 @@ registerNewUserView userVal sUsers =
 
     
 
-gotUserView : Data.Users.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
-gotUserView userVal sUsers sGlobal =
-    case userVal of
-        Data.Users.Guest userInfo userState ->
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome Guest")
-                    , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userInfo userState)))
-                ]
-        (Data.Users.Registered userId token userInfo userState) ->
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome " ++ userInfo.username)
-                    , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
-                ]
-        (Data.Users.NoWallet userId token userInfo userState) ->
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome " ++ userInfo.username)
-                    , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
-                ]
-        (Data.Users.NoCredit addr userId token userInfo userState) ->
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome " ++ userInfo.username)
-                    , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
-                ]
-        (Data.Users.Credited addr userId token userInfo userState) ->
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome " ++ userInfo.username)
-                    , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
-                ]
     
 
 failureView : String -> Html Msg 
@@ -2690,7 +2605,7 @@ displayForToken userVal sGlobal =
                         Grid.simple
                         [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
                             { onChange = UserNameInputChg
-                            , text = ""
+                            , text = userInfo.username
                             --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
@@ -2698,7 +2613,7 @@ displayForToken userVal sGlobal =
                         --, nameValidView appInfo sUsers
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
                             { onChange = NewUserPasswordInputChg
-                            , text = ""
+                            , text = userInfo.password
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
                             }
