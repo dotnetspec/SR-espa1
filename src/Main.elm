@@ -1575,7 +1575,7 @@ update msg model =
                 AppOps walletState dataState user uiState subState txRec ->
                     case user of 
                         Data.Users.Guest userInfo userState->
-                            (model, Cmd.none)
+                            (model, loginUser userInfo.username userInfo.password)
                         (Data.Users.Registered userId token userInfo userState) ->
                             (model, loginUser userInfo.username userInfo.password)
                         (Data.Users.NoWallet userId token userInfo userState) ->
