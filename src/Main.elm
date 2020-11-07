@@ -85,7 +85,7 @@ type DataKind
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( AppOps SR.Types.WalletStateLocked AllEmpty (Data.Users.Guest Data.Users.General) SR.Types.UILoading  SR.Types.StopSubscription emptyTxRecord
+    ( AppOps SR.Types.WalletStateLocked AllEmpty (Data.Users.Guest Data.Users.emptyUserInfo Data.Users.General) SR.Types.UILoading  SR.Types.StopSubscription emptyTxRecord
     , Cmd.batch
         [ 
         allUsers
@@ -168,7 +168,7 @@ type Msg
     --| ResetRejectedNewUserToShowGlobal
     | LadderNameInputChg String
     | LadderDescInputChg String
-    | NewUserNameInputChg String
+    --| UserNameInputChg String
     | NewUserPasswordInputChg String
     | NewUserDescInputChg String
     | NewUserEmailInputChg String
@@ -266,7 +266,7 @@ update msg model =
         (ClickedEnableEthereum, AppOps walletState dataState user uiState subState txRec ) ->
             (model, Cmd.none)
             -- case accountState of
-            --     Data.Users.Guest userState->
+            --     Data.Users.Guest userInfo userState ->
             --         (AppOps walletState dataState user SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none)
             --     Data.Users.Registered _ _ _->
             --         (AppOps walletState dataState user SR.Types.UIEnableEthereum SR.Types.StopSubscription txRec, Ports.log "eth_requestAccounts")
@@ -282,7 +282,7 @@ update msg model =
                     case dKind of
                         Selected sSelected ->
                             case user of
-                                Data.Users.Guest userState->
+                                Data.Users.Guest userInfo userState ->
                                     (Failure "Err", Cmd.none)
                                 (Data.Users.Registered userId token userInfo userState) ->
                                     let 
@@ -329,7 +329,7 @@ update msg model =
                     ( AppOps walletState dataState user uiState SR.Types.StopSubscription txRec, Cmd.none )
                 SR.Types.WalletOpened ->
                     case user of
-                        Data.Users.Guest userState->
+                        Data.Users.Guest userInfo userState ->
                             ( AppOps walletState dataState user uiState SR.Types.StopSubscription txRec, Cmd.none )
                         (Data.Users.Registered userId token userInfo userState) ->
                             (model, Cmd.none)
@@ -753,7 +753,7 @@ update msg model =
                                 
         (Cancel, AppOps walletState (StateUpdated sUsers sRankings dKind) user uiState subState txRec ) ->
             case user of
-                Data.Users.Guest userState->
+                Data.Users.Guest userInfo userState ->
                     (model, Cmd.none)
                 (Data.Users.Registered userId token userInfo userState) ->
                     let
@@ -851,6 +851,9 @@ update msg model =
 
         -- currently expecting user to be 'Registered' at this point for the purpose of inputting/updating details
         -- might create a new 'Registering' variant(?). Or sort user type before you get here:
+        (UserNameInputChg updateField, AppOps walletState dataState (Data.Users.Guest userInfo userState) uiState subState txRec) ->
+            (AppOps walletState dataState (Data.Users.Guest {userInfo | username = updateField} userState) uiState subState txRec, Cmd.none)
+
         (UserNameInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
             (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | username = updateField} userState) uiState subState txRec, Cmd.none)
     
@@ -907,7 +910,7 @@ update msg model =
                     case dKind of 
                         Selected sSelected ->
                             case user of
-                                Data.Users.Guest userState->
+                                Data.Users.Guest userInfo userState ->
                                     (model, Cmd.none)
                                 (Data.Users.Registered userId token userInfo userState) ->
                                     ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer user, Cmd.none )
@@ -929,7 +932,7 @@ update msg model =
                     case dKind of 
                         Selected sSelected ->
                             case user of 
-                                Data.Users.Guest userState->
+                                Data.Users.Guest userInfo userState ->
                                     (Failure "Err", Cmd.none)
 
                                 (Data.Users.Registered userId token userInfo userState) ->
@@ -1177,7 +1180,7 @@ update msg model =
                                     Global sGlobal  ->
                                         case user of
                                         -- todo: fix
-                                            Data.Users.Guest userState->
+                                            Data.Users.Guest userInfo userState ->
                                                 (model, Cmd.none)
                                             (Data.Users.Registered userId token userInfo userState) ->
                                                 (model, Cmd.none)
@@ -1243,7 +1246,7 @@ update msg model =
                                     Data.Global.Global esUserRanking globalState ->
                                         case user of
                                             -- todo: fix:
-                                                    Data.Users.Guest userState->
+                                                    Data.Users.Guest userInfo userState ->
                                                         (model, Cmd.none)
                                                     (Data.Users.Registered userId token userInfo userState) ->
                                                         let
@@ -1309,7 +1312,7 @@ update msg model =
             
         (ClickedNewChallengeConfirm challengerUID,  AppOps walletState dataState user uiState subState txRec ) ->
             case user of 
-                Data.Users.Guest _ ->
+                Data.Users.Guest _ _ ->
                     (model, Cmd.none)
 
                 _ ->
@@ -1350,7 +1353,7 @@ update msg model =
             --                 case dKind of 
             --                     Selected sSelected ->
             --                         case accountState of
-            --                             Data.Users.Guest userState-> 
+            --                             Data.Users.Guest userInfo userState -> 
             --                                 ( AppOps walletState dataState user SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none )
             --                             Data.Users.Registered ->
             --                                 ( AppOps walletState dataState user SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription txRec, Cmd.none )
@@ -1431,7 +1434,7 @@ update msg model =
                                     in
                                         case user of
                                         -- todo: fix
-                                            Data.Users.Guest userState->
+                                            Data.Users.Guest userInfo userState ->
                                                 (model, Cmd.none)
                                             (Data.Users.Registered userId token userInfo userState) ->
                                                  ( updateSelectedRankingPlayerList model convertedToUserPlayers
@@ -1563,7 +1566,7 @@ update msg model =
             case model of 
                 AppOps walletState dataState user uiState subState txRec ->
                     case user of 
-                        Data.Users.Guest userState->
+                        Data.Users.Guest userInfo userState->
                             (model, Cmd.none)
                         (Data.Users.Registered userId token userInfo userState) ->
                             (model, loginUser userInfo.username userInfo.password)
@@ -1938,7 +1941,7 @@ updateFromLoggedInUser model response =
     case (model, response) of
         (AppOps walletState dataState user uiState subState txRec, Ok token) ->
             case user of
-                Data.Users.Guest userState->
+                Data.Users.Guest userInfo userState ->
                     model
                 (Data.Users.Registered userId _ userInfo userState) ->
                     let
@@ -1963,7 +1966,7 @@ updateFromRegisteredNewUser model response =
     case (response, model) of
         (Ok token, AppOps walletState dataState user uiState subState txRec) ->
             case user of
-                Data.Users.Guest userState->
+                Data.Users.Guest userInfo userState ->
                     model
                 (Data.Users.Registered userId _ userInfo userState) ->
                     let
@@ -2140,7 +2143,7 @@ gotWalletAddrApplyToUser user uaddr =
     -- todo: fix - no  idea what's happening here currently
     -- go from addr to UID
     case user of
-            Data.Users.Guest userState->
+            Data.Users.Guest userInfo userState ->
                 user
             
             (Data.Users.Registered userId token userInfo userState) ->
@@ -2159,8 +2162,8 @@ gotWalletAddrApplyToUser user uaddr =
 -- handleNewUserInputs : Model -> Msg -> Model
 -- handleNewUserInputs model msg =
 --     case (model, msg) of
---         --(AppOps walletState dataState user uiState subState txRec), NewUserNameInputChg namefield) ->
---         (AppOps walletState dataState user uiState subState txRec), NewUserNameInputChg namefield) ->
+--         --(AppOps walletState dataState user uiState subState txRec), UserNameInputChg namefield) ->
+--         (AppOps walletState dataState user uiState subState txRec), UserNameInputChg namefield) ->
 --             let 
 --                 newUser = Maybe.withDefault Data.Users.Guest appInfo.user
 --             in
@@ -2253,7 +2256,7 @@ gotWalletAddrApplyToUser user uaddr =
 --                         AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec            
 
 --         (_,_) ->
---             Failure "NewUserNameInputChg"
+--             Failure "UserNameInputChg"
 
 
 
@@ -2306,7 +2309,7 @@ updatedForChallenge model luplayer opponentAsPlayer userMaybeCanDelete =
                     case dKind of 
                             Selected sSelected ->
                                 case user of 
-                                    Data.Users.Guest userState->
+                                    Data.Users.Guest userInfo userState ->
                                         Failure "updateChallenge fix"
                                     (Data.Users.Registered userId token userInfo userState) ->
                                         Failure "updateChallenge fix"
@@ -2419,10 +2422,10 @@ view model =
                 (AllEmpty, _) ->
                     Html.text ("Loading ...")
 
-                (StateFetched sUsers sRankings dKind, Data.Users.Guest Data.Users.CreateNewUser) ->
+                (StateFetched sUsers sRankings dKind, Data.Users.Guest userInfo Data.Users.CreateNewUser) ->
                     registerNewUserView user sUsers
 
-                (StateFetched sUsers sRankings (Global sGlobal ), Data.Users.Guest Data.Users.General) ->
+                (StateFetched sUsers sRankings (Global sGlobal ), Data.Users.Guest userInfo Data.Users.General) ->
                     gotUserView user sUsers sGlobal
                             
                 (StateFetched sUsers sRankings (Selected _ ), _) ->
@@ -2436,7 +2439,7 @@ view model =
                     Html.text ("Not yet implemented")
                 ( StateFetched _ _ (Global _), Data.Users.Credited _ _ _ _ _ ) ->
                     Html.text ("Not yet implemented")
-                ( StateFetched _ _ (Global _), Data.Users.Guest Data.Users.UpdateProfile ) ->
+                ( StateFetched _ _ (Global _), Data.Users.Guest userInfo Data.Users.UpdateProfile ) ->
                     Html.text ("Not yet implemented")
 
                 (StateUpdated _ _ _, _) ->
@@ -2462,7 +2465,7 @@ resultView  status =
 generalLoginView : Data.Users.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
 generalLoginView userVal sUsers sGlobal =
     case userVal of 
-        Data.Users.Guest userState->
+        Data.Users.Guest userInfo userState ->
             Framework.responsiveLayout [] <| Element.column Framework.container
             [ Element.el (Heading.h5) <|
                 Element.text ("SportRank - Welcome")
@@ -2476,7 +2479,7 @@ generalLoginView userVal sUsers sGlobal =
                     [ Element.column
                         Grid.simple
                         [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                            { onChange = NewUserNameInputChg
+                            { onChange = UserNameInputChg
                             , text = ""
                             --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
                             , placeholder = Nothing
@@ -2497,7 +2500,7 @@ generalLoginView userVal sUsers sGlobal =
             , displayRegisterBtnIfNewUser
                 ""
                 ClickedRegister
-            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userState)))
+            , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userInfo userState)))
             ]
 
         (Data.Users.Registered userId token userInfo userState) ->
@@ -2514,7 +2517,7 @@ generalLoginView userVal sUsers sGlobal =
                     [ Element.column
                         Grid.simple
                         [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                            { onChange = NewUserNameInputChg
+                            { onChange = UserNameInputChg
                             , text = userInfo.username
                             --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
                             , placeholder = Nothing
@@ -2549,7 +2552,7 @@ generalLoginView userVal sUsers sGlobal =
 registerNewUserView : Data.Users.User -> Data.Users.Users -> Html Msg 
 registerNewUserView userVal sUsers = 
     case userVal of
-        Data.Users.Guest userState->
+        Data.Users.Guest userInfo userState ->
             Html.text "Should have switched to Registered"
         (Data.Users.Registered userId token userInfo userState) ->
             Framework.responsiveLayout [] <|
@@ -2559,7 +2562,7 @@ registerNewUserView userVal sUsers =
                     [ Element.column
                         Grid.simple
                         [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                            { onChange = NewUserNameInputChg
+                            { onChange = UserNameInputChg
                             , text = userInfo.username
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
@@ -2611,13 +2614,13 @@ registerNewUserView userVal sUsers =
 gotUserView : Data.Users.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
 gotUserView userVal sUsers sGlobal =
     case userVal of
-        Data.Users.Guest userState->
+        Data.Users.Guest userInfo userState ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome Guest")
                     , displayEnableEthereumBtn
                     , displayForToken userVal sGlobal
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userState)))
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userInfo userState)))
                 ]
         (Data.Users.Registered userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
@@ -2678,7 +2681,7 @@ failureView str =
 displayForToken : Data.Users.User -> Data.Global.Global -> Element Msg 
 displayForToken userVal sGlobal = 
     case userVal of
-        Data.Users.Guest userState->
+        Data.Users.Guest userInfo userState ->
             Element.column Grid.section <|
                 [ Element.el [] <| Element.text ""
                 --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
@@ -2686,7 +2689,7 @@ displayForToken userVal sGlobal =
                     [ Element.column
                         Grid.simple
                         [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                            { onChange = NewUserNameInputChg
+                            { onChange = UserNameInputChg
                             , text = ""
                             --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
                             , placeholder = Nothing
@@ -2748,7 +2751,7 @@ greetingHeading greetingStr =
 ownedrankingbuttons : List Data.Global.UserRanking -> Data.Users.User -> Element Msg
 ownedrankingbuttons urankingList user =
     case user of 
-        Data.Users.Guest userState->
+        Data.Users.Guest userInfo userState ->
             Element.column Grid.section <|
             [ if List.isEmpty urankingList then
                 -- the button will be in the "Your Created Rankings" section instead
@@ -2861,7 +2864,7 @@ ownedrankingbuttons urankingList user =
 memberrankingbuttons : List Data.Global.UserRanking -> Data.Users.User -> Element Msg
 memberrankingbuttons urankingList user =
     case user of
-        Data.Users.Guest userState->
+        Data.Users.Guest userInfo userState ->
             Element.text ""
         (Data.Users.Registered userId token userInfo userState) ->
             Element.column Grid.section <|
@@ -3091,7 +3094,7 @@ neitherOwnerNorMemberRankingInfoBtn rankingobj =
 selecteduserIsOwnerhomebutton : Data.Users.User -> Element Msg
 selecteduserIsOwnerhomebutton user =
     -- case user of
-    --     Data.Users.Guest userState->
+    --     Data.Users.Guest userInfo userState ->
     --         Element.text "Error"
     --     (Data.Users.Registered userId token userInfo userState) ->
             Element.column Grid.section <|
@@ -3195,7 +3198,7 @@ selecteduserIsNeitherPlayerNorOwnerHomebutton user =
 joinBtn : Data.Users.User -> Element Msg
 joinBtn user  =
     case user of
-        Data.Users.Guest userState->
+        Data.Users.Guest userInfo userState ->
             Input.button ([ Element.htmlAttribute (Html.Attributes.id "existingUserJoinbtn") ] ++ Button.simple ++ Color.disabled) <|
             { onPress = Just ClickedRegister
             , label = Element.text "Join"
@@ -3346,7 +3349,7 @@ confirmChallengebutton model =
     case model of
         AppOps walletState dataState user uiState subState txRec ->
             case (user, dataState) of
-                (Data.Users.Guest _, _) ->
+                (Data.Users.Guest _ _, _) ->
                     Element.text <| " No User3"
                 (Data.Users.Registered userId token userInfo userState, AllEmpty) ->
                     Element.text <| " No Data"
@@ -3428,7 +3431,7 @@ confirmResultbutton model =
     --                                     Just challengerAsUser ->
     --                                         -- challenger should always be registered
     --                                         case (playerAsUser, challengerAsUser) of
-    --                                         (Data.Users.Guest _, _) ->
+    --                                         (Data.Users.Guest _ _, _) ->
     --                                             Element.text "No challenger"
     --                                         (Data.Users.Registered _ _ playerUserInfo, Data.Users.Registered userId token challengerUserInfo) ->
     --                                             Element.column Grid.section <|
@@ -3618,7 +3621,7 @@ mobileValidationErr str =
 newuserConfirmPanel : Data.Users.User -> List Data.Users.User -> Element Msg
 newuserConfirmPanel  user luser =
         case user of
-        Data.Users.Guest userState->
+        Data.Users.Guest userInfo userState ->
             if List.isEmpty luser then
                     Element.column Grid.section <|
                     [ SR.Elements.missingDataPara
@@ -3712,7 +3715,7 @@ isValidatedForAllUserDetailsInput user luser isExistingUser =
     --todo: fix
     False
 --     case user of
---         Data.Users.Guest userState->
+--         Data.Users.Guest userInfo userState ->
 --             False
 --         (Data.Users.Registered userId token userInfo userState) ->
 --             if
@@ -3823,7 +3826,7 @@ enableButton enable =
 nameValidView : Data.Users.User -> Data.Users.Users -> Element Msg
 nameValidView userVal sUsers =
     case userVal of 
-        Data.Users.Guest userState->
+        Data.Users.Guest userInfo userState ->
             Element.el
                 (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
                     ++ [ Element.moveLeft 0.0 ]
@@ -3934,7 +3937,7 @@ handleGlobalNoTokenView dataState userVal =
             Html.text ("No Data")
         (StateUpdated _ _ _, _) ->
             Html.text ("No User - No Update")
-        (StateFetched sUsers sRankings dKind, Data.Users.Guest userState) ->
+        (StateFetched sUsers sRankings dKind, Data.Users.Guest userInfo userState) ->
             case dKind of
                 Selected _ ->
                     Html.text ("Nothing should have been selected yet")
@@ -3952,7 +3955,7 @@ handleGlobalNoTokenView dataState userVal =
                                 [ Element.column
                                     Grid.simple
                                     [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                                        { onChange = NewUserNameInputChg
+                                        { onChange = UserNameInputChg
                                         , text = ""
                                         --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
                                         , placeholder = Nothing
@@ -3974,7 +3977,7 @@ handleGlobalNoTokenView dataState userVal =
                                     ""
                                     ClickedRegister
                         , Element.text ("\n")
-                        , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userState)))
+                        , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userInfo userState)))
                         ]
 
         (StateFetched sUsers sRankings dKind, Data.Users.Registered userId token userInfo userState) ->
@@ -3995,7 +3998,7 @@ handleGlobalNoTokenView dataState userVal =
                                 [ Element.column
                                     Grid.simple
                                     [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                                        { onChange = NewUserNameInputChg
+                                        { onChange = UserNameInputChg
                                         , text = userInfo.username
                                         --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
                                         , placeholder = Nothing
@@ -4106,7 +4109,7 @@ displayEnableEthereumBtn =
 --             case dKind of 
 --                 Selected sSelected ->
 --                     case user of
---                             Data.Users.Guest userState->
+--                             Data.Users.Guest userInfo userState ->
 --                                 Framework.responsiveLayout [] <|
 --                                 Element.column
 --                                     Framework.container
@@ -4151,7 +4154,7 @@ displayEnableEthereumBtn =
 --             case dKind of 
 --                 Selected sSelected ->
 --                     case user of
---                             Data.Users.Guest userState->
+--                             Data.Users.Guest userInfo userState ->
 --                                 Framework.responsiveLayout [] <| Element.column Framework.container
 --                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Guest"
 --                                     ]
@@ -4187,7 +4190,7 @@ displayEnableEthereumBtn =
 --             case dKind of 
 --                 Selected sSelected ->
 --                     case user of
---                             Data.Users.Guest userState->
+--                             Data.Users.Guest userInfo userState ->
 --                                 Framework.responsiveLayout [] <| Element.column Framework.container
 --                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - No User13" 
 --                                     , Element.text <| "No User17"
@@ -4256,7 +4259,7 @@ displayEnableEthereumBtn =
 newOrExistingUserNameDisplay : Data.Users.User ->  Element msg
 newOrExistingUserNameDisplay user =
     case user of 
-        Data.Users.Guest userState->
+        Data.Users.Guest userInfo userState ->
             Element.el Heading.h4 <| Element.text <| "New User - Please Register and Enable Ethereum to join"
         (Data.Users.Registered userId token userInfo userState) ->
             Element.el Heading.h4 <| Element.text <| "Please Register and Enable Ethereum to join"
@@ -4271,11 +4274,11 @@ newOrExistingUserNameDisplay user =
 inputUserDetailsView : DataState -> Data.Users.User -> Html Msg
 inputUserDetailsView dataState user =
     case user of
-    Data.Users.Guest userState->
+    Data.Users.Guest userInfo userState ->
         case dataState of
                 StateFetched sUsers sRankings dKind ->
                     let 
-                        userVal = Data.Users.Guest userState
+                        userVal = Data.Users.Guest userInfo userState
                     in
                     if Data.Users.isEmpty sUsers then
                         Framework.responsiveLayout [] <|
@@ -4333,7 +4336,7 @@ inputUserDetailsView dataState user =
 displayRegisterNewUser :  Data.Users.User -> Data.Users.Users -> Element Msg 
 displayRegisterNewUser userVal sUsers =
     case userVal of
-        Data.Users.Guest userState->
+        Data.Users.Guest userInfo userState ->
             Element.text "Should have switched to a Registered user already"
         
         (Data.Users.Registered userId token userInfo userState) ->
@@ -4343,7 +4346,7 @@ displayRegisterNewUser userVal sUsers =
                 [ Element.column
                     Grid.simple
                     [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                        { onChange = NewUserNameInputChg
+                        { onChange = UserNameInputChg
                         , text = userInfo.username
                         , placeholder = Nothing
                         , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
@@ -4524,7 +4527,7 @@ displayChallengeBeforeConfirmView model =
     case model of
         AppOps walletState dataState user uiState subState txRec ->
             case user of
-                Data.Users.Guest userState->
+                Data.Users.Guest userInfo userState ->
                     Html.text "No User19"
                 (Data.Users.Registered userId token userInfo userState) ->
                     Framework.responsiveLayout [] <| Element.column Framework.container
@@ -4567,7 +4570,7 @@ displayResultBeforeConfirmView model =
     --                             Html.text "No Player"
     --                         Just playerasuser ->
     --                             case playerasuser of 
-    --                                 Data.Users.Guest userState->
+    --                                 Data.Users.Guest userInfo userState ->
     --                                     Html.text "No Player"
     --                                 (Data.Users.Registered userId token userInfo userState) ->
     --                                     Framework.responsiveLayout [] <| Element.column Framework.container
@@ -4623,7 +4626,7 @@ txErrorView model =
 
     --                 Just playerAsUser ->
     --                     case playerAsUser of 
-    --                         Data.Users.Guest userState->
+    --                         Data.Users.Guest userInfo userState ->
     --                             Framework.responsiveLayout [] <| Element.column Framework.container
     --                                 [ Element.el Heading.h4 <| Element.text " Transaction Error"
     --                                 , acknoweldgeTxErrorbtn model

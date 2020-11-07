@@ -165,7 +165,7 @@ empty = SelectedRanking (EverySet.empty) (Internal.Types.RankingId "") UserIsNei
 emptyUserPlayer : UserPlayer 
 emptyUserPlayer =
     {player = Data.Players.Player "" "" 0 ""
-    , user = Data.Users.Guest Data.Users.General}
+    , user = Data.Users.Guest Data.Users.emptyUserInfo Data.Users.General}
 
 createdUserPlayer : List Data.Users.User -> Data.Players.Player -> UserPlayer
 createdUserPlayer luser player =
@@ -206,7 +206,7 @@ addNewUserPlayerJoinRanking : UserPlayer -> Internal.Types.RankingId -> UserPlay
 -- I think (Internal.Types.RankingId rnkId) pattern matching here gives us the rnkId as a String)
 addNewUserPlayerJoinRanking uplayer (Internal.Types.RankingId rnkId) = 
         case uplayer.user of
-            Data.Users.Guest _ ->
+            Data.Users.Guest _ _ ->
                 uplayer
 
             (Data.Users.Registered userId token userInfo sStatus) ->
@@ -287,7 +287,7 @@ isUserPlayerMemberOfSelectedRanking sSelected user =
 
     --     Just a ->
     --         case user of
-    --             Data.Users.Guest _ ->
+    --             Data.Users.Guest _ _ ->
     --                 False
                     
     --             (Data.Users.Registered userId token userInfo sStatus) ->
@@ -327,7 +327,7 @@ gotPlayer user (SelectedRanking sSelected rnkId ownerStatus players sState)=
     -- todo: fix
     --[emptyUserPlayer]
     case user of
-                Data.Users.Guest _ ->
+                Data.Users.Guest _ _ ->
                     empty
                     
                 (Data.Users.Registered userId token userInfo sStatus) ->
@@ -409,7 +409,7 @@ isChallenged (SelectedRanking sSelected rnkId status sPlayers sStat) sUsers upla
             --         False
 
                 case challenger of
-                    Data.Users.Guest _ ->
+                    Data.Users.Guest _ _ ->
                         False
                     (Data.Users.Registered userId token userInfo sStatus) ->
                         if userInfo.username /= "" then
@@ -460,7 +460,7 @@ isChallenged (SelectedRanking sSelected rnkId status sPlayers sStat) sUsers upla
 isPlayerCurrentUser : Data.Users.User -> UserPlayer -> Bool
 isPlayerCurrentUser user uplayer = 
     case user of
-        Data.Users.Guest _ ->
+        Data.Users.Guest _ _ ->
             False
         (Data.Users.Registered userId token userInfo sStatus) ->
             if uplayer.player.uid == userId then
@@ -498,7 +498,7 @@ printChallengerNameOrAvailable sSelected sUsers uplayer =
             Just opponent ->
                 if isChallenged sSelected sUsers uplayer then
                     case opponent.user of
-                        Data.Users.Guest _ ->
+                        Data.Users.Guest _ _ ->
                             "Available"
                         (Data.Users.Registered userId token userInfo sStatus) ->
                             userInfo.username
@@ -715,7 +715,7 @@ convertEachPlayerToUserPlayer luser player =
     in
         case user of 
             Nothing ->
-                { player = player, user = (Data.Users.Guest Data.Users.General) }
+                { player = player, user = (Data.Users.Guest Data.Users.emptyUserInfo Data.Users.General) }
             Just userVal ->
                 { player = player, user = userVal }
                 
@@ -1003,7 +1003,7 @@ releasePlayerForUI : UserPlayer
 releasePlayerForUI  =
     -- todo: fix
     {player = Data.Players.Player "" "" 0 ""
-    , user = Data.Users.Guest Data.Users.General}
+    , user = Data.Users.Guest Data.Users.emptyUserInfo Data.Users.General}
     -- case appState of 
     --     AppState user uplayer uplayerChallenger rnkId ->
     --         let
@@ -1021,4 +1021,4 @@ releaseChallengerForUI : UserPlayer
 releaseChallengerForUI =
     -- todo: fix
     {player = Data.Players.Player "" "" 0 ""
-    , user = Data.Users.Guest Data.Users.General}
+    , user = Data.Users.Guest Data.Users.emptyUserInfo Data.Users.General}

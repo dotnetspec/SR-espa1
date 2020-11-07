@@ -65,7 +65,7 @@ emptyUserRanking : UserRanking
 emptyUserRanking =
     {
         rankingInfo = Data.Rankings.emptyRanking
-        ,userInfo = Data.Users.Guest Data.Users.General
+        ,userInfo = Data.Users.Guest Data.Users.emptyUserInfo Data.Users.General
     }
 
 
@@ -97,7 +97,7 @@ isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
 
         Just a ->
             case user of
-                Data.Users.Guest _ ->
+                Data.Users.Guest _ _ ->
                     False
 
                 (Data.Users.Registered userId token userInfo userState) ->
@@ -206,7 +206,7 @@ gotOwned (Global esUP gState ) user =
 isOwned : Data.Users.User -> UserRanking -> Bool
 isOwned user ownedrnk =
     case user of
-        Data.Users.Guest _ ->
+        Data.Users.Guest _ _ ->
             False
         --UserRanking.userInfo will always be Registered only
         Data.Users.Registered userId _ _ _->
@@ -257,7 +257,7 @@ isOwned user ownedrnk =
 gotMember : Global -> Data.Users.User -> List UserRanking
 gotMember sGlobal user = 
     case user of
-        Data.Users.Guest _ ->
+        Data.Users.Guest _ _ ->
             []
         (Data.Users.Registered _ _ userInfo _) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinrankings
@@ -323,8 +323,8 @@ toUser uRanking =
 removedDeletedRankingsFromUserJoined : Data.Users.User -> Global -> Data.Users.User 
 removedDeletedRankingsFromUserJoined user sGlobal = 
         case user of 
-            Data.Users.Guest _ ->
-                Data.Users.Guest Data.Users.General
+            Data.Users.Guest _ _ ->
+                Data.Users.Guest Data.Users.emptyUserInfo Data.Users.General
 
             (Data.Users.Registered userId token userInfo userState) ->
                 let

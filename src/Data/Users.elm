@@ -24,6 +24,7 @@ module Data.Users exposing (Users
     , isNameValid
     , extractUsersFromWebData
     , empty
+    , emptyUserInfo
     , addUser
     , removeUser
     , asList
@@ -54,7 +55,7 @@ import SRdb.ScalarCodecs
 
 
 type User =
-    Guest UserState
+    Guest UserInfo UserState
     | Registered UserId Token UserInfo UserState
     | NoWallet UserId Token UserInfo UserState
     | NoCredit Eth.Types.Address UserId Token UserInfo UserState
@@ -83,6 +84,10 @@ type alias UserInfo =
     , member_since : Int
     }
 
+emptyUserInfo : UserInfo
+emptyUserInfo =
+    UserInfo 0 True "" "" (ExtraUserInfo "" "" "") [] 0
+
 type alias UserId =
     String
 
@@ -109,7 +114,7 @@ convertedStrToUserId uid =
 gotUserIdFromUser : User -> String 
 gotUserIdFromUser user = 
     case user of 
-        Guest _ ->
+        Guest _ _ ->
             ""
         Registered uid _ _ _ ->
             uid
@@ -145,19 +150,6 @@ updatedMobile userInfo str =
         updatedExtraUserInfo = {newExtrUserInfo | mobile = str}
     in
         {userInfo | extrauserinfo = updatedExtraUserInfo}
-
--- case user of
---         Guest user ->
---             Guest
---         (Registered userId token userInfo userState) ->
---             Registered userId token userInfo
---         (NoWallet userId token userInfo userState) ->
---             NoWallet userId token userInfo
---         (NoCredit addr userId token userInfo userState) ->
---             NoCredit addr userId token userInfo
---         (Credited addr userId token userInfo userState) ->
---             Credited addr userId token userInfo
-
 
 
 newUserFromFUser : FUser -> User 
@@ -205,7 +197,7 @@ asUsers esUser  =
 gotUserName : User -> String 
 gotUserName user = 
     case user of
-        Guest _ ->
+        Guest _ _ ->
             "Guest"
         (Registered userId token userInfo userState) ->
             userInfo.username
@@ -219,8 +211,8 @@ gotUserName user =
 removedDeletedRankingsFromUserJoined : User -> Data.Rankings.Rankings -> User 
 removedDeletedRankingsFromUserJoined user sRankings = 
     case user of
-        Guest _ ->
-            Guest General
+        Guest userInfo _ ->
+            Guest userInfo General
         (Registered userId token userInfo userState) ->
             Registered userId token (handleDeletionFromUserJoined userInfo sRankings) userState
         (NoWallet userId token userInfo userState) ->
@@ -282,7 +274,7 @@ gotUser (Users susers) userId =
 gotUIDFromUser : User -> UserId
 gotUIDFromUser user = 
     case user of
-        Guest _ ->
+        Guest _ _ ->
             ""
         (Registered userId _ _ _) ->
             userId
@@ -334,7 +326,7 @@ addedNewJoinedRankingId rankingId user lUser =
     in
     --todo: temp fix
     --newUserList
-    [Guest General]
+    [Guest emptyUserInfo General]
 
 
 removedInvalidRankingId : String -> Maybe String 
@@ -372,7 +364,7 @@ removedRankindIdFromUser  rnkId user =
     in
         --userUpdated
         -- todo: temp fix
-        Guest General
+        Guest emptyUserInfo General
 
 filterRankingIds : String -> String -> Maybe String 
 filterRankingIds rnkIdToFilter currentRnkId =
@@ -410,29 +402,11 @@ handleDeletionFromUserJoined userInfo sRankings =
         newUserInfo
 
 
-
--- updateAddr : Users -> String -> Users
--- updateAddr susers addr =  
---     case addr of
---         Nothing ->
---             susers
---         Just address -> 
---             let 
---                 user = gotUser susers address
---                 userRemoved = removeUser user susers
---                 updatedUserAddr =
---                         { user | m_ethaddress = address }
---             in 
---             addUser updatedUserAddr userRemoved
-
-
-
-
 updatedUserInSet : Users -> User -> Users
 updatedUserInSet susers updatedUser =
 --the user is 'Registered' for the purposes of updating the Set
     case updatedUser of
-        Guest user ->
+        Guest userInfo user ->
             susers
         (Registered userId token userInfo userState) ->
             -- remove the original user, then add the new one
