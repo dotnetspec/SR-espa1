@@ -168,7 +168,6 @@ type Msg
     --| ResetRejectedNewUserToShowGlobal
     | LadderNameInputChg String
     | LadderDescInputChg String
-    | NewUserPasswordInputChg String
     | NewUserDescInputChg String
     | NewUserEmailInputChg String
     | NewUserMobileInputChg String
@@ -850,11 +849,21 @@ update msg model =
 
         -- currently expecting user to be 'Registered' at this point for the purpose of inputting/updating details
         -- might create a new 'Registering' variant(?). Or sort user type before you get here:
-        (UserNameInputChg updateField, AppOps walletState dataState (Data.Users.Guest userInfo userState) uiState subState txRec) ->
-            (AppOps walletState dataState (Data.Users.Guest {userInfo | username = userInfo.username ++ updateField} userState) uiState subState txRec, Cmd.none)
+        (UserNameInputChg updateField, 
+            AppOps walletState dataState 
+                (Data.Users.Guest userInfo userState) uiState subState txRec) ->
+                    (AppOps walletState dataState (Data.Users.Guest {userInfo | username = userInfo.username ++ updateField} userState) uiState subState txRec, Cmd.none)
 
-        (UserNameInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-            (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | username = userInfo.username ++ updateField} userState) uiState subState txRec, Cmd.none)
+        (UserPasswordInputChg updateField, 
+            AppOps walletState dataState 
+                (Data.Users.Guest userInfo userState) uiState subState txRec) ->
+                    (AppOps walletState dataState (Data.Users.Guest {userInfo | password = userInfo.password ++ updateField} userState) uiState subState txRec, Cmd.none)
+
+        
+        (UserNameInputChg updateField, 
+            AppOps walletState dataState 
+                (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
+                    (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | username = userInfo.username ++ updateField} userState) uiState subState txRec, Cmd.none)
     
         (UserPasswordInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
             (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | password = userInfo.username ++ updateField} userState) uiState subState txRec, Cmd.none)
@@ -2190,7 +2199,7 @@ gotWalletAddrApplyToUser user uaddr =
 
             
             
---         (AppOps walletState dataState user uiState subState txRec), NewUserPasswordInputChg passwordfield) ->
+--         (AppOps walletState dataState user uiState subState txRec), UserPasswordInputChg passwordfield) ->
 --             case user of
 --                 Nothing ->
 --                     model
@@ -2505,7 +2514,7 @@ generalLoginView userVal sUsers sGlobal =
                     , displayForToken userVal sGlobal
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
-                
+
 
 registerNewUserView : Data.Users.User -> Data.Users.Users -> Html Msg 
 registerNewUserView userVal sUsers = 
@@ -2527,7 +2536,7 @@ registerNewUserView userVal sUsers =
                             }
                         , nameValidView userVal sUsers
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                            { onChange = NewUserPasswordInputChg
+                            { onChange = UserPasswordInputChg
                             , text = userInfo.password
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
@@ -2612,7 +2621,7 @@ displayForToken userVal sGlobal =
                             }
                         --, nameValidView appInfo sUsers
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                            { onChange = NewUserPasswordInputChg
+                            { onChange = UserPasswordInputChg
                             , text = userInfo.password
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
@@ -3878,7 +3887,7 @@ handleGlobalNoTokenView dataState userVal =
                                         }
                                     --, nameValidView appInfo sUsers
                                     , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                        { onChange = NewUserPasswordInputChg
+                                        { onChange = UserPasswordInputChg
                                         , text = ""
                                         , placeholder = Nothing
                                         , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
@@ -3921,7 +3930,7 @@ handleGlobalNoTokenView dataState userVal =
                                         }
                                     --, nameValidView appInfo sUsers
                                     , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                                        { onChange = NewUserPasswordInputChg
+                                        { onChange = UserPasswordInputChg
                                         , text = userInfo.password
                                         , placeholder = Nothing
                                         , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
@@ -4268,7 +4277,7 @@ displayRegisterNewUser userVal sUsers =
                         }
                     , nameValidView userVal sUsers
                     , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                        { onChange = NewUserPasswordInputChg
+                        { onChange = UserPasswordInputChg
                         , text = userInfo.password
                         , placeholder = Nothing
                         , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
