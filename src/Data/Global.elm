@@ -3,6 +3,7 @@
 module Data.Global exposing (Global(..)
     , UserRanking
     , GlobalState(..)
+    , asEverySet
     , listUserRankingsToGlobal
     , gotOthers
     , gotOwned
@@ -50,7 +51,8 @@ type alias UserRanking =
     }
 
 type GlobalState =
-    DisplayGlobal
+    DisplayGlobalLogin
+    | DisplayGlobalOnly
     | CreatingNewLadder Data.Users.User
     | CreatedNewLadder Data.Users.User Internal.Types.RankingId
 
@@ -59,7 +61,7 @@ type GlobalState =
 
 empty : Global 
 empty = 
-    GlobalRankings (EverySet.empty) DisplayGlobal
+    GlobalRankings (EverySet.empty) DisplayGlobalLogin
 
 emptyUserRanking : UserRanking
 emptyUserRanking =
@@ -145,7 +147,7 @@ created sRankings sUser =
                         |> Utils.MyUtils.removeNothingFromList
                         |> EverySet.fromList 
     in
-        asGlobalRankings esUserRanking DisplayGlobal
+        asGlobalRankings esUserRanking DisplayGlobalLogin
     
 
 createdUserRanking : Data.Users.Users -> Data.Rankings.Ranking -> Maybe UserRanking
