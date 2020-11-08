@@ -2509,9 +2509,10 @@ generalLoggedInView : Data.Users.User -> Data.Users.Users -> Data.Global.Global 
 generalLoggedInView userVal sUsers sGlobal =
     case userVal of
         Data.Users.Guest userInfo userState ->
+            -- Err
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome Guest")
+                    Element.text ("SportRank - Welcome Guest - Please Register To Continue")
                     , displayEnableEthereumBtn
                     , displayForToken userVal sGlobal
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userInfo userState)))
@@ -2641,8 +2642,9 @@ displayForToken : Data.Users.User -> Data.Global.Global -> Element Msg
 displayForToken userVal sGlobal = 
     case userVal of
         Data.Users.Guest userInfo userState ->
+            -- Err
             Element.column Grid.section <|
-                [ Element.el [] <| Element.text ""
+                [ Element.el [] <| Element.text "Please login to continue"
                 --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
                 , Element.wrappedRow (Card.fill ++ Grid.simple)
                     [ Element.column
@@ -2672,8 +2674,8 @@ displayForToken userVal sGlobal =
             
         (Data.Users.Registered userId token userInfo userState) ->
             Element.column Grid.section <|
-                [Element.text ("\n")
-                , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
+                [
+                ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
                 , memberrankingbuttons (Data.Global.gotMember sGlobal userVal) userVal
                 ]
         (Data.Users.NoWallet userId token userInfo userState) ->
@@ -2711,50 +2713,33 @@ ownedrankingbuttons : List Data.Global.UserRanking -> Data.Users.User -> Element
 ownedrankingbuttons urankingList user =
     case user of 
         Data.Users.Guest userInfo userState ->
-            Element.column Grid.section <|
-            [ if List.isEmpty urankingList then
-                -- the button will be in the "Your Created Rankings" section instead
-                Element.el [] <| 
-                    Input.button
-                        ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
-                            ++ Button.fill
-                            ++ Button.simple
-                            ++ Color.info
-                        )
-                    <|
-                        { onPress = Nothing
-                        , label = Element.text "Register To Create New Ladder"
-                        }
+        -- Err
+             if List.isEmpty urankingList then
+                Element.column Grid.section <|
+                    [ Element.el Heading.h5 <| Element.text "Your Created Rankings:"
+                    , Element.column (Card.simple ++ Grid.simple) <| [infoBtn "Create New Ladder" ClickedCreateNewLadder]
+                    ]
               else
-              
-                Element.el Heading.h5 <| Element.text "Your Created Rankings:"
-                , List.map (\ur -> ur.rankingInfo) urankingList
-                |> List.map ownedRankingInfoBtn
-                |> Element.column (Card.simple ++ Grid.simple)
-            ]
-        
+                Element.paragraph Heading.h5 
+                [
+                    Element.text "Your Created Rankings:"
+                    , List.map (\ur -> ur.rankingInfo) urankingList
+                    |> List.map ownedRankingInfoBtn
+                    |> Element.column (Card.simple ++ Grid.simple)
+                ]
+
         (Data.Users.Registered userId token userInfo userState) ->
-            Element.column Grid.section <|
-            [ if List.isEmpty urankingList then
-                Element.el [] <| 
-                    Input.button
-                        ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
-                            ++ Button.fill
-                            ++ Button.simple
-                            ++ Color.info
-                        )
-                    <|
-                        { onPress = Just <| ClickedCreateNewLadder
-                        , label = Element.text "Create New Ladder"
-                        }
-              else
-
-                Element.el Heading.h5 <| Element.text "Your Created Rankings:"
-                , List.map (\ur -> ur.rankingInfo) urankingList
-                |> List.map ownedRankingInfoBtn
-                |> Element.column (Card.simple ++ Grid.simple)
-            ]
-
+            if List.isEmpty urankingList then
+                Element.column Grid.section <|
+                    [ Element.el Heading.h5 <| Element.text "Your Created Rankings:"
+                    , Element.column (Card.simple ++ Grid.simple) <| [infoBtn "Create New Ladder" ClickedCreateNewLadder]
+                    ]
+            else
+                Element.paragraph Heading.h5 <| [Element.text "Your Created Rankings:"
+                    , List.map (\ur -> ur.rankingInfo) urankingList
+                    |> List.map ownedRankingInfoBtn
+                    |> Element.column (Card.simple ++ Grid.simple)]
+                    
         (Data.Users.NoWallet userId token userInfo userState) ->
             Element.column Grid.section <|
             [ if List.isEmpty urankingList then
