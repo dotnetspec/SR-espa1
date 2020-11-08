@@ -1590,7 +1590,7 @@ update msg model =
            
 
         (LoggedInUser response, modelReDef) ->
-            ( updateFromLoggedInUser modelReDef response
+            ( loginResponse modelReDef response
                , commandFromLoggedInUser response 
             )
 
@@ -1619,7 +1619,7 @@ update msg model =
             (updateGlobal model, Cmd.none)
 
         (ReceivedUserNames response, modelReDef) ->
-            ( updateModelFromReceivedUserNames modelReDef response
+            ( receivedUserNamesFaunaTest modelReDef response
             , Cmd.none
             )
         
@@ -1646,18 +1646,7 @@ update msg model =
 
 loginUser : String -> String -> Cmd Msg
 loginUser user_name password =
-    -- let
-    --     m_request = Bridge.requestLoginUser user_name password
-    --     --token = GQLHttp.Request ("fnED4l5RLyACAQPPrxU00AYHDsuIa1t_Od3e0lwmdZ54dywWfAA")
-    -- in
     GQLHttp.send LoggedInUser (Bridge.requestLoginUser user_name password)
-
-    -- case m_request of 
-    --     Nothing ->
-    --         Cmd.none
-    --     Just request ->
-    --         GQLHttp.send LoggedInUser request
-    --GQLHttp.send LoggedInUser token
 
 registerUser : String -> String -> Cmd Msg
 registerUser user_name password =
@@ -1667,14 +1656,8 @@ registerUser user_name password =
 commandFromLoggedInUser : Result (GQLHttp.Error (String)) (Data.Users.Token) -> Cmd Msg
 commandFromLoggedInUser response =
     case response of
-        -- Ok (lstringhead :: lstringtail) ->
-        --     allUserNames lstringhead
-
         Ok token ->
             allUserNames token
-
-        -- Ok [] ->
-        --     Cmd.none
 
         Err _ ->
             Cmd.none
@@ -1726,8 +1709,8 @@ updateGlobal model =
             Failure "updateGlobal"
 
 -- todo: change the name here as it's not actually updating the model - just testing faunadb
-updateModelFromReceivedUserNames : Model -> Result (GQLHttp.Error (List String)) (List String) -> Model
-updateModelFromReceivedUserNames model response =
+receivedUserNamesFaunaTest : Model -> Result (GQLHttp.Error (List String)) (List String) -> Model
+receivedUserNamesFaunaTest model response =
     case response of
         Ok lusernames ->
                 model
@@ -1944,18 +1927,24 @@ updateWithReceivedRankingById model response =
         (Failure _, Err _) ->
             (Failure "updateWithReceivedUsers6")
 
-updateFromLoggedInUser: Model -> Result (GQLHttp.Error (String)) (Data.Users.Token) -> Model
-updateFromLoggedInUser model response =
+loginResponse: Model -> Result (GQLHttp.Error (String)) (Data.Users.Token) -> Model
+loginResponse model response =
     case (model, response) of
         (AppOps walletState dataState user uiState subState txRec, Ok token) ->
             case user of
                 Data.Users.Guest userInfo userState ->
-                    model
-                (Data.Users.Registered userId _ userInfo userState) ->
                     let
-                        updated_user = Data.Users.Registered userId token userInfo userState         
+                        --updated_user = Data.Users.Registered userId token userInfo userState
+                        -- todo: fix
+                        updated_user = Data.Users.Registered "1234" token userInfo userState
                     in
                         AppOps walletState dataState updated_user uiState subState txRec
+                (Data.Users.Registered userId _ userInfo userState) ->
+                    -- let
+                    --     updated_user = Data.Users.Registered userId token userInfo userState         
+                    -- in
+                    --     AppOps walletState dataState updated_user uiState subState txRec
+                    model
                 (Data.Users.NoWallet userId _ userInfo userState) ->
                     model
                 (Data.Users.NoCredit addr userId _ userInfo userState) ->
@@ -2439,8 +2428,8 @@ view model =
                 (StateFetched sUsers sRankings (Selected _ ), _) ->
                      greetingView <| "ToDo: Select w/o a token should be possible"
       
-                ( StateFetched _ _ (Global _), Data.Users.Registered _ _ _ _ ) ->
-                    Html.text ("Not yet implemented")
+                ( StateFetched sUsers sRankings (Global sGlobal), Data.Users.Registered _ _ _ _ ) ->
+                    generalLoggedInView user sUsers sGlobal
                 ( StateFetched _ _ (Global _), Data.Users.NoWallet _ _ _ _ ) ->
                     Html.text ("Not yet implemented")
                 ( StateFetched _ _ (Global _), Data.Users.NoCredit _ _ _ _ _ ) ->
@@ -2514,6 +2503,52 @@ generalLoginView userVal sUsers sGlobal =
                     , displayForToken userVal sGlobal
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
+
+
+generalLoggedInView : Data.Users.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
+generalLoggedInView userVal sUsers sGlobal =
+    case userVal of
+        Data.Users.Guest userInfo userState ->
+            Framework.responsiveLayout [] <| Element.column Framework.container 
+                [ Element.el (Heading.h5) <|
+                    Element.text ("SportRank - Welcome Guest")
+                    , displayEnableEthereumBtn
+                    , displayForToken userVal sGlobal
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userInfo userState)))
+                ]
+        (Data.Users.Registered userId token userInfo userState) ->
+            Framework.responsiveLayout [] <| Element.column Framework.container 
+                [ Element.el (Heading.h5) <|
+                    Element.text ("SportRank - Welcome " ++ userInfo.username)
+                    , displayEnableEthereumBtn
+                    , displayForToken userVal sGlobal
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                ]
+        (Data.Users.NoWallet userId token userInfo userState) ->
+            Framework.responsiveLayout [] <| Element.column Framework.container 
+                [ Element.el (Heading.h5) <|
+                    Element.text ("SportRank - Welcome " ++ userInfo.username)
+                    , displayEnableEthereumBtn
+                    , displayForToken userVal sGlobal
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                ]
+        (Data.Users.NoCredit addr userId token userInfo userState) ->
+            Framework.responsiveLayout [] <| Element.column Framework.container 
+                [ Element.el (Heading.h5) <|
+                    Element.text ("SportRank - Welcome " ++ userInfo.username)
+                    , displayEnableEthereumBtn
+                    , displayForToken userVal sGlobal
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                ]
+        (Data.Users.Credited addr userId token userInfo userState) ->
+            Framework.responsiveLayout [] <| Element.column Framework.container 
+                [ Element.el (Heading.h5) <|
+                    Element.text ("SportRank - Welcome " ++ userInfo.username)
+                    , displayEnableEthereumBtn
+                    , displayForToken userVal sGlobal
+                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                ]
+
 
 
 registerNewUserView : Data.Users.User -> Data.Users.Users -> Html Msg 
