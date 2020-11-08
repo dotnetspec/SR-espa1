@@ -163,6 +163,7 @@ type Msg
     | ClickedDeleteRankingConfirmed
     | ClickedRemoveFromUserMemberRankings
     | ClickedEnableEthereum
+    | ClickedDisplayGlobal
     | Cancel
     | ResetToShowSelected
     --| ResetRejectedNewUserToShowGlobal
@@ -739,6 +740,8 @@ update msg model =
                 --             (newModel, Cmd.none)
                 --     _ ->
                         (model, Cmd.none)
+        (ClickedDisplayGlobal, AppOps walletState (StateFetched sUsers sRankings dKind) user uiState subState txRec ) ->
+             (model, Cmd.none)
 
 
         (Cancel, AppOps walletState (StateFetched sUsers sRankings dKind) user uiState subState txRec ) ->
@@ -1251,7 +1254,7 @@ update msg model =
                     case dataState of 
                         StateFetched sUsers sRankings (Global sGlobal) ->
                                 case sGlobal of 
-                                    Data.Global.Global esUserRanking globalState ->
+                                    Data.Global.GlobalRankings esUserRanking globalState ->
                                         case user of
                                             -- todo: fix:
                                                     Data.Users.Guest userInfo userState ->
@@ -1277,7 +1280,7 @@ update msg model =
                                                                     }
                                                                     txParams
                                                        
-                                                            newDataKind = Global (Data.Global.asGlobal esUserRanking (Data.Global.CreatedNewLadder user rnkId))
+                                                            newDataKind = Global (Data.Global.asGlobalRankings esUserRanking (Data.Global.CreatedNewLadder user rnkId))
                                                             newDataState = StateFetched sUsers sRankings newDataKind
                                                             
                                                         in
@@ -2428,8 +2431,18 @@ view model =
                 (StateFetched sUsers sRankings (Selected _ ), _) ->
                      greetingView <| "ToDo: Select w/o a token should be possible"
       
-                ( StateFetched sUsers sRankings (Global sGlobal), Data.Users.Registered _ _ _ _ ) ->
+                ( StateFetched sUsers sRankings (Global sGlobal ), Data.Users.Registered _ _ _ _ ) ->
                     generalLoggedInView user sUsers sGlobal
+
+    --                 DisplayGlobal
+    -- | CreatingNewLadder Data.Users.User
+    -- | CreatedNewLadder Data.Users.User Internal.Types.RankingId
+                -- ( StateFetched sUsers sRankings (Global sGlobal), Data.Users.Registered _ _ _ _ ) ->
+                --     generalLoggedInView user sUsers sGlobal
+
+                -- ( StateFetched sUsers sRankings (Global sGlobal), Data.Users.Registered _ _ _ _ ) ->
+                --     generalLoggedInView user sUsers sGlobal
+
                 ( StateFetched _ _ (Global _), Data.Users.NoWallet _ _ _ _ ) ->
                     Html.text ("Not yet implemented")
                 ( StateFetched _ _ (Global _), Data.Users.NoCredit _ _ _ _ _ ) ->
@@ -2811,12 +2824,19 @@ memberrankingbuttons urankingList user =
         Data.Users.Guest userInfo userState ->
             Element.text ""
         (Data.Users.Registered userId token userInfo userState) ->
-            Element.column Grid.section <|
-                [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
-                , List.map (\ur -> ur.rankingInfo) urankingList
-                |> List.map memberRankingInfoBtn
-                |> Element.column (Card.simple ++ Grid.simple)
-                ]
+            if List.isEmpty urankingList then
+                Element.column Grid.section <|
+                    [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
+                    , List.map (\ur -> ur.rankingInfo) urankingList
+                    |> List.map memberRankingInfoBtn
+                    |> Element.column (Card.simple ++ Grid.simple)
+                    ]
+            else 
+                Element.column Grid.section <|
+                    [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
+                    , Element.column (Card.simple ++ Grid.simple) <| [infoBtn "View All Ladders" ClickedDisplayGlobal]
+                    ]
+
 
         (Data.Users.NoWallet userId token userInfo userState) ->
             Element.column Grid.section <|
