@@ -2527,7 +2527,11 @@ view model =
                     Framework.responsiveLayout [] <| Element.column Framework.container
                         [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner " --++ userInfo.username
                         , Element.el Heading.h6 <| Element.text "Click to continue ..."
-                        --, playerbuttons dataState sSelected
+                        , playerbuttons (Data.Selected.SelectedRanking esUP rnkId 
+                                Data.Selected.UserIsOwner 
+                                sPlayers selectedState)
+                                
+                            sUsers user
                         , infoBtn "Delete" ClickedDeleteRanking
                         , infoBtn "Home" Cancel
                         ]
@@ -3066,28 +3070,21 @@ neitherOwnerNorMemberRankingInfoBtn rankingobj =
 
 
 
--- playerbuttons : DataState -> SR.Types.AppInfo -> Element Msg
--- playerbuttons dataState appInfo =
---      case dataState of
---         Fetched sUsers sRankings dKind -> 
---             case dKind of 
---                     Selected sSelected ->
---                         Element.column Grid.section <|
---                             [ SR.Elements.selectedRankingHeaderEl appInfo.selectedRanking
---                             , Element.column (Card.simple ++ Grid.simple) <|
---                                 insertPlayerList dataState appInfo
---                             ]
+playerbuttons : Data.Selected.Selected -> Data.Users.Users -> Data.Users.User -> Element Msg
+playerbuttons selectedRanking sUsers user =
+    --case selectedRanking (SelectedRanking (EverySet UserPlayer) Internal.Types.RankingId SelectedOwnerStatus Data.Players.Players SelectedState)
+    Element.column Grid.section <|
+        [ SR.Elements.selectedRankingHeaderEl <| Data.Rankings.Ranking "Ranking name to go here" False "" Nothing ""
 
---                     _ ->
---                         Element.text "Error1"
---         _ ->
---             Element.text "Error1"
+        , Element.column (Card.simple ++ Grid.simple) <|
+            --insertPlayerList selectedRanking sUsers user
+            List.map (configureThenAddPlayerRankingBtns selectedRanking sUsers user)
+                (Data.Selected.asList selectedRanking)
+        ]
 
-
-
-
--- configureThenAddPlayerRankingBtns : Data.Selected.Selected -> Data.Users.Users -> SR.Types.AppInfo -> Data.Selected.UserPlayer -> Element Msg
--- configureThenAddPlayerRankingBtns sSelected sUsers appInfo uplayer =
+configureThenAddPlayerRankingBtns : Data.Selected.Selected -> Data.Users.Users -> Data.Users.User-> Data.Selected.UserPlayer -> Element Msg
+configureThenAddPlayerRankingBtns sSelected sUsers appInfo uplayer =
+    Element.text "Hello"
 --    -- nb. 'uplayer' is the player that's being mapped cf. appInfo.player which is current user as player (single instance)
 --     let
 --         _ = Debug.log "configureThenAddPlayerRankingBtns" uplayer
@@ -3181,26 +3178,26 @@ neitherOwnerNorMemberRankingInfoBtn rankingobj =
 --                 Element.text "No challenger"
           
 
--- insertPlayerList : DataState -> SR.Types.AppInfo -> List (Element Msg)
--- insertPlayerList dataState appInfo =
---     case dataState of
---                     Fetched sUsers sRankings dKind -> 
---                         case dKind of 
---                                 Selected sSelected ->
+-- insertPlayerList : Data.Selected.Selected -> Data.Users.Users -> Data.Users.User -> List (Element Msg)
+-- insertPlayerList sSelected sUsers user  =
+--     -- case dataState of
+--     --                 Fetched sUsers sRankings dKind -> 
+--     --                     case dKind of 
+--     --                             Selected sSelected ->
 --                                     let
                                        
 --                                         mapOutPlayerList =
 --                                             List.map
---                                                 (configureThenAddPlayerRankingBtns sSelected sUsers appInfo)
+--                                                 (configureThenAddPlayerRankingBtns sSelected sUsers user)
 --                                                 (Data.Selected.asList sSelected)
 
 --                                     in
 --                                     mapOutPlayerList
 
---                                 _ ->
---                                     [ Element.text "error2" ]
---                     _ ->
---                         [ Element.text "error2" ]
+                    --             _ ->
+                    --                 [ Element.text "error2" ]
+                    -- _ ->
+                    --     [ Element.text "error2" ]
 
 
 

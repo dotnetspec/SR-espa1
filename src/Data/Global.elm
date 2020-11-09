@@ -41,7 +41,7 @@ import SR.Defaults
 import Data.Selected
 --import GlobalRankingsTests exposing (userOwner)
 -- Global came from Selected - there are many functions etc. not relevant to Global in here currently (even if renamed)
-
+-- nb. in main.elm 'Global' is a DataKind
 type Global = GlobalRankings (EverySet UserRanking) GlobalState
 
 --UserRanking.userInfo will always be Registered only

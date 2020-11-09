@@ -63,6 +63,7 @@ import Eth.Types
 
 
 -- the relevant Users are picked out with the Create function and for the UserPlayer EverySet (no need for Users assoc data)
+-- nb. in main.elm 'Selected' is a DataKind
 type Selected = 
     SelectedRanking (EverySet UserPlayer) Internal.Types.RankingId SelectedOwnerStatus Data.Players.Players SelectedState
 
