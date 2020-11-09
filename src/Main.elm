@@ -2521,8 +2521,36 @@ view model =
                     Html.text ("Not yet implemented")
 
                 -- Selected
-                (Fetched sUsers sRankings (Selected sSelected), _) ->
-                    selectedUserIsOwnerView sSelected user
+                (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId 
+                    Data.Selected.UserIsOwner 
+                        sPlayers selectedState)), _) ->
+                    Framework.responsiveLayout [] <| Element.column Framework.container
+                        [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner " --++ userInfo.username
+                        , Element.el Heading.h6 <| Element.text "Click to continue ..."
+                        --, playerbuttons dataState sSelected
+                        , infoBtn "Delete" ClickedDeleteRanking
+                        , infoBtn "Home" Cancel
+                        ]
+
+                (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId 
+                    Data.Selected.UserIsMember sPlayers selectedState)), _) ->
+                    Framework.responsiveLayout [] <| Element.column Framework.container
+                        [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " --++ userInfo.username
+                        , Element.el Heading.h6 <| Element.text "Click to continue ..."
+                    --, playerbuttons dataState appInfo
+                        , infoBtn "Home" Cancel
+                        ]
+
+                (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId 
+                    Data.Selected.UserIsNeitherOwnerNorMember sPlayers selectedState)), _) ->
+                    Framework.responsiveLayout [] <| Element.column Framework.container
+                        [ Element.el Heading.h4 <| Element.text <| "SportRank - Spectator " --++ userInfo.username
+                        , Element.el Heading.h6 <| Element.text "Click to continue ..."
+                        --, playerbuttons dataState sSelected
+                        
+                        , joinBtn user
+                        , infoBtn "Home" Cancel
+                        ]
 
 
                 (Updated _ _ _, _) ->
@@ -3174,109 +3202,6 @@ neitherOwnerNorMemberRankingInfoBtn rankingobj =
 --                     _ ->
 --                         [ Element.text "error2" ]
 
-
-selecteduserIsOwnerhomebutton : Data.Users.User -> Element Msg
-selecteduserIsOwnerhomebutton user =
-    -- case user of
-    --     Data.Users.Guest userInfo userState ->
-    --         Element.text "Error"
-    --     (Data.Users.Registered userId token userInfo userState) ->
-            Element.column Grid.section <|
-                [ Element.el Heading.h6 <| Element.text "Click to continue ..."
-                , Element.column (Card.simple ++ Grid.simple) <|
-                    [ Element.wrappedRow Grid.simple <|
-                        [ Input.button (Button.simple ++ Color.simple) <|
-                            { onPress = Just <| Cancel
-                            , label = Element.text "Home"
-                            }
-                        , Input.button (Button.simple ++ Color.danger) <|
-                            { onPress = Just <| ClickedDeleteRanking
-                            , label = Element.text "Delete"
-                            }
-                        ]
-                    ]
-                ]
-        -- (Data.Users.NoWallet userId token userInfo userState) ->
-        --      Element.column Grid.section <|
-        --         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
-        --         , Element.column (Card.simple ++ Grid.simple) <|
-        --             [ Element.wrappedRow Grid.simple <|
-        --                 [ Input.button (Button.simple ++ Color.simple) <|
-        --                     { onPress = Just <| Cancel
-        --                     , label = Element.text "Home"
-        --                     }
-        --                 , Input.button (Button.simple ++ Color.danger) <|
-        --                     { onPress = Just <| ClickedDeleteRanking userId
-        --                     , label = Element.text "Delete"
-        --                     }
-        --                 ]
-        --             ]
-        --         ]
-        -- (Data.Users.NoCredit addr userId token userInfo userState) ->
-        --     Element.column Grid.section <|
-        --         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
-        --         , Element.column (Card.simple ++ Grid.simple) <|
-        --             [ Element.wrappedRow Grid.simple <|
-        --                 [ Input.button (Button.simple ++ Color.simple) <|
-        --                     { onPress = Just <| Cancel
-        --                     , label = Element.text "Home"
-        --                     }
-        --                 , Input.button (Button.simple ++ Color.danger) <|
-        --                     { onPress = Just <| ClickedDeleteRanking userId
-        --                     , label = Element.text "Delete"
-        --                     }
-        --                 ]
-        --             ]
-        --         ]
-        -- (Data.Users.Credited addr userId token userInfo userState) ->
-        --     Element.column Grid.section <|
-        --         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
-        --         , Element.column (Card.simple ++ Grid.simple) <|
-        --             [ Element.wrappedRow Grid.simple <|
-        --                 [ Input.button (Button.simple ++ Color.simple) <|
-        --                     { onPress = Just <| Cancel
-        --                     , label = Element.text "Home"
-        --                     }
-        --                 , Input.button (Button.simple ++ Color.danger) <|
-        --                     { onPress = Just <| ClickedDeleteRanking userId
-        --                     , label = Element.text "Delete"
-        --                     }
-        --                 ]
-        --             ]
-        --         ]
-        --, SR.Elements.simpleUserInfoText
-        
-
-
-selecteduserIsPlayerHomebutton : Data.Users.User -> Element Msg
-selecteduserIsPlayerHomebutton user =
-    Element.column Grid.section <|
-        [ Element.el Heading.h6 <| Element.text "Click to continue ..."
-        , Element.column (Card.simple ++ Grid.simple) <|
-            [ Element.wrappedRow Grid.simple <|
-                [ Input.button (Button.simple ++ Color.simple) <|
-                    { onPress = Just <| Cancel
-                    , label = Element.text "Home"
-                    }
-                ]
-            ]
-        ]
-
-
-selecteduserIsNeitherPlayerNorOwnerHomebutton : Data.Users.User -> Element Msg
-selecteduserIsNeitherPlayerNorOwnerHomebutton user =
-    Element.column Grid.section <|
-        [ Element.el Heading.h6 <| Element.text "Click to continue ..."
-        , Element.column (Card.simple ++ Grid.simple) <|
-            [ Element.wrappedRow Grid.simple <|
-                [ Input.button (Button.simple ++ Color.simple) <|
-                    { onPress = Just <| Cancel
-                    , label = Element.text "Home"
-                    }
-                , joinBtn user
-                ]
-            ]
-        ]
 
 
 joinBtn : Data.Users.User -> Element Msg
@@ -4089,33 +4014,33 @@ displayEnableEthereumBtn =
             , label = Element.text "Enable Ethereum"
             }
 
-selectedUserIsOwnerView : Data.Selected.Selected -> Data.Users.User -> Html Msg
-selectedUserIsOwnerView sSelected user =
-    case sSelected of 
-        (Data.Selected.SelectedRanking esUP rnkId ownerStatus sPlayers selectedState) ->
-            case ownerStatus of 
-                Data.Selected.UserIsOwner ->
-                    Framework.responsiveLayout [] <| Element.column
-                        Framework.container
-                        [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner " --++ userInfo.username
-                        --, selecteduserIsOwnerhomebutton Data.Users.Guest
-                        --, playerbuttons dataState sSelected
-                        , infoBtn "Cancel" Cancel
-                        ]
+-- selectedView : Data.Selected.Selected -> Data.Users.User -> Html Msg
+-- selectedView sSelected user =
+--     case sSelected of 
+--         (Data.Selected.SelectedRanking esUP rnkId ownerStatus sPlayers selectedState) ->
+--             case ownerStatus of 
+--                 Data.Selected.UserIsOwner ->
+--                     Framework.responsiveLayout [] <| Element.column
+--                         Framework.container
+--                         [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner " --++ userInfo.username
+--                         --, selecteduserIsOwnerhomebutton Data.Users.Guest
+--                         --, playerbuttons dataState sSelected
+--                         , infoBtn "Cancel" Cancel
+--                         ]
 
-                Data.Selected.UserIsMember ->
-                    Framework.responsiveLayout [] <| Element.column Framework.container
-                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " --++ userInfo.username
-                    --, selecteduserIsPlayerHomebutton appInfo.user
-                    --, playerbuttons dataState appInfo
-                    ]
+--                 Data.Selected.UserIsMember ->
+--                     Framework.responsiveLayout [] <| Element.column Framework.container
+--                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " --++ userInfo.username
+--                     --, selecteduserIsPlayerHomebutton appInfo.user
+--                     --, playerbuttons dataState appInfo
+--                     ]
 
-                Data.Selected.UserIsNeitherOwnerNorMember ->
-                    Framework.responsiveLayout [] <| Element.column Framework.container
-                        [ --newOrExistingUserNameDisplay userVal accountState
+--                 Data.Selected.UserIsNeitherOwnerNorMember ->
+--                     Framework.responsiveLayout [] <| Element.column Framework.container
+                        --[ newOrExistingUserNameDisplay userVal accountState
                         --, selecteduserIsNeitherPlayerNorOwnerHomebutton userVal accountState
                         --, playerbuttons  dataState appInfo
-                        ]
+                        --]
                             -- (Data.Users.Registered userId token userInfo userState) ->
                             --     Framework.responsiveLayout [] <| Element.column Framework.container
                             --         [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userInfo.username
@@ -4142,9 +4067,9 @@ selectedUserIsOwnerView sSelected user =
                             --         ]
 
                 -- _ ->
-                --     Html.text "Fail selectedUserIsOwnerView"
+                --     Html.text "Fail selectedView"
         -- _ ->
-        --     Html.text "Fail selectedUserIsOwnerView"
+        --     Html.text "Fail selectedView"
 
 -- selectedUserIsPlayerView : DataState -> SR.Types.AppInfo -> Html Msg
 -- selectedUserIsPlayerView dataState appInfo =
