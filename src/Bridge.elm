@@ -1,6 +1,7 @@
 module Bridge exposing (requestLoginUser, requestCreateAndOrLoginUser, handleCreateAndOrLoginUserOptionalArguments, requestAllUserNames
     , requestAllUsers
     , requestAllRankings
+    , requestAllPlayers
     )
 
 import Graphql.Http as Http
@@ -11,12 +12,14 @@ import SRdb.Query as Query
 import SRdb.Object
 import SRdb.Object.User
 import SRdb.Object.Ranking
+import SRdb.Object.Player
 import SR.Types
 import SR.Constants
 import Graphql.SelectionSet exposing (SelectionSet(..))
 import Eth.Types
 import Data.Rankings
 import Data.Users
+import Data.Players
 
 requestLoginUser : Data.Users.UserName -> Data.Users.Password -> Http.Request (Data.Users.Token)
 requestLoginUser user_name password =
@@ -125,5 +128,24 @@ queryAllRankings : SelectionSet Data.Rankings.FRanking SRdb.Object.Ranking
     -> SelectionSet (Maybe (List (Maybe Data.Rankings.FRanking))) RootQuery
 queryAllRankings rankingSelectSet =
         Query.allRankings rankingSelectSet
-      
 
+--280892229782864389
+
+requestAllPlayers : Data.Users.Token ->  Http.Request (Maybe (List (Maybe Data.Players.FPlayer)))
+requestAllPlayers token =
+    Http.queryRequest SR.Constants.endpointURL (queryAllPlayers playerSelectionSet)
+        |> Http.withHeader "authorization" ("Bearer " ++ token)
+
+queryAllPlayers : SelectionSet Data.Players.FPlayer SRdb.Object.Player
+     -> SelectionSet (Maybe (List (Maybe Data.Players.FPlayer))) RootQuery
+queryAllPlayers playerSelectSet =
+    Query.allPlayers playerSelectSet
+
+playerSelectionSet :  SelectionSet Data.Players.FPlayer SRdb.Object.Player
+playerSelectionSet =
+    Graphql.SelectionSet.succeed Data.Players.FPlayer
+        |> Graphql.SelectionSet.with SRdb.Object.Player.id_
+        |> Graphql.SelectionSet.with SRdb.Object.Player.rankingid
+        |> Graphql.SelectionSet.with SRdb.Object.Player.uid
+        |> Graphql.SelectionSet.with SRdb.Object.Player.rank
+        |> Graphql.SelectionSet.with SRdb.Object.Player.challengerid

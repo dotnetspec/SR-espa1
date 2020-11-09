@@ -183,6 +183,7 @@ type Msg
     | ReceivedUserNames (Result (GQLHttp.Error (List String)) (List String))
     | ReceivedUsers (Result (GQLHttp.Error (Maybe (List (Maybe Data.Users.FUser)))) (Maybe (List (Maybe Data.Users.FUser))))
     | ReceivedRankings (Result (GQLHttp.Error (Maybe (List (Maybe Data.Rankings.FRanking)))) (Maybe (List (Maybe Data.Rankings.FRanking))))
+    | ReceivedPlayers (Result (GQLHttp.Error (Maybe (List (Maybe Data.Players.FPlayer)))) (Maybe (List (Maybe Data.Players.FPlayer))))
     | ReceivedPlayersByRankingId (Result (GQLHttp.Error (Maybe (List (Maybe Data.Players.FPlayer)))) (Maybe (List (Maybe Data.Players.FPlayer)))) String
     | CreatedGlobal
       -- App Only Ops
@@ -1619,6 +1620,11 @@ update msg model =
             ( updateWithReceivedRankings modelReDef response
             , Cmd.none
             )
+            
+        (ReceivedPlayers response, modelReDef) ->
+            ( updateWithReceivedPlayers modelReDef response
+            , Cmd.none 
+            )
 
         (ReceivedPlayersByRankingId response rankingid, modelReDef) ->
             ( updateWithReceivedPlayersByRankingId modelReDef response rankingid
@@ -1685,6 +1691,9 @@ allRankings : Cmd Msg
 allRankings  =
     GQLHttp.send ReceivedRankings (Bridge.requestAllRankings)
 
+allPlayers : Data.Users.Token -> Cmd Msg
+allPlayers  token =
+    GQLHttp.send ReceivedPlayers (Bridge.requestAllPlayers token)
 
 -- gotRankingById : Cmd Msg 
 -- gotRankingById = 
@@ -1888,6 +1897,47 @@ updateWithReceivedRankings model response =
 
         (Failure _, Err _) ->
             (Failure "updateWithReceivedRankings18")
+
+
+
+updateWithReceivedPlayers : Model -> Result (GQLHttp.Error (Maybe (List (Maybe Data.Players.FPlayer)))) (Maybe (List (Maybe Data.Players.FPlayer))) -> Model
+updateWithReceivedPlayers model response =
+     case (model, response) of
+        (AppOps walletState AllEmpty user uiState subState txRec, Ok lplayers)  ->
+            (Failure "No network connection ...")
+
+        (AppOps walletState (Fetched sUsers sRankings  (Global _)) user uiState subState txRec, Ok lplayers) ->
+             (Failure "updateWithReceivedPlayers1")
+                
+        (AppOps walletState (Updated sUsers sRankings dKind) user uiState subState txRec, Ok lplayers) ->
+            (Failure "updateWithReceivedPlayers2")
+
+        ( AppOps walletState (Fetched sUsers sRankings (Selected _)) user uiState subState txRec, Ok lplayers ) ->
+
+                    let
+                        filteredFPlayerList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lplayers)
+                        lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer filteredFPlayerList
+                        --newSPlayers = Data.Players.asPlayers (EverySet.fromList lFromFToPlayer)
+                        newDataKind = Selected (Data.Selected.created lFromFToPlayer sUsers (Internal.Types.RankingId "280892229782864389") ) -- i.e. rnkId
+                        newDataState = Fetched sUsers sRankings newDataKind
+                    in
+                        AppOps walletState newDataState user uiState subState txRec
+
+        (AppOps walletState AllEmpty user uiState subState txRec, Err _ )  ->
+            (Failure "Unable to obtain Players data. Please check your network connection ...")
+
+        (AppOps walletState (Fetched sUsers sRankings dKind) user uiState subState txRec, Err _)  ->
+            (Failure "updateWithReceivedRankings15")
+
+        (AppOps walletState (Updated sUsers sRankings dKind) user uiState subState txRec, Err _ ) ->
+            (Failure "updateWithReceivedRankings16")
+
+        (Failure _, Ok lusers) ->
+            (Failure "updateWithReceivedRankings17")
+
+        (Failure _, Err _) ->
+            (Failure "updateWithReceivedRankings18")
+
 
  
 updateWithReceivedRankingById : Model -> Result (GQLHttp.Error (Maybe Data.Rankings.FRanking)) (Maybe Data.Rankings.FRanking) -> Model
@@ -2429,6 +2479,7 @@ view model =
                 (AllEmpty, _) ->
                     Html.text ("Loading ...")
 
+                -- Global
                 (Fetched sUsers sRankings dKind, Data.Users.Guest userInfo Data.Users.CreateNewUser) ->
                     registerNewUserView user sUsers
 
@@ -2447,9 +2498,6 @@ view model =
                 ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder userVal rnkId )))
                     , Data.Users.Registered _ _ _ _ ) ->
                     generalLoggedInView userVal sUsers (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder userVal rnkId ))
-
-                (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId ownerStatus splayers selectedState) ), _) ->
-                    Html.text ("Not yet implemented")
                 
                 ( Fetched _ _ (Global _), Data.Users.NoWallet _ _ _ _ ) ->
                     Html.text ("Not yet implemented")
@@ -2470,6 +2518,10 @@ view model =
                     Html.text ("Not yet implemented")
                 ( Fetched _ _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder _ _)))
                     , Data.Users.Guest _ Data.Users.General ) ->
+                    Html.text ("Not yet implemented")
+
+                -- Selected
+                (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId ownerStatus splayers selectedState) ), _) ->
                     Html.text ("Not yet implemented")
 
                 (Updated _ _ _, _) ->
