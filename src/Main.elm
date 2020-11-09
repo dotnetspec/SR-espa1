@@ -2524,17 +2524,16 @@ view model =
                 (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId 
                     Data.Selected.UserIsOwner 
                         sPlayers selectedState)), _) ->
-                    Framework.responsiveLayout [] <| Element.column Framework.container
-                        [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner " --++ userInfo.username
-                        , Element.el Heading.h6 <| Element.text "Click to continue ..."
-                        , playerbuttons (Data.Selected.SelectedRanking esUP rnkId 
-                                Data.Selected.UserIsOwner 
-                                sPlayers selectedState)
-                                
-                            sUsers user
-                        , infoBtn "Delete" ClickedDeleteRanking
-                        , infoBtn "Home" Cancel
-                        ]
+                            Framework.responsiveLayout [] <| Element.column Framework.container
+                                [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner " --++ userInfo.username
+                                , Element.el Heading.h6 <| Element.text "Click to continue ..."
+                                , playerbuttons (Data.Selected.SelectedRanking esUP rnkId 
+                                        Data.Selected.UserIsOwner 
+                                        sPlayers selectedState)           
+                                    sUsers user
+                                , infoBtn "Delete" ClickedDeleteRanking
+                                , infoBtn "Home" Cancel
+                                ]
 
                 (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId 
                     Data.Selected.UserIsMember sPlayers selectedState)), _) ->
@@ -3077,128 +3076,106 @@ playerbuttons selectedRanking sUsers user =
         [ SR.Elements.selectedRankingHeaderEl <| Data.Rankings.Ranking "Ranking name to go here" False "" Nothing ""
 
         , Element.column (Card.simple ++ Grid.simple) <|
-            --insertPlayerList selectedRanking sUsers user
             List.map (configureThenAddPlayerRankingBtns selectedRanking sUsers user)
                 (Data.Selected.asList selectedRanking)
         ]
 
 configureThenAddPlayerRankingBtns : Data.Selected.Selected -> Data.Users.Users -> Data.Users.User-> Data.Selected.UserPlayer -> Element Msg
-configureThenAddPlayerRankingBtns sSelected sUsers appInfo uplayer =
-    Element.text "Hello"
---    -- nb. 'uplayer' is the player that's being mapped cf. appInfo.player which is current user as player (single instance)
---     let
---         _ = Debug.log "configureThenAddPlayerRankingBtns" uplayer
---         printChallengerNameOrAvailable = Data.Selected.printChallengerNameOrAvailable sSelected sUsers uplayer
---     in
---         --case user of
---         case (appInfo.user, uplayer.user) of
---             (Data.Users.Guest, _)  ->
---                 Element.text "No User2"
+configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
+   -- nb. 'uplayer' is the player that's being mapped cf. appInfo.player which is current user as player (single instance)
+    let
+        _ = Debug.log "configureThenAddPlayerRankingBtns" uplayer
+        printChallengerNameOrAvailable = Data.Selected.printChallengerNameOrAvailable sSelected sUsers uplayer
+    in
+        --case user of
+        case (user, uplayer.user) of
+            (Data.Users.Guest _ _, _)  ->
+                Element.text "Guest"
 
---             (Data.Users.Registered userId token userInfo userState, Data.Users.Registered _ _ userPlayerInfo) ->
---                 if Data.Selected.isUserPlayerMemberOfSelectedRanking sSelected appInfo.user then
+            (Data.Users.Registered userId token userInfo userState, Data.Users.Registered _ _ userPlayerInfo _) ->
+                if Data.Selected.isUserPlayerMemberOfSelectedRanking sSelected user then
                     
---                     if Data.Selected.isPlayerCurrentUser appInfo.user uplayer then
---                         --if isCurrentUserInAChallenge then
---                         if Data.Selected.isChallenged sSelected sUsers uplayer then
---                             Element.column Grid.simple <|
---                                 [ Input.button (Button.fill ++ Color.success) <|
---                                     { onPress = Just <| ClickedChangedUIStateToEnterResult appInfo.player
---                                     , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
---                                     }
---                                 ]
---                         else
---                         -- player is current user, but not in a challenge:
---                         let 
---                             _ = Debug.log "player is current user, but not in a challenge" "here"
---                         in
---                             Element.column Grid.simple <|
---                                 [ Input.button (Button.fill ++ Color.info) <|
---                                     { onPress = Nothing
---                                     , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
---                                     }
---                                 ]
---                         -- else if - this uplayer isn't the current user but the current user is in a challenge so disable any other players
+                    if Data.Selected.isPlayerCurrentUser user uplayer then
+                        --if isCurrentUserInAChallenge then
+                        if Data.Selected.isChallenged sSelected sUsers uplayer then
+                            Element.column Grid.simple <|
+                                [ Input.button (Button.fill ++ Color.success) <|
+                                    { 
+                                        --nb. this was appInfo.player - uplayer.player might not be quite correct:
+                                        onPress = Just <| ClickedChangedUIStateToEnterResult uplayer
+                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    }
+                                ]
+                        else
+                        -- player is current user, but not in a challenge:
+                        let 
+                            _ = Debug.log "player is current user, but not in a challenge" "here"
+                        in
+                            Element.column Grid.simple <|
+                                [ Input.button (Button.fill ++ Color.info) <|
+                                    { onPress = Nothing
+                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    }
+                                ]
+                        -- else if - this uplayer isn't the current user but the current user is in a challenge so disable any other players
 
---                     --else if isCurrentUserInAChallenge then
---                     else if Data.Selected.isChallenged sSelected sUsers uplayer then
---                         Element.column Grid.simple <|
---                             [ Input.button (Button.fill ++ Color.disabled) <|
---                                 { onPress = Nothing
---                                 , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
---                                 }
---                             ]
---                         -- else if - this uplayer isn't the current user but is being challenged
+                    --else if isCurrentUserInAChallenge then
+                    else if Data.Selected.isChallenged sSelected sUsers uplayer then
+                        Element.column Grid.simple <|
+                            [ Input.button (Button.fill ++ Color.disabled) <|
+                                { onPress = Nothing
+                                , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                }
+                            ]
+                        -- else if - this uplayer isn't the current user but is being challenged
 
---                     else if Data.Selected.isChallenged sSelected sUsers uplayer then
---                         Element.column Grid.simple <|
---                             [ Input.button (Button.fill ++ Color.disabled) <|
---                                 { onPress = Nothing
---                                 , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
---                                 }
---                             ]
---                     else
---                     -- this uplayer isn't the current user and isn't challenged by anyone
---                         if not (Data.Selected.isChallenged sSelected sUsers uplayer) then
---                             Element.column Grid.simple <|
---                                 [ Input.button (Button.fill ++ Color.light) <|
---                                     { onPress = Just <| ClickedChallengeOpponent uplayer
---                                     , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
---                                     }
---                                 ]
---                         else 
---                                 Element.column Grid.simple <|
---                                 [ Input.button (Button.fill ++ Color.disabled) <|
---                                     { onPress = Nothing
---                                     , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
---                                     }
---                                 ]
---                 else
---                     -- the user isn't a member of this ranking so disable everything
---                     Element.column Grid.simple <|
---                         [ Input.button (Button.fill ++ Color.disabled) <|
---                             { onPress = Nothing
---                             , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
---                             }
---                         ]
+                    else if Data.Selected.isChallenged sSelected sUsers uplayer then
+                        Element.column Grid.simple <|
+                            [ Input.button (Button.fill ++ Color.disabled) <|
+                                { onPress = Nothing
+                                , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                }
+                            ]
+                    else
+                    -- this uplayer isn't the current user and isn't challenged by anyone
+                        if not (Data.Selected.isChallenged sSelected sUsers uplayer) then
+                            Element.column Grid.simple <|
+                                [ Input.button (Button.fill ++ Color.light) <|
+                                    { onPress = Just <| ClickedChallengeOpponent uplayer
+                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    }
+                                ]
+                        else 
+                                Element.column Grid.simple <|
+                                [ Input.button (Button.fill ++ Color.disabled) <|
+                                    { onPress = Nothing
+                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    }
+                                ]
+                else
+                    -- the user isn't a member of this ranking so disable everything
+                    Element.column Grid.simple <|
+                        [ Input.button (Button.fill ++ Color.disabled) <|
+                            { onPress = Nothing
+                            , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                            }
+                        ]
 
---             (Data.Users.NoWallet userId token userInfo userState, _) ->
---                 Element.text "No User3"
---             (Data.Users.NoCredit addr userId token userInfo userState, _) ->
---                 Element.text "No User4"
---             (Data.Users.Credited addr userId token userInfo userState, _) ->
---                 Element.text "No User5"
---             ( Data.Users.Registered _ _ _, Data.Users.Guest ) ->
---                 Element.text "No challenger"
---             ( Data.Users.Registered _ _ _, Data.Users.NoWallet _ _ _ )->
---                 Element.text "No challenger"
---             ( Data.Users.Registered _ _ _, Data.Users.NoCredit _ _ _ _ )->
---                 Element.text "No challenger"
---             ( Data.Users.Registered _ _ _, Data.Users.Credited _ _ _ _ )->
---                 Element.text "No challenger"
-          
-
--- insertPlayerList : Data.Selected.Selected -> Data.Users.Users -> Data.Users.User -> List (Element Msg)
--- insertPlayerList sSelected sUsers user  =
---     -- case dataState of
---     --                 Fetched sUsers sRankings dKind -> 
---     --                     case dKind of 
---     --                             Selected sSelected ->
---                                     let
-                                       
---                                         mapOutPlayerList =
---                                             List.map
---                                                 (configureThenAddPlayerRankingBtns sSelected sUsers user)
---                                                 (Data.Selected.asList sSelected)
-
---                                     in
---                                     mapOutPlayerList
-
-                    --             _ ->
-                    --                 [ Element.text "error2" ]
-                    -- _ ->
-                    --     [ Element.text "error2" ]
-
+            (Data.Users.NoWallet userId token userInfo userState, _) ->
+                Element.text "No User3"
+            (Data.Users.NoCredit addr userId token userInfo userState, _) ->
+                Element.text "No User4"
+            (Data.Users.Credited addr userId token userInfo userState, _) ->
+                Element.text "No User5"
+            ( Data.Users.Registered _ _ _ _, Data.Users.Guest _ _) ->
+                Element.text "No challenger"
+            ( Data.Users.Registered _ _ _ _, Data.Users.NoWallet _ _ _ _)->
+                Element.text "No challenger"
+            ( Data.Users.Registered _ _ _ _, Data.Users.NoCredit _ _ _ _ _)->
+                Element.text "No challenger"
+            ( Data.Users.Registered _ _ _ _, Data.Users.Credited _ _ _ _ _)->
+                Element.text "No challenger"
+        
 
 
 joinBtn : Data.Users.User -> Element Msg
