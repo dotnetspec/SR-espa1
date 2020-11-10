@@ -1,0 +1,57 @@
+type User 
+ {  
+    active : Boolean!
+    username : String! @unique
+    password : String! @unique
+    description : String
+    email : String @unique 
+    mobile : String @unique
+    member_since: Int!
+}
+
+type Player 
+ {  rankingid : String!
+    uid : String! @unique
+    rank : Int!
+    challengerid : String
+}
+
+type Ranking
+  { 
+    active : Boolean!
+    rankingname : String! @unique
+    rankingdesc : String
+    rankingownerid : String!
+    }
+
+type UserJoinedRanking
+  { 
+    active : Boolean!
+    rankingid : String!
+    rankingname : String!
+    useraddr : String!
+    rankingownerid : String!
+    }
+
+
+type Mutation {
+  createAndOrLoginUser(active: Boolean!, username: String!, password: String!, description: String, email: String, mobile: String): String! @resolver(name: "create_andor_login_user")
+  createNewPlayer(rankingid: String!, uid: String!, rank: Int!, challengerid: String): Player! @resolver(name: "create_new_player")
+  createNewRanking(active: Boolean!, rankingname : String!, rankingdesc : String, rankingownerid : String!): Ranking! @resolver(name: "create_new_ranking")
+  createNewUser(active: Boolean!, username : String!, password : String!, description: String, email: String, mobile: String): String! @resolver(name: "create_new_user")
+  createNewUserJoinedRanking(active: Boolean!, rankingid : String!, rankingname : String!, useraddr: String!, rankingownerid : String!): UserJoinedRanking! @resolver(name: "create_new_userjoinedranking")
+}
+
+type Query {
+  allUserNames: [String!]! @resolver(name: "all_user_names")
+  allPlayerUIDs: [String!]! @resolver(name: "all_player_uids")
+  allPlayerRanks: [Int!]! @resolver(name: "all_player_ranks")
+  allPlayerChallengerUIDs: [String!]! @resolver(name: "all_player_challenger_uids")
+  allPlayers: [Player] @resolver(name: "all_players")
+  allRankings: [Ranking] @resolver(name: "all_rankings")
+  allUserJoinedRanking: [UserJoinedRanking] @resolver(name: "all_userjoinedranking")
+  allUsers: [User] @resolver(name: "all_users")
+  loginUser(username: String!, password: String!): String! @resolver(name: "login_user")
+  findRankingById (rankingid: Int!): [Ranking!]! @resolver(name: "find_ranking_by_id")
+  findPlayersByRankingId (rankingid: String!): [Player!]! @resolver(name: "find_players_by_ranking_id")
+}

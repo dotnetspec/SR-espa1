@@ -36,11 +36,12 @@ globalListTest =
             \() ->
                 start
                     |> ProgramTest.update (Main.WalletStatus Testdata.TestDefaults.simWalletSentryDataT1)
-                    |> ProgramTest.update (Main.UsersReceived Testdata.UserTestData.usersJson)
-                    |> ProgramTest.update (Main.GlobalRankingsReceived Testdata.GlobalTestData.globalRankingsJson)
+                    |> ProgramTest.update (Main.UsersReceived Testdata.UserTestData.remoteDataUsers)
+                    |> ProgramTest.update (Main.GlobalReceived Testdata.GlobalTestData.globalRankingsJson)
                     |> expectViewHas
                         [ text "SportRank - Test 1"
-                        , text "Click to continue"
+
+                        --, text "Click to continue"
                         , text "Test 4"
                         ]
         ]
@@ -50,14 +51,28 @@ globalListTest =
 -- create new tests
 
 
-createNewLadderTest : Test
-createNewLadderTest =
+existingUserCreateNewLadderTest : Test
+existingUserCreateNewLadderTest =
     --skip <|
-    test "SRProgramTest - create new ladder brings up correct header" <|
+    test "SRProgramTest - existing user - create new ladder brings up correct header" <|
         \() ->
             start
                 |> ProgramTest.update (Main.WalletStatus Testdata.TestDefaults.simWalletSentryDataT1)
-                |> ProgramTest.update (Main.GlobalRankingsReceived Testdata.GlobalTestData.globalRankingsJson)
-                |> ProgramTest.update Main.ChangedUIStateToCreateNewLadder
+                |> ProgramTest.update (Main.UsersReceived Testdata.UserTestData.remoteDataUsers)
+                |> ProgramTest.update (Main.GlobalReceived Testdata.GlobalTestData.globalRankingsJson)
+                |> ProgramTest.update Main.ClickedCreateNewLadder
+                |> expectViewHas
+                    [ text "Create New Ladder Ranking" ]
+
+
+unregisteredUserCreateNewLadderTest : Test
+unregisteredUserCreateNewLadderTest =
+    --skip <|
+    test "SRProgramTest - unregistered user - create new ladder brings up correct header" <|
+        \() ->
+            start
+                |> ProgramTest.update (Main.WalletStatus Testdata.TestDefaults.simWalletSentryDataT1)
+                |> ProgramTest.update (Main.GlobalReceived Testdata.GlobalTestData.globalRankingsJson)
+                |> ProgramTest.update Main.ClickedCreateNewLadder
                 |> expectViewHas
                     [ text "Create New Ladder Ranking" ]

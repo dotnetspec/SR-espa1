@@ -1,12 +1,16 @@
 module SR.Defaults exposing
-    ( emptyPlayer
-    , emptyActiveUser, emptyAllLists, emptyAppInfo, emptyFormValidations, emptyOwnedRanking, emptyRankingInfo, emptyUser, emptyUserPlayer, emptyUserRanking, globalBinName, globalContainerId, secretKey, selectedBinName, selectedContainerId, userBinName, userContainerId
+    ( 
+    emptyFormValidations
+    , emptyUserRanking, globalBinName
+    , globalContainerId, secretKey, selectedBinName
+    , selectedContainerId, userBinName, userContainerId
     )
+
 
 {-| Default values.
 For those withDefault shenanigans.
 
-@docs emptyPlayer
+
 
 -}
 
@@ -14,27 +18,11 @@ import Eth.Types exposing (..)
 import Http
 import Internal.Types as Internal
 import SR.Types exposing (..)
+import EverySet exposing (EverySet)
+import Data.Players
+import Data.Users
+import Data.Rankings
 
-
-emptyPlayer : SR.Types.Player
-emptyPlayer =
-    { address = ""
-    , rank = 0
-    , challengeraddress = ""
-    }
-
-
-emptyUser : SR.Types.User
-emptyUser =
-    { datestamp = 123456
-    , active = False
-    , username = ""
-    , ethaddress = ""
-    , description = ""
-    , email = ""
-    , mobile = ""
-    , userjoinrankings = []
-    }
 
 
 emptyFormValidations : SR.Types.FormValidations
@@ -48,62 +36,35 @@ emptyFormValidations =
     }
 
 
-emptyActiveUser : SR.Types.User
-emptyActiveUser =
-    { datestamp = 123456
-    , active = True
-    , username = ""
-    , ethaddress = ""
-    , description = ""
-    , email = ""
-    , mobile = ""
-    , userjoinrankings = []
-    }
-
-
 emptyUserRanking =
-    { rankingInfo = emptyRankingInfo
-    , userInfo = emptyUser
+    { rankingInfo = (Data.Rankings.Ranking "" True "" Nothing "")
+    , userInfo = Data.Users.empty
     }
 
 
-emptyUserPlayer =
-    { player = emptyPlayer
-    , user = emptyUser
-    }
+-- emptyUserPlayer =
+--     { player = SR.Types.Player "" "" 0 ""
+--     --, user = Data.Users.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
+--     , user = SR.Types.Guest
+--     }
 
 
-emptyRankingInfo =
-    { id = "0"
-    , active = False
-    , rankingname = ""
-    , rankingdesc = "emptyRankingInfo"
-    , rankingowneraddr = ""
-    }
+-- emptyAppInfo =
+--     { selectedRanking = (Data.Rankings.Ranking "" True "" Nothing "")
+--     , player = {player = Data.Players.empty, user = Data.Users.empty}
+--     , user = Data.Users.Guest
+--     , challenger = {player = Data.Players.empty, user = Data.Users.empty}
+--     , appState = AppStateGeneral
+--     }
 
 
-emptyAllLists =
-    { userRankings = []
-    , userPlayers = []
-    , users = []
-    , lownedUserRanking = []
-    , lmemberUserRanking = []
-    , lotherUserRanking = []
-    }
 
-
-emptyAppInfo =
-    { selectedRanking = emptyRankingInfo
-    , player = emptyUserPlayer
-    , user = emptyUser
-    , challenger = emptyUserPlayer
-    }
-
-
-emptyOwnedRanking =
-    { rankingInfo = emptyRankingInfo
-    , userInfo = emptyUser
-    }
+-- emptyOwnedRanking =
+--     { rankingInfo = (Data.Rankings.Ranking "" True "" Nothing "")
+--     --, userInfo = Data.Users.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
+--     -- todo: below not possible for an owned ranking (temp solution)
+--     , userInfo = SR.Types.Guest
+--     }
 
 
 secretKey =

@@ -1,11 +1,17 @@
 module SR.Types exposing
     ( PlayerId, RankingId(..)
-    , Player, Opponent, OpponentRelativeRank(..), Options, ResultOfMatch(..), WalletState(..)
+    , WalletState(..)
     , UIState(..)
-    , AllLists, AppInfo, Colors, CreateNewLadderFormFields, FormValidations, LadderState(..), ModalState(..), NewRankingListServerResponse, RankingInfo, ResultRadioOptions(..), User, UserListState(..), UserPlayer, UserRanking, colors
+    , Colors, CreateNewLadderFormFields, FormValidations, LadderState(..), ModalState(..)
+    , NewRankingListServerResponse, ResultRadioOptions(..)
+    , UserListState(..)
+    , colors
+    , SubState(..)
+    , DeleteBinResponse
     )
 
 {-| Types
+
 
 
 # Simple
@@ -31,9 +37,19 @@ import Http
 import Internal.Types as Internal
 import Ports
 import RemoteData
+import EverySet exposing (EverySet)
 
-
-
+import SRdb.ScalarCodecs
+import Eth.Utils
+import Eth.Utils
+import Css exposing (em)
+import Result
+--import SR.Defaults
+import SRdb.Scalar exposing (Id(..))
+import Data.Rankings
+import Data.Players
+import Data.Users
+import Data.Selected
 --import Json.Decode exposing (Decoder)
 
 
@@ -52,7 +68,6 @@ type Error
 
 
 -- Simple
-
 
 type ModalState
     = Open
@@ -73,35 +88,32 @@ type RankingId
     = RankingId String
 
 
-type alias Opponent =
-    UserPlayer
-
-
 type Username
     = Username String
 
 
 type WalletState
-    = WalletStateUnknown
-    | WalletStateMissing
+    = 
+    WalletStateMissing
     | WalletStateLocked
     | WalletStateAwaitOpening
-    | WalletOpenedWithoutUserCheck Eth.Types.Address
     | WalletWaitingForTransactionReceipt
-      --| WalletOpenedAndOperational
     | WalletOpened
     | WalletOperational
+    | WalletStopSub
+    | WalletOpenedNoUserAccount
 
 
 type LadderState
-    = ExistingLadder RankingInfo
-    | NewLadder RankingInfo
+    = ExistingLadder Data.Rankings.Ranking
+    | NewLadder Data.Rankings.Ranking
 
 
 type UIState
     = UIRenderAllRankings
-    | CreateNewLadder
-    | UICreateNewUser
+    | UICreateNewLadder
+    | UIRegisterNewUser
+    | UIUpdateExistingUser
     | UIWalletMissingInstructions
     | UIDisplayWalletLockedInstructions
     | UIDisplayWalletInfoToUser
@@ -113,13 +125,62 @@ type UIState
     | UIChallenge
     | UILoading
     | UIWaitingForTxReceipt
+    | UIDeleteRankingConfirm
+    | UIEnableEthereum
+    | UIOwnerDeletedRanking
+    | UIUnableToFindGlobalRankings
+    | UIEthAlreadyEnabled
+    | UILogIn
+
+type SubState 
+    = Subscribe 
+    | StopSubscription
+
 
 
 type UserListState
-    = Success (List User)
+    = Success (List Data.Users.User)
     | Loading
     | NotAsked
     | Failure String
+
+
+type alias CreateNewLadderFormFields =
+    { name : String
+    , desc : String
+    }
+
+
+type alias FormValidations =
+    { username : String
+    , userdesc : String
+    , laddername : String
+    , ladderdesc : String
+    , email : String
+    , mobile : String
+    }
+
+
+type alias DeleteBinResponse =
+    {
+    success : Bool,
+    id : String,
+    message : String
+    }
+
+
+type alias NewRankingListServerResponse =
+    { success : Bool
+    , data :
+        List
+            { id : String
+            , active : Bool
+            , rankingname : String
+            , rankingdesc : String
+            }
+    , version : Int
+    , parentId : String
+    }
 
 
 type alias Colors =
@@ -148,110 +209,4 @@ colors =
     , red = rgb 0.8 0 0
     , darkBlue = rgb 0 0 0.9
     , grey = rgb 0.9 0.9 0.9
-    }
-
-
-type alias CreateNewLadderFormFields =
-    { name : String
-    , desc : String
-    }
-
-
-type Options
-    = MatchChallenge
-    | Result
-
-
-type ResultOfMatch
-    = Won
-    | Lost
-    | Undecided
-
-
-type OpponentRelativeRank
-    = OpponentRankHigher
-    | OpponentRankLower
-
-
-{--}
-type alias AllLists =
-    { users : List User
-    , userRankings : List UserRanking
-    , lownedUserRanking : List UserRanking
-    , lmemberUserRanking : List UserRanking
-    , lotherUserRanking : List UserRanking
-    , userPlayers : List UserPlayer
-    }
---}
-
-
-type alias UserPlayer =
-    { player : Player
-    , user : User
-    }
-
-
-type alias UserRanking =
-    { rankingInfo : RankingInfo
-    , userInfo : User
-    }
-
-
-type alias AppInfo =
-    { selectedRanking : RankingInfo
-    , player : UserPlayer
-    , user : User
-    , challenger : UserPlayer
-    }
-
-
-type alias User =
-    { datestamp : Int
-    , active : Bool
-    , username : String
-    , ethaddress : String
-    , description : String
-    , email : String
-    , mobile : String
-    , userjoinrankings : List String
-    }
-
-
-type alias FormValidations =
-    { username : String
-    , userdesc : String
-    , laddername : String
-    , ladderdesc : String
-    , email : String
-    , mobile : String
-    }
-
-
-type alias Player =
-    { address : String
-    , rank : Int
-    , challengeraddress : String
-    }
-
-
-type alias RankingInfo =
-    { id : String
-    , active : Bool
-    , rankingname : String
-    , rankingdesc : String
-    , rankingowneraddr : String
-    }
-
-
-type alias NewRankingListServerResponse =
-    { success : Bool
-    , data :
-        List
-            { id : String
-            , active : Bool
-            , rankingname : String
-            , rankingdesc : String
-            }
-    , version : Int
-    , parentId : String
     }

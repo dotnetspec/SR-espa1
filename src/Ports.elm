@@ -1,3 +1,4 @@
+--port module Ports exposing (txIn, txOut, walletSentry, EthNode, ethNode, log)
 port module Ports exposing (..)
 
 -- ( EthNode
@@ -64,7 +65,8 @@ init networkId =
       , errors = []
       , incomingData = ""
       }
-    , Task.attempt PollBlock (Eth.getBlockNumber node.http)
+    , --Task.attempt PollBlock (Eth.getBlockNumber node.http)
+    Cmd.none
     )
 
 
@@ -91,23 +93,11 @@ ethNode networkId =
 
 
 
--- retrieveAddress : Model -> String
--- retrieveAddress model =
---   case model.account of
---     Nothing ->
---       "No address"
---     Just a ->
---         let
---             _ = Debug.log "in retreive" a
---         in
---         "99999"
---        --Eth.Utils.addressToString a
-
 
 type Msg
     = TxSentryMsg TxSentry.Msg
-    | WalletStatus WalletSentry
-    | PollBlock (Result Http.Error Int)
+    --| WalletStatus WalletSentry
+    --| PollBlock (Result Http.Error Int)
     | InitTx
     | WatchTxHash (Result String TxHash)
     | WatchTx (Result String Tx)
@@ -123,27 +113,35 @@ update msg model =
     case msg of
         TxSentryMsg subMsg ->
             let
+            
+                _ =
+                    Debug.log "TxSentryMsg subMsg " subMsg
+            
                 ( subModel, subCmd ) =
                     TxSentry.update subMsg model.txSentry
             in
             ( { model | txSentry = subModel }, subCmd )
 
-        WalletStatus walletSentry_ ->
-            ( { model
-                | account = walletSentry_.account
-                , node = ethNode walletSentry_.networkId
-              }
-            , Cmd.none
-            )
+        -- WalletStatus walletSentry_ ->
+        --     let 
+        --         _ =
+        --                 Debug.log "walletSentry_ in ports.update" walletSentry_
+        --     in
+        --     ( { model
+        --         | account = walletSentry_.account
+        --         , node = ethNode walletSentry_.networkId
+        --       }
+        --     , Cmd.none
+        --     )
 
-        PollBlock (Ok blockNumber) ->
-            ( { model | blockNumber = Just blockNumber }
-            , Task.attempt PollBlock <|
-                Task.andThen (\_ -> Eth.getBlockNumber model.node.http) (Process.sleep 1000)
-            )
+        -- PollBlock (Ok blockNumber) ->
+        --     ( { model | blockNumber = Just blockNumber }
+        --     , Task.attempt PollBlock <|
+        --         Task.andThen (\_ -> Eth.getBlockNumber model.node.http) (Process.sleep 1000)
+        --     )
 
-        PollBlock (Err error) ->
-            ( model, Cmd.none )
+        -- PollBlock (Err error) ->
+        --     ( model, Cmd.none )
 
         InitTx ->
             let
@@ -208,16 +206,13 @@ update msg model =
 
 
 
---retrieveAddress : Maybe Eth.Types.Address -> String
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    Sub.batch
-        [ incoming decodeValue
-        , walletSentry (WalletSentry.decodeToMsg Fail WalletStatus)
-        , TxSentry.listen model.txSentry
-        ]
+-- subscriptions : Model -> Sub Msg
+-- subscriptions model =
+--     Sub.batch
+--         [ incoming decodeValue
+--         , walletSentry (WalletSentry.decodeToMsg Fail WalletStatus)
+--         , TxSentry.listen model.txSentry
+--         ]
 
 
 
@@ -250,7 +245,7 @@ port outgoing : { action : String, data : Json.Value } -> Cmd msg
 
 
 
---web3 ports
+--ethereum ports
 
 
 port walletSentry : (Value -> msg) -> Sub msg

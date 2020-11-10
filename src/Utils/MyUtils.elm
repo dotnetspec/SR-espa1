@@ -1,17 +1,11 @@
 module Utils.MyUtils exposing
     ( addressFromStringResult
-    , addressToString
-    , convertMaybePlayerToPlayer
-    , createdMaybePlayerFromPlayer
-    , extractRankinigInfoFromMaybe
-    , extractUserRankinigFromMaybe
+    , maybeAddressToString
+    , convertListOfMaybeToList
     , gotHttpErr
-    , refEachPlayer
-    , splitPlayerFieldsToCreateMaybePlayer
     , stringFromBool
     , stringFromMaybeString
-    , stringFromRankingId
-    , stringToRankingId
+    , removeNothingFromList
     )
 
 import Eth.Types
@@ -23,40 +17,39 @@ import SR.Defaults
 import SR.Types
 
 
-extractUserRankinigFromMaybe : Maybe SR.Types.UserRanking -> SR.Types.UserRanking
-extractUserRankinigFromMaybe valtoextract =
-    case valtoextract of
-        Just a ->
-            a
+-- extractUserRankinigFromMaybe : Maybe SR.Types.UserRanking -> SR.Types.UserRanking
+-- extractUserRankinigFromMaybe valtoextract =
+--     case valtoextract of
+--         Just a ->
+--             a
 
-        Nothing ->
-            SR.Defaults.emptyUserRanking
+--         Nothing ->
+--             SR.Defaults.emptyUserRanking
 
+-- handleResult : Result err val -> a 
+-- handleResult result = 
+--     case result of 
+--         Ok val ->
+--             val
+--         Err str ->
+--             str
 
-extractRankinigInfoFromMaybe : Maybe SR.Types.RankingInfo -> SR.Types.RankingInfo
-extractRankinigInfoFromMaybe valtoextract =
-    case valtoextract of
-        Just a ->
-            a
-
-        Nothing ->
-            SR.Defaults.emptyRankingInfo
-
-
-stringToRankingId : String -> Internal.Types.RankingId
-stringToRankingId rnkId =
-    Internal.Types.RankingId rnkId
+removeNothingFromList : List (Maybe a) -> List a 
+removeNothingFromList list =
+    List.filterMap identity list
 
 
-stringFromRankingId : Internal.Types.RankingId -> String
-stringFromRankingId (Internal.Types.RankingId rnkId) =
-    rnkId
+convertListOfMaybeToList : List (Maybe a) -> List a
+convertListOfMaybeToList hasAnything =
+    let
+        onlyHasRealValues =
+            List.filterMap (\x -> x) hasAnything
+    in
+    onlyHasRealValues
 
-
-refEachPlayer : SR.Types.UserPlayer -> SR.Types.Player
-refEachPlayer uplayer =
-    uplayer.player
-
+-- convertToRankingId : String -> Internal.Types.RankingId 
+-- convertToRankingId str = 
+--     Internal.Types.RankingId str
 
 addressFromStringResult : String -> Internal.Types.Address
 addressFromStringResult uaddr =
@@ -93,68 +86,11 @@ stringFromMaybeString str =
         Just a ->
             a
 
-
-splitPlayerFieldsToCreateMaybePlayer : SR.Types.UserPlayer -> Maybe SR.Types.UserPlayer
-splitPlayerFieldsToCreateMaybePlayer uplayer =
-    if uplayer.player.rank > 0 && uplayer.player.rank < 50000 then
-        Just uplayer
-
-    else
-        Nothing
-
-
-createdMaybePlayerFromPlayer : SR.Types.Player -> Maybe SR.Types.Player
-createdMaybePlayerFromPlayer player =
-    Just
-        { address = player.address
-        , rank = player.rank
-        , challengeraddress = player.challengeraddress
-        }
-
-
-convertMaybePlayerToPlayer : Maybe SR.Types.UserPlayer -> SR.Types.UserPlayer
-convertMaybePlayerToPlayer mplayer =
-    case mplayer of
-        Nothing ->
-            SR.Defaults.emptyUserPlayer
-
-        Just a ->
-            a
-
-
-
--- { address = a.address
--- , rank = a.rank
--- , challengeraddress = a.challengeraddress
--- }
-
-
-convertMaybeUserRankingToUserRanking : Maybe SR.Types.UserRanking -> SR.Types.UserRanking
-convertMaybeUserRankingToUserRanking muranking =
-    case muranking of
-        Nothing ->
-            SR.Defaults.emptyUserRanking
-
-        Just a ->
-            a
-
-
-rankFromMaybeRank : Maybe Int -> Int
-rankFromMaybeRank int =
-    case int of
-        Nothing ->
-            0
-
-        Just a ->
-            a
-
-
-
 -- this is for Maybe Address - potential re-factor
 
 
-addressToString : Maybe Eth.Types.Address -> String
-addressToString addr =
+maybeAddressToString : Maybe Eth.Types.Address -> String
+maybeAddressToString addr =
     case addr of
         Nothing ->
             "No address"

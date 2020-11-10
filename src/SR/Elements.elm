@@ -1,4 +1,8 @@
-module SR.Elements exposing (ethereumWalletWarning, footer, justParasimpleUserInfoText, legalUserInfoText, placeholder, selectedRankingHeaderEl, simpleUserInfoText)
+module SR.Elements exposing (
+    
+    ethereumWalletWarning, footer, 
+    justParasimpleUserInfoText, legalUserInfoText, placeholder, selectedRankingHeaderEl, 
+    simpleUserInfoText, warningParagraph, ethereumNotEnabledPara, permanentlyDeleteWarnPara, missingDataPara)
 
 --import RemoteData
 
@@ -21,19 +25,95 @@ import Internal.Types
 import SR.Defaults
 import SR.Types
 import Utils.MyUtils
+import Data.Rankings
+import Data.Users
 
 
-globalHeading : SR.Types.User -> Element msg
-globalHeading user =
-    Element.column Grid.section <|
-        [ Element.el Heading.h5 <| Element.text "Global Rankings"
-        , Element.column Card.fill
-            [ Element.el Heading.h4 <| Element.text user.username
-            ]
+
+warningParagraph : Element msg
+warningParagraph =
+    Element.paragraph (Card.fill ++ Color.warning) <|
+        [ Element.el [ Font.bold ] <| Element.text "Please note: "
+        , Element.paragraph [] <|
+            List.singleton <|
+                Element.text "Clicking 'Confirm' interacts with your Ethereum wallet."
         ]
 
 
-selectedRankingHeaderEl : SR.Types.RankingInfo -> Element msg
+missingDataPara : Element msg
+missingDataPara =
+    Element.paragraph (Card.fill ++ Color.warning) <|
+        [ Element.el [ Font.bold ] <| Element.text "Please note: "
+        , Element.paragraph [] <|
+            List.singleton <|
+                Element.text "Essential data is missing. Please click 'Cancel'"
+        ]
+
+ethereumNotEnabledPara : Element msg
+ethereumNotEnabledPara =
+    Element.paragraph (Card.fill ++ Color.warning) <|
+        [ Element.el [ Font.bold ] <| Element.text "Please note: "
+        , Element.paragraph [] <|
+            List.singleton <|
+                Element.text "Ethereum is not current enabled for this dApp. Please click 'Enable Ethereum' (at top) to continue."
+        ]
+
+permanentlyDeleteWarnPara : Element msg
+permanentlyDeleteWarnPara =
+    Element.paragraph (Card.fill ++ Color.warning) <|
+        [ Element.el [ Font.bold ] <| Element.text "Please note: "
+        , Element.paragraph [] <|
+            List.singleton <|
+                Element.text "Clicking 'Confirm' will permanently delete this ranking. Participants will be notified in due course."
+        ]
+
+
+globalHeading : Data.Users.User -> Element msg
+globalHeading user =
+    case user of
+        Data.Users.Guest _ _ ->
+            Element.column Grid.section <|
+            [ Element.el Heading.h5 <| Element.text "Global Rankings"
+            , Element.column Card.fill
+                [ Element.el Heading.h4 <| Element.text "Guest"
+                ]
+            ]
+        
+        (Data.Users.Registered _ _ userInfo _) -> 
+            Element.column Grid.section <|
+                [ Element.el Heading.h5 <| Element.text "Global Rankings"
+                , Element.column Card.fill
+                    [ Element.el Heading.h4 <| Element.text userInfo.username
+                    ]
+                ]
+
+        (Data.Users.NoWallet _ _ userInfo _) -> 
+            Element.column Grid.section <|
+                [ Element.el Heading.h5 <| Element.text "Global Rankings"
+                , Element.column Card.fill
+                    [ Element.el Heading.h4 <| Element.text userInfo.username
+                    ]
+                ]
+
+        (Data.Users.NoCredit _ _ _ userInfo _) -> 
+            Element.column Grid.section <|
+                [ Element.el Heading.h5 <| Element.text "Global Rankings"
+                , Element.column Card.fill
+                    [ Element.el Heading.h4 <| Element.text userInfo.username
+                    ]
+                ]
+
+        (Data.Users.Credited _ _ _ userInfo _) -> 
+            Element.column Grid.section <|
+                [ Element.el Heading.h5 <| Element.text "Global Rankings"
+                , Element.column Card.fill
+                    [ Element.el Heading.h4 <| Element.text userInfo.username
+                    ]
+                ]
+
+
+
+selectedRankingHeaderEl : Data.Rankings.Ranking -> Element msg
 selectedRankingHeaderEl rnkInfo =
     Element.el Heading.h5 <| Element.text <| "Selected Ranking " ++ "-" ++ rnkInfo.rankingname
 
@@ -49,7 +129,7 @@ justParasimpleUserInfoText : Element msg
 justParasimpleUserInfoText =
     Element.paragraph [] <|
         List.singleton <|
-            Element.text "Use of this application is without any liablity whatsoever"
+            Element.text "Can your challengers reach you if you don't submit contact details?"
 
 
 legalUserInfoText : Element msg
@@ -62,21 +142,17 @@ legalUserInfoText =
         ]
 
 
-selectedHeading : SR.Types.User -> SR.Types.RankingInfo -> Element msg
-selectedHeading user rnkInfo =
-    let
-        _ =
-            Debug.log "rank id " rnkInfo.id
-    in
-    Element.column Grid.section <|
-        [ Element.el Heading.h5 <|
-            Element.text (user.username ++ " you selected ranking")
-        , Element.column Card.fill
-            [ Element.el Heading.h4 <|
-                Element.text rnkInfo.rankingname
-            , Element.text rnkInfo.rankingdesc
-            ]
-        ]
+-- selectedHeading : Data.Users.User -> Data.Rankings.Ranking -> Element msg
+-- selectedHeading user rnkInfo =
+--     Element.column Grid.section <|
+--         [ Element.el Heading.h5 <|
+--             Element.text (user.username ++ " you selected ranking")
+--         , Element.column Card.fill
+--             [ Element.el Heading.h4 <|
+--                 Element.text rnkInfo.rankingname
+--             , Element.text rnkInfo.rankingdesc
+--             ]
+--         ]
 
 
 ethereumWalletWarning : Element msg
@@ -93,7 +169,7 @@ footer : Element msg
 footer =
     Element.paragraph [] <|
         List.singleton <|
-            Element.text "SportRank - all rights reserved"
+            Element.text """SportRank - all rights reserved. \nUse of this application is without \nany liablity whatsoever."""
 
 
 wireframeTheme =

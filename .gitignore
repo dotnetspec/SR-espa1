@@ -3,3 +3,5 @@ elm-stuff
 public/content
 public/dist
 ad-hoc
+cypress/screenshots
+cypress/videos
