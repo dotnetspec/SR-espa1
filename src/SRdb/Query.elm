@@ -79,6 +79,18 @@ findUserByID requiredArgs object_ =
     Object.selectionForCompositeField "findUserByID" [ Argument.required "id" requiredArgs.id (SRdb.ScalarCodecs.codecs |> SRdb.Scalar.unwrapEncoder .codecId) ] object_ (identity >> Decode.nullable)
 
 
+type alias FindPlayersByRankingIdRequiredArguments =
+    { rankingid : String }
+
+
+findPlayersByRankingId :
+    FindPlayersByRankingIdRequiredArguments
+    -> SelectionSet decodesTo SRdb.Object.Player
+    -> SelectionSet (List decodesTo) RootQuery
+findPlayersByRankingId requiredArgs object_ =
+    Object.selectionForCompositeField "findPlayersByRankingId" [ Argument.required "rankingid" requiredArgs.rankingid Encode.string ] object_ (identity >> Decode.list)
+
+
 type alias LoginUserRequiredArguments =
     { username : String
     , password : String

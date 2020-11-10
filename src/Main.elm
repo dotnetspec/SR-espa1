@@ -166,7 +166,6 @@ type Msg
     | ClickedDisplayGlobalOnly
     | Cancel
     | ResetToShowSelected
-    --| ResetRejectedNewUserToShowGlobal
     | LadderNameInputChg String
     | LadderDescInputChg String
     | NewUserDescInputChg String
@@ -184,7 +183,7 @@ type Msg
     | ReceivedUsers (Result (GQLHttp.Error (Maybe (List (Maybe Data.Users.FUser)))) (Maybe (List (Maybe Data.Users.FUser))))
     | ReceivedRankings (Result (GQLHttp.Error (Maybe (List (Maybe Data.Rankings.FRanking)))) (Maybe (List (Maybe Data.Rankings.FRanking))))
     | ReceivedPlayers (Result (GQLHttp.Error (Maybe (List (Maybe Data.Players.FPlayer)))) (Maybe (List (Maybe Data.Players.FPlayer))))
-    | ReceivedPlayersByRankingId (Result (GQLHttp.Error (Maybe (List (Maybe Data.Players.FPlayer)))) (Maybe (List (Maybe Data.Players.FPlayer)))) String
+    | ReceivedPlayersByRankingId (Result (GQLHttp.Error (List Data.Players.FPlayer)) (List Data.Players.FPlayer))
     | CreatedGlobal
       -- App Only Ops
     | MissingWalletInstructions
@@ -1626,8 +1625,8 @@ update msg model =
             , Cmd.none 
             )
 
-        (ReceivedPlayersByRankingId response rankingid, modelReDef) ->
-            ( updateWithReceivedPlayersByRankingId modelReDef response rankingid
+        (ReceivedPlayersByRankingId response, modelReDef) ->
+            ( updateWithReceivedPlayersByRankingId modelReDef response
             , Cmd.none
             )
 
@@ -1691,13 +1690,14 @@ allRankings : Cmd Msg
 allRankings  =
     GQLHttp.send ReceivedRankings (Bridge.requestAllRankings)
 
+-- do we actually need allPlayers? just gotRankingById
 allPlayers : Data.Users.Token -> Cmd Msg
 allPlayers  token =
     GQLHttp.send ReceivedPlayers (Bridge.requestAllPlayers token)
 
--- gotRankingById : Cmd Msg 
--- gotRankingById = 
---     GQLHttp.send ReceivedRankingById (Bridge.findRankingById)
+gotPlayersByRankingById : String -> Cmd Msg 
+gotPlayersByRankingById id = 
+    GQLHttp.send ReceivedPlayersByRankingId (Bridge.requestPlayersByRankingId id)
 
        
 -- model handlers
@@ -1800,30 +1800,29 @@ updateWithReceivedUsers model response =
 
 
 
-updateWithReceivedPlayersByRankingId : Model -> Result (GQLHttp.Error (Maybe (List (Maybe Data.Players.FPlayer)))) (Maybe (List (Maybe Data.Players.FPlayer))) -> String -> Model
-updateWithReceivedPlayersByRankingId model response rankingid =
+updateWithReceivedPlayersByRankingId : Model -> Result (GQLHttp.Error (List Data.Players.FPlayer)) (List Data.Players.FPlayer) -> Model
+updateWithReceivedPlayersByRankingId model response =
     case (model, response) of -- AllEmpty, so fill the player set
         (AppOps walletState AllEmpty user uiState subState txRec, Ok lplayers)  ->
             (Failure "updateWithReceivedPlayersByRankingId10")
 
         (AppOps walletState (Fetched sUsers  sRankings  (Global _ )) user uiState subState txRec, Ok lplayers) ->
-                --if Data.Users.isEmpty sUsers then -- just fill the player set
-                    let
-                        filteredFPlayerList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lplayers)
-                        lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer filteredFPlayerList
-                        newsplayers = Data.Players.asPlayers (EverySet.fromList lFromFToPlayer)
-                        -- todo: change createdSelected to accept a Set instead of a list
-                        newsSelected = Data.Selected.created lFromFToPlayer sUsers (Internal.Types.RankingId rankingid)
-                        newDataKind = Selected newsSelected
-                        newDataState = Fetched sUsers sRankings newDataKind
-                    in
-                        AppOps walletState newDataState user uiState subState txRec
+            (Failure "Selected? updateWithReceivedPlayersByRankingId13")
 
         (AppOps walletState (Updated sUsers sRankings dKind) user uiState subState txRec, Ok lplayers) ->
-            model
-
-        ( AppOps _ (Fetched _ _ (Selected _)) _ _ _ _, Ok _ ) ->
             (Failure "updateWithReceivedPlayersByRankingId13")
+
+        ( AppOps walletState (Fetched sUsers sRankings ((Selected (Data.Selected.SelectedRanking esUP rnkId ownerStatus sPlayers result)))) user uiState subState txRec, Ok lplayers ) ->
+            let
+                --filteredFPlayerList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lplayers)
+                lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer lplayers
+                --newsplayers = Data.Players.asPlayers (EverySet.fromList lFromFToPlayer)
+                -- todo: change createdSelected to accept a Set instead of a list
+                newsSelected = Data.Selected.created lFromFToPlayer sUsers rnkId
+                newDataKind = Selected newsSelected
+                newDataState = Fetched sUsers sRankings newDataKind
+            in
+                AppOps walletState newDataState user uiState subState txRec
 
         (AppOps walletState AllEmpty user uiState subState txRec, Err _ )  ->
             (Failure "Unable to obtain Rankings data. Please check your network connection ...")
@@ -1918,6 +1917,7 @@ updateWithReceivedPlayers model response =
                         filteredFPlayerList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lplayers)
                         lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer filteredFPlayerList
                         --newSPlayers = Data.Players.asPlayers (EverySet.fromList lFromFToPlayer)
+                        _ = Debug.log "players" lFromFToPlayer
                         newDataKind = Selected (Data.Selected.created lFromFToPlayer sUsers (Internal.Types.RankingId "280892229782864389") ) -- i.e. rnkId
                         newDataState = Fetched sUsers sRankings newDataKind
                     in
@@ -3073,7 +3073,7 @@ playerbuttons : Data.Selected.Selected -> Data.Users.Users -> Data.Users.User ->
 playerbuttons selectedRanking sUsers user =
     --case selectedRanking (SelectedRanking (EverySet UserPlayer) Internal.Types.RankingId SelectedOwnerStatus Data.Players.Players SelectedState)
     Element.column Grid.section <|
-        [ SR.Elements.selectedRankingHeaderEl <| Data.Rankings.Ranking "Ranking name to go here" False "" Nothing ""
+        [ SR.Elements.selectedRankingHeaderEl <| Data.Rankings.Ranking "" False "Ranking name here" Nothing ""
 
         , Element.column (Card.simple ++ Grid.simple) <|
             List.map (configureThenAddPlayerRankingBtns selectedRanking sUsers user)

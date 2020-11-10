@@ -10,7 +10,7 @@ type User
 }
 
 type Player 
- {  rankingid : String! @unique
+ {  rankingid : String!
     uid : String! @unique
     rank : Int!
     challengerid : String
@@ -53,4 +53,5 @@ type Query {
   allUsers: [User] @resolver(name: "all_users")
   loginUser(username: String!, password: String!): String! @resolver(name: "login_user")
   findRankingById (rankingid: Int!): [Ranking!]! @resolver(name: "find_ranking_by_id")
+  findPlayersByRankingId (rankingid: String!): [Player!]! @resolver(name: "find_players_by_ranking_id")
 }
