@@ -82,7 +82,6 @@ type DataKind
   | Selected Data.Selected.Selected
 
 
-
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( AppOps SR.Types.WalletStateLocked AllEmpty (Data.Users.Guest Data.Users.emptyUserInfo Data.Users.General) SR.Types.UILoading  SR.Types.StopSubscription emptyTxRecord
@@ -738,25 +737,18 @@ update msg model =
                 --     _ ->
                         (model, Cmd.none)
 
-        (ClickedDisplayGlobalOnly, AppOps walletState (Fetched sUsers sRankings dKind) user uiState subState txRec ) ->
-            case dKind of
-                Selected _ ->
-                    (model, Cmd.none)
-                Global sGlobal ->
+        (Cancel, AppOps walletState 
+            (Fetched sUsers sRankings 
+                (Selected (Data.Selected.SelectedRanking playerUP rnkId _ _ Data.Selected.DisplayRanking ))) 
+                    user uiState subState txRec ) ->
                     let
-                        newDataKind = Global (Data.Global.GlobalRankings (Data.Global.asEverySet sGlobal) Data.Global.DisplayGlobalOnly)
+                        -- rf?: currently having to re-create Global here
+                        newDataKind = Global    <| Data.Global.GlobalRankings (Data.Global.asEverySet 
+                                                <| Data.Global.created sRankings sUsers) Data.Global.DisplayGlobalOnly
                         newDataState = Fetched sUsers sRankings newDataKind
 
                     in
                         ( AppOps walletState newDataState user SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
-
-
-        (Cancel, AppOps walletState (Fetched sUsers sRankings dKind) user uiState subState txRec ) ->
-            (model, Cmd.none)
-            -- let
-            --     newAppInfo = {appInfo | appState =}
-            -- in
-            --     ( AppOps walletState (Fetched sUsers sRankings dKind) newAppInfo uiState SR.Types.StopSubscription emptyTxRecord, Cmd.none )
         
                                 
         (Cancel, AppOps walletState (Updated sUsers sRankings dKind) user uiState subState txRec ) ->
@@ -2532,6 +2524,7 @@ view model =
                                         sPlayers selectedState)           
                                     sUsers user
                                 , infoBtn "Delete" ClickedDeleteRanking
+                                , Element.text "\n"
                                 , infoBtn "Home" Cancel
                                 ]
 
