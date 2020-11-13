@@ -1787,7 +1787,7 @@ updateWithReceivedUsers model response =
             (Failure "Unable to obtain User data. \nPlease check your network connection ...")
 
         (AppOps walletState (Fetched sUsers sRankings dKind) user uiState subState txRec, Err _)  ->
-            (Failure "updateWithReceivedUsers10")
+            (Failure "Network problem 1 ... please re-load or change your location")
 
         (AppOps walletState (Updated sUsers sRankings dKind) user uiState subState txRec, Err _ ) ->
             (Failure "updateWithReceivedUsers11")
@@ -1892,7 +1892,7 @@ updateWithReceivedRankings model response =
             (Failure "updateWithReceivedRankings16")
 
         (Failure _, Ok lusers) ->
-            (Failure "updateWithReceivedRankings17")
+            (Failure "updateWithReceivedRankings17.1")
 
         (Failure _, Err _) ->
             (Failure "updateWithReceivedRankings18")
