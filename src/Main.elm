@@ -849,23 +849,21 @@ update msg model =
 
         (UserNameInputChg updateField, AppOps walletState dataState 
             (Data.Users.Guest userInfo userState) uiState subState txRec) ->
-                (AppOps walletState dataState (Data.Users.Guest {userInfo | username = userInfo.username ++ updateField} userState) uiState subState txRec, Cmd.none)
+                (AppOps walletState dataState (Data.Users.Guest {userInfo | username = updateField} userState) uiState subState txRec, Cmd.none)
 
         
         (UserNameInputChg updateField, AppOps walletState dataState 
             (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-                (AppOps walletState dataState (Data.Users.Guest {userInfo | username = userInfo.username ++ updateField} userState) uiState subState txRec, Cmd.none)
+                (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | username = updateField} userState) uiState subState txRec, Cmd.none)
 
         
         (UserPasswordInputChg updateField, 
             AppOps walletState dataState 
                 (Data.Users.Guest userInfo userState) uiState subState txRec) ->
-                    (AppOps walletState dataState (Data.Users.Guest {userInfo | password = userInfo.password ++ updateField} userState) uiState subState txRec, Cmd.none)
+                    (AppOps walletState dataState (Data.Users.Guest {userInfo | password =  updateField} userState) uiState subState txRec, Cmd.none)
 
-        
-  
-        -- (UserPasswordInputChg updateField, AppOps walletState dataState (Data.Users.Guest userInfo userState) uiState subState txRec) ->
-        --     (AppOps walletState dataState (Data.Users.Guest {userInfo | password = userInfo.username ++ updateField} userState) uiState subState txRec, Cmd.none)
+        (UserPasswordInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
+            (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | password = updateField} userState) uiState subState txRec, Cmd.none)
 
         (UserDescInputChg updateField, AppOps walletState dataState (Data.Users.Guest userInfo userState) uiState subState txRec) ->
            (AppOps walletState dataState (Data.Users.Guest (Data.Users.updatedDesc userInfo updateField) userState) uiState subState txRec, Cmd.none)
