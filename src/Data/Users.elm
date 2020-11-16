@@ -63,8 +63,7 @@ type User =
 
 type UserState = 
     General
-    | CreateNewUser
-    | UpdateProfile
+    | Updating
 
 -- Users (EverySet User) is not the same type as (EverySet User)
 -- Peter Damoc

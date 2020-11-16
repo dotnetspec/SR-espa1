@@ -167,9 +167,6 @@ type Msg
     | ResetToShowSelected
     | LadderNameInputChg String
     | LadderDescInputChg String
-    | NewUserDescInputChg String
-    | NewUserEmailInputChg String
-    | NewUserMobileInputChg String
     | UserNameInputChg String
     | UserPasswordInputChg String
     | UserDescInputChg String
@@ -310,36 +307,10 @@ update msg model =
         (ClickedConfirmedRegisterNewUser, AppOps walletState dataState user uiState subState txRec) ->
             ( AppOps walletState dataState user uiState SR.Types.StopSubscription txRec, Cmd.none )
                 
-
+        -- the only user UserState can be in here is General:
         (ClickedRegister, AppOps walletState dataState user uiState subState txRec ) ->
-            -- let 
-            --     newAppInfo = {appInfo | appState = SR.Types.AppStateCreateNewUser}
-            -- in
-                --( AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription txRec, Cmd.none )
-            case walletState of
-                SR.Types.WalletStateLocked ->
-                    ( AppOps walletState dataState user uiState SR.Types.StopSubscription txRec, Cmd.none )
-                SR.Types.WalletOpenedNoUserAccount ->
-                    ( AppOps walletState dataState user uiState SR.Types.StopSubscription txRec, Cmd.none )
-                SR.Types.WalletOperational ->
-                    ( AppOps walletState dataState user uiState SR.Types.StopSubscription txRec, Cmd.none )
-                SR.Types.WalletStopSub ->
-                    ( AppOps walletState dataState user uiState SR.Types.StopSubscription txRec, Cmd.none )
-                SR.Types.WalletOpened ->
-                    case user of
-                        Data.Users.Guest userInfo userState ->
-                            ( AppOps walletState dataState user uiState SR.Types.StopSubscription txRec, Cmd.none )
-                        (Data.Users.Registered userId token userInfo userState) ->
-                            (model, Cmd.none)
-                        (Data.Users.NoWallet userId token userInfo userState) ->
-                            (model, Cmd.none)
-                        (Data.Users.NoCredit addr userId token userInfo userState) ->
-                            ( AppOps SR.Types.WalletOperational dataState user uiState SR.Types.StopSubscription txRec, Cmd.none )
-                        (Data.Users.Credited addr userId token userInfo userState) ->
-                            ( AppOps SR.Types.WalletOperational dataState user uiState SR.Types.StopSubscription txRec, Cmd.none )         
-                _ ->
-                    (model, Cmd.none)
-
+            (AppOps walletState dataState (Data.Users.Guest Data.Users.emptyUserInfo Data.Users.Updating) uiState subState txRec, Cmd.none)
+            --(AppOps walletState dataState (Data.Users.Registered "" "" Data.Users.emptyUserInfo Data.Users.Updating) uiState subState txRec, Cmd.none)
 
         (PlayersReceived response, AppOps walletState dataState user uiState subState txRec )  ->
             (model, Cmd.none)
@@ -739,16 +710,28 @@ update msg model =
 
         (Cancel, AppOps walletState 
             (Fetched sUsers sRankings 
-                (Selected (Data.Selected.SelectedRanking playerUP rnkId _ _ Data.Selected.DisplayRanking ))) 
-                    user uiState subState txRec ) ->
-                    let
-                        -- rf?: currently having to re-create Global here
-                        newDataKind = Global    <| Data.Global.GlobalRankings (Data.Global.asEverySet 
-                                                <| Data.Global.created sRankings sUsers) Data.Global.DisplayGlobalOnly
-                        newDataState = Fetched sUsers sRankings newDataKind
+                (Selected (Data.Selected.SelectedRanking playerUP rnkId _ _ 
+                    Data.Selected.DisplayRanking ))) 
+                        user uiState subState txRec ) ->
+                        let
+                            -- rf?: currently having to re-create Global here
+                            newDataKind = Global    <| Data.Global.GlobalRankings (Data.Global.asEverySet 
+                                                    <| Data.Global.created sRankings sUsers) Data.Global.DisplayGlobalOnly
+                            newDataState = Fetched sUsers sRankings newDataKind
 
-                    in
-                        ( AppOps walletState newDataState user SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+                        in
+                            ( AppOps walletState newDataState user SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+
+        (Cancel, AppOps walletState 
+            (Fetched sUsers sRankings 
+                (Selected (Data.Selected.SelectedRanking playerUP rnkId selectedOwnerStatus sPlayers 
+                    Data.Selected.CreatingChallenge ))) 
+                        user uiState subState txRec ) ->
+                        let
+                            newDataKind = Selected    <| (Data.Selected.SelectedRanking playerUP rnkId selectedOwnerStatus sPlayers Data.Selected.DisplayRanking)   
+                            newDataState = Fetched sUsers sRankings newDataKind
+                        in
+                            ( AppOps walletState newDataState user SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
         
                                 
         (Cancel, AppOps walletState (Updated sUsers sRankings dKind) user uiState subState txRec ) ->
@@ -851,33 +834,35 @@ update msg model =
 
         -- currently expecting user to be 'Registered' at this point for the purpose of inputting/updating details
         -- might create a new 'Registering' variant(?). Or sort user type before you get here:
-        (UserNameInputChg updateField, 
-            AppOps walletState dataState 
-                (Data.Users.Guest userInfo userState) uiState subState txRec) ->
-                    (AppOps walletState dataState (Data.Users.Guest {userInfo | username = userInfo.username ++ updateField} userState) uiState subState txRec, Cmd.none)
+        (UserNameInputChg updateField, AppOps walletState dataState 
+            (Data.Users.Guest userInfo userState) uiState subState txRec) ->
+                (AppOps walletState dataState (Data.Users.Guest {userInfo | username = userInfo.username ++ updateField} userState) uiState subState txRec, Cmd.none)
 
+        
+        (UserNameInputChg updateField, AppOps walletState dataState 
+            (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
+                (AppOps walletState dataState (Data.Users.Guest {userInfo | username = userInfo.username ++ updateField} userState) uiState subState txRec, Cmd.none)
+
+    
+        
         (UserPasswordInputChg updateField, 
             AppOps walletState dataState 
                 (Data.Users.Guest userInfo userState) uiState subState txRec) ->
                     (AppOps walletState dataState (Data.Users.Guest {userInfo | password = userInfo.password ++ updateField} userState) uiState subState txRec, Cmd.none)
 
         
-        (UserNameInputChg updateField, 
-            AppOps walletState dataState 
-                (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-                    (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | username = userInfo.username ++ updateField} userState) uiState subState txRec, Cmd.none)
-    
-        (UserPasswordInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-            (AppOps walletState dataState (Data.Users.Registered userId token {userInfo | password = userInfo.username ++ updateField} userState) uiState subState txRec, Cmd.none)
+  
+        -- (UserPasswordInputChg updateField, AppOps walletState dataState (Data.Users.Guest userInfo userState) uiState subState txRec) ->
+        --     (AppOps walletState dataState (Data.Users.Guest {userInfo | password = userInfo.username ++ updateField} userState) uiState subState txRec, Cmd.none)
 
-        (UserDescInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-           (AppOps walletState dataState (Data.Users.Registered userId token (Data.Users.updatedDesc userInfo updateField) userState) uiState subState txRec, Cmd.none)
+        (UserDescInputChg updateField, AppOps walletState dataState (Data.Users.Guest userInfo userState) uiState subState txRec) ->
+           (AppOps walletState dataState (Data.Users.Guest (Data.Users.updatedDesc userInfo updateField) userState) uiState subState txRec, Cmd.none)
 
-        (UserEmailInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-            (AppOps walletState dataState (Data.Users.Registered userId token (Data.Users.updatedDesc userInfo updateField) userState) uiState subState txRec, Cmd.none)
+        (UserEmailInputChg updateField, AppOps walletState dataState (Data.Users.Guest userInfo userState) uiState subState txRec) ->
+            (AppOps walletState dataState (Data.Users.Guest (Data.Users.updatedDesc userInfo updateField) userState) uiState subState txRec, Cmd.none)
 
-        (UserMobileInputChg updateField, AppOps walletState dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-            (AppOps walletState dataState (Data.Users.Registered userId token (Data.Users.updatedDesc userInfo updateField) userState) uiState subState txRec, Cmd.none)
+        (UserMobileInputChg updateField, AppOps walletState dataState (Data.Users.Guest userInfo userState) uiState subState txRec) ->
+            (AppOps walletState dataState (Data.Users.Guest (Data.Users.updatedDesc userInfo updateField) userState) uiState subState txRec, Cmd.none)
 
         -- currently if the User is not 'Registered' do nothing
         (UserMobileInputChg updateField, AppOps walletState dataState _ uiState subState txRec) ->
@@ -1556,13 +1541,14 @@ update msg model =
                                 Data.Selected.NoResult ->
                                     (Failure "Tx problem Should have been a result", Cmd.none)
                         
-                    (Data.Users.Credited addr userId token userInfo Data.Users.CreateNewUser, Fetched sUsers sRankings dKind ) ->
-                        ( AppOps SR.Types.WalletOperational dataState user SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel }
+                    (Data.Users.Credited addr userId token userInfo Data.Users.Updating, Fetched sUsers sRankings dKind ) ->
+                        ( AppOps SR.Types.WalletOperational dataState user 
+                        SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel }
                         , Cmd.batch [subCmd,  createNewUser sUsers user])
                     
-                    (Data.Users.Credited addr userId token userInfo Data.Users.UpdateProfile, Fetched sUsers sRankings dKind ) ->
-                        ( AppOps SR.Types.WalletOperational dataState user SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel }
-                        , Cmd.batch [subCmd, addedUserAsFirstPlayerInNewList user] )
+                    -- (Data.Users.Credited addr userId token userInfo Data.Users.Updating, Fetched sUsers sRankings dKind ) ->
+                    --     ( AppOps SR.Types.WalletOperational dataState user SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel }
+                    --     , Cmd.batch [subCmd, addedUserAsFirstPlayerInNewList user] )
             
                     (_, _) ->
                         (Failure "No credit", Cmd.none)
@@ -1647,6 +1633,16 @@ update msg model =
             , Cmd.none
             )
 
+-- model handlers
+handleClickedRegister : Data.Users.User -> Data.Users.User
+handleClickedRegister user = 
+    case user of 
+        Data.Users.Guest userInfo _ ->
+            Data.Users.Guest userInfo Data.Users.Updating 
+        _ ->
+            user
+        
+    
 
 
 -- GQL commands
@@ -2116,6 +2112,8 @@ handleWalletWaitingForUserInput msg walletState dataState user txRec =
                         (Failure "WatchTxReceipt", Cmd.none)
                     Fetched _ _ (Selected (Data.Selected.SelectedRanking _ _ _ _ Data.Selected.DisplayRanking)) ->
                         (Failure "WatchTxReceipt", Cmd.none)
+                    Fetched _ _ (Selected (Data.Selected.SelectedRanking _ _ _ _ Data.Selected.CreatingChallenge)) ->
+                        (Failure "WatchTxReceipt", Cmd.none)
                     Fetched _ _ (Selected (Data.Selected.SelectedRanking _ _ _ _ Data.Selected.EnteringResult)) ->
                         (Failure "WatchTxReceipt", Cmd.none)
 
@@ -2257,7 +2255,7 @@ gotWalletAddrApplyToUser user uaddr =
 --                         AppOps walletState dataState newAppInfo uiState SR.Types.StopSubscription txRec
             
 
---         (AppOps walletState dataState user uiState subState txRec),  NewUserDescInputChg descfield) ->
+--         (AppOps walletState dataState user uiState subState txRec),  UserDescInputChg descfield) ->
 --             case user of
 --                 Nothing ->
 --                     model
@@ -2273,7 +2271,7 @@ gotWalletAddrApplyToUser user uaddr =
 --                     in
 --                         AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec
 
---         (AppOps walletState dataState user uiState subState txRec), NewUserEmailInputChg emailfield) ->
+--         (AppOps walletState dataState user uiState subState txRec), UserEmailInputChg emailfield) ->
 --             case user of
 --                 Nothing ->
 --                     model
@@ -2288,7 +2286,7 @@ gotWalletAddrApplyToUser user uaddr =
 --                         AppOps walletState dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec
             
 
---         (AppOps walletState dataState user uiState subState txRec), NewUserMobileInputChg mobilefield) ->
+--         (AppOps walletState dataState user uiState subState txRec), UserMobileInputChg mobilefield) ->
 --             case user of
 --                 Nothing ->
 --                     model
@@ -2472,7 +2470,7 @@ view model =
                     Html.text ("Loading ...")
 
                 -- Global
-                (Fetched sUsers sRankings dKind, Data.Users.Guest userInfo Data.Users.CreateNewUser) ->
+                (Fetched sUsers sRankings dKind, Data.Users.Guest userInfo Data.Users.Updating) ->
                     registerNewUserView user sUsers
 
                 (Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) )
@@ -2497,8 +2495,8 @@ view model =
                     Html.text ("Not yet implemented")
                 ( Fetched _ _ (Global _), Data.Users.Credited _ _ _ _ _ ) ->
                     Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global _), Data.Users.Guest userInfo Data.Users.UpdateProfile ) ->
-                    Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global _), Data.Users.Guest userInfo Data.Users.Updating ) ->
+                --     Html.text ("Not yet implemented")
                 ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin))
                     , Data.Users.Registered _ _ _ _ ) ->
                     generalLoginView user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin)
@@ -2712,7 +2710,52 @@ registerNewUserView : Data.Users.User -> Data.Users.Users -> Html Msg
 registerNewUserView userVal sUsers = 
     case userVal of
         Data.Users.Guest userInfo userState ->
-            Html.text "Should have switched to Registered"
+            Framework.responsiveLayout [] <|
+            Element.column Grid.section <|
+                [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                    [ Element.column
+                        Grid.simple
+                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                            { onChange = UserNameInputChg
+                            , text = userInfo.username
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+                            }
+                        , nameValidView userVal sUsers
+                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                            { onChange = UserPasswordInputChg
+                            , text = userInfo.password
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                            }
+                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+                            { onChange = UserDescInputChg
+                            , text = userInfo.extrauserinfo.description
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+                            }
+                        , userDescValidationErr userInfo.extrauserinfo.description
+                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+                            { onChange = UserEmailInputChg
+                            , text = userInfo.extrauserinfo.email
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+                            }
+                        , emailValidationErr userInfo.extrauserinfo.email
+                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+                            { onChange = UserMobileInputChg
+                            , text = Utils.Validation.Validate.validatedMaxTextLength userInfo.extrauserinfo.mobile 25
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+                            }
+                        , mobileValidationErr userInfo.extrauserinfo.mobile
+                        ]
+                    ]
+                , Element.text "* required"
+                , SR.Elements.justParasimpleUserInfoText
+                , newuserConfirmPanel userVal (Data.Users.asList sUsers)
+                ]
         (Data.Users.Registered userId token userInfo userState) ->
             Framework.responsiveLayout [] <|
             Element.column Grid.section <|
@@ -2734,21 +2777,21 @@ registerNewUserView userVal sUsers =
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
                             }
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
-                            { onChange = NewUserDescInputChg
+                            { onChange = UserDescInputChg
                             , text = userInfo.extrauserinfo.description
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
                             }
                         , userDescValidationErr userInfo.extrauserinfo.description
                         , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
-                            { onChange = NewUserEmailInputChg
+                            { onChange = UserEmailInputChg
                             , text = userInfo.extrauserinfo.email
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
                             }
                         , emailValidationErr userInfo.extrauserinfo.email
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
-                            { onChange = NewUserMobileInputChg
+                            { onChange = UserMobileInputChg
                             , text = Utils.Validation.Validate.validatedMaxTextLength userInfo.extrauserinfo.mobile 25
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
@@ -4250,21 +4293,21 @@ displayRegisterNewUser userVal sUsers =
                         , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
                         }
                     , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
-                        { onChange = NewUserDescInputChg
+                        { onChange = UserDescInputChg
                         , text = userInfo.extrauserinfo.description
                         , placeholder = Nothing
                         , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
                         }
                     , userDescValidationErr userInfo.extrauserinfo.description
                     , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
-                        { onChange = NewUserEmailInputChg
+                        { onChange = UserEmailInputChg
                         , text = userInfo.extrauserinfo.email
                         , placeholder = Nothing
                         , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
                         }
                     , emailValidationErr userInfo.extrauserinfo.email
                     , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
-                        { onChange = NewUserMobileInputChg
+                        { onChange = UserMobileInputChg
                         , text = Utils.Validation.Validate.validatedMaxTextLength userInfo.extrauserinfo.mobile 25
                         , placeholder = Nothing
                         , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")

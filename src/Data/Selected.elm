@@ -69,7 +69,7 @@ type Selected =
 
 type SelectedState = 
     DisplayRanking
-    --| CreatingChallenge
+    | CreatingChallenge
     | EnteringResult
     | EnteredResult ResultOfMatch
 
