@@ -714,7 +714,7 @@ update msg model =
                     (Data.Users.Guest userInfo _) uiState subState txRec ) ->
                             ( AppOps walletState 
                                 (Fetched sUsers sRankings (Global sGlobal))
-                                    (Data.Users.Guest userInfo Data.Users.General ) SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+                                    (Data.Users.Guest Data.Users.emptyUserInfo Data.Users.General ) SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
         (Cancel, AppOps walletState 
             (Fetched sUsers sRankings 
@@ -847,9 +847,6 @@ update msg model =
             -- in
             -- ( AppOps walletState dataState newAppInfo SR.Types.UICreateNewLadder SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
-
-        -- currently expecting user to be 'Registered' at this point for the purpose of inputting/updating details
-        -- might create a new 'Registering' variant(?). Or sort user type before you get here:
         (UserNameInputChg updateField, AppOps walletState dataState 
             (Data.Users.Guest userInfo userState) uiState subState txRec) ->
                 (AppOps walletState dataState (Data.Users.Guest {userInfo | username = userInfo.username ++ updateField} userState) uiState subState txRec, Cmd.none)
@@ -859,7 +856,6 @@ update msg model =
             (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
                 (AppOps walletState dataState (Data.Users.Guest {userInfo | username = userInfo.username ++ updateField} userState) uiState subState txRec, Cmd.none)
 
-    
         
         (UserPasswordInputChg updateField, 
             AppOps walletState dataState 
