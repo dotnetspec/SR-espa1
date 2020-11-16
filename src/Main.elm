@@ -710,6 +710,22 @@ update msg model =
 
         (Cancel, AppOps walletState 
             (Fetched sUsers sRankings 
+                (Global sGlobal))
+                    (Data.Users.Guest userInfo _) uiState subState txRec ) ->
+                            ( AppOps walletState 
+                                (Fetched sUsers sRankings (Global sGlobal))
+                                    (Data.Users.Guest userInfo Data.Users.General ) SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+
+        (Cancel, AppOps walletState 
+            (Fetched sUsers sRankings 
+                (Global sGlobal))
+                    (Data.Users.Registered userId token userInfo _) uiState subState txRec ) ->
+                            ( AppOps walletState 
+                                (Fetched sUsers sRankings (Global sGlobal)) 
+                                    (Data.Users.Registered userId token userInfo Data.Users.General ) SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+
+        (Cancel, AppOps walletState 
+            (Fetched sUsers sRankings 
                 (Selected (Data.Selected.SelectedRanking playerUP rnkId _ _ 
                     Data.Selected.DisplayRanking ))) 
                         user uiState subState txRec ) ->
@@ -859,10 +875,10 @@ update msg model =
            (AppOps walletState dataState (Data.Users.Guest (Data.Users.updatedDesc userInfo updateField) userState) uiState subState txRec, Cmd.none)
 
         (UserEmailInputChg updateField, AppOps walletState dataState (Data.Users.Guest userInfo userState) uiState subState txRec) ->
-            (AppOps walletState dataState (Data.Users.Guest (Data.Users.updatedDesc userInfo updateField) userState) uiState subState txRec, Cmd.none)
+            (AppOps walletState dataState (Data.Users.Guest (Data.Users.updatedEmail userInfo updateField) userState) uiState subState txRec, Cmd.none)
 
         (UserMobileInputChg updateField, AppOps walletState dataState (Data.Users.Guest userInfo userState) uiState subState txRec) ->
-            (AppOps walletState dataState (Data.Users.Guest (Data.Users.updatedDesc userInfo updateField) userState) uiState subState txRec, Cmd.none)
+            (AppOps walletState dataState (Data.Users.Guest (Data.Users.updatedMobile userInfo updateField) userState) uiState subState txRec, Cmd.none)
 
         -- currently if the User is not 'Registered' do nothing
         (UserMobileInputChg updateField, AppOps walletState dataState _ uiState subState txRec) ->
@@ -2495,8 +2511,6 @@ view model =
                     Html.text ("Not yet implemented")
                 ( Fetched _ _ (Global _), Data.Users.Credited _ _ _ _ _ ) ->
                     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global _), Data.Users.Guest userInfo Data.Users.Updating ) ->
-                --     Html.text ("Not yet implemented")
                 ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin))
                     , Data.Users.Registered _ _ _ _ ) ->
                     generalLoginView user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin)
@@ -3786,60 +3800,6 @@ enableButton enable =
         Color.disabled
 
 
--- inputUpdateExistingUser : Model -> Element Msg
--- inputUpdateExistingUser model =
---     case model of
---         AppOps walletState dataState user uiState subState txRec ->
---             case user of
---                 Nothing ->
---                     Element.text "No User9"
---                 Just userVal ->
---                     Element.column Grid.section <|
---                         [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
---                         , Element.wrappedRow (Card.fill ++ Grid.simple)
---                             [ Element.column
---                                 Grid.simple
---                                 [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ Color.disabled)
---                                     { onChange = UserNameInputChg
---                                     , text = userVal.username
---                                     , placeholder = Just <| Input.placeholder [] <| Element.text "yah placeholder"
---                                     , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
---                                     }
---                                 , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userPassword") ])
---                                     { onChange = UserPasswordInputChg
---                                     , text = userVal.password
---                                     , placeholder = Nothing
---                                     , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
---                                     }
---                                 , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
---                                     { onChange = UserDescInputChg
---                                     , text = userVal.description
---                                     , placeholder = Nothing
---                                     , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
---                                     }
---                                 , userDescValidationErr userVal
---                                 , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
---                                     { onChange = UserEmailInputChg
---                                     , text = userVal.email
---                                     , placeholder = Nothing
---                                     , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
---                                     }
---                                 , userInfo.extrauserinfo.email
---                                 , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
---                                     { onChange = UserMobileInputChg
---                                     , text = Utils.Validation.Validate.validatedMaxTextLength userVal.mobile 25
---                                     , placeholder = Nothing
---                                     , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
---                                     }
---                                 , mobileValidationErr userVal
---                                 ]
---                             ]
-
---                         --, Element.text "* required"
---                         ]
-
---         _ ->
---             Element.text "Fail on inputNewUser"
 
 
 nameValidView : Data.Users.User -> Data.Users.Users -> Element Msg
