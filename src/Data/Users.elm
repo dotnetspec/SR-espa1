@@ -261,10 +261,19 @@ gotUserNames (Users users) =
 
 gotName : User -> String 
 gotName user = 
-    --user.username
-    -- todo: fix
-    ""
+    case user of 
+        Guest userInfo _ ->
+            userInfo.username
+        Registered _ _ userInfo _ ->
+            userInfo.username
+        NoWallet _ _ userInfo _ ->
+            userInfo.username
+        NoCredit _ _ _ userInfo _ ->
+            userInfo.username
+        Credited _ _ _ userInfo _ ->
+            userInfo.username
 
+    
 userSetLength : Users -> Int 
 userSetLength (Users susers) = 
     EverySet.size susers
@@ -486,12 +495,13 @@ isNameValid : String -> Users -> Bool
 isNameValid newName sUsers =
     let 
         userNameSet = gotUserNames sUsers
+        _ = Debug.log "userNameSet" userNameSet
     in
     if EverySet.member newName userNameSet then
-        -- let 
+        let 
         
-        --     _ = Debug.log "EverySet.member" "True"
-        -- in
+            _ = Debug.log "EverySet.member" "True"
+        in
         False 
     else if (String.length newName <= 4) then
         False

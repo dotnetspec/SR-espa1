@@ -1664,7 +1664,8 @@ handleClickedRegister user =
 
 loginUser : String -> String -> Cmd Msg
 loginUser user_name password =
-    GQLHttp.send InitiallyLoggedInUser (Bridge.requestLoginUser user_name password)
+    --GQLHttp.send InitiallyLoggedInUser (Bridge.requestLoginUser user_name password)
+    Cmd.none
 
 
 -- todo: implement
@@ -3839,20 +3840,17 @@ enableButton enable =
     else
         Color.disabled
 
-
-
-
 nameValidView : Data.Users.UserInfo -> Data.Users.Users -> Element Msg
 nameValidView userInfo sUsers =
-            if Data.Users.isNameValid userInfo.username sUsers then 
-                Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
+    if Data.Users.isNameValid userInfo.username sUsers then 
+        Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
 
-            else
-                Element.el
-                    (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
-                        ++ [ Element.moveLeft 0.0 ]
-                    )
-                    (Element.text """Must be unique (4-8 continuous chars)""")
+    else
+        Element.el
+            (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
+                ++ [ Element.moveLeft 0.0 ]
+            )
+            (Element.text """Must be unique (4-8 continuous chars)""")
 
         -- (Data.Users.NoWallet _ _ userInfo _) ->
         --     (Element.text """Validation View Error""")
