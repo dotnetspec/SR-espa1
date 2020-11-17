@@ -2730,7 +2730,7 @@ registerNewUserView userVal sUsers =
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
                             }
-                        , nameValidView userVal sUsers
+                        , nameValidView userInfo sUsers
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
                             { onChange = UserPasswordInputChg
                             , text = userInfo.password
@@ -2777,7 +2777,7 @@ registerNewUserView userVal sUsers =
                             , placeholder = Nothing
                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
                             }
-                        , nameValidView userVal sUsers
+                        , nameValidView userInfo sUsers
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
                             { onChange = UserPasswordInputChg
                             , text = userInfo.password
@@ -3796,17 +3796,8 @@ enableButton enable =
 
 
 
-nameValidView : Data.Users.User -> Data.Users.Users -> Element Msg
-nameValidView userVal sUsers =
-    case userVal of 
-        Data.Users.Guest userInfo userState ->
-            Element.el
-                (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
-                    ++ [ Element.moveLeft 0.0 ]
-                )
-                (Element.text """Must be unique (4-8 continuous chars)""")
-        
-        (Data.Users.Registered userId token userInfo userState) ->
+nameValidView : Data.Users.UserInfo -> Data.Users.Users -> Element Msg
+nameValidView userInfo sUsers =
             if Data.Users.isNameValid userInfo.username sUsers then 
                 Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Username OK!")
 
@@ -3817,12 +3808,12 @@ nameValidView userVal sUsers =
                     )
                     (Element.text """Must be unique (4-8 continuous chars)""")
 
-        (Data.Users.NoWallet userId token userInfo userState) ->
-            (Element.text """Validation View Error""")
-        (Data.Users.NoCredit addr userId token userInfo userState) ->
-            (Element.text """Validation View Error""")
-        (Data.Users.Credited addr userId token userInfo userState) ->
-            (Element.text """Validation View Error""")
+        -- (Data.Users.NoWallet _ _ userInfo _) ->
+        --     (Element.text """Validation View Error""")
+        -- (Data.Users.NoCredit addr _ _ userInfo _) ->
+        --     (Element.text """Validation View Error""")
+        -- (Data.Users.Credited addr _ _ userInfo _) ->
+        --     (Element.text """Validation View Error""")
 
 
 
@@ -4239,7 +4230,7 @@ displayRegisterNewUser userVal sUsers =
                         , placeholder = Nothing
                         , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
                         }
-                    , nameValidView userVal sUsers
+                    , nameValidView userInfo sUsers
                     , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
                         { onChange = UserPasswordInputChg
                         , text = userInfo.password

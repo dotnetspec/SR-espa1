@@ -155,9 +155,15 @@ newUserFromFUser : FUser -> User
 newUserFromFUser fuser = 
     Registered (fromScalarCodecId fuser.id_) "5678" (UserInfo 1 True "" "" (ExtraUserInfo "" "" "") [""] 1) General
 
+
 convertFUserToUser : FUser -> User 
 convertFUserToUser fuser =
-    Registered (fromScalarCodecId fuser.id_) "5678" (UserInfo 1 True "" "" (ExtraUserInfo "" "" "") [""] 1) General
+    let 
+        desc = Maybe.withDefault "" fuser.description
+        email = Maybe.withDefault "" fuser.email
+        mobile = Maybe.withDefault "" fuser.mobile
+    in
+    Registered (fromScalarCodecId fuser.id_) "5678" (UserInfo 1 True fuser.username "" (ExtraUserInfo desc email mobile) [""] 1) General
 
 type alias FUser = {
     id_ :  SRdb.ScalarCodecs.Id
@@ -168,6 +174,7 @@ type alias FUser = {
     , mobile : Maybe String
     , username : String
     }
+
 
 
 fromScalarCodecId : SRdb.ScalarCodecs.Id -> String

@@ -14,8 +14,10 @@ import SRdb.Mutation as Mutation
 import SRdb.Query as Query
 import SRdb.Object
 import SRdb.Object.User
+--import SRdb.Object.Token
 import SRdb.Object.Ranking
 import SRdb.Object.Player
+import SRdb.Object.LoginResult
 import SR.Types
 import SR.Constants
 import Graphql.SelectionSet exposing (SelectionSet(..))
@@ -24,22 +26,41 @@ import Data.Rankings
 import Data.Users
 import Data.Players
 
-requestLoginUser : Data.Users.UserName -> Data.Users.Password -> Http.Request (Data.Users.Token)
-requestLoginUser user_name password =
-    let
-        requiredArgs = {username = user_name, password = password}
-    in
-        Http.queryRequest SR.Constants.endpointURL (queryLoginUser requiredArgs)
-        |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
-
 gotToken : List String -> Data.Users.Token 
 gotToken lstring = 
     "fnED42KNUgACBwPPrxU00AYHx6mKEh6FP2HmKvQZ4ePZpk-VDhY"
 
+requestLoginUser : Data.Users.UserName -> Data.Users.Password -> Http.Request LoginResult
+requestLoginUser user_name password =
+    let
+        requiredArgs = {username = user_name, password = password}
+    in
+        Http.queryRequest SR.Constants.endpointURL (queryLoginUser requiredArgs loginResultSelectionSet)
+        |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
 
-queryLoginUser : Query.LoginUserRequiredArguments -> SelectionSet (Data.Users.Token) RootQuery
+loginResultSelectionSet : SelectionSet (LoginResult) SRdb.Object.LoginResult
+loginResultSelectionSet =
+    Graphql.SelectionSet.succeed SRdb.Object.LoginResult
+    --|> Graphql.SelectionSet.with SRdb.Object.LoginResult.token tokenSelectionSet
+    |> Graphql.SelectionSet.with (SRdb.Object.LoginResult.token (\_ -> Graphql.SelectionSet.empty))
+    |> Graphql.SelectionSet.with (SRdb.Object.LoginResult.user (userSelectionSet))
+
+
+-- tokenSelectionSet : SelectionSet (String) RootQuery
+-- tokenSelectionSet =
+--     Graphql.SelectionSet.succeed String
+        --|> Graphql.SelectionSet.with String
+
+        
+queryLoginUser : Query.LoginUserRequiredArguments 
+---> SelectionSet (Data.Users.Token) RootQuery
+ -> SelectionSet decodesTo SRdb.Object.LoginResult
+    -> SelectionSet decodesTo RootQuery
 queryLoginUser requiredArgs =
     Query.loginUser requiredArgs
+
+type alias LoginResult =
+    ( String, Data.Users.FUser )
 
 
 

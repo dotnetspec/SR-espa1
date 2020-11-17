@@ -99,9 +99,10 @@ type alias LoginUserRequiredArguments =
 
 loginUser :
     LoginUserRequiredArguments
-    -> SelectionSet String RootQuery
-loginUser requiredArgs =
-    Object.selectionForField "String" "loginUser" [ Argument.required "username" requiredArgs.username Encode.string, Argument.required "password" requiredArgs.password Encode.string ] Decode.string
+    -> SelectionSet decodesTo SRdb.Object.LoginResult
+    -> SelectionSet decodesTo RootQuery
+loginUser requiredArgs object_ =
+    Object.selectionForCompositeField "loginUser" [ Argument.required "username" requiredArgs.username Encode.string, Argument.required "password" requiredArgs.password Encode.string ] object_ identity
 
 
 allPlayerUIDs : SelectionSet (List String) RootQuery

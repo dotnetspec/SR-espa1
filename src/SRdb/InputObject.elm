@@ -17,6 +17,79 @@ import SRdb.ScalarCodecs
 import SRdb.Union
 
 
+buildLoginResultInput :
+    LoginResultInputRequiredFields
+    -> (LoginResultInputOptionalFields -> LoginResultInputOptionalFields)
+    -> LoginResultInput
+buildLoginResultInput required fillOptionals =
+    let
+        optionals =
+            fillOptionals
+                { user = Absent }
+    in
+    { token = required.token, user = optionals.user }
+
+
+type alias LoginResultInputRequiredFields =
+    { token : String }
+
+
+type alias LoginResultInputOptionalFields =
+    { user : OptionalArgument SRdb.ScalarCodecs.Id }
+
+
+{-| Type for the LoginResultInput input object.
+-}
+type alias LoginResultInput =
+    { token : String
+    , user : OptionalArgument SRdb.ScalarCodecs.Id
+    }
+
+
+{-| Encode a LoginResultInput into a value that can be used as an argument.
+-}
+encodeLoginResultInput : LoginResultInput -> Value
+encodeLoginResultInput input =
+    Encode.maybeObject
+        [ ( "token", Encode.string input.token |> Just ), ( "user", (SRdb.ScalarCodecs.codecs |> SRdb.Scalar.unwrapEncoder .codecId) |> Encode.optional input.user ) ]
+
+
+buildLoginResultUserRelation :
+    (LoginResultUserRelationOptionalFields -> LoginResultUserRelationOptionalFields)
+    -> LoginResultUserRelation
+buildLoginResultUserRelation fillOptionals =
+    let
+        optionals =
+            fillOptionals
+                { create = Absent, connect = Absent, disconnect = Absent }
+    in
+    { create = optionals.create, connect = optionals.connect, disconnect = optionals.disconnect }
+
+
+type alias LoginResultUserRelationOptionalFields =
+    { create : OptionalArgument UserInput
+    , connect : OptionalArgument SRdb.ScalarCodecs.Id
+    , disconnect : OptionalArgument Bool
+    }
+
+
+{-| Type for the LoginResultUserRelation input object.
+-}
+type alias LoginResultUserRelation =
+    { create : OptionalArgument UserInput
+    , connect : OptionalArgument SRdb.ScalarCodecs.Id
+    , disconnect : OptionalArgument Bool
+    }
+
+
+{-| Encode a LoginResultUserRelation into a value that can be used as an argument.
+-}
+encodeLoginResultUserRelation : LoginResultUserRelation -> Value
+encodeLoginResultUserRelation input =
+    Encode.maybeObject
+        [ ( "create", encodeUserInput |> Encode.optional input.create ), ( "connect", (SRdb.ScalarCodecs.codecs |> SRdb.Scalar.unwrapEncoder .codecId) |> Encode.optional input.connect ), ( "disconnect", Encode.bool |> Encode.optional input.disconnect ) ]
+
+
 buildPlayerInput :
     PlayerInputRequiredFields
     -> (PlayerInputOptionalFields -> PlayerInputOptionalFields)
