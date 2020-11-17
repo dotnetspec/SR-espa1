@@ -3720,8 +3720,7 @@ newuserConfirmPanel  user sUsers =
                                     , label = Element.text "Cancel"
                                     }
                                     , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput 
-                                    user
-                                    userInfo sUsers False)) <|
+                                    user userInfo sUsers)) <|
                                         { onPress = Just <| ClickedConfirmedRegisterNewUser
                                         , label = Element.text "Register"
                                         }
@@ -3754,10 +3753,8 @@ newuserConfirmPanel  user sUsers =
                                 { onPress = Just <| Cancel
                                 , label = Element.text "Cancel"
                                 }
-                            , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput 
-                            --(Data.Users.Registered userId token userInfo userState)  
-                            user
-                            userInfo sUsers False)) <|
+                            , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput
+                            user userInfo sUsers)) <|
                                 { onPress = Just <| ClickedConfirmedRegisterNewUser
                                 , label = Element.text "Register"
                                 }
@@ -3773,45 +3770,31 @@ newuserConfirmPanel  user sUsers =
             Element.text "newuserConfirmPanel Err"
 
 
+isValidatedForAllUserDetailsInput : Data.Users.User -> Data.Users.UserInfo -> Data.Users.Users -> Bool
+isValidatedForAllUserDetailsInput user userInfo sUsers =
+    case user of 
+        Data.Users.Guest _ _ ->
+            if
+                Data.Users.isNameValid (Data.Users.gotName user) sUsers
+                && isUserDescValidated userInfo.extrauserinfo.description
+                && isEmailValidated userInfo.extrauserinfo.email
+                && isMobileValidated userInfo.extrauserinfo.mobile
+            then
+                True
 
--- existingUserConfirmPanel : Data.Users.User -> List Data.Users.User -> Element Msg
--- existingUserConfirmPanel user luser =
---     Element.column Grid.section <|
---         [ Element.el Heading.h6 <| Element.text "Click to continue ..."
---         , Element.column (Card.simple ++ Grid.simple) <|
---             [ Element.wrappedRow Grid.simple <|
---                 [ Input.button (Button.simple ++ Color.info) <|
---                     { onPress = Just <| Cancel
---                     , label = Element.text "Cancel"
---                     }
---                 , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput user luser True)) <|
---                     { onPress = Just <| ClickedConfirmedUpdateExistingUser
---                     , label = Element.text "Confirm"
---                     }
---                 ]
---             ]
---         ]
+            else
+                False
 
-isValidatedForAllUserDetailsInput : Data.Users.User -> Data.Users.UserInfo -> Data.Users.Users -> Bool -> Bool
-isValidatedForAllUserDetailsInput user userInfo sUsers isExistingUser =
-    if
-        isExistingUser
-            && isUserDescValidated userInfo.extrauserinfo.description
-            && isEmailValidated userInfo.extrauserinfo.email
-            && isMobileValidated userInfo.extrauserinfo.mobile
-    then
-        True
+        _ ->
+            if
+                isUserDescValidated userInfo.extrauserinfo.description
+                    && isEmailValidated userInfo.extrauserinfo.email
+                    && isMobileValidated userInfo.extrauserinfo.mobile
+            then
+                True
 
-    else if
-        Data.Users.isNameValid (Data.Users.gotName user) sUsers
-            && isUserDescValidated userInfo.extrauserinfo.description
-            && isEmailValidated userInfo.extrauserinfo.email
-            && isMobileValidated userInfo.extrauserinfo.mobile
-    then
-        True
-
-    else
-        False
+            else False
+        
     
 
 isValidatedForAllLadderDetailsInput : Data.Rankings.Ranking -> Data.Rankings.Rankings -> Bool
