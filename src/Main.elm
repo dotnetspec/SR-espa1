@@ -3719,6 +3719,13 @@ newuserConfirmPanel  user sUsers =
                                     { onPress = Just <| Cancel
                                     , label = Element.text "Cancel"
                                     }
+                                    , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput 
+                                    user
+                                    userInfo sUsers False)) <|
+                                        { onPress = Just <| ClickedConfirmedRegisterNewUser
+                                        , label = Element.text "Register"
+                                        }
+                            
                                 ]
                             ]
                         ]
@@ -3785,42 +3792,27 @@ newuserConfirmPanel  user sUsers =
 --             ]
 --         ]
 
-
--- todo: rf:
 isValidatedForAllUserDetailsInput : Data.Users.User -> Data.Users.UserInfo -> Data.Users.Users -> Bool -> Bool
 isValidatedForAllUserDetailsInput user userInfo sUsers isExistingUser =
-    -- case user of
-    --     Data.Users.Guest userInfo userState ->
-    --         False
-    --     (Data.Users.Registered userId token userInfo userState) ->
-            if
-                isExistingUser
-                    && isUserDescValidated userInfo.extrauserinfo.description
-                    && isEmailValidated userInfo.extrauserinfo.email
-                    && isMobileValidated userInfo.extrauserinfo.mobile
-            then
-                True
+    if
+        isExistingUser
+            && isUserDescValidated userInfo.extrauserinfo.description
+            && isEmailValidated userInfo.extrauserinfo.email
+            && isMobileValidated userInfo.extrauserinfo.mobile
+    then
+        True
 
-            else if
-                Data.Users.isNameValid (Data.Users.gotName user) sUsers
-                    && isUserDescValidated userInfo.extrauserinfo.description
-                    && isEmailValidated userInfo.extrauserinfo.email
-                    && isMobileValidated userInfo.extrauserinfo.mobile
-            then
-                True
+    else if
+        Data.Users.isNameValid (Data.Users.gotName user) sUsers
+            && isUserDescValidated userInfo.extrauserinfo.description
+            && isEmailValidated userInfo.extrauserinfo.email
+            && isMobileValidated userInfo.extrauserinfo.mobile
+    then
+        True
 
-            else
-                False
-
-        -- (Data.Users.NoWallet userId token userInfo userState) ->
-        --     Data.Users.NoWallet userId token userInfo
-        -- (Data.Users.NoCredit addr userId token userInfo userState) ->
-        --     Data.Users.NoCredit addr userId token userInfo
-        -- (Data.Users.Credited addr userId token userInfo userState) ->
-        --     Data.Users.Credited addr userId token userInfo
+    else
+        False
     
-
-
 
 isValidatedForAllLadderDetailsInput : Data.Rankings.Ranking -> Data.Rankings.Rankings -> Bool
 isValidatedForAllLadderDetailsInput rnkInfo sRanking =
