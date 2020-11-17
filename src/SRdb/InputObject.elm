@@ -18,30 +18,27 @@ import SRdb.Union
 
 
 buildLoginResultInput :
-    LoginResultInputRequiredFields
-    -> (LoginResultInputOptionalFields -> LoginResultInputOptionalFields)
+    (LoginResultInputOptionalFields -> LoginResultInputOptionalFields)
     -> LoginResultInput
-buildLoginResultInput required fillOptionals =
+buildLoginResultInput fillOptionals =
     let
         optionals =
             fillOptionals
-                { user = Absent }
+                { token = Absent, user = Absent }
     in
-    { token = required.token, user = optionals.user }
-
-
-type alias LoginResultInputRequiredFields =
-    { token : String }
+    { token = optionals.token, user = optionals.user }
 
 
 type alias LoginResultInputOptionalFields =
-    { user : OptionalArgument SRdb.ScalarCodecs.Id }
+    { token : OptionalArgument String
+    , user : OptionalArgument SRdb.ScalarCodecs.Id
+    }
 
 
 {-| Type for the LoginResultInput input object.
 -}
 type alias LoginResultInput =
-    { token : String
+    { token : OptionalArgument String
     , user : OptionalArgument SRdb.ScalarCodecs.Id
     }
 
@@ -51,7 +48,7 @@ type alias LoginResultInput =
 encodeLoginResultInput : LoginResultInput -> Value
 encodeLoginResultInput input =
     Encode.maybeObject
-        [ ( "token", Encode.string input.token |> Just ), ( "user", (SRdb.ScalarCodecs.codecs |> SRdb.Scalar.unwrapEncoder .codecId) |> Encode.optional input.user ) ]
+        [ ( "token", Encode.string |> Encode.optional input.token ), ( "user", (SRdb.ScalarCodecs.codecs |> SRdb.Scalar.unwrapEncoder .codecId) |> Encode.optional input.user ) ]
 
 
 buildLoginResultUserRelation :

@@ -19,9 +19,9 @@ import SRdb.ScalarCodecs
 import SRdb.Union
 
 
-token : SelectionSet String SRdb.Object.LoginResult
+token : SelectionSet (Maybe String) SRdb.Object.LoginResult
 token =
-    Object.selectionForField "String" "token" [] Decode.string
+    Object.selectionForField "(Maybe String)" "token" [] (Decode.string |> Decode.nullable)
 
 
 user :

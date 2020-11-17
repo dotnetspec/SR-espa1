@@ -3,6 +3,7 @@ module Bridge exposing (requestLoginUser, requestCreateAndOrLoginUser, handleCre
     , requestAllRankings
     , requestAllPlayers
     , requestPlayersByRankingId
+    , LoginResult
     )
 
 import Graphql.Http as Http
@@ -26,9 +27,29 @@ import Data.Rankings
 import Data.Users
 import Data.Players
 
+
+
+
+--type alias Response = { loginResult : Maybe LoginResult }
+--type alias User = { name : Maybe String }
+
+
+-- query : SelectionSet Response RootQuery
+-- query =
+--     Query.selection Response
+--         |> with (Query.user { login = "octocat" } user)
+-- user : SelectionSet User Github.Object.User
+-- user =
+--     User.selection User
+--         |> with User.name
+
+
 gotToken : List String -> Data.Users.Token 
 gotToken lstring = 
     "fnED42KNUgACBwPPrxU00AYHx6mKEh6FP2HmKvQZ4ePZpk-VDhY"
+
+type alias LoginResult =
+    { token : Maybe String, user : Maybe Data.Users.FUser }
 
 requestLoginUser : Data.Users.UserName -> Data.Users.Password -> Http.Request LoginResult
 requestLoginUser user_name password =
@@ -38,30 +59,24 @@ requestLoginUser user_name password =
         Http.queryRequest SR.Constants.endpointURL (queryLoginUser requiredArgs loginResultSelectionSet)
         |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
 
-loginResultSelectionSet : SelectionSet (LoginResult) SRdb.Object.LoginResult
+-- nb. LoginResult (after succeed) is the type alias created for storing the return data
+-- SRdb.Object.LoginResult is the typelock that was auto-generated
+loginResultSelectionSet : SelectionSet LoginResult SRdb.Object.LoginResult
 loginResultSelectionSet =
-    Graphql.SelectionSet.succeed SRdb.Object.LoginResult
-    --|> Graphql.SelectionSet.with SRdb.Object.LoginResult.token tokenSelectionSet
-    |> Graphql.SelectionSet.with (SRdb.Object.LoginResult.token (\_ -> Graphql.SelectionSet.empty))
+    Graphql.SelectionSet.succeed LoginResult
+    |> Graphql.SelectionSet.with SRdb.Object.LoginResult.token 
     |> Graphql.SelectionSet.with (SRdb.Object.LoginResult.user (userSelectionSet))
 
 
--- tokenSelectionSet : SelectionSet (String) RootQuery
--- tokenSelectionSet =
---     Graphql.SelectionSet.succeed String
-        --|> Graphql.SelectionSet.with String
-
-        
-queryLoginUser : Query.LoginUserRequiredArguments 
----> SelectionSet (Data.Users.Token) RootQuery
+--The queryLoginUser function maps our LoginResult type alias to that of SRdb’s GraphQL response.
+--for the token field in LoginResult, the first type variable is specified as "Maybe String", meaning this field should be decoded to a Maybe String
+-- decodesTo represents the Elm type that this particular SelectionSet should decode to (Maybe LoginResult)
+-- SRdb.Object.LoginResult here is the typeLock - making sure we get the type right when we decodeTo
+queryLoginUser : Query.LoginUserRequiredArguments
  -> SelectionSet decodesTo SRdb.Object.LoginResult
     -> SelectionSet decodesTo RootQuery
 queryLoginUser requiredArgs =
     Query.loginUser requiredArgs
-
-type alias LoginResult =
-    ( String, Data.Users.FUser )
-
 
 
 mutationCreateAndOrLoginUser : (Mutation.CreateAndOrLoginUserOptionalArguments -> Mutation.CreateAndOrLoginUserOptionalArguments) 

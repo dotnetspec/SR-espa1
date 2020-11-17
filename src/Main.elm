@@ -173,7 +173,8 @@ type Msg
     | UserEmailInputChg String
     | UserMobileInputChg String
     | ClickedLogInUser
-    | LoggedInUser (Result (GQLHttp.Error (Data.Users.Token)) (Data.Users.Token))
+    | InitiallyLoggedInUser (Result (GQLHttp.Error String) Bridge.LoginResult)
+    | LoggedInUser (Result (GQLHttp.Error Data.Users.Token) Data.Users.Token)
     | RegisteredNewUser (Result (GQLHttp.Error Data.Users.Token) Data.Users.Token)
     | ReceivedUserNames (Result (GQLHttp.Error (List String)) (List String))
     | ReceivedUsers (Result (GQLHttp.Error (Maybe (List (Maybe Data.Users.FUser)))) (Maybe (List (Maybe Data.Users.FUser))))
@@ -1585,10 +1586,16 @@ update msg model =
                     
                 Failure _ ->
                     (model, Cmd.none)
+        
+
+        (InitiallyLoggedInUser response, modelReDef) ->
+            ( loginResponse modelReDef response
+               , Cmd.none 
+            )
            
 
         (LoggedInUser response, modelReDef) ->
-            ( loginResponse modelReDef response
+            ( registeredResponse modelReDef response
                , commandFromLoggedInUser response 
             )
 
@@ -1652,14 +1659,18 @@ handleClickedRegister user =
         _ ->
             user
         
-    
-
 
 -- GQL commands
 
 loginUser : String -> String -> Cmd Msg
 loginUser user_name password =
-    GQLHttp.send LoggedInUser (Bridge.requestLoginUser user_name password)
+    GQLHttp.send InitiallyLoggedInUser (Bridge.requestLoginUser user_name password)
+
+
+-- todo: implement
+-- registeredUser : Data.Users.Token -> Cmd Msg
+-- registeredUser token =
+--     GQLHttp.send LoggedInUser (Bridge.requestLoginUser user_name password)
 
 registerUser : String -> String -> Cmd Msg
 registerUser user_name password =
@@ -1985,14 +1996,48 @@ updateWithReceivedRankingById model response =
         (Failure _, Err _) ->
             (Failure "updateWithReceivedUsers6")
 
-loginResponse: Model -> Result (GQLHttp.Error (String)) (Data.Users.Token) -> Model
+
+
+loginResponse: Model -> Result (GQLHttp.Error (String)) (Bridge.LoginResult) -> Model
 loginResponse model response =
+    case (model, response) of
+        (AppOps walletState dataState user uiState subState txRec, Ok loginResult) ->
+            case user of
+                Data.Users.Guest userInfo userState ->
+                    let
+                        --updated_user = Data.Users.Registered userId loginResult userInfo userState
+                        -- todo: fix
+                        updated_user = Data.Users.Registered "1234" (Maybe.withDefault "" loginResult.token) userInfo userState
+                    in
+                        AppOps walletState dataState updated_user uiState subState txRec
+                (Data.Users.Registered userId _ userInfo userState) ->
+                    -- let
+                    --     updated_user = Data.Users.Registered userId token userInfo userState         
+                    -- in
+                    --     AppOps walletState dataState updated_user uiState subState txRec
+                    model
+                (Data.Users.NoWallet userId _ userInfo userState) ->
+                    model
+                (Data.Users.NoCredit addr userId _ userInfo userState) ->
+                    model
+                (Data.Users.Credited addr userId _ userInfo userState) ->
+                    model
+
+        (AppOps walletState dataState user uiState subState txRec, Err _) ->
+                AppOps walletState dataState user uiState subState txRec
+
+        (Failure _, _) ->
+            model
+
+
+registeredResponse: Model -> Result (GQLHttp.Error (String)) (Data.Users.Token) -> Model
+registeredResponse model response =
     case (model, response) of
         (AppOps walletState dataState user uiState subState txRec, Ok token) ->
             case user of
                 Data.Users.Guest userInfo userState ->
                     let
-                        --updated_user = Data.Users.Registered userId token userInfo userState
+                        --updated_user = Data.Users.Registered userId loginResult userInfo userState
                         -- todo: fix
                         updated_user = Data.Users.Registered "1234" token userInfo userState
                     in
@@ -2015,6 +2060,7 @@ loginResponse model response =
 
         (Failure _, _) ->
             model
+
 
 updateFromRegisteredNewUser: Model -> Result (GQLHttp.Error Data.Users.Token) Data.Users.Token -> Model
 updateFromRegisteredNewUser model response =
