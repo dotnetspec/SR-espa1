@@ -173,7 +173,7 @@ type Msg
     | UserEmailInputChg String
     | UserMobileInputChg String
     | ClickedLogInUser
-    | InitiallyLoggedInUser (Result (GQLHttp.Error String) Bridge.LoginResult)
+    | InitiallyLoggedInUser (Result (GQLHttp.Error Bridge.LoginResult) Bridge.LoginResult)
     | LoggedInUser (Result (GQLHttp.Error Data.Users.Token) Data.Users.Token)
     | RegisteredNewUser (Result (GQLHttp.Error Data.Users.Token) Data.Users.Token)
     | ReceivedUserNames (Result (GQLHttp.Error (List String)) (List String))
@@ -1999,7 +1999,7 @@ updateWithReceivedRankingById model response =
 
 
 
-loginResponse: Model -> Result (GQLHttp.Error (String)) (Bridge.LoginResult) -> Model
+loginResponse: Model -> Result (GQLHttp.Error (Bridge.LoginResult)) (Bridge.LoginResult) -> Model
 loginResponse model response =
     case (model, response) of
         (AppOps walletState dataState user uiState subState txRec, Ok loginResult) ->
@@ -2809,7 +2809,7 @@ registerNewUserView userVal sUsers =
                     ]
                 , Element.text "* required"
                 , SR.Elements.justParasimpleUserInfoText
-                , newuserConfirmPanel userVal (Data.Users.asList sUsers)
+                , newuserConfirmPanel userVal sUsers
                 ]
         (Data.Users.Registered userId token userInfo userState) ->
             Framework.responsiveLayout [] <|
@@ -2856,7 +2856,7 @@ registerNewUserView userVal sUsers =
                     ]
                 , Element.text "* required"
                 , SR.Elements.justParasimpleUserInfoText
-                , newuserConfirmPanel userVal (Data.Users.asList sUsers)
+                , newuserConfirmPanel userVal sUsers
                 ]
 
         (Data.Users.NoWallet userId token userInfo userState) ->
@@ -3692,11 +3692,11 @@ mobileValidationErr str =
         Element.el [] <| Element.text ""
 
 
-newuserConfirmPanel : Data.Users.User -> List Data.Users.User -> Element Msg
-newuserConfirmPanel  user luser =
+newuserConfirmPanel : Data.Users.User -> Data.Users.Users -> Element Msg
+newuserConfirmPanel  user sUsers =
         case user of
         Data.Users.Guest userInfo userState ->
-            if List.isEmpty luser then
+            if List.isEmpty <| Data.Users.asList sUsers then
                     Element.column Grid.section <|
                     [ SR.Elements.missingDataPara
                     , Element.el Heading.h6 <| Element.text "Click to continue ..."
@@ -3724,7 +3724,7 @@ newuserConfirmPanel  user luser =
                         ]
 
         (Data.Users.Registered userId token userInfo userState) ->
-            if List.isEmpty luser then
+            if List.isEmpty <| Data.Users.asList sUsers then
                     Element.column Grid.section <|
                         [ SR.Elements.missingDataPara
                         , Element.el Heading.h6 <| Element.text "Click to continue ..."
@@ -3748,7 +3748,9 @@ newuserConfirmPanel  user luser =
                                 , label = Element.text "Cancel"
                                 }
                             , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput 
-                            (Data.Users.Registered userId token userInfo userState)  luser False)) <|
+                            --(Data.Users.Registered userId token userInfo userState)  
+                            user
+                            userInfo sUsers False)) <|
                                 { onPress = Just <| ClickedConfirmedRegisterNewUser
                                 , label = Element.text "Register"
                                 }
@@ -3784,39 +3786,38 @@ newuserConfirmPanel  user luser =
 --         ]
 
 
-isValidatedForAllUserDetailsInput : Data.Users.User -> List Data.Users.User -> Bool -> Bool
-isValidatedForAllUserDetailsInput user luser isExistingUser =
-    --todo: fix
-    False
---     case user of
---         Data.Users.Guest userInfo userState ->
---             False
---         (Data.Users.Registered userId token userInfo userState) ->
---             if
---                 isExistingUser
---                     && isUserDescValidated userInfo.extrauserinfo.description
---                     && isEmailValidated user
---                     && isMobileValidated user
---             then
---                 True
+-- todo: rf:
+isValidatedForAllUserDetailsInput : Data.Users.User -> Data.Users.UserInfo -> Data.Users.Users -> Bool -> Bool
+isValidatedForAllUserDetailsInput user userInfo sUsers isExistingUser =
+    -- case user of
+    --     Data.Users.Guest userInfo userState ->
+    --         False
+    --     (Data.Users.Registered userId token userInfo userState) ->
+            if
+                isExistingUser
+                    && isUserDescValidated userInfo.extrauserinfo.description
+                    && isEmailValidated userInfo.extrauserinfo.email
+                    && isMobileValidated userInfo.extrauserinfo.mobile
+            then
+                True
 
---             else if
---                 Data.Users.isNameValid (Data.Users.gotUserName user) luser
---                     && isUserDescValidated userInfo.extrauserinfo.description
---                     && isEmailValidated user
---                     && isMobileValidated user
---             then
---                 True
+            else if
+                Data.Users.isNameValid (Data.Users.gotName user) sUsers
+                    && isUserDescValidated userInfo.extrauserinfo.description
+                    && isEmailValidated userInfo.extrauserinfo.email
+                    && isMobileValidated userInfo.extrauserinfo.mobile
+            then
+                True
 
---             else
---                 False
+            else
+                False
 
---         (Data.Users.NoWallet userId token userInfo userState) ->
---             Data.Users.NoWallet userId token userInfo
---         (Data.Users.NoCredit addr userId token userInfo userState) ->
---             Data.Users.NoCredit addr userId token userInfo
---         (Data.Users.Credited addr userId token userInfo userState) ->
---             Data.Users.Credited addr userId token userInfo
+        -- (Data.Users.NoWallet userId token userInfo userState) ->
+        --     Data.Users.NoWallet userId token userInfo
+        -- (Data.Users.NoCredit addr userId token userInfo userState) ->
+        --     Data.Users.NoCredit addr userId token userInfo
+        -- (Data.Users.Credited addr userId token userInfo userState) ->
+        --     Data.Users.Credited addr userId token userInfo
     
 
 
@@ -4209,7 +4210,7 @@ inputUserDetailsView dataState user =
                             Framework.container
                             [
                             Element.el Heading.h4 <| Element.text "No Users"
-                            , newuserConfirmPanel user (Data.Users.asList sUsers)
+                            , newuserConfirmPanel user sUsers
                             ]
                     else
                         Framework.responsiveLayout [] <|
@@ -4219,7 +4220,7 @@ inputUserDetailsView dataState user =
                                 , Element.text "\n"
                                 , Element.el Heading.h4 <| Element.text "Create New User"
                                 , displayRegisterNewUser userVal sUsers
-                                , newuserConfirmPanel user (Data.Users.asList sUsers)
+                                , newuserConfirmPanel user sUsers
                                 ]
                 _ ->
                     Html.text "tbc"
@@ -4233,7 +4234,7 @@ inputUserDetailsView dataState user =
                             Framework.container
                             [
                             Element.el Heading.h4 <| Element.text "No Users"
-                            , newuserConfirmPanel user (Data.Users.asList sUsers)
+                            , newuserConfirmPanel user sUsers
                             ]
                     else
                         Framework.responsiveLayout [] <|
@@ -4243,7 +4244,7 @@ inputUserDetailsView dataState user =
                                 , Element.text "\n"
                                 , Element.el Heading.h4 <| Element.text "Create New User"
                                 , displayRegisterNewUser (Data.Users.Registered userId token userInfo userState) sUsers
-                                , newuserConfirmPanel user (Data.Users.asList sUsers)
+                                , newuserConfirmPanel user sUsers
                                 ]
                 _ ->
                     Html.text "tbc"
@@ -4306,7 +4307,7 @@ displayRegisterNewUser userVal sUsers =
                 ]
             , Element.text "* required"
             , SR.Elements.justParasimpleUserInfoText
-            , newuserConfirmPanel (userVal) (Data.Users.asList sUsers)
+            , newuserConfirmPanel (userVal) sUsers
             ]
 
         (Data.Users.NoWallet userId token userInfo userState) ->

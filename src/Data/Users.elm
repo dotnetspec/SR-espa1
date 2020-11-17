@@ -34,6 +34,7 @@ module Data.Users exposing (Users
     , removedInvalidRankingId
     , handleDeletionFromUserJoined
     , removedDeletedRankingsFromUserJoined
+    , gotName
     )
 
 
@@ -493,15 +494,7 @@ extractUsersFromWebData remData =
 
 isNameValid : String -> Users -> Bool 
 isNameValid newName sUsers =
-    let 
-        userNameSet = gotUserNames sUsers
-        _ = Debug.log "userNameSet" userNameSet
-    in
-    if EverySet.member newName userNameSet then
-        let 
-        
-            _ = Debug.log "EverySet.member" "True"
-        in
+    if EverySet.member newName <| gotUserNames sUsers then
         False 
     else if (String.length newName <= 4) then
         False
@@ -544,25 +537,7 @@ isNameValid newName sUsers =
 --                     ]
 
 
-
--- removeCurrentUserEntryFromUserList : List User -> Eth.Types.Address -> List User
--- removeCurrentUserEntryFromUserList userList uaddr =
---     List.filter (\r -> (String.toLower <| r.m_ethaddress) /= (String.toLower <| (Eth.Utils.addressToString uaddr)))
---         (validatedUserList userList)
-
 --private
-
--- isUserInListStrAddr : List User -> String -> Bool
--- isUserInListStrAddr userlist uaddr =
---     let
---         gotSingleUserFromList =
---             gotUserFromUserList userlist uaddr
---     in
---     if gotSingleUserFromList.m_ethaddress == "" then
---         False
-
---     else
---         True
 
 -- isRankingId : String -> Bool
 -- isRankingId =
