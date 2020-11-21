@@ -1,4 +1,4 @@
-type User @embedded
+type User
  {  
     active : Boolean!
     username : String!
@@ -9,14 +9,14 @@ type User @embedded
     member_since: Int!
 }
 
-type Player @embedded
+type Player
  {  rankingid : String!
     uid : String!
     rank : Int!
     challengerid : String
 }
 
-type Ranking @embedded
+type Ranking
   { 
     active : Boolean!
     rankingname : String!
@@ -24,7 +24,7 @@ type Ranking @embedded
     rankingownerid : String!
     }
 
-type UserJoinedRanking @embedded
+type UserJoinedRanking
   { 
     active : Boolean!
     rankingid : String!
@@ -57,5 +57,6 @@ type Query {
 type loginResult @embedded
 {
   token : String
-  logginUser : User 
+  logginUser : User
+  id : String
 }
