@@ -52,6 +52,7 @@ type alias UserRanking =
 
 type GlobalState =
     DisplayGlobalLogin
+    | DisplayLoggedIn
     | DisplayGlobalOnly
     | CreatingNewLadder Data.Users.User
     | CreatedNewLadder Data.Users.User Internal.Types.RankingId

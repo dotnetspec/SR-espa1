@@ -723,18 +723,34 @@ update msg model =
         (Cancel, AppOps walletState 
             (Fetched sUsers sRankings 
                 (Global sGlobal))
-                    (Data.Users.Guest userInfo _) uiState subState txRec ) ->
-                            ( AppOps walletState 
-                                (Fetched sUsers sRankings (Global sGlobal))
-                                    (Data.Users.Guest Data.Users.emptyUserInfo Data.Users.General ) SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+                    user uiState subState txRec ) ->
+                        let
+                            -- rf?: currently having to re-create Global here
+                            newDataKind = Global    <| Data.Global.GlobalRankings (Data.Global.asEverySet 
+                                                    <| Data.Global.created sRankings sUsers) Data.Global.DisplayLoggedIn
+                            newDataState = Fetched sUsers sRankings newDataKind
 
-        (Cancel, AppOps walletState 
-            (Fetched sUsers sRankings 
-                (Global sGlobal))
-                    (Data.Users.Registered userId token userInfo _) uiState subState txRec ) ->
+                        in
                             ( AppOps walletState 
-                                (Fetched sUsers sRankings (Global sGlobal)) 
-                                    (Data.Users.Registered userId token userInfo Data.Users.General ) SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+                               newDataState
+                                    user SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+
+        -- (Cancel, AppOps walletState 
+        --     (Fetched sUsers sRankings 
+        --         (Global sGlobal))
+        --             (Data.Users.Registered userId token userInfo _) uiState subState txRec ) ->
+        --                     ( AppOps walletState 
+        --                         (Fetched sUsers sRankings (Global sGlobal)) 
+        --                             (Data.Users.Registered userId token userInfo Data.Users.General ) SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+
+        -- (Cancel, AppOps walletState 
+        --     (Fetched sUsers sRankings 
+        --         (Global sGlobal))
+        --             (Data.Users.Registered userId token userInfo _) uiState subState txRec ) ->
+        --                     ( AppOps walletState 
+        --                         (Fetched sUsers sRankings (Global sGlobal)) 
+        --                             (Data.Users.Registered userId token userInfo Data.Users.General ) SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+
 
         (Cancel, AppOps walletState 
             (Fetched sUsers sRankings 
@@ -2541,22 +2557,38 @@ view model =
                 -- Global
                 (Fetched sUsers sRankings dKind, Data.Users.Guest userInfo Data.Users.Updating) ->
                     registerNewUserView user sUsers
-
-                (Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) )
-                    , Data.Users.Guest userInfo Data.Users.General) ->
-                    generalLoginView user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin)
                             
                 ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly) )
                     , Data.Users.Registered _ _ _ _ ) ->
                     globalOnlyView user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly)
 
+                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly))
+                    , Data.Users.Guest _ Data.Users.General ) ->
+                    globalOnlyView user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly)
+
                 ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder userVal)))
                     , Data.Users.Registered _ _ _ _ ) ->
-                    generalLoggedInView userVal sUsers (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder userVal))
+                    generalLoggedInView 
+                        userVal sUsers (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder userVal))
 
                 ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder userVal rnkId )))
                     , Data.Users.Registered _ _ _ _ ) ->
-                    generalLoggedInView userVal sUsers (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder userVal rnkId ))
+                    generalLoggedInView 
+                        userVal sUsers (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder userVal rnkId ))
+
+                ( Fetched sUsers sRankings  (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayLoggedIn)), userVal) -> 
+                    generalLoggedInView 
+                        userVal sUsers (Data.Global.GlobalRankings esUR (Data.Global.DisplayLoggedIn ))
+
+                (Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) )
+                    , Data.Users.Guest userInfo Data.Users.General) ->
+                    generalLoginView 
+                        user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin)
+
+                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin))
+                    , Data.Users.Registered _ _ _ _ ) ->
+                    generalLoginView 
+                        user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin)
                 
                 ( Fetched _ _ (Global _), Data.Users.NoWallet _ _ _ _ ) ->
                     Html.text ("Not yet implemented")
@@ -2564,13 +2596,9 @@ view model =
                     Html.text ("Not yet implemented")
                 ( Fetched _ _ (Global _), Data.Users.Credited _ _ _ _ _ ) ->
                     Html.text ("Not yet implemented")
-                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin))
-                    , Data.Users.Registered _ _ _ _ ) ->
-                    generalLoginView user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin)
                 
-                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly))
-                    , Data.Users.Guest _ Data.Users.General ) ->
-                    globalOnlyView user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly)
+                
+                
                 
                 ( Fetched _ _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder _)))
                     , Data.Users.Guest _ Data.Users.General ) ->
@@ -2618,6 +2646,7 @@ view model =
 
                 (Updated _ _ _, _) ->
                     Html.text ("No User - No Update")
+
            
         Failure str ->
            failureView str
@@ -2743,10 +2772,13 @@ globalOnlyView userVal sUsers sGlobal =
         (Data.Users.Registered userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome1 " ++ userInfo.username)
+                    Element.text ("SportRank - " ++ userInfo.username)
                     , displayEnableEthereumBtn
+                    , Element.text "\n"
+                    , infoBtn "Home" Cancel
                     --, displayForToken userVal sGlobal
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                    
                 ]
         (Data.Users.NoWallet userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
