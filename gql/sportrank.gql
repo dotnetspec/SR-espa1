@@ -2,11 +2,9 @@ type User
  {  
     active : Boolean!
     username : String!
-    password : String!
     description : String
     email : String 
     mobile : String
-    member_since: Int!
 }
 
 type Player
@@ -58,5 +56,4 @@ type loginResult @embedded
 {
   token : String
   logginUser : User
-  id : String
 }

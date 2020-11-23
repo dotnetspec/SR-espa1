@@ -1664,8 +1664,8 @@ handleClickedRegister user =
 
 loginUser : String -> String -> Cmd Msg
 loginUser user_name password =
-    --GQLHttp.send InitiallyLoggedInUser (Bridge.requestLoginUser user_name password)
-    Cmd.none
+    GQLHttp.send InitiallyLoggedInUser (Bridge.requestLoginUser user_name password)
+    --Cmd.none
 
 
 -- todo: implement
