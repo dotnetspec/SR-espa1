@@ -2,7 +2,7 @@ module Bridge exposing (requestLoginUser, requestCreateAndOrLoginUser, handleCre
     , requestAllUsers
     , requestAllRankings
     , requestAllPlayers
-    , requestPlayersByRankingId
+    --, requestPlayersByRankingId
     , LoginResult
     )
 
@@ -65,7 +65,7 @@ loginResultSelectionSet : SelectionSet LoginResult SRdb.Object.LoginResult
 loginResultSelectionSet =
     Graphql.SelectionSet.succeed LoginResult
     |> Graphql.SelectionSet.with SRdb.Object.LoginResult.token 
-    |> Graphql.SelectionSet.with (SRdb.Object.LoginResult.user (userSelectionSet))
+    |> Graphql.SelectionSet.with (SRdb.Object.LoginResult.logginUser (userSelectionSet))
 
 
 --The queryLoginUser function maps our LoginResult type alias to that of SRdb’s GraphQL response.
@@ -120,7 +120,7 @@ userSelectionSet =
         |> Graphql.SelectionSet.with SRdb.Object.User.active
         |> Graphql.SelectionSet.with SRdb.Object.User.description
         |> Graphql.SelectionSet.with SRdb.Object.User.email
-        |> Graphql.SelectionSet.with SRdb.Object.User.member_since
+        |> Graphql.SelectionSet.with SRdb.Object.User.ts_
         |> Graphql.SelectionSet.with SRdb.Object.User.mobile
         |> Graphql.SelectionSet.with SRdb.Object.User.username
 
@@ -189,18 +189,19 @@ playerSelectionSet =
         |> Graphql.SelectionSet.with SRdb.Object.Player.challengerid
 
 
-requestPlayersByRankingId : String -> Http.Request (List Data.Players.FPlayer)
-requestPlayersByRankingId rankingId  =
-    let
-        --requiredArgs = {id  = (SRdb.Scalar.Id rankingId)}
-        requiredArgs = {rankingid = rankingId}
-    in
-        Http.queryRequest SR.Constants.endpointURL (queryfindPlayersByRankingID requiredArgs playerSelectionSet)
-        |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
+-- it needs to be players by ranking id - all players for a given ranking
+-- requestPlayersByRankingId : String -> Http.Request (List Data.Players.FPlayer)
+-- requestPlayersByRankingId rankingId  =
+--     let
+--         --requiredArgs = {id  = (SRdb.Scalar.Id rankingId)}
+--         requiredArgs = {rankingid = rankingId}
+--     in
+--         Http.queryRequest SR.Constants.endpointURL (queryfindPlayersByRankingID requiredArgs playerSelectionSet)
+--         |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
 
 
-queryfindPlayersByRankingID : Query.FindPlayersByRankingIdRequiredArguments ->  SelectionSet Data.Players.FPlayer SRdb.Object.Player
-     -> SelectionSet (List Data.Players.FPlayer) RootQuery
-queryfindPlayersByRankingID requiredArgs playerSelectSet =
-    Query.findPlayersByRankingId requiredArgs playerSelectSet
+-- queryfindPlayersByRankingID : Query.FindPlayerByIDRequiredArguments ->  SelectionSet Data.Players.FPlayer SRdb.Object.Player
+--      -> SelectionSet (List Data.Players.FPlayer) RootQuery
+-- queryfindPlayersByRankingID requiredArgs playerSelectSet =
+--     Query.findPlayersByRankingId requiredArgs playerSelectSet
 

@@ -1707,7 +1707,8 @@ allPlayers  token =
 
 gotPlayersByRankingById : String -> Cmd Msg 
 gotPlayersByRankingById id = 
-    GQLHttp.send ReceivedPlayersByRankingId (Bridge.requestPlayersByRankingId id)
+    --GQLHttp.send ReceivedPlayersByRankingId (Bridge.requestPlayersByRankingId id)
+    Cmd.none
 
        
 -- model handlers

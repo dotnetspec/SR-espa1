@@ -171,7 +171,7 @@ type alias FUser = {
     , active : Bool
     , description : Maybe String
     , email : Maybe String
-    , member_since : Int
+    , ts_ : SRdb.ScalarCodecs.Long
     , mobile : Maybe String
     , username : String
     }

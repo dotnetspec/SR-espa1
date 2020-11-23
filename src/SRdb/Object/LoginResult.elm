@@ -24,8 +24,8 @@ token =
     Object.selectionForField "(Maybe String)" "token" [] (Decode.string |> Decode.nullable)
 
 
-user :
+logginUser :
     SelectionSet decodesTo SRdb.Object.User
     -> SelectionSet (Maybe decodesTo) SRdb.Object.LoginResult
-user object_ =
-    Object.selectionForCompositeField "user" [] object_ (identity >> Decode.nullable)
+logginUser object_ =
+    Object.selectionForCompositeField "logginUser" [] object_ (identity >> Decode.nullable)

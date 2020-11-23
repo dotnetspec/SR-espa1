@@ -7,7 +7,7 @@ module SR.Constants exposing
     , jsonbinUsersReadBinLink
     , baseBinUrl
     , endpointURL
-    
+    , customKeyBearerToken
     )
 
 endpointURL : String
@@ -17,9 +17,9 @@ endpointURL =
 customKeyBearerToken : String
 customKeyBearerToken =
     -- Test Server Key
-    --"Bearer fnAD7T98VfACBeFno5RAUCCOMn8oSlNq03CUNTDc"
+    "Bearer fnAD7T98VfACBeFno5RAUCCOMn8oSlNq03CUNTDc"
     -- Test server suggested:
-    "Bearer fnAD5UBKwIACCOQKx_X7D7S9eCTPDHaCvWWS9d-0"
+    --"Bearer fnAD5UBKwIACCOQKx_X7D7S9eCTPDHaCvWWS9d-0"
 
 baseBinUrl : String 
 baseBinUrl = 
