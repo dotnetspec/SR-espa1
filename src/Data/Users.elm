@@ -15,7 +15,6 @@ module Data.Users exposing (Users
     , updatedMobile
     , convertFUserToUser
     , newUser
-    , newUserFromFUser
     , updatedUserInSet
     , addedNewJoinedRankingId
     , removedRankingIdFromAll
@@ -51,6 +50,7 @@ import Eth.Types
 --import SR.Defaults
 import Data.Rankings
 import SRdb.Scalar exposing (Id(..))
+import SRdb.Scalar exposing (Long(..))
 import SRdb.ScalarCodecs
 
 
@@ -152,10 +152,6 @@ updatedMobile userInfo str =
         {userInfo | extrauserinfo = updatedExtraUserInfo}
 
 
-newUserFromFUser : FUser -> User 
-newUserFromFUser fuser = 
-    Registered (fromScalarCodecId fuser.id_) "5678" (UserInfo 1 True "" "" (ExtraUserInfo "" "" "") [""] 1) General
-
 
 convertFUserToUser : FUser -> User 
 convertFUserToUser fuser =
@@ -164,7 +160,7 @@ convertFUserToUser fuser =
         email = Maybe.withDefault "" fuser.email
         mobile = Maybe.withDefault "" fuser.mobile
     in
-    Registered (fromScalarCodecId fuser.id_) "5678" (UserInfo 1 True fuser.username "" (ExtraUserInfo desc email mobile) [""] 1) General
+    Registered (fromScalarCodecId fuser.id_) (fromScalarCodecLong fuser.ts_) (UserInfo 1 True fuser.username "" (ExtraUserInfo desc email mobile) [""] 1) General
 
 type alias FUser = {
     id_ :  SRdb.ScalarCodecs.Id
@@ -181,6 +177,11 @@ type alias FUser = {
 fromScalarCodecId : SRdb.ScalarCodecs.Id -> String
 fromScalarCodecId (Id id) =
     id
+
+
+fromScalarCodecLong : SRdb.ScalarCodecs.Long -> String
+fromScalarCodecLong (Long ts) =
+    ts
 
 newUser : String -> String -> String -> String -> String -> User
 newUser username password desc email mobile =
