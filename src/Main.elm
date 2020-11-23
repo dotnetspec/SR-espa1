@@ -437,6 +437,17 @@ update msg model =
         ( PlayersReceived _, Failure _ ) ->
             (model, Cmd.none)
 
+        (ClickedDisplayGlobalOnly, AppOps walletState 
+            (Fetched sUsers sRankings _) 
+                user uiState subState txRec ) ->
+                let
+                    -- rf?: currently having to re-create Global here
+                    newDataKind = Global    <| Data.Global.GlobalRankings (Data.Global.asEverySet 
+                                            <| Data.Global.created sRankings sUsers) Data.Global.DisplayGlobalOnly
+                    newDataState = Fetched sUsers sRankings newDataKind
+                in
+                    ( AppOps walletState newDataState user SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+
         (ClickedSelectedOwnedRanking rnkidstr rnkownerstr rnknamestr, AppOps walletState dataState user uiState subState txRec )  ->
             let
                 _ = Debug.log "selected ranking is : " rnkidstr
@@ -1748,7 +1759,7 @@ receivedUserNamesFaunaTest model response =
         Err _ ->
             model
 
---GQLHttp.Error (Maybe (List (Maybe Data.Users.FUser)))) (Maybe (List (Maybe Data.Users.FUser))
+
 updateWithReceivedUsers : Model -> Result (GQLHttp.Error (Maybe (List (Maybe Data.Users.FUser)))) (Maybe (List (Maybe Data.Users.FUser))) -> Model
 updateWithReceivedUsers model response =
     case (model, response) of -- AllEmpty, so fill the User set
@@ -2556,9 +2567,11 @@ view model =
                 ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin))
                     , Data.Users.Registered _ _ _ _ ) ->
                     generalLoginView user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin)
+                
                 ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly))
                     , Data.Users.Guest _ Data.Users.General ) ->
                     globalOnlyView user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly)
+                
                 ( Fetched _ _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder _)))
                     , Data.Users.Guest _ Data.Users.General ) ->
                     Html.text ("Not yet implemented")
@@ -2730,7 +2743,7 @@ globalOnlyView userVal sUsers sGlobal =
         (Data.Users.Registered userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome " ++ userInfo.username)
+                    Element.text ("SportRank - Welcome1 " ++ userInfo.username)
                     , displayEnableEthereumBtn
                     --, displayForToken userVal sGlobal
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
