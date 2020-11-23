@@ -81,12 +81,12 @@ type alias UserInfo =
     , password : String
     , extrauserinfo : ExtraUserInfo
     , userjoinrankings : List String
-    , member_since : Int
+    , member_since : String
     }
 
 emptyUserInfo : UserInfo
 emptyUserInfo =
-    UserInfo 0 True "" "" (ExtraUserInfo "" "" "") [] 0
+    UserInfo 0 True "" "" (ExtraUserInfo "" "" "") [] ""
 
 type alias UserId =
     String
@@ -160,7 +160,7 @@ convertFUserToUser fuser =
         email = Maybe.withDefault "" fuser.email
         mobile = Maybe.withDefault "" fuser.mobile
     in
-    Registered (fromScalarCodecId fuser.id_) (fromScalarCodecLong fuser.ts_) (UserInfo 1 True fuser.username "" (ExtraUserInfo desc email mobile) [""] 1) General
+    Registered (fromScalarCodecId fuser.id_) "" (UserInfo 1 True fuser.username "" (ExtraUserInfo desc email mobile) [""] (fromScalarCodecLong fuser.ts_)) General
 
 type alias FUser = {
     id_ :  SRdb.ScalarCodecs.Id
@@ -185,7 +185,7 @@ fromScalarCodecLong (Long ts) =
 
 newUser : String -> String -> String -> String -> String -> User
 newUser username password desc email mobile =
-    Registered "" "" (UserInfo 10 True username password (ExtraUserInfo desc email mobile) [""] 0) General
+    Registered "" "" (UserInfo 10 True username password (ExtraUserInfo desc email mobile) [""] "") General
 
 --nb. this is not an EverySet, it's a Users type.
 empty : Users
