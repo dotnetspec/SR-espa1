@@ -2033,30 +2033,29 @@ updateWithReceivedRankingById model response =
 loginResponse: Model -> Result (GQLHttp.Error (Bridge.LoginResult)) (Bridge.LoginResult) -> Model
 loginResponse model response =
     case (model, response) of
-        (AppOps walletState dataState user uiState subState txRec, Ok loginResult) ->
-            case user of
-                Data.Users.Guest userInfo userState ->
-                    let
-                        --updated_user = Data.Users.Registered userId loginResult userInfo userState
-                        -- todo: fix
-                        updated_user = Data.Users.Registered "1234" (Maybe.withDefault "" loginResult.token) userInfo userState
-                    in
-                        AppOps walletState dataState updated_user uiState subState txRec
-                (Data.Users.Registered userId _ userInfo userState) ->
-                    -- let
-                    --     updated_user = Data.Users.Registered userId token userInfo userState         
-                    -- in
-                    --     AppOps walletState dataState updated_user uiState subState txRec
-                    model
-                (Data.Users.NoWallet userId _ userInfo userState) ->
-                    model
-                (Data.Users.NoCredit addr userId _ userInfo userState) ->
-                    model
-                (Data.Users.Credited addr userId _ userInfo userState) ->
-                    model
+        (AppOps walletState dataState (Data.Users.Guest userInfo userState) uiState subState txRec, Ok loginResult) ->
+            let
+                --updated_user = Data.Users.Registered userId loginResult userInfo userState
+                -- todo: fix
+                updated_user = Data.Users.Registered "1234" (Maybe.withDefault "" loginResult.token) userInfo userState
+            in
+                AppOps walletState dataState updated_user uiState subState txRec
+        
+        (AppOps walletState dataState _
+            uiState subState txRec, Ok loginResult) ->
+                model
 
-        (AppOps walletState dataState user uiState subState txRec, Err _) ->
-                AppOps walletState dataState user uiState subState txRec
+        (AppOps walletState dataState (Data.Users.Guest userInfo _) uiState subState txRec, Err _) ->
+                AppOps walletState dataState (Data.Users.Guest userInfo (Data.Users.LoginError)) uiState subState txRec
+        
+        ( AppOps _ _ (Data.Users.Registered _ _ _ _) _ _ _, Err _ ) ->
+            model
+        ( AppOps _ _ (Data.Users.NoWallet _ _ _ _) _ _ _, Err _ ) ->
+            model
+        ( AppOps _ _ (Data.Users.NoCredit _ _ _ _ _) _ _ _, Err _ ) ->
+            model
+        ( AppOps _ _ (Data.Users.Credited _ _ _ _ _) _ _ _, Err _ ) ->
+            model
 
         (Failure _, _) ->
             model
@@ -2596,12 +2595,12 @@ view model =
                 (Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) )
                     , Data.Users.Guest userInfo Data.Users.General) ->
                     generalLoginView 
-                        user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin)
+                        user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) ""
 
                 ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin))
                     , Data.Users.Registered _ _ _ _ ) ->
                     generalLoginView 
-                        user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin)
+                        user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) ""
                 
                 ( Fetched _ _ (Global _), Data.Users.NoWallet _ _ _ _ ) ->
                     Html.text ("Not yet implemented")
@@ -2660,6 +2659,23 @@ view model =
                 (Updated _ _ _, _) ->
                     Html.text ("No User - No Update")
 
+                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin))
+                    , Data.Users.Guest _ Data.Users.LoginError ) ->
+                        generalLoginView
+                            user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Not found. Register?:"
+                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly))
+                    , Data.Users.Guest _ Data.Users.LoginError ) ->
+                        generalLoginView
+                            user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Not found. Register?:"
+                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder _)))
+                    , Data.Users.Guest _ Data.Users.LoginError ) ->
+                        generalLoginView
+                            user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Not found. Register?:"
+                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder _ _)))
+                    , Data.Users.Guest _ Data.Users.LoginError ) ->
+                        generalLoginView
+                            user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Not found. Register?:"
+
            
         Failure str ->
            failureView str
@@ -2679,15 +2695,15 @@ resultView  status =
                 SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
 
 
-generalLoginView : Data.Users.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
-generalLoginView userVal sUsers sGlobal =
+generalLoginView : Data.Users.User -> Data.Users.Users -> Data.Global.Global -> String -> Html Msg 
+generalLoginView userVal sUsers sGlobal errorMsg =
     case userVal of
         Data.Users.Guest userInfo userState ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome Guest")
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal
+                    , displayForToken userVal sGlobal errorMsg
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userInfo userState)))
                 ]
         (Data.Users.Registered userId token userInfo userState) ->
@@ -2695,7 +2711,7 @@ generalLoginView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal
+                    , displayForToken userVal sGlobal errorMsg
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
         (Data.Users.NoWallet userId token userInfo userState) ->
@@ -2703,7 +2719,7 @@ generalLoginView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal
+                    , displayForToken userVal sGlobal errorMsg
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
@@ -2711,7 +2727,7 @@ generalLoginView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal
+                    , displayForToken userVal sGlobal errorMsg
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
         (Data.Users.Credited addr userId token userInfo userState) ->
@@ -2719,7 +2735,7 @@ generalLoginView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal
+                    , displayForToken userVal sGlobal errorMsg
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
 
@@ -2733,7 +2749,7 @@ generalLoggedInView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome Guest - Please Register To Continue")
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal
+                    , displayForToken userVal sGlobal ""
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userInfo userState)))
                 ]
         (Data.Users.Registered userId token userInfo userState) ->
@@ -2741,7 +2757,7 @@ generalLoggedInView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal
+                    , displayForToken userVal sGlobal ""
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
         (Data.Users.NoWallet userId token userInfo userState) ->
@@ -2749,7 +2765,7 @@ generalLoggedInView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal
+                    , displayForToken userVal sGlobal ""
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
@@ -2757,7 +2773,7 @@ generalLoggedInView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal
+                    , displayForToken userVal sGlobal ""
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
         (Data.Users.Credited addr userId token userInfo userState) ->
@@ -2765,7 +2781,7 @@ generalLoggedInView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal
+                    , displayForToken userVal sGlobal ""
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
 
@@ -2779,7 +2795,7 @@ globalOnlyView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome Guest - Please Register To Continue")
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal
+                    , displayForToken userVal sGlobal ""
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Guest userInfo userState)))
                 ]
         (Data.Users.Registered userId token userInfo userState) ->
@@ -2789,16 +2805,14 @@ globalOnlyView userVal sUsers sGlobal =
                     , displayEnableEthereumBtn
                     , Element.text "\n"
                     , infoBtn "Cancel" Cancel
-                    --, displayForToken userVal sGlobal
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
-                    
                 ]
         (Data.Users.NoWallet userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal
+                    , displayForToken userVal sGlobal ""
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
@@ -2806,7 +2820,7 @@ globalOnlyView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal
+                    , displayForToken userVal sGlobal ""
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
         (Data.Users.Credited addr userId token userInfo userState) ->
@@ -2814,7 +2828,7 @@ globalOnlyView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal
+                    , displayForToken userVal sGlobal ""
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
 
@@ -2947,14 +2961,12 @@ failureView str =
                     -- do it in a separate function like dispalyForToken
                     , infoBtn "Log In" ClickedLogInUser
                     , Element.text ("\n")
-                            , displayRegisterBtnIfNewUser
-                                ""
-                                ClickedRegister   
+                    , infoBtn "Register" ClickedRegister  
                 ]
 
 
-displayForToken : Data.Users.User -> Data.Global.Global -> Element Msg 
-displayForToken userVal sGlobal = 
+displayForToken : Data.Users.User -> Data.Global.Global -> String -> Element Msg 
+displayForToken userVal sGlobal errorMsg = 
     case userVal of
         Data.Users.Guest userInfo userState ->
             -- Err
@@ -2981,10 +2993,8 @@ displayForToken userVal sGlobal =
                         ]
                     ]
                 , infoBtn "Log In" ClickedLogInUser
-                , Element.text ("\n")
-                , displayRegisterBtnIfNewUser
-                    ""
-                    ClickedRegister
+                , Element.text errorMsg
+                , infoBtn "Register" ClickedRegister
                 ]
             
         (Data.Users.Registered userId token userInfo userState) ->
@@ -4008,18 +4018,18 @@ infoBtn label msg =
             , label = Element.text label
             }
 
-displayRegisterBtnIfNewUser : String -> Msg -> Element Msg
-displayRegisterBtnIfNewUser uname msg =
-    if uname /= "" then
-        Element.text ""
+-- displayRegisterBtnIfNewUser : String -> Msg -> Element Msg
+-- displayRegisterBtnIfNewUser uname msg =
+--     if uname /= "" then
+--         Element.text ""
 
-    else
-        Input.button
-            (Button.simple ++ Button.fill ++ Color.info ++ [ Element.htmlAttribute (Html.Attributes.id "registerbtn") ])
-        <|
-            { onPress = Just <| msg
-            , label = Element.text "Register"
-            }
+--     else
+--         Input.button
+--             (Button.simple ++ Button.fill ++ Color.info ++ [ Element.htmlAttribute (Html.Attributes.id "registerbtn") ])
+--         <|
+--             { onPress = Just <| msg
+--             , label = Element.text "Register"
+--             }
 
 
 displayEnableEthereumBtn : Element Msg

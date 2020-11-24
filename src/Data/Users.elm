@@ -69,6 +69,7 @@ type User =
 type UserState = 
     General
     | Updating
+    | LoginError
 
 -- Users (EverySet User) is not the same type as (EverySet User)
 -- Peter Damoc
