@@ -46,7 +46,7 @@ missingDataPara =
         [ Element.el [ Font.bold ] <| Element.text "Please note: "
         , Element.paragraph [] <|
             List.singleton <|
-                Element.text "Essential data is missing. Please click 'Cancel'"
+                Element.text "Essential data is missing!"
         ]
 
 ethereumNotEnabledPara : Element msg

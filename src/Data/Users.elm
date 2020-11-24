@@ -21,6 +21,7 @@ module Data.Users exposing (Users
     , removedRankindIdFromUser
     , isEmpty
     , isNameValid
+    , isPasswordValid
     , extractUsersFromWebData
     , empty
     , emptyUserInfo
@@ -501,41 +502,11 @@ isNameValid newName sUsers =
         False
     else True
 
--- gotUserListFromRemData : RemoteData.WebData (List User) -> List User
--- gotUserListFromRemData userList =
---     case userList of
---         RemoteData.Success a ->
---             a
-
---         RemoteData.NotAsked ->
---             [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
---             ]
-
---         RemoteData.Loading ->
---             [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
---             ]
-
---         RemoteData.Failure err ->
---             case err of
---                 Http.BadUrl s ->
---                     [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
---                     ]
-
---                 Http.Timeout ->
---                     [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
---                     ]
-
---                 Http.NetworkError ->
---                     [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
---                     ]
-
---                 Http.BadStatus statuscode ->
---                     [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
---                     ]
-
---                 Http.BadBody s ->
---                     [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
---                     ]
+isPasswordValid : String -> Bool 
+isPasswordValid password  =
+    if (String.length password <= 4 || String.length password > 10) then
+        False
+    else True
 
 
 --private

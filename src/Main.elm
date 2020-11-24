@@ -2841,8 +2841,9 @@ registerNewUserView userVal sUsers =
                             { onChange = UserPasswordInputChg
                             , text = userInfo.password
                             , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password*")
                             }
+                        , passwordValidView userInfo
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
                             { onChange = UserDescInputChg
                             , text = userInfo.extrauserinfo.description
@@ -2888,8 +2889,9 @@ registerNewUserView userVal sUsers =
                             { onChange = UserPasswordInputChg
                             , text = userInfo.password
                             , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password*")
                             }
+                        , passwordValidView userInfo
                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
                             { onChange = UserDescInputChg
                             , text = userInfo.extrauserinfo.description
@@ -3755,7 +3757,14 @@ newuserConfirmPanel : Data.Users.User -> Data.Users.Users -> Element Msg
 newuserConfirmPanel  user sUsers =
         case user of
         Data.Users.Guest userInfo userState ->
-            if List.isEmpty <| Data.Users.asList sUsers then
+            if 
+                (List.isEmpty <| Data.Users.asList sUsers)
+                || 
+                (not <| Data.Users.isNameValid userInfo.username sUsers)
+                || 
+                (not <| Data.Users.isPasswordValid userInfo.password)
+            
+            then
                     Element.column Grid.section <|
                     [ SR.Elements.missingDataPara
                     , Element.el Heading.h6 <| Element.text "Click to continue ..."
@@ -3885,15 +3894,20 @@ nameValidView userInfo sUsers =
             (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
                 ++ [ Element.moveLeft 0.0 ]
             )
-            (Element.text """Must be unique (4-8 continuous chars)""")
+            (Element.text """Must be unique (5-8 continuous chars)""")
 
-        -- (Data.Users.NoWallet _ _ userInfo _) ->
-        --     (Element.text """Validation View Error""")
-        -- (Data.Users.NoCredit addr _ _ userInfo _) ->
-        --     (Element.text """Validation View Error""")
-        -- (Data.Users.Credited addr _ _ userInfo _) ->
-        --     (Element.text """Validation View Error""")
 
+passwordValidView : Data.Users.UserInfo -> Element Msg
+passwordValidView userInfo =
+    if Data.Users.isPasswordValid userInfo.password then 
+        Element.el ([ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Password OK!")
+
+    else
+        Element.el
+            ([ Font.color SR.Types.colors.red, Font.alignLeft ]
+                ++ [ Element.moveLeft 0.0 ]
+            )
+            (Element.text """Must be unique (5-8 continuous chars)""")
 
 
 -- ladderNameValidationErr : SR.Types.AppInfo -> DataState -> Element Msg
@@ -3910,7 +3924,7 @@ nameValidView userInfo sUsers =
 --                             (List.append [ Element.htmlAttribute (Html.Attributes.id "laddernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
 --                                 ++ [ Element.moveLeft 0.0 ]
 --                             )
---                             (Element.text """Must be unique (4-8 continuous chars)""")
+--                             (Element.text """Must be unique (5-8 continuous chars)""")
 
 --                 _ -> 
 --                     let 
@@ -4314,8 +4328,9 @@ displayRegisterNewUser userVal sUsers =
                         { onChange = UserPasswordInputChg
                         , text = userInfo.password
                         , placeholder = Nothing
-                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password*")
                         }
+                    , passwordValidView userInfo
                     , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
                         { onChange = UserDescInputChg
                         , text = userInfo.extrauserinfo.description
