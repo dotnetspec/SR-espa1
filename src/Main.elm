@@ -2775,7 +2775,7 @@ globalOnlyView userVal sUsers sGlobal =
                     Element.text ("SportRank - " ++ userInfo.username)
                     , displayEnableEthereumBtn
                     , Element.text "\n"
-                    , infoBtn "Home" Cancel
+                    , infoBtn "Cancel" Cancel
                     --, displayForToken userVal sGlobal
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                     
