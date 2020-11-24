@@ -2998,9 +2998,11 @@ displayForToken userVal sGlobal errorMsg =
                         ]
                     ]
                 , infoBtn "Log In" ClickedLogInUser
-                , Element.text errorMsg
+                , SR.Elements.warningText errorMsg
                 , infoBtn "Register" ClickedRegister
                 ]
+
+                
             
         (Data.Users.Registered userId token userInfo userState) ->
             Element.column Grid.section <|
