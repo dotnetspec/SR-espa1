@@ -71,11 +71,11 @@ permanentlyDeleteWarnPara =
 globalHeading : Data.Users.User -> Element msg
 globalHeading user =
     case user of
-        Data.Users.Guest _ _ ->
+        Data.Users.Spectator _ _ ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Global Rankings"
             , Element.column Card.fill
-                [ Element.el Heading.h4 <| Element.text "Guest"
+                [ Element.el Heading.h4 <| Element.text "Spectator"
                 ]
             ]
         

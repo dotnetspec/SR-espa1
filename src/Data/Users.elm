@@ -60,7 +60,7 @@ import Regex
 
 
 type User =
-    Guest UserInfo UserState
+    Spectator UserInfo UserState
     | Registered UserId Token UserInfo UserState
     | NoWallet UserId Token UserInfo UserState
     | NoCredit Eth.Types.Address UserId Token UserInfo UserState
@@ -119,7 +119,7 @@ convertedStrToUserId uid =
 gotUserIdFromUser : User -> String 
 gotUserIdFromUser user = 
     case user of 
-        Guest _ _ ->
+        Spectator _ _ ->
             ""
         Registered uid _ _ _ ->
             uid
@@ -210,8 +210,8 @@ asUsers esUser  =
 gotUserName : User -> String 
 gotUserName user = 
     case user of
-        Guest _ _ ->
-            "Guest"
+        Spectator _ _ ->
+            "Spectator"
         (Registered userId token userInfo userState) ->
             userInfo.username
         (NoWallet userId token userInfo userState) ->
@@ -224,8 +224,8 @@ gotUserName user =
 removedDeletedRankingsFromUserJoined : User -> Data.Rankings.Rankings -> User 
 removedDeletedRankingsFromUserJoined user sRankings = 
     case user of
-        Guest userInfo _ ->
-            Guest userInfo General
+        Spectator userInfo _ ->
+            Spectator userInfo General
         (Registered userId token userInfo userState) ->
             Registered userId token (handleDeletionFromUserJoined userInfo sRankings) userState
         (NoWallet userId token userInfo userState) ->
@@ -269,7 +269,7 @@ gotUserNames (Users users) =
 gotName : User -> String 
 gotName user = 
     case user of 
-        Guest userInfo _ ->
+        Spectator userInfo _ ->
             userInfo.username
         Registered _ _ userInfo _ ->
             userInfo.username
@@ -296,7 +296,7 @@ gotUser (Users susers) userId =
 gotUIDFromUser : User -> UserId
 gotUIDFromUser user = 
     case user of
-        Guest _ _ ->
+        Spectator _ _ ->
             ""
         (Registered userId _ _ _) ->
             userId
@@ -348,7 +348,7 @@ addedNewJoinedRankingId rankingId user lUser =
     in
     --todo: temp fix
     --newUserList
-    [Guest emptyUserInfo General]
+    [Spectator emptyUserInfo General]
 
 
 removedInvalidRankingId : String -> Maybe String 
@@ -386,7 +386,7 @@ removedRankindIdFromUser  rnkId user =
     in
         --userUpdated
         -- todo: temp fix
-        Guest emptyUserInfo General
+        Spectator emptyUserInfo General
 
 filterRankingIds : String -> String -> Maybe String 
 filterRankingIds rnkIdToFilter currentRnkId =
@@ -428,7 +428,7 @@ updatedUserInSet : Users -> User -> Users
 updatedUserInSet susers updatedUser =
 --the user is 'Registered' for the purposes of updating the Set
     case updatedUser of
-        Guest userInfo user ->
+        Spectator userInfo user ->
             susers
         (Registered userId token userInfo userState) ->
             -- remove the original user, then add the new one
