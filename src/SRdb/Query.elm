@@ -79,18 +79,6 @@ findUserByID requiredArgs object_ =
     Object.selectionForCompositeField "findUserByID" [ Argument.required "id" requiredArgs.id (SRdb.ScalarCodecs.codecs |> SRdb.Scalar.unwrapEncoder .codecId) ] object_ (identity >> Decode.nullable)
 
 
-type alias FindPlayersByRankingIdRequiredArguments =
-    { rankingid : String }
-
-
-findPlayersByRankingId :
-    FindPlayersByRankingIdRequiredArguments
-    -> SelectionSet decodesTo SRdb.Object.Player
-    -> SelectionSet (List decodesTo) RootQuery
-findPlayersByRankingId requiredArgs object_ =
-    Object.selectionForCompositeField "findPlayersByRankingId" [ Argument.required "rankingid" requiredArgs.rankingid Encode.string ] object_ (identity >> Decode.list)
-
-
 type alias LoginUserRequiredArguments =
     { username : String
     , password : String
@@ -99,9 +87,10 @@ type alias LoginUserRequiredArguments =
 
 loginUser :
     LoginUserRequiredArguments
-    -> SelectionSet String RootQuery
-loginUser requiredArgs =
-    Object.selectionForField "String" "loginUser" [ Argument.required "username" requiredArgs.username Encode.string, Argument.required "password" requiredArgs.password Encode.string ] Decode.string
+    -> SelectionSet decodesTo SRdb.Object.LoginResult
+    -> SelectionSet decodesTo RootQuery
+loginUser requiredArgs object_ =
+    Object.selectionForCompositeField "loginUser" [ Argument.required "username" requiredArgs.username Encode.string, Argument.required "password" requiredArgs.password Encode.string ] object_ identity
 
 
 allPlayerUIDs : SelectionSet (List String) RootQuery
@@ -131,18 +120,6 @@ findRankingByID :
     -> SelectionSet (Maybe decodesTo) RootQuery
 findRankingByID requiredArgs object_ =
     Object.selectionForCompositeField "findRankingByID" [ Argument.required "id" requiredArgs.id (SRdb.ScalarCodecs.codecs |> SRdb.Scalar.unwrapEncoder .codecId) ] object_ (identity >> Decode.nullable)
-
-
-type alias FindRankingByIdRequiredArguments =
-    { rankingid : Int }
-
-
-findRankingById :
-    FindRankingByIdRequiredArguments
-    -> SelectionSet decodesTo SRdb.Object.Ranking
-    -> SelectionSet (List decodesTo) RootQuery
-findRankingById requiredArgs object_ =
-    Object.selectionForCompositeField "findRankingById" [ Argument.required "rankingid" requiredArgs.rankingid Encode.int ] object_ (identity >> Decode.list)
 
 
 allPlayerChallengerUIDs : SelectionSet (List String) RootQuery

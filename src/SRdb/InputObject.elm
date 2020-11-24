@@ -17,6 +17,76 @@ import SRdb.ScalarCodecs
 import SRdb.Union
 
 
+buildLoginResultInput :
+    (LoginResultInputOptionalFields -> LoginResultInputOptionalFields)
+    -> LoginResultInput
+buildLoginResultInput fillOptionals =
+    let
+        optionals =
+            fillOptionals
+                { token = Absent, logginUser = Absent }
+    in
+    { token = optionals.token, logginUser = optionals.logginUser }
+
+
+type alias LoginResultInputOptionalFields =
+    { token : OptionalArgument String
+    , logginUser : OptionalArgument SRdb.ScalarCodecs.Id
+    }
+
+
+{-| Type for the LoginResultInput input object.
+-}
+type alias LoginResultInput =
+    { token : OptionalArgument String
+    , logginUser : OptionalArgument SRdb.ScalarCodecs.Id
+    }
+
+
+{-| Encode a LoginResultInput into a value that can be used as an argument.
+-}
+encodeLoginResultInput : LoginResultInput -> Value
+encodeLoginResultInput input =
+    Encode.maybeObject
+        [ ( "token", Encode.string |> Encode.optional input.token ), ( "logginUser", (SRdb.ScalarCodecs.codecs |> SRdb.Scalar.unwrapEncoder .codecId) |> Encode.optional input.logginUser ) ]
+
+
+buildLoginResultLogginUserRelation :
+    (LoginResultLogginUserRelationOptionalFields -> LoginResultLogginUserRelationOptionalFields)
+    -> LoginResultLogginUserRelation
+buildLoginResultLogginUserRelation fillOptionals =
+    let
+        optionals =
+            fillOptionals
+                { create = Absent, connect = Absent, disconnect = Absent }
+    in
+    { create = optionals.create, connect = optionals.connect, disconnect = optionals.disconnect }
+
+
+type alias LoginResultLogginUserRelationOptionalFields =
+    { create : OptionalArgument UserInput
+    , connect : OptionalArgument SRdb.ScalarCodecs.Id
+    , disconnect : OptionalArgument Bool
+    }
+
+
+{-| Type for the LoginResultLogginUserRelation input object.
+-}
+type alias LoginResultLogginUserRelation =
+    { create : OptionalArgument UserInput
+    , connect : OptionalArgument SRdb.ScalarCodecs.Id
+    , disconnect : OptionalArgument Bool
+    }
+
+
+{-| Encode a LoginResultLogginUserRelation into a value that can be used as an argument.
+-}
+encodeLoginResultLogginUserRelation : LoginResultLogginUserRelation -> Value
+encodeLoginResultLogginUserRelation input =
+    Encode.maybeObject
+        [ ( "create", encodeUserInput |> Encode.optional input.create ), ( "connect", (SRdb.ScalarCodecs.codecs |> SRdb.Scalar.unwrapEncoder .codecId) |> Encode.optional input.connect ), ( "disconnect", Encode.bool |> Encode.optional input.disconnect ) ]
+
+
 buildPlayerInput :
     PlayerInputRequiredFields
     -> (PlayerInputOptionalFields -> PlayerInputOptionalFields)
@@ -111,14 +181,12 @@ buildUserInput required fillOptionals =
             fillOptionals
                 { description = Absent, email = Absent, mobile = Absent }
     in
-    { active = required.active, username = required.username, password = required.password, description = optionals.description, email = optionals.email, mobile = optionals.mobile, member_since = required.member_since }
+    { active = required.active, username = required.username, description = optionals.description, email = optionals.email, mobile = optionals.mobile }
 
 
 type alias UserInputRequiredFields =
     { active : Bool
     , username : String
-    , password : String
-    , member_since : Int
     }
 
 
@@ -134,11 +202,9 @@ type alias UserInputOptionalFields =
 type alias UserInput =
     { active : Bool
     , username : String
-    , password : String
     , description : OptionalArgument String
     , email : OptionalArgument String
     , mobile : OptionalArgument String
-    , member_since : Int
     }
 
 
@@ -147,7 +213,7 @@ type alias UserInput =
 encodeUserInput : UserInput -> Value
 encodeUserInput input =
     Encode.maybeObject
-        [ ( "active", Encode.bool input.active |> Just ), ( "username", Encode.string input.username |> Just ), ( "password", Encode.string input.password |> Just ), ( "description", Encode.string |> Encode.optional input.description ), ( "email", Encode.string |> Encode.optional input.email ), ( "mobile", Encode.string |> Encode.optional input.mobile ), ( "member_since", Encode.int input.member_since |> Just ) ]
+        [ ( "active", Encode.bool input.active |> Just ), ( "username", Encode.string input.username |> Just ), ( "description", Encode.string |> Encode.optional input.description ), ( "email", Encode.string |> Encode.optional input.email ), ( "mobile", Encode.string |> Encode.optional input.mobile ) ]
 
 
 buildUserJoinedRankingInput :

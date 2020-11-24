@@ -41,11 +41,6 @@ id_ =
     Object.selectionForField "ScalarCodecs.Id" "_id" [] (SRdb.ScalarCodecs.codecs |> SRdb.Scalar.unwrapCodecs |> .codecId |> .decoder)
 
 
-member_since : SelectionSet Int SRdb.Object.User
-member_since =
-    Object.selectionForField "Int" "member_since" [] Decode.int
-
-
 mobile : SelectionSet (Maybe String) SRdb.Object.User
 mobile =
     Object.selectionForField "(Maybe String)" "mobile" [] (Decode.string |> Decode.nullable)
@@ -54,11 +49,6 @@ mobile =
 active : SelectionSet Bool SRdb.Object.User
 active =
     Object.selectionForField "Bool" "active" [] Decode.bool
-
-
-password : SelectionSet String SRdb.Object.User
-password =
-    Object.selectionForField "String" "password" [] Decode.string
 
 
 {-| The document's timestamp.

@@ -2,7 +2,8 @@ module Bridge exposing (requestLoginUser, requestCreateAndOrLoginUser, handleCre
     , requestAllUsers
     , requestAllRankings
     , requestAllPlayers
-    , requestPlayersByRankingId
+    --, requestPlayersByRankingId
+    , LoginResult
     )
 
 import Graphql.Http as Http
@@ -14,8 +15,10 @@ import SRdb.Mutation as Mutation
 import SRdb.Query as Query
 import SRdb.Object
 import SRdb.Object.User
+--import SRdb.Object.Token
 import SRdb.Object.Ranking
 import SRdb.Object.Player
+import SRdb.Object.LoginResult
 import SR.Types
 import SR.Constants
 import Graphql.SelectionSet exposing (SelectionSet(..))
@@ -24,23 +27,56 @@ import Data.Rankings
 import Data.Users
 import Data.Players
 
-requestLoginUser : Data.Users.UserName -> Data.Users.Password -> Http.Request (Data.Users.Token)
-requestLoginUser user_name password =
-    let
-        requiredArgs = {username = user_name, password = password}
-    in
-        Http.queryRequest SR.Constants.endpointURL (queryLoginUser requiredArgs)
-        |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
+
+
+
+--type alias Response = { loginResult : Maybe LoginResult }
+--type alias User = { name : Maybe String }
+
+
+-- query : SelectionSet Response RootQuery
+-- query =
+--     Query.selection Response
+--         |> with (Query.user { login = "octocat" } user)
+-- user : SelectionSet User Github.Object.User
+-- user =
+--     User.selection User
+--         |> with User.name
+
 
 gotToken : List String -> Data.Users.Token 
 gotToken lstring = 
     "fnED42KNUgACBwPPrxU00AYHx6mKEh6FP2HmKvQZ4ePZpk-VDhY"
 
+type alias LoginResult =
+    { token : Maybe String, user : Maybe Data.Users.FUser }
 
-queryLoginUser : Query.LoginUserRequiredArguments -> SelectionSet (Data.Users.Token) RootQuery
+requestLoginUser : Data.Users.UserName -> Data.Users.Password -> Http.Request LoginResult
+requestLoginUser user_name password =
+    let
+        requiredArgs = {username = user_name, password = password}
+    in
+        Http.queryRequest SR.Constants.endpointURL (queryLoginUser requiredArgs loginResultSelectionSet)
+        |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
+
+-- nb. LoginResult (after succeed) is the type alias created for storing the return data
+-- SRdb.Object.LoginResult is the typelock that was auto-generated
+loginResultSelectionSet : SelectionSet LoginResult SRdb.Object.LoginResult
+loginResultSelectionSet =
+    Graphql.SelectionSet.succeed LoginResult
+    |> Graphql.SelectionSet.with SRdb.Object.LoginResult.token 
+    |> Graphql.SelectionSet.with (SRdb.Object.LoginResult.logginUser (userSelectionSet))
+
+
+--The queryLoginUser function maps our LoginResult type alias to that of SRdb’s GraphQL response.
+--for the token field in LoginResult, the first type variable is specified as "Maybe String", meaning this field should be decoded to a Maybe String
+-- decodesTo represents the Elm type that this particular SelectionSet should decode to (Maybe LoginResult)
+-- SRdb.Object.LoginResult here is the typeLock - making sure we get the type right when we decodeTo
+queryLoginUser : Query.LoginUserRequiredArguments
+ -> SelectionSet decodesTo SRdb.Object.LoginResult
+    -> SelectionSet decodesTo RootQuery
 queryLoginUser requiredArgs =
     Query.loginUser requiredArgs
-
 
 
 mutationCreateAndOrLoginUser : (Mutation.CreateAndOrLoginUserOptionalArguments -> Mutation.CreateAndOrLoginUserOptionalArguments) 
@@ -84,7 +120,7 @@ userSelectionSet =
         |> Graphql.SelectionSet.with SRdb.Object.User.active
         |> Graphql.SelectionSet.with SRdb.Object.User.description
         |> Graphql.SelectionSet.with SRdb.Object.User.email
-        |> Graphql.SelectionSet.with SRdb.Object.User.member_since
+        |> Graphql.SelectionSet.with SRdb.Object.User.ts_
         |> Graphql.SelectionSet.with SRdb.Object.User.mobile
         |> Graphql.SelectionSet.with SRdb.Object.User.username
 
@@ -153,18 +189,19 @@ playerSelectionSet =
         |> Graphql.SelectionSet.with SRdb.Object.Player.challengerid
 
 
-requestPlayersByRankingId : String -> Http.Request (List Data.Players.FPlayer)
-requestPlayersByRankingId rankingId  =
-    let
-        --requiredArgs = {id  = (SRdb.Scalar.Id rankingId)}
-        requiredArgs = {rankingid = rankingId}
-    in
-        Http.queryRequest SR.Constants.endpointURL (queryfindPlayersByRankingID requiredArgs playerSelectionSet)
-        |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
+-- it needs to be players by ranking id - all players for a given ranking
+-- requestPlayersByRankingId : String -> Http.Request (List Data.Players.FPlayer)
+-- requestPlayersByRankingId rankingId  =
+--     let
+--         --requiredArgs = {id  = (SRdb.Scalar.Id rankingId)}
+--         requiredArgs = {rankingid = rankingId}
+--     in
+--         Http.queryRequest SR.Constants.endpointURL (queryfindPlayersByRankingID requiredArgs playerSelectionSet)
+--         |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
 
 
-queryfindPlayersByRankingID : Query.FindPlayersByRankingIdRequiredArguments ->  SelectionSet Data.Players.FPlayer SRdb.Object.Player
-     -> SelectionSet (List Data.Players.FPlayer) RootQuery
-queryfindPlayersByRankingID requiredArgs playerSelectSet =
-    Query.findPlayersByRankingId requiredArgs playerSelectSet
+-- queryfindPlayersByRankingID : Query.FindPlayerByIDRequiredArguments ->  SelectionSet Data.Players.FPlayer SRdb.Object.Player
+--      -> SelectionSet (List Data.Players.FPlayer) RootQuery
+-- queryfindPlayersByRankingID requiredArgs playerSelectSet =
+--     Query.findPlayersByRankingId requiredArgs playerSelectSet
 

@@ -15,13 +15,13 @@ module Data.Users exposing (Users
     , updatedMobile
     , convertFUserToUser
     , newUser
-    , newUserFromFUser
     , updatedUserInSet
     , addedNewJoinedRankingId
     , removedRankingIdFromAll
     , removedRankindIdFromUser
     , isEmpty
     , isNameValid
+    , isPasswordValid
     , extractUsersFromWebData
     , empty
     , emptyUserInfo
@@ -34,6 +34,7 @@ module Data.Users exposing (Users
     , removedInvalidRankingId
     , handleDeletionFromUserJoined
     , removedDeletedRankingsFromUserJoined
+    , gotName
     )
 
 
@@ -50,6 +51,7 @@ import Eth.Types
 --import SR.Defaults
 import Data.Rankings
 import SRdb.Scalar exposing (Id(..))
+import SRdb.Scalar exposing (Long(..))
 import SRdb.ScalarCodecs
 
 
@@ -63,8 +65,7 @@ type User =
 
 type UserState = 
     General
-    | CreateNewUser
-    | UpdateProfile
+    | Updating
 
 -- Users (EverySet User) is not the same type as (EverySet User)
 -- Peter Damoc
@@ -81,12 +82,12 @@ type alias UserInfo =
     , password : String
     , extrauserinfo : ExtraUserInfo
     , userjoinrankings : List String
-    , member_since : Int
+    , member_since : String
     }
 
 emptyUserInfo : UserInfo
 emptyUserInfo =
-    UserInfo 0 True "" "" (ExtraUserInfo "" "" "") [] 0
+    UserInfo 0 True "" "" (ExtraUserInfo "" "" "") [] ""
 
 type alias UserId =
     String
@@ -152,32 +153,40 @@ updatedMobile userInfo str =
         {userInfo | extrauserinfo = updatedExtraUserInfo}
 
 
-newUserFromFUser : FUser -> User 
-newUserFromFUser fuser = 
-    Registered (fromScalarCodecId fuser.id_) "5678" (UserInfo 1 True "" "" (ExtraUserInfo "" "" "") [""] 1) General
 
 convertFUserToUser : FUser -> User 
 convertFUserToUser fuser =
-    Registered (fromScalarCodecId fuser.id_) "5678" (UserInfo 1 True "" "" (ExtraUserInfo "" "" "") [""] 1) General
+    let 
+        desc = Maybe.withDefault "" fuser.description
+        email = Maybe.withDefault "" fuser.email
+        mobile = Maybe.withDefault "" fuser.mobile
+    in
+    Registered (fromScalarCodecId fuser.id_) "" (UserInfo 1 True fuser.username "" (ExtraUserInfo desc email mobile) [""] (fromScalarCodecLong fuser.ts_)) General
 
 type alias FUser = {
     id_ :  SRdb.ScalarCodecs.Id
     , active : Bool
     , description : Maybe String
     , email : Maybe String
-    , member_since : Int
+    , ts_ : SRdb.ScalarCodecs.Long
     , mobile : Maybe String
     , username : String
     }
+
 
 
 fromScalarCodecId : SRdb.ScalarCodecs.Id -> String
 fromScalarCodecId (Id id) =
     id
 
+
+fromScalarCodecLong : SRdb.ScalarCodecs.Long -> String
+fromScalarCodecLong (Long ts) =
+    ts
+
 newUser : String -> String -> String -> String -> String -> User
 newUser username password desc email mobile =
-    Registered "" "" (UserInfo 10 True username password (ExtraUserInfo desc email mobile) [""] 0) General
+    Registered "" "" (UserInfo 10 True username password (ExtraUserInfo desc email mobile) [""] "") General
 
 --nb. this is not an EverySet, it's a Users type.
 empty : Users
@@ -255,10 +264,19 @@ gotUserNames (Users users) =
 
 gotName : User -> String 
 gotName user = 
-    --user.username
-    -- todo: fix
-    ""
+    case user of 
+        Guest userInfo _ ->
+            userInfo.username
+        Registered _ _ userInfo _ ->
+            userInfo.username
+        NoWallet _ _ userInfo _ ->
+            userInfo.username
+        NoCredit _ _ _ userInfo _ ->
+            userInfo.username
+        Credited _ _ _ userInfo _ ->
+            userInfo.username
 
+    
 userSetLength : Users -> Int 
 userSetLength (Users susers) = 
     EverySet.size susers
@@ -478,75 +496,20 @@ extractUsersFromWebData remData =
 
 isNameValid : String -> Users -> Bool 
 isNameValid newName sUsers =
-    let 
-        userNameSet = gotUserNames sUsers
-    in
-    if EverySet.member newName userNameSet then
-        -- let 
-        
-        --     _ = Debug.log "EverySet.member" "True"
-        -- in
+    if EverySet.member newName <| gotUserNames sUsers then
         False 
     else if (String.length newName <= 4) then
         False
     else True
 
--- gotUserListFromRemData : RemoteData.WebData (List User) -> List User
--- gotUserListFromRemData userList =
---     case userList of
---         RemoteData.Success a ->
---             a
+isPasswordValid : String -> Bool 
+isPasswordValid password  =
+    if (String.length password <= 4 || String.length password > 10) then
+        False
+    else True
 
---         RemoteData.NotAsked ->
---             [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
---             ]
-
---         RemoteData.Loading ->
---             [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
---             ]
-
---         RemoteData.Failure err ->
---             case err of
---                 Http.BadUrl s ->
---                     [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
---                     ]
-
---                 Http.Timeout ->
---                     [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
---                     ]
-
---                 Http.NetworkError ->
---                     [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
---                     ]
-
---                 Http.BadStatus statuscode ->
---                     [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
---                     ]
-
---                 Http.BadBody s ->
---                     [ (User 0 True "" "" Nothing "" "" "" [""] 0 Nothing)
---                     ]
-
-
-
--- removeCurrentUserEntryFromUserList : List User -> Eth.Types.Address -> List User
--- removeCurrentUserEntryFromUserList userList uaddr =
---     List.filter (\r -> (String.toLower <| r.m_ethaddress) /= (String.toLower <| (Eth.Utils.addressToString uaddr)))
---         (validatedUserList userList)
 
 --private
-
--- isUserInListStrAddr : List User -> String -> Bool
--- isUserInListStrAddr userlist uaddr =
---     let
---         gotSingleUserFromList =
---             gotUserFromUserList userlist uaddr
---     in
---     if gotSingleUserFromList.m_ethaddress == "" then
---         False
-
---     else
---         True
 
 -- isRankingId : String -> Bool
 -- isRankingId =

@@ -5,6 +5,10 @@
 module SRdb.Object exposing (..)
 
 
+type LoginResult
+    = LoginResult
+
+
 type Player
     = Player
 

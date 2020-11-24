@@ -1,17 +1,15 @@
-type User 
+type User
  {  
     active : Boolean!
-    username : String! @unique
-    password : String! @unique
+    username : String!
     description : String
-    email : String @unique 
-    mobile : String @unique
-    member_since: Int!
+    email : String 
+    mobile : String
 }
 
-type Player 
+type Player
  {  rankingid : String!
-    uid : String! @unique
+    uid : String!
     rank : Int!
     challengerid : String
 }
@@ -19,7 +17,7 @@ type Player
 type Ranking
   { 
     active : Boolean!
-    rankingname : String! @unique
+    rankingname : String!
     rankingdesc : String
     rankingownerid : String!
     }
@@ -51,7 +49,11 @@ type Query {
   allRankings: [Ranking] @resolver(name: "all_rankings")
   allUserJoinedRanking: [UserJoinedRanking] @resolver(name: "all_userjoinedranking")
   allUsers: [User] @resolver(name: "all_users")
-  loginUser(username: String!, password: String!): String! @resolver(name: "login_user")
-  findRankingById (rankingid: Int!): [Ranking!]! @resolver(name: "find_ranking_by_id")
-  findPlayersByRankingId (rankingid: String!): [Player!]! @resolver(name: "find_players_by_ranking_id")
+  loginUser(username: String!, password: String!): loginResult! @resolver(name: "login_user")
+}
+
+type loginResult @embedded
+{
+  token : String
+  logginUser : User
 }
