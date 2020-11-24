@@ -2862,7 +2862,7 @@ registerNewUserView userVal sUsers =
                             { onChange = UserMobileInputChg
                             , text = Utils.Validation.Validate.validatedMaxTextLength userInfo.extrauserinfo.mobile 25
                             , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile (inc. Int code)")
                             }
                         , mobileValidationErr userInfo.extrauserinfo.mobile
                         ]
@@ -2910,7 +2910,7 @@ registerNewUserView userVal sUsers =
                             { onChange = UserMobileInputChg
                             , text = Utils.Validation.Validate.validatedMaxTextLength userInfo.extrauserinfo.mobile 25
                             , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile (inc. Int code)")
                             }
                         , mobileValidationErr userInfo.extrauserinfo.mobile
                         ]
@@ -3708,21 +3708,9 @@ isLadderDescValidated rankingInfo =
                 False
 
 
-isEmailValidated : String -> Bool
-isEmailValidated str =
-    if String.length str == 0 then
-        True
-
-    else if Validate.isValidEmail str then
-        True
-
-    else
-        False
-
-
 emailValidationErr : String -> Element Msg
 emailValidationErr str =
-    if isEmailValidated str then
+    if Data.Users.isEmailValid str then
         Element.el
             (List.append
                 [ Font.color SR.Types.colors.green, Font.alignLeft ]
@@ -3741,13 +3729,13 @@ emailValidationErr str =
 
 mobileValidationErr : String -> Element Msg
 mobileValidationErr str =
-    if isMobileValidated str then
+    if Data.Users.isMobileValid str then
         Element.el (List.append [ Font.color SR.Types.colors.green, Font.alignLeft ] [ Element.htmlAttribute (Html.Attributes.id "userMobileValid") ]) (Element.text "Mobile OK!")
 
     else if String.length str > 0 then
         Element.el (List.append [ Font.color SR.Types.colors.red, Font.alignLeft ] [ Element.htmlAttribute (Html.Attributes.id "userMobileInvalid") ] ++ [ Element.moveLeft 5.0 ])
             (Element.text """ Mobile number, if
- entered, must be valid""")
+ entered, must be valid (+ not 00)""")
 
     else
         Element.el [] <| Element.text ""
@@ -3845,8 +3833,8 @@ isValidatedForAllUserDetailsInput user userInfo sUsers =
             if
                 Data.Users.isNameValid (Data.Users.gotName user) sUsers
                 && isUserDescValidated userInfo.extrauserinfo.description
-                && isEmailValidated userInfo.extrauserinfo.email
-                && isMobileValidated userInfo.extrauserinfo.mobile
+                && Data.Users.isEmailValid userInfo.extrauserinfo.email
+                && Data.Users.isMobileValid userInfo.extrauserinfo.mobile
             then
                 True
 
@@ -3856,8 +3844,8 @@ isValidatedForAllUserDetailsInput user userInfo sUsers =
         _ ->
             if
                 isUserDescValidated userInfo.extrauserinfo.description
-                    && isEmailValidated userInfo.extrauserinfo.email
-                    && isMobileValidated userInfo.extrauserinfo.mobile
+                    && Data.Users.isEmailValid userInfo.extrauserinfo.email
+                    && Data.Users.isMobileValid userInfo.extrauserinfo.mobile
             then
                 True
 
@@ -3894,7 +3882,7 @@ nameValidView userInfo sUsers =
             (List.append [ Element.htmlAttribute (Html.Attributes.id "usernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
                 ++ [ Element.moveLeft 0.0 ]
             )
-            (Element.text """Must be unique (5-8 continuous chars)""")
+            (Element.text """Unique and 5-8 continuous chars""")
 
 
 passwordValidView : Data.Users.UserInfo -> Element Msg
@@ -3907,7 +3895,7 @@ passwordValidView userInfo =
             ([ Font.color SR.Types.colors.red, Font.alignLeft ]
                 ++ [ Element.moveLeft 0.0 ]
             )
-            (Element.text """Must be unique (5-8 continuous chars)""")
+            (Element.text """5-8 continuous chars""")
 
 
 -- ladderNameValidationErr : SR.Types.AppInfo -> DataState -> Element Msg
@@ -3938,25 +3926,6 @@ passwordValidView userInfo =
 --                 in
 --                     (Element.text "") 
 
-
-
-isMobileValidated : String -> Bool
-isMobileValidated str =
-    let
-        mobileNumberInt =
-            Maybe.withDefault 0 (String.toInt str)
-    in
-    if String.length str == 0 then
-        True
-
-    else if
-        (String.length str > 4 && String.length str < 25)
-            && (Just mobileNumberInt /= Just 0)
-    then
-        True
-
-    else
-        False
         
 
 -- --todo: fix:
@@ -4349,7 +4318,7 @@ displayRegisterNewUser userVal sUsers =
                         { onChange = UserMobileInputChg
                         , text = Utils.Validation.Validate.validatedMaxTextLength userInfo.extrauserinfo.mobile 25
                         , placeholder = Nothing
-                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile")
+                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile (inc. Int code)")
                         }
                     , mobileValidationErr userInfo.extrauserinfo.mobile
                     ]

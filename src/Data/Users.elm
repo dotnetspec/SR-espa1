@@ -22,6 +22,8 @@ module Data.Users exposing (Users
     , isEmpty
     , isNameValid
     , isPasswordValid
+    , isEmailValid
+    , isMobileValid
     , extractUsersFromWebData
     , empty
     , emptyUserInfo
@@ -53,6 +55,7 @@ import Data.Rankings
 import SRdb.Scalar exposing (Id(..))
 import SRdb.Scalar exposing (Long(..))
 import SRdb.ScalarCodecs
+import Regex
 
 
 
@@ -498,19 +501,23 @@ isNameValid : String -> Users -> Bool
 isNameValid newName sUsers =
     if EverySet.member newName <| gotUserNames sUsers then
         False 
-    else if (String.length newName <= 4) then
-        False
-    else True
+    else 
+        Regex.contains (Maybe.withDefault Regex.never (Regex.fromString "(?!.*[\\.\\-\\_]{2,})^[a-zA-Z0-9\\.\\-\\_]{4,8}$")) newName
 
 isPasswordValid : String -> Bool 
-isPasswordValid password  =
-    if (String.length password <= 4 || String.length password > 10) then
-        False
-    else True
+isPasswordValid newPassword  =
+    Regex.contains (Maybe.withDefault Regex.never (Regex.fromString "(?!.*[\\.\\-\\_]{2,})^[a-zA-Z0-9\\.\\-\\_]{4,8}$")) newPassword
+
+isEmailValid : String -> Bool
+isEmailValid newEmail = 
+    Regex.contains (Maybe.withDefault Regex.never 
+    (Regex.fromString "[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?")) newEmail
+    
+
+isMobileValid : String -> Bool
+isMobileValid newMobile = 
+    Regex.contains (Maybe.withDefault Regex.never 
+    (Regex.fromString "^\\+((?:9[679]|8[035789]|6[789]|5[90]|42|3[578]|2[1-689])|9[0-58]|8[1246]|6[0-6]|5[1-8]|4[013-9]|3[0-469]|2[70]|7|1)(?:\\W*\\d){0,13}\\d$")) newMobile
+ 
 
 
---private
-
--- isRankingId : String -> Bool
--- isRankingId =
---     Regex.contains (Maybe.withDefault Regex.never (Regex.fromString "^((0[Xx]){1})?[0-9A-Fa-f]{40}$"))
