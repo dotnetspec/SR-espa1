@@ -723,7 +723,8 @@ update msg model =
         (Cancel, AppOps walletState 
             (Fetched sUsers sRankings 
                 (Global sGlobal))
-                    user uiState subState txRec ) ->
+                    (Data.Users.Guest userInfo Data.Users.Updating) 
+                        uiState subState txRec ) ->
                         let
                             -- rf?: currently having to re-create Global here
                             newDataKind = Global    <| Data.Global.GlobalRankings (Data.Global.asEverySet 
@@ -733,23 +734,25 @@ update msg model =
                         in
                             ( AppOps walletState 
                                newDataState
-                                    user SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+                                    (Data.Users.Guest Data.Users.emptyUserInfo Data.Users.General) 
+                                        SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
-        -- (Cancel, AppOps walletState 
-        --     (Fetched sUsers sRankings 
-        --         (Global sGlobal))
-        --             (Data.Users.Registered userId token userInfo _) uiState subState txRec ) ->
-        --                     ( AppOps walletState 
-        --                         (Fetched sUsers sRankings (Global sGlobal)) 
-        --                             (Data.Users.Registered userId token userInfo Data.Users.General ) SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+        (Cancel, AppOps walletState 
+            (Fetched sUsers sRankings 
+                (Global sGlobal))
+                    (Data.Users.Guest userInfo Data.Users.General) 
+                        uiState subState txRec ) ->
+                        let
+                            -- rf?: currently having to re-create Global here
+                            newDataKind = Global    <| Data.Global.GlobalRankings (Data.Global.asEverySet 
+                                                    <| Data.Global.created sRankings sUsers) Data.Global.DisplayLoggedIn
+                            newDataState = Fetched sUsers sRankings newDataKind
 
-        -- (Cancel, AppOps walletState 
-        --     (Fetched sUsers sRankings 
-        --         (Global sGlobal))
-        --             (Data.Users.Registered userId token userInfo _) uiState subState txRec ) ->
-        --                     ( AppOps walletState 
-        --                         (Fetched sUsers sRankings (Global sGlobal)) 
-        --                             (Data.Users.Registered userId token userInfo Data.Users.General ) SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+                        in
+                            ( AppOps walletState 
+                               newDataState
+                                    (Data.Users.Guest userInfo Data.Users.General) 
+                                        SR.Types.UILoading SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
 
         (Cancel, AppOps walletState 
@@ -2555,8 +2558,18 @@ view model =
                     Html.text ("Loading ...")
 
                 -- Global
-                (Fetched sUsers sRankings dKind, Data.Users.Guest userInfo Data.Users.Updating) ->
-                    registerNewUserView user sUsers
+
+                (Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayLoggedIn)), 
+                    Data.Users.Guest userInfo 
+                        Data.Users.General) ->
+                            -- this may be on a 'Cancel'
+                            generalLoggedInView 
+                                user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayLoggedIn)
+
+                (Fetched sUsers sRankings dKind, 
+                    Data.Users.Guest userInfo 
+                        Data.Users.Updating) ->
+                            registerNewUserView user sUsers
                             
                 ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly) )
                     , Data.Users.Registered _ _ _ _ ) ->
@@ -2576,7 +2589,7 @@ view model =
                     generalLoggedInView 
                         userVal sUsers (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder userVal rnkId ))
 
-                ( Fetched sUsers sRankings  (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayLoggedIn)), userVal) -> 
+                ( Fetched sUsers sRankings  (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayLoggedIn)), userVal) ->
                     generalLoggedInView 
                         userVal sUsers (Data.Global.GlobalRankings esUR (Data.Global.DisplayLoggedIn ))
 
@@ -3755,25 +3768,25 @@ newuserConfirmPanel  user sUsers =
                             ]
                         ]
                     ]
-                else
-                    Element.column Grid.section <|
-                        [ 
-                        Element.el Heading.h6 <| Element.text "Click to continue ..."
-                        , Element.column (Card.simple ++ Grid.simple) <|
-                            [ Element.wrappedRow Grid.simple <|
-                                [ Input.button (Button.simple ++ Color.info) <|
-                                    { onPress = Just <| Cancel
-                                    , label = Element.text "Cancel"
+            else
+                Element.column Grid.section <|
+                    [ 
+                    Element.el Heading.h6 <| Element.text "Click to continue ..."
+                    , Element.column (Card.simple ++ Grid.simple) <|
+                        [ Element.wrappedRow Grid.simple <|
+                            [ Input.button (Button.simple ++ Color.info) <|
+                                { onPress = Just <| Cancel
+                                , label = Element.text "Cancel"
+                                }
+                                , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput 
+                                user userInfo sUsers)) <|
+                                    { onPress = Just <| ClickedConfirmedRegisterNewUser
+                                    , label = Element.text "Register"
                                     }
-                                    , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput 
-                                    user userInfo sUsers)) <|
-                                        { onPress = Just <| ClickedConfirmedRegisterNewUser
-                                        , label = Element.text "Register"
-                                        }
-                            
-                                ]
+                        
                             ]
                         ]
+                    ]
 
         (Data.Users.Registered userId token userInfo userState) ->
             if List.isEmpty <| Data.Users.asList sUsers then
