@@ -1,4 +1,4 @@
-module Bridge exposing (requestLoginUser, requestCreateNewUser, handleCreateNewUserOptionalArguments, requestAllUserNames
+module Bridge exposing (requestLoginUser, requestCreateNewUser, requestAllUserNames
     , requestAllUsers
     , requestAllRankings
     , requestAllPlayers
@@ -70,29 +70,13 @@ queryLoginUser requiredArgs =
 
 requestCreateNewUser : Data.Users.UserInfo -> Http.Request LoginResult
 requestCreateNewUser userInfo =
-    Http.mutationRequest SR.Constants.endpointURL (Mutation.createNewUser (handleCreateNewUserOptionalArguments ) 
+    -- handling of optional args is addressed at https://elmlang.slack.com/archives/C0RSQNQ92/p1606277449291800
+    -- and https://thoughtbot.com/blog/optional-arguments-in-elm-queries
+    Http.mutationRequest SR.Constants.endpointURL (Mutation.createNewUser 
+        (\default -> { default | description = Present userInfo.extrauserinfo.description
+        , email = Present userInfo.extrauserinfo.email, mobile = Present userInfo.extrauserinfo.mobile })
         ({ active = True, username = userInfo.username, password = userInfo.password } ) loginResultSelectionSet)
         |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
-
-handleCreateNewUserOptionalArguments : Mutation.CreateNewUserOptionalArguments -> Mutation.CreateNewUserOptionalArguments
-handleCreateNewUserOptionalArguments optionalArgs = 
-    --todo: make it handle the optionals
-    --{ description = Absent, email = Absent, mobile = Absent }
-    { description = Present "", email = Present "", mobile = Present "" }
-    --optionalArgs
-
-
--- handleCreateNewUserRequiredArguments : Data.Users.UserInfo -> Mutation.CreateNewUserRequiredArguments
--- handleCreateNewUserRequiredArguments userInfo =
---             --Mutation.CreateNewUserRequiredArguments 
---             {True userInfo.username userInfo.password}
---             { data : SRdb.InputObject.UserInput }
---             { active : Bool
---             , username : String
---             , description : OptionalArgument String
---             , email : OptionalArgument String
---             , mobile : OptionalArgument String
---             }
 
 
 requestAllUserNames : Data.Users.Token -> Http.Request (List String)
