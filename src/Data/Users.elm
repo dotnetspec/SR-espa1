@@ -73,6 +73,8 @@ type UserState =
     | Updating
     | Updated
     | LoginError
+    | WalletOperational
+    | WalletWaitingForTransactionReceipt
 
 
 -- these states might transfer over to UserState

@@ -94,14 +94,14 @@ type Username
 -- perhaps this should be part of UserState?
 type WalletState
     = 
-    WalletStateMissing
-    | WalletStateLocked
-    | WalletStateAwaitOpening
-    | WalletWaitingForTransactionReceipt
-    | WalletOpened
-    | WalletOperational
-    | WalletStopSub
-    | WalletOpenedNoUserAccount
+    --WalletStateLocked
+    -- WalletStateAwaitOpening
+    -- | 
+    WalletWaitingForTransactionReceipt
+    --| WalletOpened
+    --| WalletOperational
+    --| WalletStopSub
+    --| WalletOpenedNoUserAccount
 
 
 type LadderState
@@ -111,9 +111,7 @@ type LadderState
 
 type UIState
     = 
-    --UIRenderAllRankings
     UICreateNewLadder
-    | UIRegisterNewUser
     | UIUpdateExistingUser
     | UIWalletMissingInstructions
     | UIDisplayWalletLockedInstructions
@@ -124,14 +122,12 @@ type UIState
     | UIEnterResult
     | UIEnterResultTxProblem
     | UIChallenge
-    | UILoading
     | UIWaitingForTxReceipt
     | UIDeleteRankingConfirm
     | UIEnableEthereum
     | UIOwnerDeletedRanking
     | UIUnableToFindGlobalRankings
     | UIEthAlreadyEnabled
-    | UILogIn
 
 type SubState 
     = Subscribe 
