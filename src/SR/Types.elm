@@ -91,7 +91,7 @@ type RankingId
 type Username
     = Username String
 
-
+-- perhaps this should be part of UserState?
 type WalletState
     = 
     WalletStateMissing
@@ -110,8 +110,9 @@ type LadderState
 
 
 type UIState
-    = UIRenderAllRankings
-    | UICreateNewLadder
+    = 
+    --UIRenderAllRankings
+    UICreateNewLadder
     | UIRegisterNewUser
     | UIUpdateExistingUser
     | UIWalletMissingInstructions

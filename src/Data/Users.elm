@@ -74,6 +74,42 @@ type UserState =
     | Updated
     | LoginError
 
+
+-- these states might transfer over to UserState
+-- type UIState
+--     = UIRenderAllRankings
+--     | UICreateNewLadder
+--     | UIRegisterNewUser
+--     | UIUpdateExistingUser
+--     | UIWalletMissingInstructions
+--     | UIDisplayWalletLockedInstructions
+--     | UIDisplayWalletInfoToUser
+--     | UISelectedRankingUserIsOwner
+--     | UISelectedRankingUserIsPlayer
+--     | UISelectedRankingUserIsNeitherOwnerNorPlayer
+--     | UIEnterResult
+--     | UIEnterResultTxProblem
+--     | UIChallenge
+--     | UILoading
+--     | UIWaitingForTxReceipt
+--     | UIDeleteRankingConfirm
+--     | UIEnableEthereum
+--     | UIOwnerDeletedRanking
+--     | UIUnableToFindGlobalRankings
+--     | UIEthAlreadyEnabled
+--     | UILogIn
+
+-- type WalletState
+--     = 
+--     WalletStateMissing
+--     | WalletStateLocked
+--     | WalletStateAwaitOpening
+--     | WalletWaitingForTransactionReceipt
+--     | WalletOpened
+--     | WalletOperational
+--     | WalletStopSub
+--     | WalletOpenedNoUserAccount
+
 -- Users (EverySet User) is not the same type as (EverySet User)
 -- Peter Damoc
 -- You can think about the tag ('Users') as a box containing a type.
