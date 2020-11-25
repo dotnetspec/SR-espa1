@@ -22,6 +22,7 @@ module Data.Users exposing (Users
     , isEmpty
     , isNameValid
     , isPasswordValid
+    , isDescValid
     , isEmailValid
     , isMobileValid
     , extractUsersFromWebData
@@ -69,6 +70,7 @@ type User =
 type UserState = 
     General
     | Updating
+    | Updated
     | LoginError
 
 -- Users (EverySet User) is not the same type as (EverySet User)
@@ -509,16 +511,31 @@ isPasswordValid : String -> Bool
 isPasswordValid newPassword  =
     Regex.contains (Maybe.withDefault Regex.never (Regex.fromString "(?!.*[\\.\\-\\_]{2,})^[a-zA-Z0-9\\.\\-\\_]{4,8}$")) newPassword
 
+
+isDescValid : String -> Bool
+isDescValid str =
+    if String.length str <= 20 then
+        True
+
+    else
+        False
+
 isEmailValid : String -> Bool
 isEmailValid newEmail = 
+    if newEmail == "" then
+        True 
+    else
     Regex.contains (Maybe.withDefault Regex.never 
     (Regex.fromString "[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?")) newEmail
     
 
 isMobileValid : String -> Bool
 isMobileValid newMobile = 
-    Regex.contains (Maybe.withDefault Regex.never 
-    (Regex.fromString "^\\+((?:9[679]|8[035789]|6[789]|5[90]|42|3[578]|2[1-689])|9[0-58]|8[1246]|6[0-6]|5[1-8]|4[013-9]|3[0-469]|2[70]|7|1)(?:\\W*\\d){0,13}\\d$")) newMobile
+    if newMobile == "" then
+        True 
+    else 
+        Regex.contains (Maybe.withDefault Regex.never 
+        (Regex.fromString "^\\+((?:9[679]|8[035789]|6[789]|5[90]|42|3[578]|2[1-689])|9[0-58]|8[1246]|6[0-6]|5[1-8]|4[013-9]|3[0-469]|2[70]|7|1)(?:\\W*\\d){0,13}\\d$")) newMobile
  
 
 

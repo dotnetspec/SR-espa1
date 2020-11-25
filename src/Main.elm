@@ -305,8 +305,8 @@ update msg model =
                     (model, Cmd.none)
 
 
-        (ClickedConfirmedRegisterNewUser, AppOps walletState dataState user uiState subState txRec) ->
-            ( AppOps walletState dataState user uiState SR.Types.StopSubscription txRec, Cmd.none )
+        (ClickedConfirmedRegisterNewUser, AppOps walletState dataState (Data.Users.Spectator userInfo userState) uiState subState txRec) ->
+            ( AppOps walletState dataState (Data.Users.Spectator userInfo userState) uiState SR.Types.StopSubscription txRec, registerUser userInfo )
                 
         -- the only user UserState can be in here is General:
         (ClickedRegister, AppOps walletState dataState user uiState subState txRec ) ->
@@ -1703,10 +1703,10 @@ loginUser user_name password =
 -- registeredUser token =
 --     GQLHttp.send LoggedInUser (Bridge.requestLoginUser user_name password)
 
-registerUser : String -> String -> Cmd Msg
-registerUser user_name password =
-    --GQLHttp.send RegisteredNewUser (Bridge.requestregisterUser user_name password)
-    Cmd.none
+registerUser : Data.Users.UserInfo -> Cmd Msg
+registerUser userInfo =
+    GQLHttp.send RegisteredNewUser (Bridge.requestCreateNewUser  userInfo )
+    --Cmd.none
 
 commandFromLoggedInUser : Result (GQLHttp.Error (String)) (Data.Users.Token) -> Cmd Msg
 commandFromLoggedInUser response =
@@ -2631,6 +2631,15 @@ view model =
                     , Data.Users.Registered _ _ _ _ ) ->
                     generalLoginView 
                         user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) ""
+
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ Data.Global.DisplayGlobalLogin)), Data.Users.Spectator _ Data.Users.Updated ) ->
+                    Html.text ("User Updated")
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ Data.Global.DisplayGlobalOnly)), Data.Users.Spectator _ Data.Users.Updated ) ->
+                    Html.text ("User Updated")
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatingNewLadder _))), Data.Users.Spectator _ Data.Users.Updated ) ->
+                    Html.text ("User Updated")
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatedNewLadder _ _))), Data.Users.Spectator _ Data.Users.Updated ) ->
+                    Html.text ("User Updated")
                 
         
 
@@ -2888,7 +2897,7 @@ registerNewUserView userVal sUsers =
                     ]
                 , Element.text "* required"
                 , SR.Elements.justParasimpleUserInfoText
-                , newuserConfirmPanel userVal sUsers
+                , userDetailsConfirmPanel userVal sUsers
                 ]
         (Data.Users.Registered userId token userInfo userState) ->
             Framework.responsiveLayout [] <|
@@ -2936,7 +2945,7 @@ registerNewUserView userVal sUsers =
                     ]
                 , Element.text "* required"
                 , SR.Elements.justParasimpleUserInfoText
-                , newuserConfirmPanel userVal sUsers
+                , userDetailsConfirmPanel userVal sUsers
                 ]
 
         (Data.Users.NoWallet userId token userInfo userState) ->
@@ -3679,7 +3688,7 @@ acknoweldgeTxErrorbtn model =
 
 userDescValidationErr : String -> Element Msg
 userDescValidationErr str =
-    if isUserDescValidated str then
+    if Data.Users.isDescValid str then
         Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "descValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "")
 
     else
@@ -3701,15 +3710,6 @@ ladderDescValidationErr rankingInfo =
                 ++ [ Element.moveLeft 0.0 ]
             )
             (Element.text "20 characters max")
-
-
-isUserDescValidated : String -> Bool
-isUserDescValidated str =
-    if String.length str <= 20 then
-        True
-
-    else
-        False
 
 
 isLadderDescValidated : Data.Rankings.Ranking -> Bool
@@ -3758,8 +3758,8 @@ mobileValidationErr str =
         Element.el [] <| Element.text ""
 
 
-newuserConfirmPanel : Data.Users.User -> Data.Users.Users -> Element Msg
-newuserConfirmPanel  user sUsers =
+userDetailsConfirmPanel : Data.Users.User -> Data.Users.Users -> Element Msg
+userDetailsConfirmPanel  user sUsers =
         case user of
         Data.Users.Spectator userInfo userState ->
             if 
@@ -3828,19 +3828,19 @@ newuserConfirmPanel  user sUsers =
                                 }
                             , Input.button (Button.simple ++ enableButton (isValidatedForAllUserDetailsInput
                             user userInfo sUsers)) <|
-                                { onPress = Just <| ClickedConfirmedRegisterNewUser
-                                , label = Element.text "Register"
+                                { onPress = Just <| ClickedConfirmedUpdateExistingUser
+                                , label = Element.text "Update"
                                 }
                             ]
                         ]
                     ]
         
         (Data.Users.NoWallet userId token userInfo userState) ->
-            Element.text "newuserConfirmPanel Err"
+            Element.text "userDetailsConfirmPanel Err"
         (Data.Users.NoCredit addr userId token userInfo userState) ->
-            Element.text "newuserConfirmPanel Err"
+            Element.text "userDetailsConfirmPanel Err"
         (Data.Users.Credited addr userId token userInfo userState) ->
-            Element.text "newuserConfirmPanel Err"
+            Element.text "userDetailsConfirmPanel Err"
 
 
 isValidatedForAllUserDetailsInput : Data.Users.User -> Data.Users.UserInfo -> Data.Users.Users -> Bool
@@ -3849,7 +3849,7 @@ isValidatedForAllUserDetailsInput user userInfo sUsers =
         Data.Users.Spectator _ _ ->
             if
                 Data.Users.isNameValid (Data.Users.gotName user) sUsers
-                && isUserDescValidated userInfo.extrauserinfo.description
+                && Data.Users.isDescValid userInfo.extrauserinfo.description
                 && Data.Users.isEmailValid userInfo.extrauserinfo.email
                 && Data.Users.isMobileValid userInfo.extrauserinfo.mobile
             then
@@ -3860,7 +3860,7 @@ isValidatedForAllUserDetailsInput user userInfo sUsers =
 
         _ ->
             if
-                isUserDescValidated userInfo.extrauserinfo.description
+                Data.Users.isDescValid userInfo.extrauserinfo.description
                     && Data.Users.isEmailValid userInfo.extrauserinfo.email
                     && Data.Users.isMobileValid userInfo.extrauserinfo.mobile
             then
@@ -4244,7 +4244,7 @@ inputUserDetailsView dataState user =
                             Framework.container
                             [
                             Element.el Heading.h4 <| Element.text "No Users"
-                            , newuserConfirmPanel user sUsers
+                            , userDetailsConfirmPanel user sUsers
                             ]
                     else
                         Framework.responsiveLayout [] <|
@@ -4254,7 +4254,7 @@ inputUserDetailsView dataState user =
                                 , Element.text "\n"
                                 , Element.el Heading.h4 <| Element.text "Create New User"
                                 , displayRegisterNewUser userVal sUsers
-                                , newuserConfirmPanel user sUsers
+                                , userDetailsConfirmPanel user sUsers
                                 ]
                 _ ->
                     Html.text "tbc"
@@ -4268,7 +4268,7 @@ inputUserDetailsView dataState user =
                             Framework.container
                             [
                             Element.el Heading.h4 <| Element.text "No Users"
-                            , newuserConfirmPanel user sUsers
+                            , userDetailsConfirmPanel user sUsers
                             ]
                     else
                         Framework.responsiveLayout [] <|
@@ -4278,7 +4278,7 @@ inputUserDetailsView dataState user =
                                 , Element.text "\n"
                                 , Element.el Heading.h4 <| Element.text "Create New User"
                                 , displayRegisterNewUser (Data.Users.Registered userId token userInfo userState) sUsers
-                                , newuserConfirmPanel user sUsers
+                                , userDetailsConfirmPanel user sUsers
                                 ]
                 _ ->
                     Html.text "tbc"
@@ -4342,7 +4342,7 @@ displayRegisterNewUser userVal sUsers =
                 ]
             , Element.text "* required"
             , SR.Elements.justParasimpleUserInfoText
-            , newuserConfirmPanel (userVal) sUsers
+            , userDetailsConfirmPanel (userVal) sUsers
             ]
 
         (Data.Users.NoWallet userId token userInfo userState) ->
@@ -4368,7 +4368,7 @@ displayRegisterNewUser userVal sUsers =
     --                                 Framework.container
     --                                 [ Element.el Heading.h4 <| Element.text "Create New User"
     --                                 , inputNewUser walletState dataState appInfo
-    --                                 , newuserConfirmPanel walletState appInfo.user (Data.Users.asList sUsers)
+    --                                 , userDetailsConfirmPanel walletState appInfo.user (Data.Users.asList sUsers)
     --                                 ]
     --             SR.Types.WalletStateLocked ->
     --                 -- case user of
@@ -4382,7 +4382,7 @@ displayRegisterNewUser userVal sUsers =
     --                                 , Element.text "\n"
     --                                 , Element.el Heading.h4 <| Element.text "Create New User"
     --                                 , inputNewUser walletState dataState appInfo
-    --                                 , newuserConfirmPanel walletState appInfo.user (Data.Users.asList sUsers)
+    --                                 , userDetailsConfirmPanel walletState appInfo.user (Data.Users.asList sUsers)
     --                                 ]
                 
     --             SR.Types.WalletOperational ->
@@ -4397,7 +4397,7 @@ displayRegisterNewUser userVal sUsers =
     --                                 , Element.text "\n"
     --                                 , Element.el Heading.h4 <| Element.text "Create New User"
     --                                 , inputNewUser walletState dataState appInfo
-    --                                 , newuserConfirmPanel walletState appInfo.user (Data.Users.asList sUsers)
+    --                                 , userDetailsConfirmPanel walletState appInfo.user (Data.Users.asList sUsers)
     --                                 ]
 
     --             SR.Types.WalletOpenedNoUserAccount ->
@@ -4412,7 +4412,7 @@ displayRegisterNewUser userVal sUsers =
     --                                 , Element.text "\n"
     --                                 , Element.el Heading.h4 <| Element.text "Create New User"
     --                                 , inputNewUser walletState dataState appInfo
-    --                                 , newuserConfirmPanel walletState appInfo.user (Data.Users.asList sUsers)
+    --                                 , userDetailsConfirmPanel walletState appInfo.user (Data.Users.asList sUsers)
     --                                 ]
     --             _ ->
     --                 Html.text "fell thru in inputUserDetailsView"

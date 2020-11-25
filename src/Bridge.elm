@@ -1,4 +1,4 @@
-module Bridge exposing (requestLoginUser, requestCreateAndOrLoginUser, handleCreateAndOrLoginUserOptionalArguments, requestAllUserNames
+module Bridge exposing (requestLoginUser, requestCreateNewUser, handleCreateNewUserOptionalArguments, requestAllUserNames
     , requestAllUsers
     , requestAllRankings
     , requestAllPlayers
@@ -59,6 +59,8 @@ requestLoginUser user_name password =
         Http.queryRequest SR.Constants.endpointURL (queryLoginUser requiredArgs loginResultSelectionSet)
         |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
 
+
+
 -- nb. LoginResult (after succeed) is the type alias created for storing the return data
 -- SRdb.Object.LoginResult is the typelock that was auto-generated
 loginResultSelectionSet : SelectionSet LoginResult SRdb.Object.LoginResult
@@ -79,29 +81,64 @@ queryLoginUser requiredArgs =
     Query.loginUser requiredArgs
 
 
-mutationCreateAndOrLoginUser : (Mutation.CreateAndOrLoginUserOptionalArguments -> Mutation.CreateAndOrLoginUserOptionalArguments) 
-    -> Data.Users.UserName -> Data.Users.Password -> SelectionSet Data.Users.Token RootMutation
-mutationCreateAndOrLoginUser fillInOptionals user_name password  =
-    let
-        -- filledInOptionals =
-        --     fillInOptionals { description = Absent, email = Absent, mobile = Absent }
-        required_arguments =
-            Mutation.CreateAndOrLoginUserRequiredArguments True user_name password
+-- requestregisterUser : Data.Users.UserName -> Data.Users.Password -> Http.Request LoginResult
+-- requestregisterUser user_name password =
+--     let
+--         requiredArgs = {username = user_name, password = password}
+--     in
+--         Http.queryRequest SR.Constants.endpointURL (queryLoginUser requiredArgs requestregisterUserSelSet)
+--         |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
 
-    in
-    Mutation.createAndOrLoginUser fillInOptionals required_arguments
+-- requestregisterUserSelSet : SelectionSet LoginResult SRdb.Object.LoginResult
+-- requestregisterUserSelSet =
+--     Graphql.SelectionSet.succeed LoginResult
+--     |> Graphql.SelectionSet.with SRdb.Object.LoginResult.token 
+--     |> Graphql.SelectionSet.with (SRdb.Object.LoginResult.logginUser (userSelectionSet))
 
 
-requestCreateAndOrLoginUser : (Mutation.CreateAndOrLoginUserOptionalArguments -> Mutation.CreateAndOrLoginUserOptionalArguments) ->
- Data.Users.UserName -> Data.Users.Password -> Http.Request Data.Users.Token
-requestCreateAndOrLoginUser fillInOptionals user_name password =
-    Http.mutationRequest SR.Constants.endpointURL (mutationCreateAndOrLoginUser fillInOptionals user_name password)
+requestCreateNewUser : Data.Users.UserInfo -> Http.Request Data.Users.Token
+requestCreateNewUser userInfo =
+    Http.mutationRequest SR.Constants.endpointURL (Mutation.createNewUser (handleCreateNewUserOptionalArguments ) 
+        ({ active = True, username = userInfo.username, password = userInfo.password } ))
         |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
 
-handleCreateAndOrLoginUserOptionalArguments : Mutation.CreateAndOrLoginUserOptionalArguments -> Mutation.CreateAndOrLoginUserOptionalArguments
-handleCreateAndOrLoginUserOptionalArguments fillInOptionals = 
+handleCreateNewUserOptionalArguments : Mutation.CreateNewUserOptionalArguments -> Mutation.CreateNewUserOptionalArguments
+handleCreateNewUserOptionalArguments optionalArgs = 
     --todo: make it handle the optionals
-        fillInOptionals
+    --{ description = Absent, email = Absent, mobile = Absent }
+    { description = Present "", email = Present "", mobile = Present "" }
+    --optionalArgs
+
+
+-- mutationCreateNewUser : (Mutation.CreateNewUserRequiredArguments -> Mutation.CreateNewUserRequiredArguments) 
+--     (Mutation.CreateNewUserOptionalArguments -> Mutation.CreateNewUserOptionalArguments) -> SelectionSet Data.Users.Token RootMutation
+-- mutationCreateNewUser requiredArgs optionalArgs  =
+--     let
+--         -- filledInOptionals =
+--         --     optionalArgs { description = Absent, email = Absent, mobile = Absent }
+        
+
+--     in
+--     --  (CreateNewUserOptionalArguments -> CreateNewUserOptionalArguments)
+--     -> CreateNewUserRequiredArguments
+--     -> SelectionSet String RootMutation
+--     Mutation.createNewUser optionalArgs requiredArgs
+
+
+-- handleCreateNewUserRequiredArguments : Data.Users.UserInfo -> Mutation.CreateNewUserRequiredArguments
+-- handleCreateNewUserRequiredArguments userInfo =
+--             --Mutation.CreateNewUserRequiredArguments 
+--             {True userInfo.username userInfo.password}
+--             { data : SRdb.InputObject.UserInput }
+--             { active : Bool
+--             , username : String
+--             , description : OptionalArgument String
+--             , email : OptionalArgument String
+--             , mobile : OptionalArgument String
+--             }
+
+
+
 
 requestAllUserNames : Data.Users.Token -> Http.Request (List String)
 requestAllUserNames token =
@@ -187,6 +224,9 @@ playerSelectionSet =
         |> Graphql.SelectionSet.with SRdb.Object.Player.uid
         |> Graphql.SelectionSet.with SRdb.Object.Player.rank
         |> Graphql.SelectionSet.with SRdb.Object.Player.challengerid
+
+
+
 
 
 -- it needs to be players by ranking id - all players for a given ranking
