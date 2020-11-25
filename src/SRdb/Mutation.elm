@@ -56,8 +56,9 @@ type alias CreateNewUserRequiredArguments =
 createNewUser :
     (CreateNewUserOptionalArguments -> CreateNewUserOptionalArguments)
     -> CreateNewUserRequiredArguments
-    -> SelectionSet String RootMutation
-createNewUser fillInOptionals requiredArgs =
+    -> SelectionSet decodesTo SRdb.Object.LoginResult
+    -> SelectionSet decodesTo RootMutation
+createNewUser fillInOptionals requiredArgs object_ =
     let
         filledInOptionals =
             fillInOptionals { description = Absent, email = Absent, mobile = Absent }
@@ -66,7 +67,7 @@ createNewUser fillInOptionals requiredArgs =
             [ Argument.optional "description" filledInOptionals.description Encode.string, Argument.optional "email" filledInOptionals.email Encode.string, Argument.optional "mobile" filledInOptionals.mobile Encode.string ]
                 |> List.filterMap identity
     in
-    Object.selectionForField "String" "createNewUser" (optionalArgs ++ [ Argument.required "active" requiredArgs.active Encode.bool, Argument.required "username" requiredArgs.username Encode.string, Argument.required "password" requiredArgs.password Encode.string ]) Decode.string
+    Object.selectionForCompositeField "createNewUser" (optionalArgs ++ [ Argument.required "active" requiredArgs.active Encode.bool, Argument.required "username" requiredArgs.username Encode.string, Argument.required "password" requiredArgs.password Encode.string ]) object_ identity
 
 
 type alias CreateUserRequiredArguments =

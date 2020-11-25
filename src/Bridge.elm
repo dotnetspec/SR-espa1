@@ -1,4 +1,4 @@
-module Bridge exposing (requestLoginUser, requestCreateAndOrLoginUser, handleCreateAndOrLoginUserOptionalArguments, requestAllUserNames
+module Bridge exposing (requestLoginUser, requestCreateNewUser, requestAllUserNames
     , requestAllUsers
     , requestAllRankings
     , requestAllPlayers
@@ -27,26 +27,13 @@ import Data.Rankings
 import Data.Users
 import Data.Players
 
-
-
-
---type alias Response = { loginResult : Maybe LoginResult }
---type alias User = { name : Maybe String }
-
-
--- query : SelectionSet Response RootQuery
--- query =
---     Query.selection Response
---         |> with (Query.user { login = "octocat" } user)
--- user : SelectionSet User Github.Object.User
--- user =
---     User.selection User
---         |> with User.name
-
-
-gotToken : List String -> Data.Users.Token 
-gotToken lstring = 
-    "fnED42KNUgACBwPPrxU00AYHx6mKEh6FP2HmKvQZ4ePZpk-VDhY"
+-- mySelection : SelectionSet MyLocalType ObjectOnGraphqlSide
+-- mySelection =
+--   SelectionSet.succeed functionToConstructLocalType
+--     |> with fieldFromGraphql
+--     |> with otherFieldFromGraphql
+--     |> ...
+-- MyLocalType is FRanking -> it can then be converted
 
 type alias LoginResult =
     { token : Maybe String, user : Maybe Data.Users.FUser }
@@ -58,6 +45,8 @@ requestLoginUser user_name password =
     in
         Http.queryRequest SR.Constants.endpointURL (queryLoginUser requiredArgs loginResultSelectionSet)
         |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
+
+
 
 -- nb. LoginResult (after succeed) is the type alias created for storing the return data
 -- SRdb.Object.LoginResult is the typelock that was auto-generated
@@ -79,29 +68,16 @@ queryLoginUser requiredArgs =
     Query.loginUser requiredArgs
 
 
-mutationCreateAndOrLoginUser : (Mutation.CreateAndOrLoginUserOptionalArguments -> Mutation.CreateAndOrLoginUserOptionalArguments) 
-    -> Data.Users.UserName -> Data.Users.Password -> SelectionSet Data.Users.Token RootMutation
-mutationCreateAndOrLoginUser fillInOptionals user_name password  =
-    let
-        -- filledInOptionals =
-        --     fillInOptionals { description = Absent, email = Absent, mobile = Absent }
-        required_arguments =
-            Mutation.CreateAndOrLoginUserRequiredArguments True user_name password
-
-    in
-    Mutation.createAndOrLoginUser fillInOptionals required_arguments
-
-
-requestCreateAndOrLoginUser : (Mutation.CreateAndOrLoginUserOptionalArguments -> Mutation.CreateAndOrLoginUserOptionalArguments) ->
- Data.Users.UserName -> Data.Users.Password -> Http.Request Data.Users.Token
-requestCreateAndOrLoginUser fillInOptionals user_name password =
-    Http.mutationRequest SR.Constants.endpointURL (mutationCreateAndOrLoginUser fillInOptionals user_name password)
+requestCreateNewUser : Data.Users.UserInfo -> Http.Request LoginResult
+requestCreateNewUser userInfo =
+    -- handling of optional args is addressed at https://elmlang.slack.com/archives/C0RSQNQ92/p1606277449291800
+    -- and https://thoughtbot.com/blog/optional-arguments-in-elm-queries
+    Http.mutationRequest SR.Constants.endpointURL (Mutation.createNewUser 
+        (\default -> { default | description = Present userInfo.extrauserinfo.description
+        , email = Present userInfo.extrauserinfo.email, mobile = Present userInfo.extrauserinfo.mobile })
+        ({ active = True, username = userInfo.username, password = userInfo.password } ) loginResultSelectionSet)
         |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
 
-handleCreateAndOrLoginUserOptionalArguments : Mutation.CreateAndOrLoginUserOptionalArguments -> Mutation.CreateAndOrLoginUserOptionalArguments
-handleCreateAndOrLoginUserOptionalArguments fillInOptionals = 
-    --todo: make it handle the optionals
-        fillInOptionals
 
 requestAllUserNames : Data.Users.Token -> Http.Request (List String)
 requestAllUserNames token =
@@ -130,23 +106,11 @@ requestAllUsers  =
     Http.queryRequest SR.Constants.endpointURL (queryAllUsers userSelectionSet)
        |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
 
--- requestAllUsers : Data.Users.Token -> Http.Request (List String)
--- requestAllUsers token =
---     Http.queryRequest SR.Constants.endpointURL queryAllUsers
---         |> Http.withHeader "authorization" ("Bearer " ++ token)
 
 queryAllUsers : SelectionSet decodesTo SRdb.Object.User
     -> SelectionSet (Maybe (List (Maybe decodesTo))) RootQuery
 queryAllUsers =
     Query.allUsers
-
--- mySelection : SelectionSet MyLocalType ObjectOnGraphqlSide
--- mySelection =
---   SelectionSet.succeed functionToConstructLocalType
---     |> with fieldFromGraphql
---     |> with otherFieldFromGraphql
---     |> ...
--- MyLocalType is FRanking -> it can then be converted
        
 requestAllRankings : Http.Request (Maybe (List (Maybe Data.Rankings.FRanking)))
 requestAllRankings  =
@@ -167,8 +131,6 @@ rankingSelectionSet =
             |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingdesc
             |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingownerid
 
---280892229782864389
-
 requestAllPlayers : Data.Users.Token ->  Http.Request (Maybe (List (Maybe Data.Players.FPlayer)))
 requestAllPlayers token =
     Http.queryRequest SR.Constants.endpointURL (queryAllPlayers playerSelectionSet)
@@ -187,6 +149,7 @@ playerSelectionSet =
         |> Graphql.SelectionSet.with SRdb.Object.Player.uid
         |> Graphql.SelectionSet.with SRdb.Object.Player.rank
         |> Graphql.SelectionSet.with SRdb.Object.Player.challengerid
+
 
 
 -- it needs to be players by ranking id - all players for a given ranking

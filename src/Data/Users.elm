@@ -22,9 +22,13 @@ module Data.Users exposing (Users
     , isEmpty
     , isNameValid
     , isPasswordValid
+    , isDescValid
+    , isEmailValid
+    , isMobileValid
     , extractUsersFromWebData
     , empty
     , emptyUserInfo
+    , emptyFUser
     , addUser
     , removeUser
     , asList
@@ -53,11 +57,12 @@ import Data.Rankings
 import SRdb.Scalar exposing (Id(..))
 import SRdb.Scalar exposing (Long(..))
 import SRdb.ScalarCodecs
+import Regex
 
 
 
 type User =
-    Guest UserInfo UserState
+    Spectator UserInfo UserState
     | Registered UserId Token UserInfo UserState
     | NoWallet UserId Token UserInfo UserState
     | NoCredit Eth.Types.Address UserId Token UserInfo UserState
@@ -66,6 +71,8 @@ type User =
 type UserState = 
     General
     | Updating
+    | Updated
+    | LoginError
 
 -- Users (EverySet User) is not the same type as (EverySet User)
 -- Peter Damoc
@@ -115,7 +122,7 @@ convertedStrToUserId uid =
 gotUserIdFromUser : User -> String 
 gotUserIdFromUser user = 
     case user of 
-        Guest _ _ ->
+        Spectator _ _ ->
             ""
         Registered uid _ _ _ ->
             uid
@@ -173,6 +180,16 @@ type alias FUser = {
     , username : String
     }
 
+emptyFUser : FUser
+emptyFUser = {
+    id_ =  SRdb.Scalar.Id ""
+    , active = False
+    , description = Nothing
+    , email = Nothing
+    , ts_ = SRdb.Scalar.Long ""
+    , mobile = Nothing
+    , username = ""
+    }
 
 
 fromScalarCodecId : SRdb.ScalarCodecs.Id -> String
@@ -206,8 +223,8 @@ asUsers esUser  =
 gotUserName : User -> String 
 gotUserName user = 
     case user of
-        Guest _ _ ->
-            "Guest"
+        Spectator _ _ ->
+            "Spectator"
         (Registered userId token userInfo userState) ->
             userInfo.username
         (NoWallet userId token userInfo userState) ->
@@ -220,8 +237,8 @@ gotUserName user =
 removedDeletedRankingsFromUserJoined : User -> Data.Rankings.Rankings -> User 
 removedDeletedRankingsFromUserJoined user sRankings = 
     case user of
-        Guest userInfo _ ->
-            Guest userInfo General
+        Spectator userInfo _ ->
+            Spectator userInfo General
         (Registered userId token userInfo userState) ->
             Registered userId token (handleDeletionFromUserJoined userInfo sRankings) userState
         (NoWallet userId token userInfo userState) ->
@@ -265,7 +282,7 @@ gotUserNames (Users users) =
 gotName : User -> String 
 gotName user = 
     case user of 
-        Guest userInfo _ ->
+        Spectator userInfo _ ->
             userInfo.username
         Registered _ _ userInfo _ ->
             userInfo.username
@@ -292,7 +309,7 @@ gotUser (Users susers) userId =
 gotUIDFromUser : User -> UserId
 gotUIDFromUser user = 
     case user of
-        Guest _ _ ->
+        Spectator _ _ ->
             ""
         (Registered userId _ _ _) ->
             userId
@@ -344,7 +361,7 @@ addedNewJoinedRankingId rankingId user lUser =
     in
     --todo: temp fix
     --newUserList
-    [Guest emptyUserInfo General]
+    [Spectator emptyUserInfo General]
 
 
 removedInvalidRankingId : String -> Maybe String 
@@ -382,7 +399,7 @@ removedRankindIdFromUser  rnkId user =
     in
         --userUpdated
         -- todo: temp fix
-        Guest emptyUserInfo General
+        Spectator emptyUserInfo General
 
 filterRankingIds : String -> String -> Maybe String 
 filterRankingIds rnkIdToFilter currentRnkId =
@@ -424,7 +441,7 @@ updatedUserInSet : Users -> User -> Users
 updatedUserInSet susers updatedUser =
 --the user is 'Registered' for the purposes of updating the Set
     case updatedUser of
-        Guest userInfo user ->
+        Spectator userInfo user ->
             susers
         (Registered userId token userInfo userState) ->
             -- remove the original user, then add the new one
@@ -498,19 +515,38 @@ isNameValid : String -> Users -> Bool
 isNameValid newName sUsers =
     if EverySet.member newName <| gotUserNames sUsers then
         False 
-    else if (String.length newName <= 4) then
-        False
-    else True
+    else 
+        Regex.contains (Maybe.withDefault Regex.never (Regex.fromString "(?!.*[\\.\\-\\_]{2,})^[a-zA-Z0-9\\.\\-\\_]{4,8}$")) newName
 
 isPasswordValid : String -> Bool 
-isPasswordValid password  =
-    if (String.length password <= 4 || String.length password > 10) then
+isPasswordValid newPassword  =
+    Regex.contains (Maybe.withDefault Regex.never (Regex.fromString "(?!.*[\\.\\-\\_]{2,})^[a-zA-Z0-9\\.\\-\\_]{4,8}$")) newPassword
+
+
+isDescValid : String -> Bool
+isDescValid str =
+    if String.length str <= 20 then
+        True
+
+    else
         False
-    else True
+
+isEmailValid : String -> Bool
+isEmailValid newEmail = 
+    if newEmail == "" then
+        True 
+    else
+    Regex.contains (Maybe.withDefault Regex.never 
+    (Regex.fromString "[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?")) newEmail
+    
+
+isMobileValid : String -> Bool
+isMobileValid newMobile = 
+    if newMobile == "" then
+        True 
+    else 
+        Regex.contains (Maybe.withDefault Regex.never 
+        (Regex.fromString "^\\+((?:9[679]|8[035789]|6[789]|5[90]|42|3[578]|2[1-689])|9[0-58]|8[1246]|6[0-6]|5[1-8]|4[013-9]|3[0-469]|2[70]|7|1)(?:\\W*\\d){0,13}\\d$")) newMobile
+ 
 
 
---private
-
--- isRankingId : String -> Bool
--- isRankingId =
---     Regex.contains (Maybe.withDefault Regex.never (Regex.fromString "^((0[Xx]){1})?[0-9A-Fa-f]{40}$"))

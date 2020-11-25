@@ -45,14 +45,14 @@ emptyUserRanking =
 -- emptyUserPlayer =
 --     { player = SR.Types.Player "" "" 0 ""
 --     --, user = Data.Users.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
---     , user = SR.Types.Guest
+--     , user = SR.Types.Spectator
 --     }
 
 
 -- emptyAppInfo =
 --     { selectedRanking = (Data.Rankings.Ranking "" True "" Nothing "")
 --     , player = {player = Data.Players.empty, user = Data.Users.empty}
---     , user = Data.Users.Guest
+--     , user = Data.Users.Spectator
 --     , challenger = {player = Data.Players.empty, user = Data.Users.empty}
 --     , appState = AppStateGeneral
 --     }
@@ -63,7 +63,7 @@ emptyUserRanking =
 --     { rankingInfo = (Data.Rankings.Ranking "" True "" Nothing "")
 --     --, userInfo = Data.Users.User 0 True "" "" Nothing "" "" "" [""] 0 Nothing
 --     -- todo: below not possible for an owned ranking (temp solution)
---     , userInfo = SR.Types.Guest
+--     , userInfo = SR.Types.Spectator
 --     }
 
 

@@ -2,7 +2,7 @@ module SR.Elements exposing (
     
     ethereumWalletWarning, footer, 
     justParasimpleUserInfoText, legalUserInfoText, placeholder, selectedRankingHeaderEl, 
-    simpleUserInfoText, warningParagraph, ethereumNotEnabledPara, permanentlyDeleteWarnPara, missingDataPara)
+    simpleUserInfoText, warningParagraph, warningText, ethereumNotEnabledPara, permanentlyDeleteWarnPara, missingDataPara)
 
 --import RemoteData
 
@@ -29,6 +29,18 @@ import Data.Rankings
 import Data.Users
 
 
+warningText : String -> Element msg
+warningText warningTxt =
+    Element.el
+        [ Font.color (Element.rgb 1 0 0)
+        , Font.size 18
+        , Font.family
+            [ Font.typeface "Open Sans"
+            , Font.sansSerif
+            ]
+        , Font.center
+        ]
+        (Element.text  warningTxt)
 
 warningParagraph : Element msg
 warningParagraph =
@@ -71,11 +83,11 @@ permanentlyDeleteWarnPara =
 globalHeading : Data.Users.User -> Element msg
 globalHeading user =
     case user of
-        Data.Users.Guest _ _ ->
+        Data.Users.Spectator _ _ ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Global Rankings"
             , Element.column Card.fill
-                [ Element.el Heading.h4 <| Element.text "Guest"
+                [ Element.el Heading.h4 <| Element.text "Spectator"
                 ]
             ]
         
