@@ -175,7 +175,7 @@ type Msg
     | ClickedLogInUser
     | InitiallyLoggedInUser (Result (GQLHttp.Error Bridge.LoginResult) Bridge.LoginResult)
     | LoggedInUser (Result (GQLHttp.Error Data.Users.Token) Data.Users.Token)
-    | RegisteredNewUser (Result (GQLHttp.Error Data.Users.Token) Data.Users.Token)
+    | RegisteredNewUser (Result (GQLHttp.Error Bridge.LoginResult) Bridge.LoginResult)
     | ReceivedUserNames (Result (GQLHttp.Error (List String)) (List String))
     | ReceivedUsers (Result (GQLHttp.Error (Maybe (List (Maybe Data.Users.FUser)))) (Maybe (List (Maybe Data.Users.FUser))))
     | ReceivedRankings (Result (GQLHttp.Error (Maybe (List (Maybe Data.Rankings.FRanking)))) (Maybe (List (Maybe Data.Rankings.FRanking))))
@@ -1629,9 +1629,11 @@ update msg model =
                , commandFromLoggedInUser response 
             )
 
+
             
         (RegisteredNewUser response, modelReDef) ->
-            ( updateFromRegisteredNewUser modelReDef response
+            ( --updateFromRegisteredNewUser modelReDef response
+                loginResponse modelReDef response
                , Cmd.none 
             )
 

@@ -96,10 +96,10 @@ queryLoginUser requiredArgs =
 --     |> Graphql.SelectionSet.with (SRdb.Object.LoginResult.logginUser (userSelectionSet))
 
 
-requestCreateNewUser : Data.Users.UserInfo -> Http.Request Data.Users.Token
+requestCreateNewUser : Data.Users.UserInfo -> Http.Request LoginResult
 requestCreateNewUser userInfo =
     Http.mutationRequest SR.Constants.endpointURL (Mutation.createNewUser (handleCreateNewUserOptionalArguments ) 
-        ({ active = True, username = userInfo.username, password = userInfo.password } ))
+        ({ active = True, username = userInfo.username, password = userInfo.password } ) loginResultSelectionSet)
         |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
 
 handleCreateNewUserOptionalArguments : Mutation.CreateNewUserOptionalArguments -> Mutation.CreateNewUserOptionalArguments
