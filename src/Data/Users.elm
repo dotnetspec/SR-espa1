@@ -28,6 +28,7 @@ module Data.Users exposing (Users
     , extractUsersFromWebData
     , empty
     , emptyUserInfo
+    , emptyFUser
     , addUser
     , removeUser
     , asList
@@ -179,6 +180,16 @@ type alias FUser = {
     , username : String
     }
 
+emptyFUser : FUser
+emptyFUser = {
+    id_ =  SRdb.Scalar.Id ""
+    , active = False
+    , description = Nothing
+    , email = Nothing
+    , ts_ = SRdb.Scalar.Long ""
+    , mobile = Nothing
+    , username = ""
+    }
 
 
 fromScalarCodecId : SRdb.ScalarCodecs.Id -> String

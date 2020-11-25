@@ -27,26 +27,13 @@ import Data.Rankings
 import Data.Users
 import Data.Players
 
-
-
-
---type alias Response = { loginResult : Maybe LoginResult }
---type alias User = { name : Maybe String }
-
-
--- query : SelectionSet Response RootQuery
--- query =
---     Query.selection Response
---         |> with (Query.user { login = "octocat" } user)
--- user : SelectionSet User Github.Object.User
--- user =
---     User.selection User
---         |> with User.name
-
-
-gotToken : List String -> Data.Users.Token 
-gotToken lstring = 
-    "fnED42KNUgACBwPPrxU00AYHx6mKEh6FP2HmKvQZ4ePZpk-VDhY"
+-- mySelection : SelectionSet MyLocalType ObjectOnGraphqlSide
+-- mySelection =
+--   SelectionSet.succeed functionToConstructLocalType
+--     |> with fieldFromGraphql
+--     |> with otherFieldFromGraphql
+--     |> ...
+-- MyLocalType is FRanking -> it can then be converted
 
 type alias LoginResult =
     { token : Maybe String, user : Maybe Data.Users.FUser }
@@ -81,21 +68,6 @@ queryLoginUser requiredArgs =
     Query.loginUser requiredArgs
 
 
--- requestregisterUser : Data.Users.UserName -> Data.Users.Password -> Http.Request LoginResult
--- requestregisterUser user_name password =
---     let
---         requiredArgs = {username = user_name, password = password}
---     in
---         Http.queryRequest SR.Constants.endpointURL (queryLoginUser requiredArgs requestregisterUserSelSet)
---         |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
-
--- requestregisterUserSelSet : SelectionSet LoginResult SRdb.Object.LoginResult
--- requestregisterUserSelSet =
---     Graphql.SelectionSet.succeed LoginResult
---     |> Graphql.SelectionSet.with SRdb.Object.LoginResult.token 
---     |> Graphql.SelectionSet.with (SRdb.Object.LoginResult.logginUser (userSelectionSet))
-
-
 requestCreateNewUser : Data.Users.UserInfo -> Http.Request LoginResult
 requestCreateNewUser userInfo =
     Http.mutationRequest SR.Constants.endpointURL (Mutation.createNewUser (handleCreateNewUserOptionalArguments ) 
@@ -110,21 +82,6 @@ handleCreateNewUserOptionalArguments optionalArgs =
     --optionalArgs
 
 
--- mutationCreateNewUser : (Mutation.CreateNewUserRequiredArguments -> Mutation.CreateNewUserRequiredArguments) 
---     (Mutation.CreateNewUserOptionalArguments -> Mutation.CreateNewUserOptionalArguments) -> SelectionSet Data.Users.Token RootMutation
--- mutationCreateNewUser requiredArgs optionalArgs  =
---     let
---         -- filledInOptionals =
---         --     optionalArgs { description = Absent, email = Absent, mobile = Absent }
-        
-
---     in
---     --  (CreateNewUserOptionalArguments -> CreateNewUserOptionalArguments)
---     -> CreateNewUserRequiredArguments
---     -> SelectionSet String RootMutation
---     Mutation.createNewUser optionalArgs requiredArgs
-
-
 -- handleCreateNewUserRequiredArguments : Data.Users.UserInfo -> Mutation.CreateNewUserRequiredArguments
 -- handleCreateNewUserRequiredArguments userInfo =
 --             --Mutation.CreateNewUserRequiredArguments 
@@ -136,8 +93,6 @@ handleCreateNewUserOptionalArguments optionalArgs =
 --             , email : OptionalArgument String
 --             , mobile : OptionalArgument String
 --             }
-
-
 
 
 requestAllUserNames : Data.Users.Token -> Http.Request (List String)
@@ -167,23 +122,11 @@ requestAllUsers  =
     Http.queryRequest SR.Constants.endpointURL (queryAllUsers userSelectionSet)
        |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
 
--- requestAllUsers : Data.Users.Token -> Http.Request (List String)
--- requestAllUsers token =
---     Http.queryRequest SR.Constants.endpointURL queryAllUsers
---         |> Http.withHeader "authorization" ("Bearer " ++ token)
 
 queryAllUsers : SelectionSet decodesTo SRdb.Object.User
     -> SelectionSet (Maybe (List (Maybe decodesTo))) RootQuery
 queryAllUsers =
     Query.allUsers
-
--- mySelection : SelectionSet MyLocalType ObjectOnGraphqlSide
--- mySelection =
---   SelectionSet.succeed functionToConstructLocalType
---     |> with fieldFromGraphql
---     |> with otherFieldFromGraphql
---     |> ...
--- MyLocalType is FRanking -> it can then be converted
        
 requestAllRankings : Http.Request (Maybe (List (Maybe Data.Rankings.FRanking)))
 requestAllRankings  =
@@ -204,8 +147,6 @@ rankingSelectionSet =
             |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingdesc
             |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingownerid
 
---280892229782864389
-
 requestAllPlayers : Data.Users.Token ->  Http.Request (Maybe (List (Maybe Data.Players.FPlayer)))
 requestAllPlayers token =
     Http.queryRequest SR.Constants.endpointURL (queryAllPlayers playerSelectionSet)
@@ -224,8 +165,6 @@ playerSelectionSet =
         |> Graphql.SelectionSet.with SRdb.Object.Player.uid
         |> Graphql.SelectionSet.with SRdb.Object.Player.rank
         |> Graphql.SelectionSet.with SRdb.Object.Player.challengerid
-
-
 
 
 

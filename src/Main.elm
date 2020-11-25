@@ -47,6 +47,7 @@ import SR.Types
 import SR.Types
 import Bridge
 import Graphql.Http as GQLHttp
+import Data.Users
 
 main =
     Browser.element
@@ -1601,18 +1602,10 @@ update msg model =
                 
         (ClickedLogInUser, model_) ->
             case model of 
-                AppOps walletState dataState user uiState subState txRec ->
-                    case user of 
-                        Data.Users.Spectator userInfo userState->
-                            (model, loginUser userInfo.username userInfo.password)
-                        (Data.Users.Registered userId token userInfo userState) ->
-                            (model, loginUser userInfo.username userInfo.password)
-                        (Data.Users.NoWallet userId token userInfo userState) ->
-                            (model, loginUser userInfo.username userInfo.password)
-                        (Data.Users.NoCredit addr userId token userInfo userState) ->
-                            (model, loginUser userInfo.username userInfo.password)
-                        (Data.Users.Credited addr userId token userInfo userState) ->
-                            (model, loginUser userInfo.username userInfo.password)
+                AppOps walletState dataState (Data.Users.Spectator userInfo userState) uiState subState txRec ->
+                    (model, loginUser userInfo.username userInfo.password)
+                AppOps walletState dataState _ uiState subState txRec ->
+                    (Failure "Only Spectator can login", Cmd.none)
                     
                 Failure _ ->
                     (model, Cmd.none)
@@ -1622,17 +1615,14 @@ update msg model =
             ( loginResponse modelReDef response
                , Cmd.none 
             )
-           
 
         (LoggedInUser response, modelReDef) ->
             ( registeredResponse modelReDef response
                , commandFromLoggedInUser response 
             )
-
-
             
         (RegisteredNewUser response, modelReDef) ->
-            ( --updateFromRegisteredNewUser modelReDef response
+            (
                 loginResponse modelReDef response
                , Cmd.none 
             )
@@ -2037,29 +2027,18 @@ loginResponse model response =
     case (model, response) of
         (AppOps walletState dataState (Data.Users.Spectator userInfo userState) uiState subState txRec
             , Ok loginResult) ->
-            let
-                --updated_user = Data.Users.Registered userId loginResult userInfo userState
-                -- todo: fix
-                updated_user = Data.Users.Registered "1234" (Maybe.withDefault "" loginResult.token) userInfo userState
-            in
-                AppOps walletState dataState updated_user uiState subState txRec
+                AppOps walletState dataState (Data.Users.convertFUserToUser (Maybe.withDefault (Data.Users.emptyFUser) loginResult.user)) uiState subState txRec
         
-        (AppOps walletState dataState _ uiState subState txRec
+        ( AppOps _ _ (_) _ _ _
             , Ok loginResult) ->
-                model
+                Failure "Only a Spectator should be able \nlogin or register. A user has \nbeen created in Fauna!"
 
         (AppOps walletState dataState (Data.Users.Spectator userInfo _) uiState subState txRec
             , Err _) ->
                 AppOps walletState dataState (Data.Users.Spectator userInfo (Data.Users.LoginError)) uiState subState txRec
         
-        ( AppOps _ _ (Data.Users.Registered _ _ _ _) _ _ _, Err _ ) ->
-            model
-        ( AppOps _ _ (Data.Users.NoWallet _ _ _ _) _ _ _, Err _ ) ->
-            model
-        ( AppOps _ _ (Data.Users.NoCredit _ _ _ _ _) _ _ _, Err _ ) ->
-            model
-        ( AppOps _ _ (Data.Users.Credited _ _ _ _ _) _ _ _, Err _ ) ->
-            model
+        ( AppOps _ _ (_) _ _ _, Err _ ) ->
+            Failure "Only a Spectator should be able \nlogin or register."
 
         (Failure _, _) ->
             model
