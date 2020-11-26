@@ -855,7 +855,9 @@ update msg model =
             --         ( AppOps dataState user SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec, Cmd.none )
 
 
-        (LadderNameInputChg namefield, AppOps ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder userVal ranking)))) user uiState subState txRec ) ->
+        (LadderNameInputChg namefield
+            , AppOps ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder userVal ranking)))) 
+                user uiState subState txRec ) ->
             let
                 newDataKind = Global (Data.Global.asGlobalRankings esUR (Data.Global.CreatingNewLadder userVal { ranking | rankingname = namefield } ))
                 newDataState = Fetched sUsers sRankings newDataKind
@@ -863,9 +865,16 @@ update msg model =
             ( AppOps newDataState userVal uiState SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
 
-        (LadderDescInputChg descfield, AppOps dataState user uiState subState txRec ) ->
+        (LadderDescInputChg descfield
+            , AppOps ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder userVal ranking)))) 
+                user uiState subState txRec ) ->
+            let
+                newDataKind = Global (Data.Global.asGlobalRankings esUR (Data.Global.CreatingNewLadder userVal { ranking | rankingdesc = Just descfield } ))
+                newDataState = Fetched sUsers sRankings newDataKind
+            in
+            ( AppOps newDataState userVal uiState SR.Types.StopSubscription emptyTxRecord, Cmd.none )
             -- todo: fix
-            (model, Cmd.none)
+            --(model, Cmd.none)
             -- let
             --     newSelectedRanking =
             --         appInfo.selectedRanking
