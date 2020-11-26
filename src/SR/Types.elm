@@ -1,6 +1,6 @@
 module SR.Types exposing
     ( PlayerId, RankingId(..)
-    , WalletState(..)
+    --, WalletState(..)
     , UIState(..)
     , Colors, CreateNewLadderFormFields, FormValidations, LadderState(..), ModalState(..)
     , NewRankingListServerResponse, ResultRadioOptions(..)
@@ -92,12 +92,12 @@ type Username
     = Username String
 
 -- perhaps this should be part of UserState?
-type WalletState
-    = 
+-- type WalletState
+--     = 
     --WalletStateLocked
     -- WalletStateAwaitOpening
     -- | 
-    WalletWaitingForTransactionReceipt
+    --WalletWaitingForTransactionReceipt
     --| WalletOpened
     --| WalletOperational
     --| WalletStopSub
