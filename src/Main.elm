@@ -766,7 +766,7 @@ update msg model =
         (Cancel, AppOps 
             (Fetched sUsers sRankings 
                 (Global (Data.Global.GlobalRankings esUR 
-                    (Data.Global.CreatingNewLadder ranking))))
+                    (Data.Global.DisplayGlobalOnly))))
                     user uiState subState txRec ) ->
                         let
                             -- rf?: currently having to re-create Global here
@@ -777,6 +777,7 @@ update msg model =
                             ( AppOps 
                                newDataState
                                     user SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+
 
 
         (Cancel, AppOps 
@@ -1680,11 +1681,7 @@ update msg model =
 
 
         (_, _) ->
-            let
-                _ =
-                    Debug.log "handledWalletStateOpened1" msg
-            in
-            ( Failure "handledWalletStateOpened2"
+            ( Failure "fell through update, use debugger to find/create the state pattern"
             , Cmd.none
             )
 
