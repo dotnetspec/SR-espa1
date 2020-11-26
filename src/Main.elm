@@ -719,7 +719,7 @@ update msg model =
                     let
                         newDataKind = Global <| Data.Global.GlobalRankings 
                             (Data.Global.asEverySet sGlobal) 
-                            (Data.Global.CreatingNewLadder (Data.Users.Registered userId token userInfo userState) Data.Rankings.emptyRanking)
+                            (Data.Global.CreatingNewLadder Data.Rankings.emptyRanking)
                         newDataState = Fetched sUsers sRankings newDataKind
                         newModel = 
                                 AppOps newDataState (Data.Users.Registered userId token userInfo userState)
@@ -762,6 +762,21 @@ update msg model =
                                newDataState
                                     (Data.Users.Spectator userInfo Data.Users.General) 
                                         SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+
+        (Cancel, AppOps 
+            (Fetched sUsers sRankings 
+                (Global (Data.Global.GlobalRankings esUR 
+                    (Data.Global.CreatingNewLadder ranking))))
+                    user uiState subState txRec ) ->
+                        let
+                            -- rf?: currently having to re-create Global here
+                            newDataKind = Global    <| Data.Global.GlobalRankings (Data.Global.asEverySet 
+                                                    <| Data.Global.created sRankings sUsers) Data.Global.DisplayLoggedIn
+                            newDataState = Fetched sUsers sRankings newDataKind
+                        in
+                            ( AppOps 
+                               newDataState
+                                    user SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
 
         (Cancel, AppOps 
@@ -856,23 +871,23 @@ update msg model =
 
 
         (LadderNameInputChg namefield
-            , AppOps ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder userVal ranking)))) 
+            , AppOps ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder ranking)))) 
                 user uiState subState txRec ) ->
             let
-                newDataKind = Global (Data.Global.asGlobalRankings esUR (Data.Global.CreatingNewLadder userVal { ranking | rankingname = namefield } ))
+                newDataKind = Global (Data.Global.asGlobalRankings esUR (Data.Global.CreatingNewLadder { ranking | rankingname = namefield } ))
                 newDataState = Fetched sUsers sRankings newDataKind
             in
-            ( AppOps newDataState userVal uiState SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+            ( AppOps newDataState user uiState SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
 
         (LadderDescInputChg descfield
-            , AppOps ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder userVal ranking)))) 
+            , AppOps ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder ranking)))) 
                 user uiState subState txRec ) ->
             let
-                newDataKind = Global (Data.Global.asGlobalRankings esUR (Data.Global.CreatingNewLadder userVal { ranking | rankingdesc = Just descfield } ))
+                newDataKind = Global (Data.Global.asGlobalRankings esUR (Data.Global.CreatingNewLadder { ranking | rankingdesc = Just descfield } ))
                 newDataState = Fetched sUsers sRankings newDataKind
             in
-            ( AppOps newDataState userVal uiState SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+            ( AppOps newDataState user uiState SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
         (UserNameInputChg updateField, AppOps dataState 
             (Data.Users.Spectator userInfo userState) uiState subState txRec) ->
@@ -2472,11 +2487,11 @@ view model =
                         Data.Users.Updating) ->
                             registerNewUserView user sUsers
 
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder _ _)))
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder _ )))
                     , Data.Users.Spectator _ Data.Users.General ) ->
                     Html.text ("Not yet implemented")
                 
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder _ _)))
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder _ )))
                     , Data.Users.Spectator _ Data.Users.General ) ->
                     Html.text ("Not yet implemented")
 
@@ -2490,12 +2505,12 @@ view model =
                         generalLoginView
                             user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Not found. Register?:"
                 
-                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder _ _)))
+                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder _ )))
                     , Data.Users.Spectator _ Data.Users.LoginError ) ->
                         generalLoginView
                             user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Not found. Register?:"
                 
-                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder _ _)))
+                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder _ )))
                     , Data.Users.Spectator _ Data.Users.LoginError ) ->
                         generalLoginView
                             user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Not found. Register?:"
@@ -2508,14 +2523,15 @@ view model =
                     , Data.Users.Registered _ _ _ _ ) ->
                     globalOnlyView user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly)
 
-                ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder userVal ranking)))
+                ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder ranking)))
                     , Data.Users.Registered _ _ _ _ ) ->
-                        inputNewLadderview sRankings ranking (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder userVal ranking))
+                        inputNewLadderview sRankings ranking (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder ranking))
 
-                ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder userVal rnkId )))
-                    , Data.Users.Registered _ _ _ _ ) ->
+                ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder rnkId )))
+                    , Data.Users.Registered userId token userInfo userState ) ->
                     generalLoggedInView 
-                        userVal sUsers (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder userVal rnkId ))
+                        (Data.Users.Registered userId token userInfo userState) sUsers 
+                            (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder rnkId ))
 
                 ( Fetched sUsers sRankings  (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayLoggedIn)), userVal) ->
                     generalLoggedInView 
@@ -2535,9 +2551,9 @@ view model =
                     Html.text ("User Updated")
                 ( Fetched _ _ (Global (Data.Global.GlobalRankings _ Data.Global.DisplayGlobalOnly)), Data.Users.Spectator _ Data.Users.Updated ) ->
                     Html.text ("User Updated")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatingNewLadder _ _))), Data.Users.Spectator _ Data.Users.Updated ) ->
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatingNewLadder _ ))), Data.Users.Spectator _ Data.Users.Updated ) ->
                     Html.text ("User Updated")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatedNewLadder _ _))), Data.Users.Spectator _ Data.Users.Updated ) ->
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatedNewLadder _ ))), Data.Users.Spectator _ Data.Users.Updated ) ->
                     Html.text ("User Updated")
                 
         
@@ -2555,10 +2571,10 @@ view model =
                 ( Fetched _ _ (Global (Data.Global.GlobalRankings _ Data.Global.DisplayGlobalOnly)), Data.Users.Spectator _ _ ) ->
                      Html.text ("Not yet implemented")
                 
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatingNewLadder _ _))), Data.Users.Spectator _ _ ) ->
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatingNewLadder _ ))), Data.Users.Spectator _ _ ) ->
                     Html.text ("Not yet implemented")
                 
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatedNewLadder _ _))), Data.Users.Spectator _ _ ) ->
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatedNewLadder _ ))), Data.Users.Spectator _ _ ) ->
                      Html.text ("Not yet implemented")
                 
 
