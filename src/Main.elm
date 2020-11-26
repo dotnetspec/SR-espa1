@@ -873,21 +873,6 @@ update msg model =
                 newDataState = Fetched sUsers sRankings newDataKind
             in
             ( AppOps newDataState userVal uiState SR.Types.StopSubscription emptyTxRecord, Cmd.none )
-            -- todo: fix
-            --(model, Cmd.none)
-            -- let
-            --     newSelectedRanking =
-            --         appInfo.selectedRanking
-
-
-            --     updatedSelectedRanking =
-            --         { newSelectedRanking | rankingdesc = (Just descfield) }
-
-
-            --     newAppInfo =
-            --         { appInfo | selectedRanking = updatedSelectedRanking }
-            -- in
-            -- ( AppOps dataState newAppInfo SR.Types.UICreateNewLadder SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
         (UserNameInputChg updateField, AppOps dataState 
             (Data.Users.Spectator userInfo userState) uiState subState txRec) ->
@@ -3627,8 +3612,8 @@ userDescValidationErr str =
             (Element.text "20 characters max")
 
 
-ladderDescValidationErr : Data.Rankings.Ranking -> Element Msg
-ladderDescValidationErr rankingInfo =
+ladderDescValidation : Data.Rankings.Ranking -> Element Msg
+ladderDescValidation rankingInfo =
     if isLadderDescValidated rankingInfo then
         Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "ladderdescValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "")
 
@@ -3796,19 +3781,10 @@ isValidatedForAllUserDetailsInput user userInfo sUsers =
 
             else False
         
-    
-
 isValidatedForAllLadderDetailsInput : Data.Rankings.Ranking -> Data.Rankings.Rankings -> Bool
-isValidatedForAllLadderDetailsInput rnkInfo sRanking =
-    if
-        Data.Rankings.isRankingNameValidated rnkInfo sRanking
-            && isLadderDescValidated rnkInfo
-    then
-        True
-
-    else
-        False
-
+isValidatedForAllLadderDetailsInput ranking sRanking =
+    Data.Rankings.isRankingNameValid ranking.rankingname sRanking
+        && isLadderDescValidated ranking
 
 enableButton : Bool -> List (Element.Attribute msg)
 enableButton enable =
@@ -3843,17 +3819,20 @@ passwordValidView userInfo =
             (Element.text """5-8 continuous chars""")
 
 
-ladderNameValidationErr :  Data.Rankings.Ranking -> Data.Global.Global -> Element Msg
-ladderNameValidationErr  ranking sGlobal =
-    if Data.Rankings.isRankingNameValidated ranking (Data.Global.asRankings sGlobal) then
-        Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "laddernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Ladder name OK!")
+ladderNameValidation :  Data.Rankings.Ranking -> Data.Rankings.Rankings -> Element Msg
+ladderNameValidation  ranking sRankings =
+    if Data.Rankings.isRankingNameValid ranking.rankingname sRankings then
+        Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "laddernameValidMsg") ] 
+        [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) 
+        (Element.text "Ladder name OK!")
 
     else
         Element.el
-            (List.append [ Element.htmlAttribute (Html.Attributes.id "laddernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
+            (List.append [ Element.htmlAttribute (Html.Attributes.id "laddernameValidMsg") ] 
+            [ Font.color SR.Types.colors.red, Font.alignLeft ]
                 ++ [ Element.moveLeft 0.0 ]
             )
-            (Element.text """Must be unique (5-8 continuous chars)""")
+            (Element.text """Must be unique (4-8 continuous chars)""")
 
 
 displayUpdateProfileBtnIfExistingUser : String -> Element Msg
@@ -4343,7 +4322,7 @@ inputNewLadderview sRankings ranking sGlobal =
                                 , placeholder = Nothing
                                 , label = Input.labelLeft Input.label <| Element.text "Name*:"
                                 }
-                            , ladderNameValidationErr ranking sGlobal
+                            , ladderNameValidation ranking sRankings
                                 , Input.multiline Input.simple 
                                     {onChange = LadderDescInputChg
                                     , text =  Utils.Validation.Validate.validatedMaxTextLength (Maybe.withDefault "" ranking.rankingdesc) 20
@@ -4352,7 +4331,7 @@ inputNewLadderview sRankings ranking sGlobal =
                                     , spellcheck = False
                                     }
                             , Element.text "* Required"
-                            , ladderDescValidationErr ranking
+                            , ladderDescValidation ranking
                             ]
                         ]
                     ]
