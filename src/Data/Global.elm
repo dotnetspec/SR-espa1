@@ -54,7 +54,7 @@ type GlobalState =
     DisplayGlobalLogin
     | DisplayLoggedIn
     | DisplayGlobalOnly
-    | CreatingNewLadder Data.Users.User
+    | CreatingNewLadder Data.Users.User Data.Rankings.Ranking
     | CreatedNewLadder Data.Users.User Internal.Types.RankingId
 
 -- newUserRanking ranking user =

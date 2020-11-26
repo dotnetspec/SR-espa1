@@ -217,23 +217,23 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case ( msg, model ) of
-        ( WalletStatus walletSentry_, AppOps  dataState (Data.Users.Spectator userInfo userState) uiState subState txRec ) ->
+        ( WalletStatus walletSentry_, AppOps dataState (Data.Users.Spectator userInfo userState) uiState subState txRec ) ->
             (model, Cmd.none)
 
-        ( WalletStatus walletSentry_, AppOps  dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec ) ->
+        ( WalletStatus walletSentry_, AppOps dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec ) ->
             case walletSentry_.networkId of
                 Rinkeby ->
                     case walletSentry_.account of
                         Nothing ->
                             --walletState is wrong here:
-                            ( AppOps  dataState (Data.Users.NoWallet userId token userInfo userState) uiState subState emptyTxRecord
+                            ( AppOps dataState (Data.Users.NoWallet userId token userInfo userState) uiState subState emptyTxRecord
                             , Cmd.none
                             )
 
                         Just uaddr ->
                         -- and here:
                             let
-                                newModel = AppOps  dataState (gotWalletAddrApplyToUser (Data.Users.Registered userId token userInfo userState) uaddr) uiState subState emptyTxRecord
+                                newModel = AppOps dataState (gotWalletAddrApplyToUser (Data.Users.Registered userId token userInfo userState) uaddr) uiState subState emptyTxRecord
                             in
                             (newModel, Cmd.none)
                 _ ->
@@ -265,20 +265,20 @@ update msg model =
         ( WalletStatus _, Failure _ ) ->
             (model, Cmd.none)
 
-        (ClickedEnableEthereum, AppOps  dataState user uiState subState txRec ) ->
+        (ClickedEnableEthereum, AppOps dataState user uiState subState txRec ) ->
             (model, Cmd.none)
             -- case accountState of
             --     Data.Users.Spectator userInfo userState ->
-            --         (AppOps  dataState user SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none)
+            --         (AppOps dataState user SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none)
             --     Data.Users.Registered _ _ _->
-            --         (AppOps  dataState user SR.Types.UIEnableEthereum SR.Types.StopSubscription txRec, Ports.log "eth_requestAccounts")
+            --         (AppOps dataState user SR.Types.UIEnableEthereum SR.Types.StopSubscription txRec, Ports.log "eth_requestAccounts")
             --     SR.Types.EthEnabled ->
-            --         (AppOps  dataState user SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription txRec, Cmd.none)
+            --         (AppOps dataState user SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription txRec, Cmd.none)
             --     SR.Types.EthEnabledAndRegistered ->
-            --         (AppOps  dataState user SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription txRec, Cmd.none)
+            --         (AppOps dataState user SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription txRec, Cmd.none)
             
 
-        (ClickedRemoveFromUserMemberRankings, AppOps  dataState user uiState subState txRec ) ->
+        (ClickedRemoveFromUserMemberRankings, AppOps dataState user uiState subState txRec ) ->
             case dataState of
                 Fetched sUsers sRankings dKind ->
                     case dKind of
@@ -295,7 +295,7 @@ update msg model =
                                         _ = Debug.log "newUser: " newUser
                                         updatedsUsers = Data.Users.updatedUserInSet sUsers newUser
                                     in
-                                     (AppOps  dataState user uiState SR.Types.StopSubscription txRec, httpUpdateUsers updatedsUsers)
+                                     (AppOps dataState user uiState SR.Types.StopSubscription txRec, httpUpdateUsers updatedsUsers)
 
                                 (Data.Users.NoWallet userId token userInfo userState) ->
                                     (Failure "Err", Cmd.none)
@@ -311,15 +311,15 @@ update msg model =
                     (model, Cmd.none)
 
 
-        (ClickedConfirmedRegisterNewUser, AppOps  dataState (Data.Users.Spectator userInfo userState) uiState subState txRec) ->
-            ( AppOps  dataState (Data.Users.Spectator userInfo userState) uiState SR.Types.StopSubscription txRec, registerUser userInfo )
+        (ClickedConfirmedRegisterNewUser, AppOps dataState (Data.Users.Spectator userInfo userState) uiState subState txRec) ->
+            ( AppOps dataState (Data.Users.Spectator userInfo userState) uiState SR.Types.StopSubscription txRec, registerUser userInfo )
                 
         -- the only user UserState can be in here is General:
-        (ClickedRegister, AppOps  dataState user uiState subState txRec ) ->
-            (AppOps  dataState (Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.Updating) uiState subState txRec, Cmd.none)
-            --(AppOps  dataState (Data.Users.Registered "" "" Data.Users.emptyUserInfo Data.Users.Updating) uiState subState txRec, Cmd.none)
+        (ClickedRegister, AppOps dataState user uiState subState txRec ) ->
+            (AppOps dataState (Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.Updating) uiState subState txRec, Cmd.none)
+            --(AppOps dataState (Data.Users.Registered "" "" Data.Users.emptyUserInfo Data.Users.Updating) uiState subState txRec, Cmd.none)
 
-        (PlayersReceived response, AppOps  dataState user uiState subState txRec )  ->
+        (PlayersReceived response, AppOps dataState user uiState subState txRec )  ->
             (model, Cmd.none)
             -- let 
             --     --_ = Debug.log "players received " (Tuple.second (Data.Players.handleFetchedPlayers response))
@@ -417,7 +417,7 @@ update msg model =
                     --         Fetched sUsers sRankings dKind -> 
                     --             case dKind of 
                     --                     Selected sSelected ->
-                    --                         (AppOps  dataState user SR.Types.UIOwnerDeletedRanking SR.Types.StopSubscription emptyTxRecord, Cmd.none)
+                    --                         (AppOps dataState user SR.Types.UIOwnerDeletedRanking SR.Types.StopSubscription emptyTxRecord, Cmd.none)
                     --                     _ ->
                     --                         (model, Cmd.none)
                     --         _ ->
@@ -431,7 +431,7 @@ update msg model =
                     --         Fetched sUsers sRankings dKind -> 
                     --             case dKind of 
                     --                     Selected sSelected ->
-                    --                         (AppOps  dataState user SR.Types.UIOwnerDeletedRanking SR.Types.StopSubscription emptyTxRecord, Cmd.none)
+                    --                         (AppOps dataState user SR.Types.UIOwnerDeletedRanking SR.Types.StopSubscription emptyTxRecord, Cmd.none)
                     --                     _ ->
                     --                         (model, Cmd.none)
                     --         _ ->
@@ -454,7 +454,7 @@ update msg model =
                 in
                     ( AppOps newDataState user SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
-        (ClickedSelectedOwnedRanking rnkidstr rnkownerstr rnknamestr, AppOps  dataState user uiState subState txRec )  ->
+        (ClickedSelectedOwnedRanking rnkidstr rnkownerstr rnknamestr, AppOps dataState user uiState subState txRec )  ->
             let
                 _ = Debug.log "selected ranking is : " rnkidstr
             in
@@ -501,7 +501,7 @@ update msg model =
                     (model, Cmd.none)
 
 
-        (ClickedSelectedMemberRanking rnkidstr rnkownerstr rnknamestr, AppOps  dataState user uiState subState txRec ) ->
+        (ClickedSelectedMemberRanking rnkidstr rnkownerstr rnknamestr, AppOps dataState user uiState subState txRec ) ->
             case dataState of 
                 Fetched sUsers sRankings dKind ->
                     case dKind of 
@@ -529,7 +529,7 @@ update msg model =
                                 (model, Cmd.none)
 
         --todo: below will be handled differently. clicking will fetch a set of players from fauna first, then replace newsSelected with real set of players
-        (ClickedSelectedNeitherOwnerNorMember rnkidstr rnkownerstr rnknamestr, AppOps  dataState user uiState subState txRec)  ->
+        (ClickedSelectedNeitherOwnerNorMember rnkidstr rnkownerstr rnknamestr, AppOps dataState user uiState subState txRec)  ->
             case dataState of
                 (Fetched sUsers sRankings (Global sGlobal )) ->
                     let
@@ -562,11 +562,11 @@ update msg model =
         
 
 
-        (ClickedChangedUIStateToEnterResult player, AppOps  dataState user uiState subState txRec)  ->
-            ( AppOps  dataState user SR.Types.UIEnterResult SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+        (ClickedChangedUIStateToEnterResult player, AppOps dataState user uiState subState txRec)  ->
+            ( AppOps dataState user SR.Types.UIEnterResult SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
 
-        (SentResultToWallet result, AppOps  dataState user uiState subState txRec)  ->
+        (SentResultToWallet result, AppOps dataState user uiState subState txRec)  ->
             let
                 _ =
                     Debug.log "SentResultToWallet" result
@@ -599,20 +599,20 @@ update msg model =
             case (result) of
                 (Data.Selected.Won playerUP challengerUP) ->
                 --SR.Types.WalletWaitingForTransactionReceipt used to be used here
-                        ( AppOps  dataState user 
+                        ( AppOps dataState user 
                         SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = newSentry }
                         , sentryCmd
                         )
                         
                 (Data.Selected.Lost playerUP challengerUP) ->
                 -- SR.Types.WalletWaitingForTransactionReceipt used to be used here                              
-                        ( AppOps  dataState user SR.Types.UIWaitingForTxReceipt 
+                        ( AppOps dataState user SR.Types.UIWaitingForTxReceipt 
                          SR.Types.StopSubscription { txRec | txSentry = newSentry }
                         , sentryCmd
                         )
                 
                 (Data.Selected.Undecided playerUP challengerUP) -> 
-                        ( AppOps  dataState user SR.Types.UIEnterResultTxProblem 
+                        ( AppOps dataState user SR.Types.UIEnterResultTxProblem 
                         SR.Types.StopSubscription emptyTxRecord
                             , sentryCmd
                             )
@@ -621,7 +621,7 @@ update msg model =
                     (Failure "No Result", Cmd.none)
 
 
-        (ProcessResult result, AppOps  dataState user uiState subState txRec )  ->               
+        (ProcessResult result, AppOps dataState user uiState subState txRec )  ->               
             let
                 _ =
                     Debug.log "process result" result
@@ -717,12 +717,12 @@ update msg model =
             (Data.Users.Registered userId token userInfo userState) 
                 uiState subState txRec) ->
                     let
-                        newPlayer = { rankingid = "" , uid = userId, rank = 1 , challengerid = ""}
-                        newESUplayer = EverySet.singleton {player = newPlayer, user = (Data.Users.Registered userId token userInfo userState)}
-                        newDataKind = Selected (Data.Selected.SelectedRanking newESUplayer (Internal.Types.RankingId "") Data.Selected.UserIsOwner Data.Players.empty Data.Selected.DisplayRanking)
+                        newDataKind = Global <| Data.Global.GlobalRankings 
+                            (Data.Global.asEverySet sGlobal) 
+                            (Data.Global.CreatingNewLadder (Data.Users.Registered userId token userInfo userState) Data.Rankings.emptyRanking)
                         newDataState = Fetched sUsers sRankings newDataKind
                         newModel = 
-                                AppOps newDataState (Data.Users.Registered userId token userInfo Data.Users.CreateNewLadder)
+                                AppOps newDataState (Data.Users.Registered userId token userInfo userState)
                                 uiState 
                                 SR.Types.StopSubscription emptyTxRecord
                     in
@@ -817,18 +817,18 @@ update msg model =
 
             (Failure "Network error ...", Cmd.none)
 
-        (ResetToShowSelected, AppOps  dataState user uiState subState txRec ) ->
+        (ResetToShowSelected, AppOps dataState user uiState subState txRec ) ->
             case dataState of 
                 Fetched sUsers sRankings dKind ->
                     case dKind of
                         Selected sSelected ->
                             case (Data.Selected.gotStatus sSelected) of 
                                 Data.Selected.UserIsOwner ->
-                                    (AppOps  dataState user SR.Types.UISelectedRankingUserIsOwner SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+                                    (AppOps dataState user SR.Types.UISelectedRankingUserIsOwner SR.Types.StopSubscription emptyTxRecord, Cmd.none )
                                 Data.Selected.UserIsMember ->
-                                    (AppOps  dataState user SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+                                    (AppOps dataState user SR.Types.UISelectedRankingUserIsPlayer SR.Types.StopSubscription emptyTxRecord, Cmd.none )
                                 Data.Selected.UserIsNeitherOwnerNorMember ->
-                                    (AppOps  dataState user SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+                                    (AppOps dataState user SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer SR.Types.StopSubscription emptyTxRecord, Cmd.none )
                         _ -> 
                             (model, Cmd.none)
                 _ -> 
@@ -836,7 +836,7 @@ update msg model =
 
 
 
-        (ClickedUpdateExistingUser, AppOps  dataState user uiState subState txRec ) ->
+        (ClickedUpdateExistingUser, AppOps dataState user uiState subState txRec ) ->
             -- todo: fix
             (model, Cmd.none)
             -- let 
@@ -852,28 +852,18 @@ update msg model =
             --         in
             --             ( AppOps newDataState appInfo SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec, Cmd.none )
             --     _ ->
-            --         ( AppOps  dataState user SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec, Cmd.none )
+            --         ( AppOps dataState user SR.Types.UIUpdateExistingUser SR.Types.StopSubscription txRec, Cmd.none )
 
 
-        (LadderNameInputChg namefield, AppOps  dataState user uiState subState txRec ) ->
-            -- todo: fix
-            (model, Cmd.none)
-            -- let
-            --     newSelectedRanking =
-            --         appInfo.selectedRanking
+        (LadderNameInputChg namefield, AppOps ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder userVal ranking)))) user uiState subState txRec ) ->
+            let
+                newDataKind = Global (Data.Global.asGlobalRankings esUR (Data.Global.CreatingNewLadder userVal { ranking | rankingname = namefield } ))
+                newDataState = Fetched sUsers sRankings newDataKind
+            in
+            ( AppOps newDataState userVal uiState SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
 
-            --     updatedSelectedRanking =
-            --         { newSelectedRanking | rankingname = namefield }
-
-
-            --     newAppInfo =
-            --         { appInfo | selectedRanking = updatedSelectedRanking }
-            -- in
-            -- ( AppOps  dataState newAppInfo SR.Types.UICreateNewLadder SR.Types.StopSubscription emptyTxRecord, Cmd.none )
-
-
-        (LadderDescInputChg descfield, AppOps  dataState user uiState subState txRec ) ->
+        (LadderDescInputChg descfield, AppOps dataState user uiState subState txRec ) ->
             -- todo: fix
             (model, Cmd.none)
             -- let
@@ -888,41 +878,41 @@ update msg model =
             --     newAppInfo =
             --         { appInfo | selectedRanking = updatedSelectedRanking }
             -- in
-            -- ( AppOps  dataState newAppInfo SR.Types.UICreateNewLadder SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+            -- ( AppOps dataState newAppInfo SR.Types.UICreateNewLadder SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
-        (UserNameInputChg updateField, AppOps  dataState 
+        (UserNameInputChg updateField, AppOps dataState 
             (Data.Users.Spectator userInfo userState) uiState subState txRec) ->
-                (AppOps  dataState (Data.Users.Spectator {userInfo | username = updateField} userState) uiState subState txRec, Cmd.none)
+                (AppOps dataState (Data.Users.Spectator {userInfo | username = updateField} userState) uiState subState txRec, Cmd.none)
 
         
-        (UserNameInputChg updateField, AppOps  dataState 
+        (UserNameInputChg updateField, AppOps dataState 
             (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-                (AppOps  dataState (Data.Users.Registered userId token {userInfo | username = updateField} userState) uiState subState txRec, Cmd.none)
+                (AppOps dataState (Data.Users.Registered userId token {userInfo | username = updateField} userState) uiState subState txRec, Cmd.none)
 
         
         (UserPasswordInputChg updateField, 
-            AppOps  dataState 
+            AppOps dataState 
                 (Data.Users.Spectator userInfo userState) uiState subState txRec) ->
-                    (AppOps  dataState (Data.Users.Spectator {userInfo | password =  updateField} userState) uiState subState txRec, Cmd.none)
+                    (AppOps dataState (Data.Users.Spectator {userInfo | password =  updateField} userState) uiState subState txRec, Cmd.none)
 
-        (UserPasswordInputChg updateField, AppOps  dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
-            (AppOps  dataState (Data.Users.Registered userId token {userInfo | password = updateField} userState) uiState subState txRec, Cmd.none)
+        (UserPasswordInputChg updateField, AppOps dataState (Data.Users.Registered userId token userInfo userState) uiState subState txRec) ->
+            (AppOps dataState (Data.Users.Registered userId token {userInfo | password = updateField} userState) uiState subState txRec, Cmd.none)
 
-        (UserDescInputChg updateField, AppOps  dataState (Data.Users.Spectator userInfo userState) uiState subState txRec) ->
-           (AppOps  dataState (Data.Users.Spectator (Data.Users.updatedDesc userInfo updateField) userState) uiState subState txRec, Cmd.none)
+        (UserDescInputChg updateField, AppOps dataState (Data.Users.Spectator userInfo userState) uiState subState txRec) ->
+           (AppOps dataState (Data.Users.Spectator (Data.Users.updatedDesc userInfo updateField) userState) uiState subState txRec, Cmd.none)
 
-        (UserEmailInputChg updateField, AppOps  dataState (Data.Users.Spectator userInfo userState) uiState subState txRec) ->
-            (AppOps  dataState (Data.Users.Spectator (Data.Users.updatedEmail userInfo updateField) userState) uiState subState txRec, Cmd.none)
+        (UserEmailInputChg updateField, AppOps dataState (Data.Users.Spectator userInfo userState) uiState subState txRec) ->
+            (AppOps dataState (Data.Users.Spectator (Data.Users.updatedEmail userInfo updateField) userState) uiState subState txRec, Cmd.none)
 
-        (UserMobileInputChg updateField, AppOps  dataState (Data.Users.Spectator userInfo userState) uiState subState txRec) ->
-            (AppOps  dataState (Data.Users.Spectator (Data.Users.updatedMobile userInfo updateField) userState) uiState subState txRec, Cmd.none)
+        (UserMobileInputChg updateField, AppOps dataState (Data.Users.Spectator userInfo userState) uiState subState txRec) ->
+            (AppOps dataState (Data.Users.Spectator (Data.Users.updatedMobile userInfo updateField) userState) uiState subState txRec, Cmd.none)
 
         -- currently if the User is not 'Registered' do nothing
-        (UserMobileInputChg updateField, AppOps  dataState _ uiState subState txRec) ->
+        (UserMobileInputChg updateField, AppOps dataState _ uiState subState txRec) ->
             (model, Cmd.none)
 
 
-        (ClickedConfirmedUpdateExistingUser, AppOps  dataState user uiState subState txRec )  ->
+        (ClickedConfirmedUpdateExistingUser, AppOps dataState user uiState subState txRec )  ->
             --todo: fix
             (model, Cmd.none)
             -- case dataState of
@@ -948,12 +938,12 @@ update msg model =
             --                     (model, Cmd.none)
 
 
-        (SentUserInfoAndDecodedResponseToNewUser serverResponse, AppOps  dataState user uiState subState txRec )  ->
-            --(AppOps  dataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription emptyTxRecord, Cmd.none )
+        (SentUserInfoAndDecodedResponseToNewUser serverResponse, AppOps dataState user uiState subState txRec )  ->
+            --(AppOps dataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription emptyTxRecord, Cmd.none )
             (model, Cmd.none)
 
 
-        (ClickedChallengeOpponent opponentAsPlayer, AppOps  dataState user uiState subState txRec )  ->
+        (ClickedChallengeOpponent opponentAsPlayer, AppOps dataState user uiState subState txRec )  ->
             case dataState of
                 Fetched sUsers sRankings dKind ->                   
                     case dKind of 
@@ -975,7 +965,7 @@ update msg model =
                     (model, Cmd.none)
 
 
-        (ClickedDeleteRanking, AppOps  dataState user uiState subState txRec )  ->
+        (ClickedDeleteRanking, AppOps dataState user uiState subState txRec )  ->
             case dataState of 
                 Fetched sUsers sRankings dKind ->
                     case dKind of 
@@ -1024,7 +1014,7 @@ update msg model =
                             in
                                 (model, Cmd.none)
         
-        (ClickedDeleteRankingConfirmed, AppOps  dataState user uiState subState txRec )  ->
+        (ClickedDeleteRankingConfirmed, AppOps dataState user uiState subState txRec )  ->
             case dataState of 
                 Updated sUsers sRankings dKind ->
                     case dKind of 
@@ -1047,7 +1037,7 @@ update msg model =
                     ( model, Cmd.none )
 
 
-        (ReturnedFromDeletedSelectedRankingFromJsonBin result, AppOps  dataState user uiState subState txRec )  ->
+        (ReturnedFromDeletedSelectedRankingFromJsonBin result, AppOps dataState user uiState subState txRec )  ->
             -- nb. you haven't used the result
             let 
                 _= Debug.log "result"  result
@@ -1078,7 +1068,7 @@ update msg model =
                     ( model, Cmd.none )
 
 
-        (ReturnedFromDeletedRankingFromGlobalList response, AppOps  dataState user uiState subState txRec )  ->
+        (ReturnedFromDeletedRankingFromGlobalList response, AppOps dataState user uiState subState txRec )  ->
             (model, Cmd.none)
             -- todo: fix for fauna
             -- let 
@@ -1112,7 +1102,7 @@ update msg model =
             --                 Updated sUsers sRankings dKind -> 
             --                     case dKind of 
             --                             Global sGlobal  ->
-            --                                 (AppOps  dataState user SR.Types.UIUnableToFindGlobalRankings SR.Types.StopSubscription emptyTxRecord, Cmd.none)
+            --                                 (AppOps dataState user SR.Types.UIUnableToFindGlobalRankings SR.Types.StopSubscription emptyTxRecord, Cmd.none)
             --                             _ ->
             --                                 (model, Cmd.none)
             --                 _ ->
@@ -1123,7 +1113,7 @@ update msg model =
             --         (model, Cmd.none)    
                 
 
-        (WatchTxHash (Ok txHash), AppOps  dataState user uiState subState txRec ) ->
+        (WatchTxHash (Ok txHash), AppOps dataState user uiState subState txRec ) ->
             (model, Cmd.none)
                     -- let
                     --     _ =
@@ -1131,11 +1121,11 @@ update msg model =
                     -- in
                     -- case walletState of 
                     --     SR.Types.WalletOperational -> 
-                    --         ( AppOps  dataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription { txRec | txHash = Just txHash }, Cmd.none )
+                    --         ( AppOps dataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription { txRec | txHash = Just txHash }, Cmd.none )
                     --     _ ->
                     --         (model, Cmd.none)
 
-        (WatchTxHash (Err err),  AppOps  dataState user uiState subState txRec ) ->
+        (WatchTxHash (Err err),  AppOps dataState user uiState subState txRec ) ->
             (model, Cmd.none)
             -- let
             --     _ =
@@ -1148,7 +1138,7 @@ update msg model =
             --             (model, Cmd.none)
         
         
-        (WatchTx (Ok tx),  AppOps  dataState user uiState subState txRec ) ->
+        (WatchTx (Ok tx),  AppOps dataState user uiState subState txRec ) ->
             (model, Cmd.none)
             -- let
             --     _ =
@@ -1158,7 +1148,7 @@ update msg model =
             --     (SR.Types.WalletOperational, 
             --         Fetched  sUsers sRankings 
             --             (Selected (Data.Selected.SelectedRanking esUP rnkId ownerStatus sPlayers (Data.Selected.EnteredResult resultOfMatch)))) -> 
-            --                 AppOps  dataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription { txRec | tx = Just tx } |> update (ProcessResult resultOfMatch)
+            --                 AppOps dataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription { txRec | tx = Just tx } |> update (ProcessResult resultOfMatch)
                     
             --     (SR.Types.WalletOperational, _ ) ->
             --         (Failure "WatchTxReceipt", Cmd.none)
@@ -1166,7 +1156,7 @@ update msg model =
             --     (_, _) -> 
             --         (Failure "WatchTxReceipt", Cmd.none)
 
-        (WatchTx (Err err),  AppOps  dataState user uiState subState txRec ) ->
+        (WatchTx (Err err),  AppOps dataState user uiState subState txRec ) ->
             (model, Cmd.none)
             -- let
             --     _ =
@@ -1179,7 +1169,7 @@ update msg model =
             --         (model, Cmd.none)
         
         
-        (WatchTxReceipt (Ok txReceipt),  AppOps  dataState user uiState subState txRec ) ->
+        (WatchTxReceipt (Ok txReceipt),  AppOps dataState user uiState subState txRec ) ->
             (model, Cmd.none)
             -- let
             --     _ =
@@ -1190,7 +1180,7 @@ update msg model =
             --     (SR.Types.WalletOperational, 
             --         Fetched  sUsers sRankings 
             --             (Selected (Data.Selected.SelectedRanking esUP rnkId ownerStatus sPlayers (Data.Selected.EnteredResult resultOfMatch)))) ->
-            --             AppOps  dataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription emptyTxRecord
+            --             AppOps dataState user SR.Types.UIRenderAllRankings SR.Types.StopSubscription emptyTxRecord
             --                 |> update (ProcessResult resultOfMatch )
 
             --     (SR.Types.WalletOperational, _ ) ->
@@ -1199,7 +1189,7 @@ update msg model =
             --     (_, _) -> 
             --         (Failure "WatchTxReceipt", Cmd.none)
 
-        (WatchTxReceipt (Err err),  AppOps  dataState user uiState subState txRec ) ->
+        (WatchTxReceipt (Err err),  AppOps dataState user uiState subState txRec ) ->
             (model, Cmd.none)
             -- let
             --     _ =
@@ -1207,11 +1197,11 @@ update msg model =
             -- in
             -- case walletState of 
             --     SR.Types.WalletOperational ->
-            --         ( AppOps  dataState user SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
+            --         ( AppOps dataState user SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | errors = ("Error Retrieving TxReceipt: " ++ err) :: txRec.errors }, Cmd.none )
             --     _ ->
             --         (model, Cmd.none)
         
-        (TrackTx blockDepth,  AppOps  dataState user uiState subState txRec ) ->
+        (TrackTx blockDepth,  AppOps dataState user uiState subState txRec ) ->
             (model, Cmd.none)
             -- let
             --     _ =
@@ -1219,7 +1209,7 @@ update msg model =
             -- in
             -- case walletState of 
             --     SR.Types.WalletOperational ->
-            --         ( AppOps  dataState user SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | blockDepth = Just blockDepth }, Cmd.none )
+            --         ( AppOps dataState user SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | blockDepth = Just blockDepth }, Cmd.none )
             --     _ -> 
             --         (model, Cmd.none)
 
@@ -1227,7 +1217,7 @@ update msg model =
         -- it had the Http.expectStringResponse in it
         -- it's already created the new ranking with current player as the first entry
         -- the result now is the ranking id only at this point which was pulled out by the decoder
-        (SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder,  AppOps  dataState user uiState subState txRec ) ->
+        (SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId idValueFromDecoder,  AppOps dataState user uiState subState txRec ) ->
             (model, Cmd.none)
             -- case walletState of 
             --     SR.Types.WalletOperational ->
@@ -1284,7 +1274,7 @@ update msg model =
             --     _ -> 
             --         (model, Cmd.none)
 
-        -- (ResetRejectedNewUserToShowGlobal,  AppOps  dataState user uiState subState txRec ) ->
+        -- (ResetRejectedNewUserToShowGlobal,  AppOps dataState user uiState subState txRec ) ->
         --     let 
         --         newAppInfo = {appInfo | user = Data.Users.Spectator}
         --     in 
@@ -1295,7 +1285,7 @@ update msg model =
         --             (model, Cmd.none)
 
 
-        (ClickedConfirmCreateNewLadder rnkId,  AppOps  dataState user uiState subState txRec ) ->
+        (ClickedConfirmCreateNewLadder rnkId,  AppOps dataState user uiState subState txRec ) ->
             (model, Cmd.none)
             -- case walletState of 
             --     SR.Types.WalletOpened ->
@@ -1351,7 +1341,7 @@ update msg model =
             --     _ -> 
             --         (model, Cmd.none)
 
-        (AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList,  AppOps  dataState user uiState subState txRec ) ->
+        (AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList,  AppOps dataState user uiState subState txRec ) ->
             -- I think the global set has already been updated
             -- case walletState of 
             --     SR.Types.WalletOperational ->
@@ -1359,7 +1349,7 @@ update msg model =
             --     _ ->
                     (model, Cmd.none)
             
-        (ClickedNewChallengeConfirm challengerUID,  AppOps  dataState user uiState subState txRec ) ->
+        (ClickedNewChallengeConfirm challengerUID,  AppOps dataState user uiState subState txRec ) ->
             (model, Cmd.none)
             -- case user of 
             --     Data.Users.Spectator _ _ ->
@@ -1389,7 +1379,7 @@ update msg model =
             --                             (model, Cmd.none)
 
 
-        (ClickedJoinSelected,  AppOps  dataState user uiState subState txRec ) ->
+        (ClickedJoinSelected,  AppOps dataState user uiState subState txRec ) ->
             (model, Cmd.none)
         -- todo: re-implement when fauna ready
             -- let 
@@ -1404,12 +1394,12 @@ update msg model =
             --                     Selected sSelected ->
             --                         case accountState of
             --                             Data.Users.Spectator userInfo userState -> 
-            --                                 ( AppOps  dataState user SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none )
+            --                                 ( AppOps dataState user SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none )
             --                             Data.Users.Registered ->
-            --                                 ( AppOps  dataState user SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription txRec, Cmd.none )
+            --                                 ( AppOps dataState user SR.Types.UIEthAlreadyEnabled SR.Types.StopSubscription txRec, Cmd.none )
 
             --                             SR.Types.EthEnabled ->
-            --                                 ( AppOps  dataState user SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none )
+            --                                 ( AppOps dataState user SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none )
 
             --                             SR.Types.EthEnabledAndRegistered ->
             --                                 case user of
@@ -1439,13 +1429,13 @@ update msg model =
             --                             (model, Cmd.none)
 
                 -- SR.Types.WalletStopSub ->
-                --     ( AppOps  dataState user SR.Types.UIEnableEthereum SR.Types.StopSubscription txRec, Cmd.none )
+                --     ( AppOps dataState user SR.Types.UIEnableEthereum SR.Types.StopSubscription txRec, Cmd.none )
 
                 -- SR.Types.WalletStateLocked ->
-                --     ( AppOps  dataState user SR.Types.UIEnableEthereum SR.Types.StopSubscription txRec, Cmd.none )
+                --     ( AppOps dataState user SR.Types.UIEnableEthereum SR.Types.StopSubscription txRec, Cmd.none )
 
                 -- SR.Types.WalletOpenedNoUserAccount ->
-                --     ( AppOps  dataState user SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none )
+                --     ( AppOps dataState user SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec, Cmd.none )
 
                 -- _ -> 
                 --     let 
@@ -1453,7 +1443,7 @@ update msg model =
                 --     in
                 --     (model, Cmd.none)
 
-        (ReturnFromPlayerListUpdate response, AppOps  dataState user uiState subState txRec ) ->
+        (ReturnFromPlayerListUpdate response, AppOps dataState user uiState subState txRec ) ->
             (model, Cmd.none)
             -- let
             --     _ = Debug.log "ReturnFromPlayerListUpdate" walletState
@@ -1515,7 +1505,7 @@ update msg model =
 
             
 
-        (ReturnFromUserListUpdate response,  AppOps  dataState user uiState subState txRec ) ->
+        (ReturnFromUserListUpdate response,  AppOps dataState user uiState subState txRec ) ->
             (model, Cmd.none)
             -- let 
             --     _ =
@@ -1556,7 +1546,7 @@ update msg model =
                 -- _ ->
                 --     (model, Cmd.none)
 
-        (TimeUpdated posixTime,  AppOps  dataState user uiState subState txRec ) ->
+        (TimeUpdated posixTime,  AppOps dataState user uiState subState txRec ) ->
             let
                 _ =
                     Debug.log "posixtime" posixTime
@@ -1565,7 +1555,7 @@ update msg model =
         
 
         -- TxSentryMsg updates when user clicks 'Confirm' in the wallet
-        (TxSentryMsg subMsg,  AppOps  dataState user uiState subState txRec ) ->
+        (TxSentryMsg subMsg,  AppOps dataState user uiState subState txRec ) ->
             let
                 _ =
                     Debug.log "handleTxSubMsg subMsg" <| handleTxSubMsg subMsg
@@ -1583,17 +1573,17 @@ update msg model =
                             (Selected  (Data.Selected.SelectedRanking sSelected rnkId ownerStatus sPlayers (Data.Selected.EnteredResult resultEntered) ))) ->
                             case resultEntered of 
                                 Data.Selected.Won _ _ ->
-                                    (AppOps  dataState user SR.Types.UIWaitingForTxReceipt 
+                                    (AppOps dataState user SR.Types.UIWaitingForTxReceipt 
                                     SR.Types.StopSubscription { txRec | txSentry = subModel } |> update (ProcessResult resultEntered) )
 
                                 Data.Selected.Lost _ _ ->
                                     -- wallet was operational here
-                                    (AppOps  dataState user SR.Types.UIWaitingForTxReceipt 
+                                    (AppOps dataState user SR.Types.UIWaitingForTxReceipt 
                                     SR.Types.StopSubscription { txRec | txSentry = subModel } |> update (ProcessResult resultEntered))
                                     
                                 Data.Selected.Undecided _ _ ->
                                     -- wallet was operational here
-                                    ( AppOps  dataState user 
+                                    ( AppOps dataState user 
                                     SR.Types.UIWaitingForTxReceipt 
                                     SR.Types.StopSubscription { txRec | txSentry = subModel } |> update (ProcessResult resultEntered))
                                 
@@ -1601,7 +1591,7 @@ update msg model =
                                     (Failure "Tx problem Should have been a result", Cmd.none)
                         
                     (Data.Users.Credited addr userId token userInfo Data.Users.Updating, Fetched sUsers sRankings dKind ) ->
-                        ( AppOps  dataState (Data.Users.Credited addr userId token userInfo Data.Users.WalletOperational) 
+                        ( AppOps dataState (Data.Users.Credited addr userId token userInfo Data.Users.WalletOperational) 
                         SR.Types.UIWaitingForTxReceipt SR.Types.StopSubscription { txRec | txSentry = subModel }
                         , Cmd.batch [subCmd,  createNewUser sUsers (Data.Users.Credited addr userId token userInfo Data.Users.WalletOperational)])
                     
@@ -1613,15 +1603,15 @@ update msg model =
                         (Failure "No credit", Cmd.none)
             
             else
-                ( AppOps  dataState user SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription txRec, Cmd.none )
+                ( AppOps dataState user SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription txRec, Cmd.none )
 
 
                 
         (ClickedLogInUser, model_) ->
             case model of 
-                AppOps  dataState (Data.Users.Spectator userInfo userState) uiState subState txRec ->
+                AppOps dataState (Data.Users.Spectator userInfo userState) uiState subState txRec ->
                     (model, loginUser userInfo.username userInfo.password)
-                AppOps  dataState _ uiState subState txRec ->
+                AppOps dataState _ uiState subState txRec ->
                     (Failure "Only Spectator can login", Cmd.none)
                     
                 Failure _ ->
@@ -1755,7 +1745,7 @@ gotPlayersByRankingById id =
 updateGlobal : Model -> Model 
 updateGlobal model = 
     case model of 
-        AppOps  dataState user uiState subState txRec ->
+        AppOps dataState user uiState subState txRec ->
             case dataState of 
                 AllEmpty ->
                     model
@@ -2042,17 +2032,17 @@ updateWithReceivedRankingById model response =
 loginResponse: Model -> Result (GQLHttp.Error (Bridge.LoginResult)) (Bridge.LoginResult) -> Model
 loginResponse model response =
     case (model, response) of
-        (AppOps  dataState (Data.Users.Spectator userInfo userState) uiState subState txRec
+        (AppOps dataState (Data.Users.Spectator userInfo userState) uiState subState txRec
             , Ok loginResult) ->
-                AppOps  dataState (Data.Users.convertFUserToUser (Maybe.withDefault (Data.Users.emptyFUser) loginResult.user)) uiState subState txRec
+                AppOps dataState (Data.Users.convertFUserToUser (Maybe.withDefault (Data.Users.emptyFUser) loginResult.user)) uiState subState txRec
         
         ( AppOps _ (_) _ _ _
             , Ok loginResult) ->
                 Failure "Only a Spectator should be able \nlogin or register. A user has \nbeen created in Fauna!"
 
-        (AppOps  dataState (Data.Users.Spectator userInfo _) uiState subState txRec
+        (AppOps dataState (Data.Users.Spectator userInfo _) uiState subState txRec
             , Err _) ->
-                AppOps  dataState (Data.Users.Spectator userInfo (Data.Users.LoginError)) uiState subState txRec
+                AppOps dataState (Data.Users.Spectator userInfo (Data.Users.LoginError)) uiState subState txRec
         
         ( AppOps _ (_) _ _ _, Err _ ) ->
             Failure "Only a Spectator should be able \nlogin or register."
@@ -2064,7 +2054,7 @@ loginResponse model response =
 registeredResponse: Model -> Result (GQLHttp.Error (String)) (Data.Users.Token) -> Model
 registeredResponse model response =
     case (model, response) of
-        (AppOps  dataState user uiState subState txRec, Ok token) ->
+        (AppOps dataState user uiState subState txRec, Ok token) ->
             case user of
                 Data.Users.Spectator userInfo userState ->
                     let
@@ -2072,12 +2062,12 @@ registeredResponse model response =
                         -- todo: fix
                         updated_user = Data.Users.Registered "1234" token userInfo userState
                     in
-                        AppOps  dataState updated_user uiState subState txRec
+                        AppOps dataState updated_user uiState subState txRec
                 (Data.Users.Registered userId _ userInfo userState) ->
                     -- let
                     --     updated_user = Data.Users.Registered userId token userInfo userState         
                     -- in
-                    --     AppOps  dataState updated_user uiState subState txRec
+                    --     AppOps dataState updated_user uiState subState txRec
                     model
                 (Data.Users.NoWallet userId _ userInfo userState) ->
                     model
@@ -2086,8 +2076,8 @@ registeredResponse model response =
                 (Data.Users.Credited addr userId _ userInfo userState) ->
                     model
 
-        (AppOps  dataState user uiState subState txRec, Err _) ->
-                AppOps  dataState user uiState subState txRec
+        (AppOps dataState user uiState subState txRec, Err _) ->
+                AppOps dataState user uiState subState txRec
 
         (Failure _, _) ->
             model
@@ -2096,7 +2086,7 @@ registeredResponse model response =
 updateFromRegisteredNewUser: Model -> Result (GQLHttp.Error Data.Users.Token) Data.Users.Token -> Model
 updateFromRegisteredNewUser model response =
     case (response, model) of
-        (Ok token, AppOps  dataState user uiState subState txRec) ->
+        (Ok token, AppOps dataState user uiState subState txRec) ->
             case user of
                 Data.Users.Spectator userInfo userState ->
                     model
@@ -2105,7 +2095,7 @@ updateFromRegisteredNewUser model response =
                         updated_user = Data.Users.Registered userId token userInfo userState
                         --newAppInfo = { appInfo | user = updated_user }
                     in
-                        AppOps  dataState updated_user uiState subState txRec
+                        AppOps dataState updated_user uiState subState txRec
                 (Data.Users.NoWallet userId _ userInfo userState) ->
                     model
                 (Data.Users.NoCredit addr userId _ userInfo userState) ->
@@ -2214,8 +2204,8 @@ gotWalletAddrApplyToUser user uaddr =
 -- handleNewUserInputs : Model -> Msg -> Model
 -- handleNewUserInputs model msg =
 --     case (model, msg) of
---         --(AppOps  dataState user uiState subState txRec), UserNameInputChg namefield) ->
---         (AppOps  dataState user uiState subState txRec), UserNameInputChg namefield) ->
+--         --(AppOps dataState user uiState subState txRec), UserNameInputChg namefield) ->
+--         (AppOps dataState user uiState subState txRec), UserNameInputChg namefield) ->
 --             let 
 --                 newUser = Maybe.withDefault Data.Users.Spectator appInfo.user
 --             in
@@ -2229,7 +2219,7 @@ gotWalletAddrApplyToUser user uaddr =
 --                         newAppInfo =
 --                             { appInfo | user = Just newUserWithUpdatedNameField}
 --                     in
---                         AppOps  dataState newAppInfo uiState SR.Types.StopSubscription txRec
+--                         AppOps dataState newAppInfo uiState SR.Types.StopSubscription txRec
 
 --                 -- Just userVal ->
 --                 --     let
@@ -2239,11 +2229,11 @@ gotWalletAddrApplyToUser user uaddr =
 --                 --         newAppInfo =
 --                 --             { appInfo | user = Just updatedNewUser }
 --                 --     in
---                 --     AppOps  dataState newAppInfo uiState SR.Types.StopSubscription txRec
+--                 --     AppOps dataState newAppInfo uiState SR.Types.StopSubscription txRec
 
             
             
---         (AppOps  dataState user uiState subState txRec), UserPasswordInputChg passwordfield) ->
+--         (AppOps dataState user uiState subState txRec), UserPasswordInputChg passwordfield) ->
 --             case user of
 --                 Nothing ->
 --                     model
@@ -2257,10 +2247,10 @@ gotWalletAddrApplyToUser user uaddr =
 --                         newAppInfo =
 --                             { appInfo | user = Just updatedNewUser }
 --                     in
---                         AppOps  dataState newAppInfo uiState SR.Types.StopSubscription txRec
+--                         AppOps dataState newAppInfo uiState SR.Types.StopSubscription txRec
             
 
---         (AppOps  dataState user uiState subState txRec),  UserDescInputChg descfield) ->
+--         (AppOps dataState user uiState subState txRec),  UserDescInputChg descfield) ->
 --             case user of
 --                 Nothing ->
 --                     model
@@ -2274,9 +2264,9 @@ gotWalletAddrApplyToUser user uaddr =
 --                         newAppInfo =
 --                             { appInfo | user = Just updatedNewUser }
 --                     in
---                         AppOps  dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec
+--                         AppOps dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec
 
---         (AppOps  dataState user uiState subState txRec), UserEmailInputChg emailfield) ->
+--         (AppOps dataState user uiState subState txRec), UserEmailInputChg emailfield) ->
 --             case user of
 --                 Nothing ->
 --                     model
@@ -2288,10 +2278,10 @@ gotWalletAddrApplyToUser user uaddr =
 --                         newAppInfo =
 --                             { appInfo | user = Just updatedNewUser }
 --                     in
---                         AppOps  dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec
+--                         AppOps dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec
             
 
---         (AppOps  dataState user uiState subState txRec), UserMobileInputChg mobilefield) ->
+--         (AppOps dataState user uiState subState txRec), UserMobileInputChg mobilefield) ->
 --             case user of
 --                 Nothing ->
 --                     model
@@ -2305,7 +2295,7 @@ gotWalletAddrApplyToUser user uaddr =
 --                         newAppInfo =
 --                             { appInfo | user = Just updatedNewUser }
 --                     in
---                         AppOps  dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec            
+--                         AppOps dataState newAppInfo SR.Types.UIRegisterNewUser SR.Types.StopSubscription txRec            
 
 --         (_,_) ->
 --             Failure "UserNameInputChg"
@@ -2351,7 +2341,7 @@ updateUserMobile mobilefield userInfo =
 updatedForChallenge : Model -> List Data.Selected.UserPlayer -> Data.Selected.UserPlayer -> Data.Users.User -> Model
 updatedForChallenge model luplayer opponentAsPlayer userMaybeCanDelete =
     case model of
-        AppOps  dataState user uiState subState txRec ->
+        AppOps dataState user uiState subState txRec ->
             let 
                 _ = Debug.log "updatedForChallenge 1 - dataState" dataState
 
@@ -2410,7 +2400,7 @@ updatedForChallenge model luplayer opponentAsPlayer userMaybeCanDelete =
 updateSelectedRankingPlayerList : Model -> List Data.Selected.UserPlayer -> Model
 updateSelectedRankingPlayerList model luplayers =
     case model of
-        AppOps  dataState user uiState subState txRec ->
+        AppOps dataState user uiState subState txRec ->
             case dataState of
                 Updated sUsers sRankings dKind -> 
                     case dKind of 
@@ -2441,7 +2431,7 @@ updateSelectedRankingPlayerList model luplayers =
 -- populatedSelected : Model -> List Data.Selected.UserPlayer -> Model
 -- populatedSelected model luplayer =
 --     case model of
---         AppOps  dataState user uiState subState txRec ->
+--         AppOps dataState user uiState subState txRec ->
 --             case dataState of 
 --                 Selected sSelected sUsers _ ->
 --                     let
@@ -2469,7 +2459,7 @@ updateSelectedRankingPlayerList model luplayers =
 view : Model -> Html Msg
 view model =
     case model of
-        AppOps  dataState user uiState subState txRec ->
+        AppOps dataState user uiState subState txRec ->
             case (dataState, user) of 
                 (AllEmpty, _) ->
                     Html.text ("Loading ...")
@@ -2488,7 +2478,7 @@ view model =
                         Data.Users.Updating) ->
                             registerNewUserView user sUsers
 
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder _)))
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder _ _)))
                     , Data.Users.Spectator _ Data.Users.General ) ->
                     Html.text ("Not yet implemented")
                 
@@ -2506,7 +2496,7 @@ view model =
                         generalLoginView
                             user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Not found. Register?:"
                 
-                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder _)))
+                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder _ _)))
                     , Data.Users.Spectator _ Data.Users.LoginError ) ->
                         generalLoginView
                             user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Not found. Register?:"
@@ -2524,10 +2514,9 @@ view model =
                     , Data.Users.Registered _ _ _ _ ) ->
                     globalOnlyView user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly)
 
-                ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder userVal)))
+                ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder userVal ranking)))
                     , Data.Users.Registered _ _ _ _ ) ->
-                    generalLoggedInView 
-                        userVal sUsers (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder userVal))
+                        inputNewLadderview sRankings ranking (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder userVal ranking))
 
                 ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder userVal rnkId )))
                     , Data.Users.Registered _ _ _ _ ) ->
@@ -2552,7 +2541,7 @@ view model =
                     Html.text ("User Updated")
                 ( Fetched _ _ (Global (Data.Global.GlobalRankings _ Data.Global.DisplayGlobalOnly)), Data.Users.Spectator _ Data.Users.Updated ) ->
                     Html.text ("User Updated")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatingNewLadder _))), Data.Users.Spectator _ Data.Users.Updated ) ->
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatingNewLadder _ _))), Data.Users.Spectator _ Data.Users.Updated ) ->
                     Html.text ("User Updated")
                 ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatedNewLadder _ _))), Data.Users.Spectator _ Data.Users.Updated ) ->
                     Html.text ("User Updated")
@@ -2572,7 +2561,7 @@ view model =
                 ( Fetched _ _ (Global (Data.Global.GlobalRankings _ Data.Global.DisplayGlobalOnly)), Data.Users.Spectator _ _ ) ->
                      Html.text ("Not yet implemented")
                 
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatingNewLadder _))), Data.Users.Spectator _ _ ) ->
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatingNewLadder _ _))), Data.Users.Spectator _ _ ) ->
                     Html.text ("Not yet implemented")
                 
                 ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatedNewLadder _ _))), Data.Users.Spectator _ _ ) ->
@@ -3320,38 +3309,39 @@ joinBtn user  =
 
 -- newrankingconfirmbutton : SR.Types.AppInfo -> DataState -> Element Msg
 -- newrankingconfirmbutton appInfo dataState =
---     case dataState of 
---             Fetched sUsers sRankings dKind ->
---                  case dKind of 
---                     Global sGlobal  ->
---                         Element.column Grid.section <|
---                             [ Element.el Heading.h6 <| Element.text "Click to continue ..."
---                             , Element.column (Card.simple ++ Grid.simple) <|
---                                 [ Element.wrappedRow Grid.simple <|
---                                     [ Input.button (Button.simple ++ Color.simple) <|
---                                         { onPress = Just <| Cancel
---                                         , label = Element.text "Cancel"
---                                         }
---                                     , Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput appInfo.selectedRanking sRankings)) <|
-                                        
---                                         { onPress = Just <| ClickedConfirmCreateNewLadder
---                                         , label = Element.text "Confirm"
---                                         }
---                                     ]
---                                 ]
---                             , SR.Elements.warningParagraph
---                             ]
---                     _ -> 
---                         let 
---                             _ = Debug.log "newrankingconfirmbutton - dataState should be global" dataState
---                         in
---                             Element.text ""
+newrankingconfirmbutton : Element Msg
+newrankingconfirmbutton  =
+    --Element.text "Click to continue ..."
+    -- case dataState of 
+    --         Fetched sUsers sRankings dKind ->
+    --              case dKind of 
+    --                 Global sGlobal  ->
+                        Element.column Grid.section <|
+                            [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+                            , Element.column (Card.simple ++ Grid.simple) <|
+                                [ Element.wrappedRow Grid.simple <|
+                                    [infoBtn "Cancel" Cancel
+                                    --, Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput appInfo.selectedRanking sRankings)) <|
+                                    
+                                    , Input.button (Button.simple ++ Color.simple) <|
+                                        { onPress = Just <| ClickedConfirmCreateNewLadder <| Internal.Types.RankingId "1"
+                                        , label = Element.text "Confirm"
+                                        }
+                                    ]
+                                ]
+                            , SR.Elements.warningParagraph
+                            ]
+    --                 _ -> 
+    --                     let 
+    --                         _ = Debug.log "newrankingconfirmbutton - dataState should be global" dataState
+    --                     in
+    --                         Element.text ""
                     
---             _ -> 
---                 let 
---                     _ = Debug.log "newrankingconfirmbutton - dataState" dataState
---                 in
---                     Element.text ""
+    --         _ -> 
+    --             let 
+    --                 _ = Debug.log "newrankingconfirmbutton - dataState" dataState
+    --             in
+    --                 Element.text ""
 
 
 -- confirmDelRankingBtn : SR.Types.AppInfo -> DataState -> Element Msg
@@ -3437,7 +3427,7 @@ joinBtn user  =
 confirmChallengebutton : Model -> Element Msg
 confirmChallengebutton model =
     case model of
-        AppOps  dataState user uiState subState txRec ->
+        AppOps dataState user uiState subState txRec ->
             case (user, dataState) of
                 (Data.Users.Spectator _ _, _) ->
                     Element.text <| " No User3"
@@ -3500,7 +3490,7 @@ confirmResultbutton model =
     -- todo: fix
     Element.text "Fix confirmResultbutton"
     -- case model of
-    --     AppOps  dataState user uiState subState txRec ->
+    --     AppOps dataState user uiState subState txRec ->
     --         case dataState of
     --             Fetched sUsers sRankings dKind -> 
     --                 case dKind of 
@@ -3586,7 +3576,7 @@ acknoweldgeTxErrorbtn model =
     -- todo: fix
     Element.text "fix"
     -- case model of
-    --     AppOps  dataState user uiState subState txRec ->
+    --     AppOps dataState user uiState subState txRec ->
     --         Element.column Grid.section <|
     --             [ 
     --             Element.paragraph (Card.fill ++ Color.info) <|
@@ -3844,62 +3834,17 @@ passwordValidView userInfo =
             (Element.text """5-8 continuous chars""")
 
 
--- ladderNameValidationErr : SR.Types.AppInfo -> DataState -> Element Msg
--- ladderNameValidationErr appInfo dataState =
---     case dataState of 
---         Fetched sUsers sRankings dKind ->
---             case dKind of 
---                 Global sGlobal  ->
---                     if Data.Rankings.isRankingNameValidated appInfo.selectedRanking (Data.Global.asList sGlobal) then
---                         Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "laddernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Ladder name OK!")
+ladderNameValidationErr :  Data.Rankings.Ranking -> Data.Global.Global -> Element Msg
+ladderNameValidationErr  ranking sGlobal =
+    if Data.Rankings.isRankingNameValidated ranking (Data.Global.asRankings sGlobal) then
+        Element.el (List.append [ Element.htmlAttribute (Html.Attributes.id "laddernameValidMsg") ] [ Font.color SR.Types.colors.green, Font.alignLeft ] ++ [ Element.moveLeft 1.0 ]) (Element.text "Ladder name OK!")
 
---                     else
---                         Element.el
---                             (List.append [ Element.htmlAttribute (Html.Attributes.id "laddernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
---                                 ++ [ Element.moveLeft 0.0 ]
---                             )
---                             (Element.text """Must be unique (5-8 continuous chars)""")
-
---                 _ -> 
---                     let 
---                         _ = Debug.log "dataState - should be Global" dataState
---                     in
---                         (Element.text "")
-
---         _ -> 
---                 let 
---                     _ = Debug.log "dataState - ladderNameValidationErr" dataState
---                 in
---                     (Element.text "") 
-
-        
-
--- --todo: fix:
--- inputNewLadder : SR.Types.AppInfo -> DataState -> Element Msg
--- inputNewLadder appInfo dataState =
---             Element.column Grid.section <|
---                 [ Element.el Heading.h6 <| Element.text "New Ladder Details"
---                 , Element.wrappedRow (Card.fill ++ Grid.simple)
---                     [ Element.column Grid.simple
---                         [ Input.text Input.simple
---                             { onChange = LadderNameInputChg
---                             , text = appInfo.selectedRanking.rankingname
---                             , placeholder = Nothing
---                             , label = Input.labelLeft Input.label <| Element.text "Name*:"
---                             }
---                         , ladderNameValidationErr appInfo dataState
---                             , Input.multiline Input.simple 
---                                 {onChange = LadderDescInputChg
---                                 , text =  Utils.Validation.Validate.validatedMaxTextLength (Maybe.withDefault "" appInfo.selectedRanking.rankingdesc) 20
---                                 , placeholder = Nothing
---                                 , label = Input.labelLeft Input.label <| Element.text "Desc:"
---                                 , spellcheck = False
---                                 }
---                         , Element.text "* Required"
---                         , ladderDescValidationErr appInfo.selectedRanking
---                         ]
---                     ]
---                 ]
+    else
+        Element.el
+            (List.append [ Element.htmlAttribute (Html.Attributes.id "laddernameValidMsg") ] [ Font.color SR.Types.colors.red, Font.alignLeft ]
+                ++ [ Element.moveLeft 0.0 ]
+            )
+            (Element.text """Must be unique (5-8 continuous chars)""")
 
 
 displayUpdateProfileBtnIfExistingUser : String -> Element Msg
@@ -4355,7 +4300,7 @@ displayRegisterNewUser userVal sUsers =
 -- updateExistingUserView : Model -> Html Msg
 -- updateExistingUserView model =
 --     case model of
---         AppOps  dataState user uiState subState txRec ->
+--         AppOps dataState user uiState subState txRec ->
 --             case dataState of 
 --                 Fetched sUsers sRankings dKind -> 
 --                     case user of
@@ -4375,26 +4320,41 @@ displayRegisterNewUser userVal sUsers =
 --             Html.text "Fail updateExistingUserView"
 
 
--- inputNewLadderview : Model -> Html Msg
--- inputNewLadderview model =
---     case model of
---         AppOps  dataState user uiState subState txRec ->
---             Framework.responsiveLayout [] <|
---                 Element.column
---                     Framework.container
---                     [ Element.el Heading.h4 <| Element.text "Create New Ladder Ranking"
---                     , inputNewLadder appInfo dataState
---                     , newrankingconfirmbutton appInfo dataState
---                     , SR.Elements.footer
---                     ]
-
---         _ ->
---             Html.text "Fail"
+inputNewLadderview : Data.Rankings.Rankings -> Data.Rankings.Ranking -> Data.Global.Global -> Html Msg
+inputNewLadderview sRankings ranking sGlobal =
+            Framework.responsiveLayout [] <| Element.column Framework.container
+                [ Element.el Heading.h4 <| Element.text "Create New Ladder Ranking"
+                , Element.column Grid.section <|
+                    [ Element.el Heading.h6 <| Element.text "New Ladder Details"
+                    , Element.wrappedRow (Card.fill ++ Grid.simple)
+                        [ Element.column Grid.simple
+                            [ Input.text Input.simple
+                                { onChange = LadderNameInputChg
+                                , text = ranking.rankingname
+                                , placeholder = Nothing
+                                , label = Input.labelLeft Input.label <| Element.text "Name*:"
+                                }
+                            , ladderNameValidationErr ranking sGlobal
+                                , Input.multiline Input.simple 
+                                    {onChange = LadderDescInputChg
+                                    , text =  Utils.Validation.Validate.validatedMaxTextLength (Maybe.withDefault "" ranking.rankingdesc) 20
+                                    , placeholder = Nothing
+                                    , label = Input.labelLeft Input.label <| Element.text "Desc:"
+                                    , spellcheck = False
+                                    }
+                            , Element.text "* Required"
+                            , ladderDescValidationErr ranking
+                            ]
+                        ]
+                    ]
+                , newrankingconfirmbutton
+                , SR.Elements.footer
+                ]
 
 -- deleteRankingview : Model -> Html Msg
 -- deleteRankingview model =
 --     case model of
---         AppOps  dataState user uiState subState txRec ->
+--         AppOps dataState user uiState subState txRec ->
 --             Framework.responsiveLayout [] <|
 --                 Element.column
 --                     Framework.container
@@ -4413,7 +4373,7 @@ displayRegisterNewUser userVal sUsers =
 displayChallengeBeforeConfirmView : Model -> Html Msg
 displayChallengeBeforeConfirmView model =
     case model of
-        AppOps  dataState user uiState subState txRec ->
+        AppOps dataState user uiState subState txRec ->
             case user of
                 Data.Users.Spectator userInfo userState ->
                     Html.text "No User19"
@@ -4447,7 +4407,7 @@ displayResultBeforeConfirmView model =
     -- todo: fix
     Html.text "Error displayResultBeforeConfirmView"
     -- case model of
-    --     AppOps  dataState user uiState subState txRec ->
+    --     AppOps dataState user uiState subState txRec ->
     --         case dataState of
     --             Fetched sUsers sRankings (Selected sSelected) -> 
     --                 let
@@ -4492,7 +4452,7 @@ txErrorView model =
 -- todo: fix
     Html.text "Error txErrorView"
     -- case model of
-    --     AppOps  dataState user uiState subState txRec ->
+    --     AppOps dataState user uiState subState txRec ->
     --         let
     --             m_playerAsUser =
     --                 --SR.ListOps.gotUserFromUserList (EverySet.fromList dataState) appInfo.player.player.uid
@@ -4604,7 +4564,7 @@ continueWithRemoveDeletedRankingView continueStr =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
-        AppOps  dataState user uiState subState txRec ->
+        AppOps dataState user uiState subState txRec ->
             case subState of 
                 SR.Types.Subscribe ->
                     Sub.batch
