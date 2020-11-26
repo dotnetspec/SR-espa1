@@ -101,6 +101,7 @@ type OpponentRelativeRank
     = OpponentRankHigher
     | OpponentRankLower
 
+
 asSelected : EverySet UserPlayer -> Internal.Types.RankingId -> SelectedOwnerStatus -> Data.Players.Players -> SelectedState -> Selected 
 asSelected esUserPlayer rnkId status sPlayers sState = 
     SelectedRanking esUserPlayer rnkId status sPlayers sState

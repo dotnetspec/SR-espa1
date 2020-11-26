@@ -75,6 +75,7 @@ type UserState =
     | LoginError
     | WalletOperational
     | WalletWaitingForTransactionReceipt
+    | CreateNewLadder
 
 
 -- these states might transfer over to UserState

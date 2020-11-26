@@ -25,6 +25,7 @@ import Http
 import List.Unique
 import SRdb.Scalar exposing (Id(..))
 import SRdb.ScalarCodecs
+import Data.Users
 
 
 
@@ -34,7 +35,7 @@ type PlayerNames = PlayerNames (EverySet String)
 
 type alias Player =
     { rankingid : String
-    , uid : String
+    , uid : Data.Users.UserId
     , rank : Int
     , challengerid : String
     }

@@ -713,22 +713,21 @@ update msg model =
                 Data.Selected.NoResult ->
                     (Failure "No Result", Cmd.none)
 
-
-        (ClickedCreateNewLadder, AppOps  dataState appState uiState subState txRec) ->
-            -- todo: fix
-                -- case dataState of
-                --     Fetched sUsers sRankings (Global sGlobal) ->
-                --         let
-                --             newDataKind = Selected (sSelected 0 Data.Selected.UserIsOwner [] Data.Selected.DisplayRanking)
-                --             newDataState = Updated sUsers sRankings newDataKind
-                --             newModel = 
-                --                     AppOps newDataState
-                --                     uiState 
-                --                     SR.Types.StopSubscription emptyTxRecord
-                --         in
-                --             (newModel, Cmd.none)
-                --     _ ->
-                        (model, Cmd.none)
+        (ClickedCreateNewLadder, AppOps (Fetched sUsers sRankings (Global sGlobal)) 
+            (Data.Users.Registered userId token userInfo userState) 
+                uiState subState txRec) ->
+                    let
+                        newPlayer = { rankingid = "" , uid = userId, rank = 1 , challengerid = ""}
+                        newESUplayer = EverySet.singleton {player = newPlayer, user = (Data.Users.Registered userId token userInfo userState)}
+                        newDataKind = Selected (Data.Selected.SelectedRanking newESUplayer (Internal.Types.RankingId "") Data.Selected.UserIsOwner Data.Players.empty Data.Selected.DisplayRanking)
+                        newDataState = Fetched sUsers sRankings newDataKind
+                        newModel = 
+                                AppOps newDataState (Data.Users.Registered userId token userInfo Data.Users.CreateNewLadder)
+                                uiState 
+                                SR.Types.StopSubscription emptyTxRecord
+                    in
+                        (newModel, Cmd.none)
+                
 
         (Cancel, AppOps 
             (Fetched sUsers sRankings 

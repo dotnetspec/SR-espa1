@@ -91,18 +91,6 @@ type RankingId
 type Username
     = Username String
 
--- perhaps this should be part of UserState?
--- type WalletState
---     = 
-    --WalletStateLocked
-    -- WalletStateAwaitOpening
-    -- | 
-    --WalletWaitingForTransactionReceipt
-    --| WalletOpened
-    --| WalletOperational
-    --| WalletStopSub
-    --| WalletOpenedNoUserAccount
-
 
 type LadderState
     = ExistingLadder Data.Rankings.Ranking
@@ -111,8 +99,7 @@ type LadderState
 
 type UIState
     = 
-    UICreateNewLadder
-    | UIUpdateExistingUser
+    UIUpdateExistingUser
     | UIWalletMissingInstructions
     | UIDisplayWalletLockedInstructions
     | UIDisplayWalletInfoToUser
