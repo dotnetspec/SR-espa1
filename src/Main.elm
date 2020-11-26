@@ -2818,7 +2818,7 @@ registerNewUserView userVal sUsers =
                             { onChange = UserMobileInputChg
                             , text = Utils.Validation.Validate.validatedMaxTextLength userInfo.extrauserinfo.mobile 25
                             , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile \n(inc. Int code)")
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile \n(inc. Int code\neg.+65)")
                             }
                         , mobileValidationErr userInfo.extrauserinfo.mobile
                         ]
@@ -2866,7 +2866,7 @@ registerNewUserView userVal sUsers =
                             { onChange = UserMobileInputChg
                             , text = Utils.Validation.Validate.validatedMaxTextLength userInfo.extrauserinfo.mobile 25
                             , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile \n(inc. Int code)")
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile \n(inc. Int code\n e.g.+65)")
                             }
                         , mobileValidationErr userInfo.extrauserinfo.mobile
                         ]
@@ -4213,7 +4213,7 @@ displayRegisterNewUser userVal sUsers =
                         { onChange = UserMobileInputChg
                         , text = Utils.Validation.Validate.validatedMaxTextLength userInfo.extrauserinfo.mobile 25
                         , placeholder = Nothing
-                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text " Mobile \n(inc. Int code)")
+                        , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text " Mobile \n(inc. Int code \ne.g. +65)")
                         }
                     , mobileValidationErr userInfo.extrauserinfo.mobile
                     ]
