@@ -6,7 +6,7 @@ module SR.Types exposing
     , NewRankingListServerResponse, ResultRadioOptions(..)
     , UserListState(..)
     , colors
-    , SubState(..)
+    --, SubState(..)
     , DeleteBinResponse
     )
 
@@ -116,9 +116,9 @@ type UIState
     | UIUnableToFindGlobalRankings
     | UIEthAlreadyEnabled
 
-type SubState 
-    = Subscribe 
-    | StopSubscription
+-- type SubState 
+--     = Subscribe 
+--     | StopSubscription
 
 
 

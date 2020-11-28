@@ -75,6 +75,9 @@ type UserState =
     | LoginError
     | WalletOperational
     | WalletWaitingForTransactionReceipt
+    -- these 2 might replace the 2 above (?):
+    | Subscribe 
+    | StopSubscription
 
 
 -- these states might transfer over to UserState
