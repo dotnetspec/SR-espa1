@@ -2523,15 +2523,21 @@ view model =
                         generalLoginView
                             user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Not found. Register?:"
                 
-                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder _ )))
+                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR 
+                    (Data.Global.CreatingNewLadder _ )))
                     , Data.Users.Spectator _ Data.Users.LoginError ) ->
                         generalLoginView
-                            user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Not found. Register?:"
+                            user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Please register \nto create a new ladder:"
+
+                ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR 
+                    (Data.Global.CreatingNewLadder ranking)))
+                    , Data.Users.Registered uid token userInfo userState ) ->
+                        inputNewLadderview sRankings ranking (Data.Users.Registered uid token userInfo userState) 
                 
                 ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder )))
                     , Data.Users.Spectator _ Data.Users.LoginError ) ->
                         generalLoginView
-                            user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Not found. Register?:"
+                            user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Please register \nto create a new ladder:"
 
                 ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly))
                     , Data.Users.Spectator _ Data.Users.General ) ->
@@ -2541,9 +2547,7 @@ view model =
                     , Data.Users.Registered _ _ _ _ ) ->
                     globalOnlyView user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly)
 
-                ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder ranking)))
-                    , Data.Users.Registered _ _ _ _ ) ->
-                        inputNewLadderview sRankings ranking (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder ranking))
+                
 
                 ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder )))
                     , Data.Users.Registered userId token userInfo userState ) ->
@@ -3330,23 +3334,6 @@ joinBtn user  =
             { onPress = Just ClickedJoinSelected
             , label = Element.text "Join"
             }
-
-
-newrankingconfirmbutton : Data.Rankings.Rankings -> Data.Rankings.Ranking -> Element Msg
-newrankingconfirmbutton  sRankings ranking =
-                        Element.column Grid.section <|
-                            [ Element.el Heading.h6 <| Element.text "Click to continue ..."
-                            , Element.column (Card.simple ++ Grid.simple) <|
-                                [ Element.wrappedRow Grid.simple <|
-                                    [infoBtn "Cancel" Cancel
-                                    , Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput ranking sRankings)) <|
-                                        { onPress = Just <| ClickedConfirmCreateNewLadder
-                                        , label = Element.text "Confirm"
-                                        }
-                                    ]
-                                ]
-                            , SR.Elements.warningParagraph
-                            ]
 
 
 -- confirmDelRankingBtn : SR.Types.AppInfo -> DataState -> Element Msg
@@ -4319,8 +4306,8 @@ displayRegisterNewUser userVal sUsers =
 --             Html.text "Fail updateExistingUserView"
 
 
-inputNewLadderview : Data.Rankings.Rankings -> Data.Rankings.Ranking -> Data.Global.Global -> Html Msg
-inputNewLadderview sRankings ranking sGlobal =
+inputNewLadderview : Data.Rankings.Rankings -> Data.Rankings.Ranking -> Data.Users.User -> Html Msg
+inputNewLadderview sRankings ranking user =
             Framework.responsiveLayout [] <| Element.column Framework.container
                 [ Element.el Heading.h4 <| Element.text "Create New Ladder Ranking"
                 , Element.column Grid.section <|
@@ -4346,9 +4333,38 @@ inputNewLadderview sRankings ranking sGlobal =
                             ]
                         ]
                     ]
-                , newrankingconfirmbutton sRankings ranking
-                , SR.Elements.footer
+                , Element.column Grid.section <|
+                    [ Element.el Heading.h6 <| Element.text "Click to continue ..."
+                    , Element.column (Card.simple ++ Grid.simple) <|
+                        [ Element.wrappedRow Grid.simple <|
+                            [infoBtn "Cancel" Cancel
+                            , Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput ranking sRankings)) <|
+                                { onPress = Just <| ClickedConfirmCreateNewLadder
+                                , label = Element.text "Confirm"
+                                }
+                            ]
+                        ]
+                    ]
+                    , case user of 
+                        (Data.Users.Spectator _ _) ->
+                            Element.text ""
+                        (Data.Users.Registered _ _ _ _) ->
+                            Element.text ""
+                        (Data.Users.NoWallet _ _ _ _) ->
+                            Element.text ""
+                        (Data.Users.NoCredit _ _ _ _ _) ->
+                            Element.text ""
+                        (Data.Users.Credited _ _ _ _ _) ->
+                            SR.Elements.warningParagraph
+                        , 
+                            SR.Elements.footer
                 ]
+
+    --             Spectator UserInfo UserState
+    -- | Registered UserId Token UserInfo UserState
+    -- | NoWallet UserId Token UserInfo UserState
+    -- | NoCredit Eth.Types.Address UserId Token UserInfo UserState
+    -- | Credited Eth.Types.Address UserId Token UserInfo UserState
 
 -- deleteRankingview : Model -> Html Msg
 -- deleteRankingview model =
