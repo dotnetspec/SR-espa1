@@ -806,32 +806,27 @@ update msg model =
                             -- UIEnterResultTxProblem is deliberately wrong - remove eventually
                             ( AppOps newDataState user SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription emptyTxRecord, Cmd.none )
         
-                                
+        (Cancel, AppOps 
+            (Fetched sUsers sRankings 
+                (Global (Data.Global.GlobalRankings esUR 
+                    (Data.Global.CreatingNewLadder _))))
+                        (Data.Users.Registered userId token userInfo userState)
+                            uiState subState txRec ) ->
+            let
+                newDataKind = Global (Data.Global.GlobalRankings esUR 
+                    (Data.Global.DisplayLoggedIn))               
+                newDataState = Fetched sUsers sRankings newDataKind
+            in
+            -- UIEnterResultTxProblem is deliberately wrong - remove eventually
+            ( AppOps newDataState 
+                (Data.Users.Registered userId token userInfo userState) 
+                    SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription emptyTxRecord, Cmd.none )            
 
         (Cancel, AppOps (Updated sUsers sRankings dKind) user uiState subState txRec ) ->
-            case user of
-                Data.Users.Spectator userInfo userState ->
-                    (model, Cmd.none)
-                (Data.Users.Registered userId token userInfo userState) ->
-                    let
-                            newDataKind = Global Data.Global.empty
-                            newDataState = Fetched sUsers sRankings newDataKind
-
-                            _ = Debug.log "toGlobal now" "Updated"
-                        in
                         -- UIEnterResultTxProblem is deliberately wrong - remove eventually
-                        ( AppOps newDataState user SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription emptyTxRecord, Cmd.none )
-
-                (Data.Users.NoWallet userId token userInfo userState) ->
-                    (model, Cmd.none)
-                (Data.Users.NoCredit addr userId token userInfo userState) ->
-                    (model, Cmd.none)
-                (Data.Users.Credited addr userId token userInfo userState) ->
-                    (model, Cmd.none)
-
-        (Cancel, AppOps AllEmpty user uiState subState txRec ) ->
-
-            (Failure "Network error ...", Cmd.none)
+            ( AppOps 
+                (Fetched sUsers sRankings dKind) 
+                    user SR.Types.UIEnterResultTxProblem SR.Types.StopSubscription emptyTxRecord, Cmd.none )
 
         (ResetToShowSelected, AppOps dataState user uiState subState txRec ) ->
             case dataState of 
@@ -2531,8 +2526,8 @@ view model =
 
                 ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR 
                     (Data.Global.CreatingNewLadder ranking)))
-                    , Data.Users.Registered uid token userInfo userState ) ->
-                        inputNewLadderview sRankings ranking (Data.Users.Registered uid token userInfo userState) 
+                    , (Data.Users.Registered _ _ _ _) as userVal ) ->
+                        inputNewLadderview sRankings ranking userVal
                 
                 ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder )))
                     , Data.Users.Spectator _ Data.Users.LoginError ) ->
