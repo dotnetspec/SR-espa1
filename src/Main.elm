@@ -1313,7 +1313,7 @@ update msg model =
                     newDataKind = Global (Data.Global.asGlobalRankings esUserRanking Data.Global.CreatedNewLadder)
                     newDataState = Fetched sUsers sRankings newDataKind
                 in
-                    ( AppOps newDataState (Data.Users.Spectator userInfo userState)
+                    ( AppOps newDataState (Data.Users.Registered userId token userInfo userState)
                         uiState SR.Types.Subscribe txRec
                             ,Cmd.none)
 
@@ -3331,27 +3331,15 @@ joinBtn user  =
             , label = Element.text "Join"
             }
 
-    
-       
 
-
--- newrankingconfirmbutton : SR.Types.AppInfo -> DataState -> Element Msg
--- newrankingconfirmbutton appInfo dataState =
-newrankingconfirmbutton : Element Msg
-newrankingconfirmbutton  =
-    --Element.text "Click to continue ..."
-    -- case dataState of 
-    --         Fetched sUsers sRankings dKind ->
-    --              case dKind of 
-    --                 Global sGlobal  ->
+newrankingconfirmbutton : Data.Rankings.Rankings -> Data.Rankings.Ranking -> Element Msg
+newrankingconfirmbutton  sRankings ranking =
                         Element.column Grid.section <|
                             [ Element.el Heading.h6 <| Element.text "Click to continue ..."
                             , Element.column (Card.simple ++ Grid.simple) <|
                                 [ Element.wrappedRow Grid.simple <|
                                     [infoBtn "Cancel" Cancel
-                                    --, Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput appInfo.selectedRanking sRankings)) <|
-                                    
-                                    , Input.button (Button.simple ++ Color.simple) <|
+                                    , Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput ranking sRankings)) <|
                                         { onPress = Just <| ClickedConfirmCreateNewLadder
                                         , label = Element.text "Confirm"
                                         }
@@ -3359,17 +3347,6 @@ newrankingconfirmbutton  =
                                 ]
                             , SR.Elements.warningParagraph
                             ]
-    --                 _ -> 
-    --                     let 
-    --                         _ = Debug.log "newrankingconfirmbutton - dataState should be global" dataState
-    --                     in
-    --                         Element.text ""
-                    
-    --         _ -> 
-    --             let 
-    --                 _ = Debug.log "newrankingconfirmbutton - dataState" dataState
-    --             in
-    --                 Element.text ""
 
 
 -- confirmDelRankingBtn : SR.Types.AppInfo -> DataState -> Element Msg
@@ -4369,7 +4346,7 @@ inputNewLadderview sRankings ranking sGlobal =
                             ]
                         ]
                     ]
-                , newrankingconfirmbutton
+                , newrankingconfirmbutton sRankings ranking
                 , SR.Elements.footer
                 ]
 
