@@ -156,7 +156,7 @@ type Msg
     | ClickedUpdateExistingUser
     | ClickedConfirmedUpdateExistingUser
     | ClickedCreateNewLadder
-    | ClickedConfirmCreateNewLadder Internal.Types.RankingId
+    | ClickedConfirmCreateNewLadder
     | ClickedNewChallengeConfirm String
     | ClickedChallengeOpponent Data.Selected.UserPlayer
     | ClickedJoinSelected
@@ -1294,8 +1294,15 @@ update msg model =
         --         _ -> 
         --             (model, Cmd.none)
 
+-- Spectator UserInfo UserState
+--     | Registered UserId Token UserInfo UserState
+--     | NoWallet UserId Token UserInfo UserState
+--     | NoCredit Eth.Types.Address UserId Token UserInfo UserState
+--     | Credited Eth.Types.Address UserId Token UserInfo UserState
 
-        (ClickedConfirmCreateNewLadder rnkId,  AppOps dataState user uiState subState txRec ) ->
+        (ClickedConfirmCreateNewLadder,  AppOps (Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUserRanking globalState))) 
+            (Data.Users.Credited ethAddr userId token userInfo userState) 
+                uiState subState txRec ) ->
             (model, Cmd.none)
             -- case walletState of 
             --     SR.Types.WalletOpened ->
@@ -3331,7 +3338,7 @@ newrankingconfirmbutton  =
                                     --, Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput appInfo.selectedRanking sRankings)) <|
                                     
                                     , Input.button (Button.simple ++ Color.simple) <|
-                                        { onPress = Just <| ClickedConfirmCreateNewLadder <| Internal.Types.RankingId "1"
+                                        { onPress = Just <| ClickedConfirmCreateNewLadder
                                         , label = Element.text "Confirm"
                                         }
                                     ]
