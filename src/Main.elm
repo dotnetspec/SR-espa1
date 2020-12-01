@@ -48,6 +48,7 @@ import SR.Types
 import Bridge
 import Graphql.Http as GQLHttp
 import Data.Users
+import Data.Rankings
 
 main =
     Browser.element
@@ -156,7 +157,7 @@ type Msg
     | ClickedUpdateExistingUser
     | ClickedConfirmedUpdateExistingUser
     | ClickedCreateNewLadder
-    | ClickedConfirmCreateNewLadder
+    | ClickedConfirmCreateNewRanking
     | ClickedNewChallengeConfirm String
     | ClickedChallengeOpponent Data.Selected.UserPlayer
     | ClickedJoinSelected
@@ -720,7 +721,7 @@ update msg model =
                     let
                         newDataKind = Global <| Data.Global.GlobalRankings 
                             (Data.Global.asEverySet sGlobal) 
-                            (Data.Global.CreatingNewLadder (Data.Rankings.Ranking "" True "" Nothing userId))
+                            (Data.Global.CreatingNewRanking (Data.Rankings.Ranking "" True "" Nothing userId))
                         newDataState = Fetched sUsers sRankings newDataKind
                         newModel = 
                                 AppOps newDataState (Data.Users.Registered userId token userInfo userState)
@@ -810,7 +811,7 @@ update msg model =
         (Cancel, AppOps 
             (Fetched sUsers sRankings 
                 (Global (Data.Global.GlobalRankings esUR 
-                    (Data.Global.CreatingNewLadder _))))
+                    (Data.Global.CreatingNewRanking _))))
                         (Data.Users.Registered userId token userInfo userState)
                             uiState txRec ) ->
             let
@@ -868,20 +869,20 @@ update msg model =
 
 
         (LadderNameInputChg namefield
-            , AppOps ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder ranking)))) 
+            , AppOps ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewRanking ranking)))) 
                 user uiState txRec ) ->
             let
-                newDataKind = Global (Data.Global.asGlobalRankings esUR (Data.Global.CreatingNewLadder { ranking | rankingname = namefield } ))
+                newDataKind = Global (Data.Global.asGlobalRankings esUR (Data.Global.CreatingNewRanking { ranking | rankingname = namefield } ))
                 newDataState = Fetched sUsers sRankings newDataKind
             in
             ( AppOps newDataState user uiState emptyTxRecord, Cmd.none )
 
 
         (LadderDescInputChg descfield
-            , AppOps ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder ranking)))) 
+            , AppOps ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewRanking ranking)))) 
                 user uiState txRec ) ->
             let
-                newDataKind = Global (Data.Global.asGlobalRankings esUR (Data.Global.CreatingNewLadder { ranking | rankingdesc = Just descfield } ))
+                newDataKind = Global (Data.Global.asGlobalRankings esUR (Data.Global.CreatingNewRanking { ranking | rankingdesc = Just descfield } ))
                 newDataState = Fetched sUsers sRankings newDataKind
             in
             ( AppOps newDataState user uiState emptyTxRecord, Cmd.none )
@@ -1292,50 +1293,53 @@ update msg model =
         --             (model, Cmd.none)
 
 
-        (ClickedConfirmCreateNewLadder,  AppOps (Fetched sUsers sRankings 
-            (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewLadder ranking)))) 
+        (ClickedConfirmCreateNewRanking,  AppOps (Fetched sUsers sRankings 
+            (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
             (Data.Users.Spectator userInfo userState) 
                 uiState txRec ) ->
                 (Failure "Cannot create a ladder as a spectator", Cmd.none)
 
-        (ClickedConfirmCreateNewLadder,  AppOps (Fetched sUsers sRankings 
-            (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewLadder ranking)))) 
+        (ClickedConfirmCreateNewRanking,  AppOps (Fetched sUsers sRankings 
+            (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
             (Data.Users.Registered userId token userInfo userState) 
                 uiState txRec ) ->
                 let
-                    newDataKind = Global (Data.Global.asGlobalRankings esUserRanking (Data.Global.CreatedNewLadder ranking))
-                    newDataState = Fetched sUsers sRankings newDataKind
+                    newesRankings = Data.Rankings.addRanking ranking sRankings 
+                    newDataKind = Global (Data.Global.asGlobalRankings esUserRanking (Data.Global.CreatedNewRanking ranking))
+                    newDataState = Fetched sUsers newesRankings newDataKind
                 in
                     ( AppOps newDataState (Data.Users.Registered userId token userInfo userState)
                         uiState txRec
                             , createNewRanking ranking)
 
-        (ClickedConfirmCreateNewLadder,  AppOps (Fetched sUsers sRankings 
-            (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewLadder ranking)))) 
+        (ClickedConfirmCreateNewRanking,  AppOps (Fetched sUsers sRankings 
+            (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
             (Data.Users.NoWallet userId token userInfo userState) 
                 uiState txRec ) ->
                 let
-                    newDataKind = Global (Data.Global.asGlobalRankings esUserRanking (Data.Global.CreatedNewLadder ranking))
-                    newDataState = Fetched sUsers sRankings newDataKind
+                    newesRankings = Data.Rankings.addRanking ranking sRankings 
+                    newDataKind = Global (Data.Global.asGlobalRankings esUserRanking (Data.Global.CreatedNewRanking ranking))
+                    newDataState = Fetched sUsers newesRankings newDataKind
                 in
                     ( AppOps newDataState (Data.Users.NoWallet userId token userInfo userState)
                         uiState txRec
                             ,Cmd.none)
 
-        (ClickedConfirmCreateNewLadder,  AppOps (Fetched sUsers sRankings 
-            (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewLadder ranking)))) 
+        (ClickedConfirmCreateNewRanking,  AppOps (Fetched sUsers sRankings 
+            (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
             (Data.Users.NoCredit ethAddr userId token userInfo userState) 
                 uiState txRec ) ->
                 let
-                    newDataKind = Global (Data.Global.asGlobalRankings esUserRanking (Data.Global.CreatedNewLadder ranking))
-                    newDataState = Fetched sUsers sRankings newDataKind
+                    newesRankings = Data.Rankings.addRanking ranking sRankings 
+                    newDataKind = Global (Data.Global.asGlobalRankings esUserRanking (Data.Global.CreatedNewRanking ranking))
+                    newDataState = Fetched sUsers newesRankings newDataKind
                 in
                     ( AppOps newDataState (Data.Users.NoCredit ethAddr userId token userInfo userState)
                         uiState txRec
                             ,Cmd.none)
 
-        (ClickedConfirmCreateNewLadder,  AppOps (Fetched sUsers sRankings 
-            (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewLadder ranking)))) 
+        (ClickedConfirmCreateNewRanking,  AppOps (Fetched sUsers sRankings 
+            (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
             (Data.Users.Credited ethAddr userId token userInfo userState) 
                 uiState txRec ) ->
                 let
@@ -1358,9 +1362,9 @@ update msg model =
                             }
                             txParams
                 
-                    newDataKind = Global (Data.Global.asGlobalRankings esUserRanking (Data.Global.CreatedNewLadder ranking))
-                    newDataState = Fetched sUsers sRankings newDataKind
-                    
+                    newesRankings = Data.Rankings.addRanking ranking sRankings 
+                    newDataKind = Global (Data.Global.asGlobalRankings esUserRanking (Data.Global.CreatedNewRanking ranking))
+                    newDataState = Fetched sUsers newesRankings newDataKind
                 in
                     ( AppOps newDataState (Data.Users.Credited ethAddr userId token userInfo 
                     --Data.Users.WalletWaitingForTransactionReceipt
@@ -2601,11 +2605,11 @@ view model =
                         Data.Users.Updating) ->
                             registerNewUserView user sUsers
 
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewLadder _ )))
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewRanking _ )))
                     , Data.Users.Spectator _ Data.Users.General ) ->
                     Html.text ("Not yet implemented")
                 
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder ranking)))
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewRanking ranking)))
                     , Data.Users.Spectator _ Data.Users.General ) ->
                     Html.text ("Not yet implemented")
 
@@ -2620,17 +2624,17 @@ view model =
                             user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Not found. Register?:"
                 
                 ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR 
-                    (Data.Global.CreatingNewLadder _ )))
+                    (Data.Global.CreatingNewRanking _ )))
                     , Data.Users.Spectator _ Data.Users.LoginError ) ->
                         generalLoginView
                             user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Please register \nto create a new ladder:"
 
                 ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR 
-                    (Data.Global.CreatingNewLadder ranking)))
+                    (Data.Global.CreatingNewRanking ranking)))
                     , (Data.Users.Registered _ _ _ _) as userVal ) ->
                         inputNewLadderview sRankings ranking userVal
                 
-                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder ranking)))
+                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewRanking ranking)))
                     , Data.Users.Spectator _ Data.Users.LoginError ) ->
                         generalLoginView
                             user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Please register \nto create a new ladder:"
@@ -2645,11 +2649,11 @@ view model =
 
                 
 
-                ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder ranking)))
+                ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewRanking ranking)))
                     , Data.Users.Registered userId token userInfo userState ) ->
                     generalLoggedInView 
                         (Data.Users.Registered userId token userInfo userState) sUsers 
-                            (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewLadder ranking))
+                            (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewRanking ranking))
 
                 ( Fetched sUsers sRankings  (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayLoggedIn)), userVal) ->
                     generalLoggedInView 
@@ -2669,9 +2673,9 @@ view model =
                     Html.text ("User Updated")
                 ( Fetched _ _ (Global (Data.Global.GlobalRankings _ Data.Global.DisplayGlobalOnly)), Data.Users.Spectator _ Data.Users.Updated ) ->
                     Html.text ("User Updated")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatingNewLadder _ ))), Data.Users.Spectator _ Data.Users.Updated ) ->
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatingNewRanking _ ))), Data.Users.Spectator _ Data.Users.Updated ) ->
                     Html.text ("User Updated")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatedNewLadder ranking))), Data.Users.Spectator _ Data.Users.Updated ) ->
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatedNewRanking ranking))), Data.Users.Spectator _ Data.Users.Updated ) ->
                     Html.text ("User Updated")
                 
         
@@ -2689,10 +2693,10 @@ view model =
                 ( Fetched _ _ (Global (Data.Global.GlobalRankings _ Data.Global.DisplayGlobalOnly)), Data.Users.Spectator _ _ ) ->
                      Html.text ("Not yet implemented")
                 
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatingNewLadder _ ))), Data.Users.Spectator _ _ ) ->
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatingNewRanking _ ))), Data.Users.Spectator _ _ ) ->
                     Html.text ("Not yet implemented")
                 
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatedNewLadder ranking))), Data.Users.Spectator _ _ ) ->
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings _ (Data.Global.CreatedNewRanking ranking))), Data.Users.Spectator _ _ ) ->
                      Html.text ("Not yet implemented")
                 
 
@@ -3484,7 +3488,7 @@ joinBtn user  =
 --                                         }
 --                                     -- , Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput appInfo.selectedRanking (Data.Global.asList sGlobal))) <|
                                         
---                                     --     { onPress = Just <| ClickedConfirmCreateNewLadder
+--                                     --     { onPress = Just <| ClickedConfirmCreateNewRanking
 --                                     --     , label = Element.text "Confirm"
 --                                     --     }
 --                                     ]
@@ -4435,7 +4439,7 @@ inputNewLadderview sRankings ranking user =
                         [ Element.wrappedRow Grid.simple <|
                             [infoBtn "Cancel" Cancel
                             , Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput ranking sRankings)) <|
-                                { onPress = Just <| ClickedConfirmCreateNewLadder
+                                { onPress = Just <| ClickedConfirmCreateNewRanking
                                 , label = Element.text "Confirm"
                                 }
                             ]
@@ -4671,7 +4675,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
         AppOps (Fetched sUsers sRankings 
-            (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewLadder ranking)))) 
+            (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
             (Data.Users.Credited ethAddr userId token userInfo userState) 
                 uiState txRec ->
                     Sub.batch
