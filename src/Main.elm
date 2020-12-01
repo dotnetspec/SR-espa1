@@ -2699,40 +2699,83 @@ view model =
                 
 
                 -- Selected
-                (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId 
-                    Data.Selected.UserIsOwner 
-                        sPlayers selectedState name)), _) ->
-                            Framework.responsiveLayout [] <| Element.column Framework.container
-                                [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner " --++ userInfo.username
-                                , Element.el Heading.h6 <| Element.text "Click to continue ..."
+                (Fetched sUsers sRankings 
+                    (Selected sSelected), Data.Users.Spectator _ _ ) ->
+                        Framework.responsiveLayout [] <| Element.column Framework.container
+                            [ Element.el Heading.h4 <| Element.text <| "SportRank - Spectator "
+                            , infoBtn "Cancel" Cancel
+                            , Element.text "\n"
+                            , playerbuttons sSelected        
+                                sUsers user
+                            ]
+                
+                ( Fetched sUsers sRankings 
+                    (Selected (Data.Selected.SelectedRanking esUP rnkId 
+                                        Data.Selected.UserIsOwner 
+                                        sPlayers selectedState name)  )
+                                        , Data.Users.Registered userId token userInfo userState ) ->
+                    Framework.responsiveLayout [] <| Element.column Framework.container
+                                [ Element.el Heading.h4 <| Element.text <| "SportRank - " ++ userInfo.username
                                 , playerbuttons (Data.Selected.SelectedRanking esUP rnkId 
                                         Data.Selected.UserIsOwner 
-                                        sPlayers selectedState name)           
-                                    sUsers user
+                                        sPlayers selectedState name)   
+                                -- , playerbuttons sSelected        
+                                     sUsers user
                                 , infoBtn "Delete" ClickedDeleteRanking
                                 , Element.text "\n"
                                 , infoBtn "Cancel" Cancel
                                 ]
 
-                (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId 
-                    Data.Selected.UserIsMember sPlayers selectedState name)), _) ->
-                    Framework.responsiveLayout [] <| Element.column Framework.container
-                        [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " --++ userInfo.username
-                        , Element.el Heading.h6 <| Element.text "Click to continue ..."
-                    --, playerbuttons dataState appInfo
-                        , infoBtn "Home1" Cancel
-                        ]
+                ( Fetched _ _ (Selected (Data.Selected.SelectedRanking _ _ Data.Selected.UserIsMember _ _ _)), Data.Users.Registered _ _ _ _ ) ->
+                    Html.text "selected user"
+                ( Fetched _ _ (Selected (Data.Selected.SelectedRanking _ _ Data.Selected.UserIsNeitherOwnerNorMember _ _ _)), Data.Users.Registered _ _ _ _ ) ->
+                    Html.text "selected user"
 
-                (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId 
-                    Data.Selected.UserIsNeitherOwnerNorMember sPlayers selectedState name)), _) ->
-                    Framework.responsiveLayout [] <| Element.column Framework.container
-                        [ Element.el Heading.h4 <| Element.text <| "SportRank - Spectator " --++ userInfo.username
-                        , Element.el Heading.h6 <| Element.text "Click to continue ..."
-                        --, playerbuttons dataState sSelected
+                ( Fetched _ _ (Selected _), Data.Users.NoWallet _ _ _ _ ) ->
+                    Html.text "selected user"
+
+                ( Fetched _ _ (Selected _), Data.Users.NoCredit _ _ _ _ _ ) ->
+                    Html.text "selected user"
+
+                ( Fetched _ _ (Selected _), Data.Users.Credited _ _ _ _ _ ) ->
+                    Html.text "selected user"
+
+
+
+                -- (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId 
+                --     Data.Selected.UserIsOwner 
+                --         sPlayers selectedState name)), _) ->
+                --             Framework.responsiveLayout [] <| Element.column Framework.container
+                --                 [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner " --++ userInfo.username
+                --                 , Element.el Heading.h6 <| Element.text "Click to continue ..."
+                --                 , playerbuttons (Data.Selected.SelectedRanking esUP rnkId 
+                --                         Data.Selected.UserIsOwner 
+                --                         sPlayers selectedState name)           
+                --                     sUsers user
+                --                 , infoBtn "Delete" ClickedDeleteRanking
+                --                 , Element.text "\n"
+                --                 , infoBtn "Cancel" Cancel
+                --                 ]
+
+                -- (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId 
+                --     Data.Selected.UserIsMember sPlayers selectedState name)), _) ->
+                --     Framework.responsiveLayout [] <| Element.column Framework.container
+                --         [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " --++ userInfo.username
+                --         , Element.el Heading.h6 <| Element.text "Click to continue ..."
+                --     --, playerbuttons dataState appInfo
+                --         , infoBtn "Home1" Cancel
+                --         ]
+
+                -- (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId 
+                --     Data.Selected.UserIsNeitherOwnerNorMember sPlayers selectedState name)), _) ->
+                --     Framework.responsiveLayout [] <| Element.column Framework.container
+                --         [ Element.el Heading.h4 <| Element.text <| "SportRank - Spectator " --++ userInfo.username
+                --         , Element.el Heading.h6 <| Element.text "Click to continue ..."
+                --         --, playerbuttons dataState sSelected
                         
-                        , joinBtn user
-                        , infoBtn "Home2" Cancel
-                        ]
+                --         , joinBtn user
+                --         , infoBtn "Home2" Cancel
+                --         ]
 
 
                 (Updated _ _ _, _) ->
