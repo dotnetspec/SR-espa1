@@ -152,6 +152,7 @@ type Msg
     ClickedSelectedOwnedRanking Internal.Types.RankingId String String
     | ClickedSelectedMemberRanking Internal.Types.RankingId String String
     | ClickedSelectedNeitherOwnerNorMember Internal.Types.RankingId String String
+    | ClickedSelectedRanking Internal.Types.RankingId String String
     | ClickedRegister
     | ClickedConfirmedRegisterNewUser
     | ClickedUpdateExistingUser
@@ -456,51 +457,25 @@ update msg model =
                 in
                     ( AppOps newDataState user SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )
 
-        (ClickedSelectedOwnedRanking rnkidstr rnkownerstr rnknamestr, AppOps dataState user uiState txRec )  ->
-            let
-                _ = Debug.log "selected ranking is : " rnkidstr
-            in
-            case dataState of 
-                Fetched sUsers sRankings dKind ->
-                        case dKind of 
-                            Global sGlobal  ->
-                                let                                                     
-                                    -- newAppInfo =
-                                    --     createSelectedOnRankingSelected rnkidstr rnkownerstr rnknamestr
+        (ClickedSelectedRanking rnkidstr rnkownerstr rnknamestr, AppOps 
+            (Fetched sUsers sRankings _) 
+                (Data.Users.Spectator userInfo Data.Users.General) uiState txRec ) ->
+                    let                                                     
+                        newDataKind = Selected (Data.Selected.created [] sUsers rnkidstr "")
+                        newDataState = Fetched sUsers sRankings newDataKind
+                    in
+                        ( AppOps newDataState (Data.Users.Spectator userInfo Data.Users.General) SR.Types.UIEnterResultTxProblem emptyTxRecord, 
+                        fetchedSingleRanking rnkidstr )
 
-                                    newDataKind = Selected (Data.Selected.created [] sUsers rnkidstr)
-                                    newDataState = Fetched sUsers sRankings newDataKind
-                            
-                                in
-                                --WalletWaitingForTransactionReceipt just for rf
-                                    ( AppOps  newDataState user SR.Types.UIEnterResultTxProblem emptyTxRecord, 
-                                    fetchedSingleRanking rnkidstr )
-
-                            _ ->
-                                (model, Cmd.none)
-
-                -- you may have just done an update, we can re-set to Fetched here         
-                Updated sUsers sRankings dKind ->
-                        case dKind of 
-                            Global sGlobal  ->
-                                        let
-                                            newAppInfo =
-                                                createSelectedOnRankingSelected rnkidstr rnkownerstr rnknamestr
-
-                                            --todo: replace with real players
-                                            newDataKind = Selected (Data.Selected.created [] sUsers rnkidstr)
-                                        
-                                            newDataState = Fetched sUsers sRankings newDataKind
-                                    
-                                        in
-                                        --WalletWaitingForTransactionReceipt just to compile
-                                            ( AppOps  newDataState user SR.Types.UIEnterResultTxProblem emptyTxRecord, 
-                                            fetchedSingleRanking rnkidstr )
-
-                            _ ->
-                                (model, Cmd.none)
-                AllEmpty ->
-                    (model, Cmd.none)
+        (ClickedSelectedRanking rnkidstr rnkownerstr rnknamestr, AppOps 
+            (Fetched sUsers sRankings _) 
+                (Data.Users.Registered userId token userInfo Data.Users.General) uiState txRec ) ->
+                    let                                                     
+                        newDataKind = Selected (Data.Selected.created [] sUsers rnkidstr rnknamestr)
+                        newDataState = Fetched sUsers sRankings newDataKind
+                    in
+                        ( AppOps newDataState (Data.Users.Registered userId token userInfo Data.Users.General) SR.Types.UIEnterResultTxProblem emptyTxRecord, 
+                        fetchedSingleRanking rnkidstr )
 
 
         (ClickedSelectedMemberRanking rnkidstr rnkownerstr rnknamestr, AppOps dataState user uiState txRec ) ->
@@ -519,7 +494,7 @@ update msg model =
 
                                         --newDataKind = Selected Data.Selected.empty (Internal.Types.RankingId "") appInfo.user Data.Selected.UserIsMember (Data.Players.empty)
                                         --todo: we need to get the list of players from fauna
-                                        newDataKind = Selected (Data.Selected.created [] sUsers rnkidstr)
+                                        newDataKind = Selected (Data.Selected.created [] sUsers rnkidstr "")
                                         --todo: replace with real players
                                         newDataState = Fetched sUsers sRankings newDataKind
                                     in
@@ -545,7 +520,7 @@ update msg model =
                         
                         --newDataKind = Selected Data.Selected.empty rnkidstr appInfo.user Data.Selected.UserIsNeitherOwnerNorMember (Data.Global.asRankings sGlobal)
                         
-                        newsSelected = Data.Selected.created [] sUsers rnkidstr
+                        newsSelected = Data.Selected.created [] sUsers rnkidstr ""
                         newDataKind = Selected newsSelected
                         newDataState = Fetched sUsers sRankings newDataKind
                     in
@@ -802,7 +777,7 @@ update msg model =
         (Cancel, AppOps 
             (Fetched sUsers sRankings 
                 (Selected (Data.Selected.SelectedRanking playerUP rnkId _ _ 
-                    Data.Selected.DisplayRanking ))) 
+                    Data.Selected.DisplayRanking name ))) 
                         user uiState txRec ) ->
                         let
                             -- rf?: currently having to re-create Global here
@@ -816,26 +791,14 @@ update msg model =
         (Cancel, AppOps 
             (Fetched sUsers sRankings 
                 (Selected (Data.Selected.SelectedRanking playerUP rnkId selectedOwnerStatus sPlayers 
-                    Data.Selected.CreatingChallenge ))) 
+                    Data.Selected.CreatingChallenge name))) 
                         user uiState txRec ) ->
                         let
-                            newDataKind = Selected    <| (Data.Selected.SelectedRanking playerUP rnkId selectedOwnerStatus sPlayers Data.Selected.DisplayRanking)   
+                            newDataKind = Selected    <| (Data.Selected.SelectedRanking playerUP rnkId selectedOwnerStatus sPlayers Data.Selected.DisplayRanking name)   
                             newDataState = Fetched sUsers sRankings newDataKind
                         in
                             -- UIEnterResultTxProblem is deliberately wrong - remove eventually
                             ( AppOps newDataState user SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )
-
-        -- (Cancel, AppOps 
-        --     (Fetched sUsers sRankings 
-        --         (Selected (Data.Selected.SelectedRanking playerUP rnkId selectedOwnerStatus sPlayers 
-        --             Data.Selected.DisplayRanking ))) 
-        --                 user uiState txRec ) ->
-        --                 let
-        --                     newDataKind = Selected    <| (Data.Selected.SelectedRanking playerUP rnkId selectedOwnerStatus sPlayers Data.Selected.DisplayRanking)   
-        --                     newDataState = Fetched sUsers sRankings newDataKind
-        --                 in
-        --                     -- UIEnterResultTxProblem is deliberately wrong - remove eventually
-        --                     ( AppOps newDataState user SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )
         
         (Cancel, AppOps 
             (Fetched sUsers sRankings 
@@ -1014,7 +977,7 @@ update msg model =
                                 (Data.Users.Registered userId token userInfo userState) ->
                                     let 
                                         newsUsers = Data.Users.updatedUserInSet sUsers user
-                                            --(Data.Users.removedRankindIdFromUser (Data.Rankings.stringFromRankingId (Data.Selected.gotRankingId sSelected)) appInfo.user)
+                                            --(Data.Users.removedRankindIdFromUser (Data.Rankings.stringFromRankingId  "" appInfo.user)
                                          
                                         --removedRanking = Data.Rankings.removedById rnkId sRanking
                                         --todo: replace with a real set of rankings
@@ -1063,7 +1026,7 @@ update msg model =
                                     
                                     txRec
                                 , 
-                                    --httpDeleteSelectedRankingFromJsonBin (Data.Rankings.stringFromRankingId (Data.Selected.gotRankingId sSelected))
+                                    --httpDeleteSelectedRankingFromJsonBin (Data.Rankings.stringFromRankingId  ""
                                     -- todo: fix for fauna
                                     Cmd.none
                             )
@@ -1544,7 +1507,7 @@ update msg model =
             --                                      ( updateSelectedRankingPlayerList model convertedToUserPlayers
             --                                      -- todo: fix:
             --                                     , httpUpdateUsersJoinRankings "" user newUserList)
-            --                                     --(Data.Rankings.stringListToRankingIdList (Data.Selected.gotRankingId sSelected)) 
+            --                                     --(Data.Rankings.stringListToRankingIdList  "" 
                                                 
                                 
             --                                 (Data.Users.NoWallet userId token userInfo userState) ->
@@ -1633,7 +1596,7 @@ update msg model =
                         --nb. 'Selected' is a variant defined in Main (just a box or label), it is NOT a Set
                         -- you're only specifying it to distinguish from Global as a dKind
                         -- sSelected is the variable you're pattern matching on here
-                            (Selected  (Data.Selected.SelectedRanking sSelected rnkId ownerStatus sPlayers (Data.Selected.EnteredResult resultEntered) ))) ->
+                            (Selected  (Data.Selected.SelectedRanking sSelected rnkId ownerStatus sPlayers (Data.Selected.EnteredResult resultEntered) name ))) ->
                             case resultEntered of 
                                 Data.Selected.Won _ _ ->
                                     (AppOps dataState user SR.Types.UIWaitingForTxReceipt 
@@ -1920,13 +1883,13 @@ updateWithReceivedPlayersByRankingId model response =
         (AppOps (Updated sUsers sRankings dKind) user uiState txRec, Ok lplayers) ->
             (Failure "updateWithReceivedPlayersByRankingId13")
 
-        ( AppOps (Fetched sUsers sRankings ((Selected (Data.Selected.SelectedRanking esUP rnkId ownerStatus sPlayers result)))) user uiState txRec, Ok lplayers ) ->
+        ( AppOps (Fetched sUsers sRankings ((Selected (Data.Selected.SelectedRanking esUP rnkId ownerStatus sPlayers result name)))) user uiState txRec, Ok lplayers ) ->
             let
                 --filteredFPlayerList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lplayers)
                 lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer lplayers
                 --newsplayers = Data.Players.asPlayers (EverySet.fromList lFromFToPlayer)
                 -- todo: change createdSelected to accept a Set instead of a list
-                newsSelected = Data.Selected.created lFromFToPlayer sUsers rnkId
+                newsSelected = Data.Selected.created lFromFToPlayer sUsers rnkId name
                 newDataKind = Selected newsSelected
                 newDataState = Fetched sUsers sRankings newDataKind
             in
@@ -2026,7 +1989,7 @@ updateWithReceivedPlayers model response =
                         lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer filteredFPlayerList
                         --newSPlayers = Data.Players.asPlayers (EverySet.fromList lFromFToPlayer)
                         _ = Debug.log "players" lFromFToPlayer
-                        newDataKind = Selected (Data.Selected.created lFromFToPlayer sUsers (Internal.Types.RankingId "280892229782864389") ) -- i.e. rnkId
+                        newDataKind = Selected (Data.Selected.created lFromFToPlayer sUsers (Internal.Types.RankingId "280892229782864389") "") -- i.e. rnkId
                         newDataState = Fetched sUsers sRankings newDataKind
                     in
                         AppOps newDataState user uiState txRec
@@ -2134,7 +2097,7 @@ createNewRankingResponse model response =
                             user = Data.Users.Registered userId token userInfo userState})
 
                     newDataKind = Selected 
-                        <| (Data.Selected.SelectedRanking firstUserPlayer (Internal.Types.RankingId newRanking.id_) Data.Selected.UserIsOwner Data.Players.empty Data.Selected.DisplayRanking )
+                        <| (Data.Selected.SelectedRanking firstUserPlayer (Internal.Types.RankingId newRanking.id_) Data.Selected.UserIsOwner Data.Players.empty Data.Selected.DisplayRanking newRanking.rankingname )
                     newDataState = Fetched sUsers sRankings newDataKind
                 in 
                     AppOps newDataState  (Data.Users.Registered userId token userInfo userState) uiState txRec
@@ -2147,7 +2110,7 @@ createNewRankingResponse model response =
                             user = Data.Users.Registered userId token userInfo userState})
 
                     newDataKind = Selected 
-                        <| (Data.Selected.SelectedRanking firstUserPlayer (Internal.Types.RankingId newRanking.id_) Data.Selected.UserIsOwner Data.Players.empty Data.Selected.DisplayRanking )
+                        <| (Data.Selected.SelectedRanking firstUserPlayer (Internal.Types.RankingId newRanking.id_) Data.Selected.UserIsOwner Data.Players.empty Data.Selected.DisplayRanking newRanking.rankingname )
                     newDataState = Fetched sUsers sRankings newDataKind
                 in 
                     AppOps newDataState  (Data.Users.Registered userId token userInfo userState) uiState txRec
@@ -2160,7 +2123,7 @@ createNewRankingResponse model response =
                             user = Data.Users.Registered userId token userInfo userState})
 
                     newDataKind = Selected 
-                        <| (Data.Selected.SelectedRanking firstUserPlayer (Internal.Types.RankingId newRanking.id_) Data.Selected.UserIsOwner Data.Players.empty Data.Selected.DisplayRanking )
+                        <| (Data.Selected.SelectedRanking firstUserPlayer (Internal.Types.RankingId newRanking.id_) Data.Selected.UserIsOwner Data.Players.empty Data.Selected.DisplayRanking newRanking.rankingname )
                     newDataState = Fetched sUsers sRankings newDataKind
                 in 
                     AppOps newDataState  (Data.Users.Registered userId token userInfo userState) uiState txRec
@@ -2173,7 +2136,7 @@ createNewRankingResponse model response =
                             user = Data.Users.Registered userId token userInfo userState})
 
                     newDataKind = Selected 
-                        <| (Data.Selected.SelectedRanking firstUserPlayer (Internal.Types.RankingId newRanking.id_) Data.Selected.UserIsOwner Data.Players.empty Data.Selected.DisplayRanking )
+                        <| (Data.Selected.SelectedRanking firstUserPlayer (Internal.Types.RankingId newRanking.id_) Data.Selected.UserIsOwner Data.Players.empty Data.Selected.DisplayRanking newRanking.rankingname )
                     newDataState = Fetched sUsers sRankings newDataKind
                 in 
                     AppOps newDataState  (Data.Users.Registered userId token userInfo userState) uiState txRec
@@ -2564,7 +2527,7 @@ updateSelectedRankingPlayerList model luplayers =
                             let 
                             --todo: I think this means we lose the update - need to do differently ...
                                 newDataKind = Selected (Data.Selected.created (Data.Selected.convertUserPlayersToPlayers luplayers) sUsers
-                                    (Data.Selected.gotRankingId sSelected))
+                                    (Data.Selected.gotRankingId sSelected) "")
                                 newDataState = Updated sUsers sRankings newDataKind 
                             in
                                 AppOps newDataState user uiState txRec
@@ -2737,13 +2700,13 @@ view model =
                 -- Selected
                 (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId 
                     Data.Selected.UserIsOwner 
-                        sPlayers selectedState)), _) ->
+                        sPlayers selectedState name)), _) ->
                             Framework.responsiveLayout [] <| Element.column Framework.container
                                 [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner " --++ userInfo.username
                                 , Element.el Heading.h6 <| Element.text "Click to continue ..."
                                 , playerbuttons (Data.Selected.SelectedRanking esUP rnkId 
                                         Data.Selected.UserIsOwner 
-                                        sPlayers selectedState)           
+                                        sPlayers selectedState name)           
                                     sUsers user
                                 , infoBtn "Delete" ClickedDeleteRanking
                                 , Element.text "\n"
@@ -2751,7 +2714,7 @@ view model =
                                 ]
 
                 (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId 
-                    Data.Selected.UserIsMember sPlayers selectedState)), _) ->
+                    Data.Selected.UserIsMember sPlayers selectedState name)), _) ->
                     Framework.responsiveLayout [] <| Element.column Framework.container
                         [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " --++ userInfo.username
                         , Element.el Heading.h6 <| Element.text "Click to continue ..."
@@ -2760,7 +2723,7 @@ view model =
                         ]
 
                 (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId 
-                    Data.Selected.UserIsNeitherOwnerNorMember sPlayers selectedState)), _) ->
+                    Data.Selected.UserIsNeitherOwnerNorMember sPlayers selectedState name)), _) ->
                     Framework.responsiveLayout [] <| Element.column Framework.container
                         [ Element.el Heading.h4 <| Element.text <| "SportRank - Spectator " --++ userInfo.username
                         , Element.el Heading.h6 <| Element.text "Click to continue ..."
@@ -3280,7 +3243,7 @@ ownedRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
 ownedRankingInfoBtn rankingobj =
     Element.column Grid.simple <|
         [ Input.button (Button.fill ++ Color.primary) <|
-            { onPress = Just (ClickedSelectedOwnedRanking (Internal.Types.RankingId rankingobj.id_) rankingobj.rankingownerid rankingobj.rankingname)
+            { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId rankingobj.id_) rankingobj.rankingownerid rankingobj.rankingname)
             , label = Element.text rankingobj.rankingname
             }
         ]
@@ -3327,8 +3290,9 @@ playerbuttons : Data.Selected.Selected -> Data.Users.Users -> Data.Users.User ->
 playerbuttons selectedRanking sUsers user =
     --case selectedRanking (SelectedRanking (EverySet UserPlayer) Internal.Types.RankingId SelectedOwnerStatus Data.Players.Players SelectedState)
     Element.column Grid.section <|
-        [ SR.Elements.selectedRankingHeaderEl <| Data.Rankings.Ranking "" False "Ranking name here" Nothing ""
-
+        [ 
+            -- SR.Elements.selectedRankingHeaderEl <| Data.Rankings.Ranking "" False selectedRanking.ranking.rankingname Nothing ""
+        SR.Elements.selectedRankingHeaderEl <| selectedRanking
         , Element.column (Card.simple ++ Grid.simple) <|
             List.map (configureThenAddPlayerRankingBtns selectedRanking sUsers user)
                 (Data.Selected.asList selectedRanking)
