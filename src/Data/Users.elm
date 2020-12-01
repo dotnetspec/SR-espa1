@@ -71,6 +71,7 @@ type User =
 
 type UserState = 
     General
+    | CreatingNew
     | Updating
     | Updated
     | LoginError

@@ -318,7 +318,7 @@ update msg model =
                 
         -- the only user UserState can be in here is General:
         (ClickedRegister, AppOps dataState user uiState txRec ) ->
-            (AppOps dataState (Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.Updating) uiState txRec, Cmd.none)
+            (AppOps dataState (Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.CreatingNew) uiState txRec, Cmd.none)
             --(AppOps dataState (Data.Users.Registered "" "" Data.Users.emptyUserInfo Data.Users.Updating) uiState txRec, Cmd.none)
 
         (PlayersReceived response, AppOps dataState user uiState txRec )  ->
@@ -735,6 +735,23 @@ update msg model =
             (Fetched sUsers sRankings 
                 (Global sGlobal))
                     (Data.Users.Spectator userInfo Data.Users.Updating) 
+                        uiState txRec ) ->
+                        let
+                            -- rf?: currently having to re-create Global here
+                            newDataKind = Global    <| Data.Global.GlobalRankings (Data.Global.asEverySet 
+                                                    <| Data.Global.created sRankings sUsers) Data.Global.DisplayLoggedIn
+                            newDataState = Fetched sUsers sRankings newDataKind
+
+                        in
+                            ( AppOps 
+                               newDataState
+                                    (Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General) 
+                                        SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )
+
+        (Cancel, AppOps 
+            (Fetched sUsers sRankings 
+                (Global sGlobal))
+                    (Data.Users.Spectator userInfo Data.Users.CreatingNew) 
                         uiState txRec ) ->
                         let
                             -- rf?: currently having to re-create Global here
@@ -2603,7 +2620,12 @@ view model =
                 (Fetched sUsers sRankings dKind, 
                     Data.Users.Spectator userInfo 
                         Data.Users.Updating) ->
-                            registerNewUserView user sUsers
+                            Html.text ("Spectator cannot update!")
+
+                (Fetched sUsers sRankings dKind, 
+                    Data.Users.Spectator userInfo 
+                        Data.Users.CreatingNew) ->
+                            inputUserDetailsView (Fetched sUsers sRankings dKind) user
 
                 ( Fetched _ _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewRanking _ )))
                     , Data.Users.Spectator _ Data.Users.General ) ->
@@ -2767,7 +2789,7 @@ generalLoginView userVal sUsers sGlobal errorMsg =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome Spectator")
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal errorMsg
+                    , displayForRegisteredUser userVal sGlobal errorMsg
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Spectator userInfo userState)))
                 ]
         (Data.Users.Registered userId token userInfo userState) ->
@@ -2777,7 +2799,7 @@ generalLoginView userVal sUsers sGlobal errorMsg =
                     , displayEnableEthereumBtn
                     , Element.text ("\n")
                     , displayCreateNewRankingBtn
-                    , displayForToken userVal sGlobal errorMsg
+                    , displayForRegisteredUser userVal sGlobal errorMsg
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
         (Data.Users.NoWallet userId token userInfo userState) ->
@@ -2785,7 +2807,7 @@ generalLoginView userVal sUsers sGlobal errorMsg =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal errorMsg
+                    , displayForRegisteredUser userVal sGlobal errorMsg
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
@@ -2793,7 +2815,7 @@ generalLoginView userVal sUsers sGlobal errorMsg =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal errorMsg
+                    , displayForRegisteredUser userVal sGlobal errorMsg
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
         (Data.Users.Credited addr userId token userInfo userState) ->
@@ -2801,7 +2823,7 @@ generalLoginView userVal sUsers sGlobal errorMsg =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal errorMsg
+                    , displayForRegisteredUser userVal sGlobal errorMsg
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
 
@@ -2815,7 +2837,7 @@ generalLoggedInView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome Spectator")
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal ""
+                    , displayForRegisteredUser userVal sGlobal ""
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Spectator userInfo userState)))
                 ]
         (Data.Users.Registered userId token userInfo userState) ->
@@ -2825,7 +2847,7 @@ generalLoggedInView userVal sUsers sGlobal =
                     , displayEnableEthereumBtn
                     , Element.text ("\n")
                     , displayCreateNewRankingBtn
-                    , displayForToken userVal sGlobal ""
+                    , displayForRegisteredUser userVal sGlobal ""
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
         (Data.Users.NoWallet userId token userInfo userState) ->
@@ -2833,7 +2855,7 @@ generalLoggedInView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal ""
+                    , displayForRegisteredUser userVal sGlobal ""
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
@@ -2841,7 +2863,7 @@ generalLoggedInView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal ""
+                    , displayForRegisteredUser userVal sGlobal ""
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
         (Data.Users.Credited addr userId token userInfo userState) ->
@@ -2849,7 +2871,7 @@ generalLoggedInView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal ""
+                    , displayForRegisteredUser userVal sGlobal ""
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
 
@@ -2863,7 +2885,7 @@ globalOnlyView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome Spectator")
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal ""
+                    , displayForRegisteredUser userVal sGlobal ""
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Spectator userInfo userState)))
                 ]
         (Data.Users.Registered userId token userInfo userState) ->
@@ -2880,7 +2902,7 @@ globalOnlyView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal ""
+                    , displayForRegisteredUser userVal sGlobal ""
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
@@ -2888,7 +2910,7 @@ globalOnlyView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal ""
+                    , displayForRegisteredUser userVal sGlobal ""
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
         (Data.Users.Credited addr userId token userInfo userState) ->
@@ -2896,118 +2918,118 @@ globalOnlyView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForToken userVal sGlobal ""
+                    , displayForRegisteredUser userVal sGlobal ""
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
 
 
 
-registerNewUserView : Data.Users.User -> Data.Users.Users -> Html Msg 
-registerNewUserView userVal sUsers = 
-    case userVal of
-        Data.Users.Spectator userInfo userState ->
-            Framework.responsiveLayout [] <|
-            Element.column Grid.section <|
-                [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-                , Element.wrappedRow (Card.fill ++ Grid.simple)
-                    [ Element.column
-                        Grid.simple
-                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                            { onChange = UserNameInputChg
-                            , text = userInfo.username
-                            , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
-                            }
-                        , nameValidView userInfo sUsers
-                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                            { onChange = UserPasswordInputChg
-                            , text = userInfo.password
-                            , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password*")
-                            }
-                        , passwordValidView userInfo
-                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
-                            { onChange = UserDescInputChg
-                            , text = userInfo.extrauserinfo.description
-                            , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
-                            }
-                        , userDescValidationErr userInfo.extrauserinfo.description
-                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
-                            { onChange = UserEmailInputChg
-                            , text = userInfo.extrauserinfo.email
-                            , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
-                            }
-                        , emailValidationErr userInfo.extrauserinfo.email
-                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
-                            { onChange = UserMobileInputChg
-                            , text = Utils.Validation.Validate.validatedMaxTextLength userInfo.extrauserinfo.mobile 25
-                            , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile \n(inc. Int code\neg.+65)")
-                            }
-                        , mobileValidationErr userInfo.extrauserinfo.mobile
-                        ]
-                    ]
-                , Element.text "* required"
-                , SR.Elements.justParasimpleUserInfoText
-                , userDetailsConfirmPanel userVal sUsers
-                ]
-        (Data.Users.Registered userId token userInfo userState) ->
-            Framework.responsiveLayout [] <|
-            Element.column Grid.section <|
-                [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-                , Element.wrappedRow (Card.fill ++ Grid.simple)
-                    [ Element.column
-                        Grid.simple
-                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                            { onChange = UserNameInputChg
-                            , text = userInfo.username
-                            , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
-                            }
-                        , nameValidView userInfo sUsers
-                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                            { onChange = UserPasswordInputChg
-                            , text = userInfo.password
-                            , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password*")
-                            }
-                        , passwordValidView userInfo
-                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
-                            { onChange = UserDescInputChg
-                            , text = userInfo.extrauserinfo.description
-                            , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
-                            }
-                        , userDescValidationErr userInfo.extrauserinfo.description
-                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
-                            { onChange = UserEmailInputChg
-                            , text = userInfo.extrauserinfo.email
-                            , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
-                            }
-                        , emailValidationErr userInfo.extrauserinfo.email
-                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
-                            { onChange = UserMobileInputChg
-                            , text = Utils.Validation.Validate.validatedMaxTextLength userInfo.extrauserinfo.mobile 25
-                            , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile \n(inc. Int code\n e.g.+65)")
-                            }
-                        , mobileValidationErr userInfo.extrauserinfo.mobile
-                        ]
-                    ]
-                , Element.text "* required"
-                , SR.Elements.justParasimpleUserInfoText
-                , userDetailsConfirmPanel userVal sUsers
-                ]
+-- registerNewUserView : Data.Users.User -> Data.Users.Users -> Html Msg 
+-- registerNewUserView userVal sUsers = 
+--     case userVal of
+--         Data.Users.Spectator userInfo userState ->
+--             Framework.responsiveLayout [] <|
+--             Element.column Grid.section <|
+--                 [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+--                 , Element.wrappedRow (Card.fill ++ Grid.simple)
+--                     [ Element.column
+--                         Grid.simple
+--                         [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+--                             { onChange = UserNameInputChg
+--                             , text = userInfo.username
+--                             , placeholder = Nothing
+--                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+--                             }
+--                         , nameValidView userInfo sUsers
+--                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+--                             { onChange = UserPasswordInputChg
+--                             , text = userInfo.password
+--                             , placeholder = Nothing
+--                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password*")
+--                             }
+--                         , passwordValidView userInfo
+--                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+--                             { onChange = UserDescInputChg
+--                             , text = userInfo.extrauserinfo.description
+--                             , placeholder = Nothing
+--                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+--                             }
+--                         , userDescValidationErr userInfo.extrauserinfo.description
+--                         , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+--                             { onChange = UserEmailInputChg
+--                             , text = userInfo.extrauserinfo.email
+--                             , placeholder = Nothing
+--                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+--                             }
+--                         , emailValidationErr userInfo.extrauserinfo.email
+--                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+--                             { onChange = UserMobileInputChg
+--                             , text = Utils.Validation.Validate.validatedMaxTextLength userInfo.extrauserinfo.mobile 25
+--                             , placeholder = Nothing
+--                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile \n(inc. Int code\neg.+65)")
+--                             }
+--                         , mobileValidationErr userInfo.extrauserinfo.mobile
+--                         ]
+--                     ]
+--                 , Element.text "* required"
+--                 , SR.Elements.justParasimpleUserInfoText
+--                 , userDetailsConfirmPanel userVal sUsers
+--                 ]
+--         (Data.Users.Registered userId token userInfo userState) ->
+--             Framework.responsiveLayout [] <|
+--             Element.column Grid.section <|
+--                 [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+--                 , Element.wrappedRow (Card.fill ++ Grid.simple)
+--                     [ Element.column
+--                         Grid.simple
+--                         [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+--                             { onChange = UserNameInputChg
+--                             , text = userInfo.username
+--                             , placeholder = Nothing
+--                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+--                             }
+--                         , nameValidView userInfo sUsers
+--                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+--                             { onChange = UserPasswordInputChg
+--                             , text = userInfo.password
+--                             , placeholder = Nothing
+--                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password*")
+--                             }
+--                         , passwordValidView userInfo
+--                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+--                             { onChange = UserDescInputChg
+--                             , text = userInfo.extrauserinfo.description
+--                             , placeholder = Nothing
+--                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+--                             }
+--                         , userDescValidationErr userInfo.extrauserinfo.description
+--                         , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+--                             { onChange = UserEmailInputChg
+--                             , text = userInfo.extrauserinfo.email
+--                             , placeholder = Nothing
+--                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+--                             }
+--                         , emailValidationErr userInfo.extrauserinfo.email
+--                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+--                             { onChange = UserMobileInputChg
+--                             , text = Utils.Validation.Validate.validatedMaxTextLength userInfo.extrauserinfo.mobile 25
+--                             , placeholder = Nothing
+--                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile \n(inc. Int code\n e.g.+65)")
+--                             }
+--                         , mobileValidationErr userInfo.extrauserinfo.mobile
+--                         ]
+--                     ]
+--                 , Element.text "* required"
+--                 , SR.Elements.justParasimpleUserInfoText
+--                 , userDetailsConfirmPanel userVal sUsers
+--                 ]
 
-        (Data.Users.NoWallet userId token userInfo userState) ->
-            Html.text "Irrelevant view"
-        (Data.Users.NoCredit addr userId token userInfo userState) ->
-            Html.text "Irrelevant view"
-        (Data.Users.Credited addr userId token userInfo userState) ->
-            Html.text "Irrelevant view"
+--         (Data.Users.NoWallet userId token userInfo userState) ->
+--             Html.text "Irrelevant view"
+--         (Data.Users.NoCredit addr userId token userInfo userState) ->
+--             Html.text "Irrelevant view"
+--         (Data.Users.Credited addr userId token userInfo userState) ->
+--             Html.text "Irrelevant view"
 
     
 
@@ -3024,7 +3046,7 @@ failureView str =
                     , Element.text ("\n")
                     , Element.el Color.danger <| Element.text str
                     , Element.text ("\n")
-                    --, displayForToken userVal sGlobal
+                    --, displayForRegisteredUser userVal sGlobal
                     -- if the UI following is an issue needing branching
                     -- do it in a separate function like dispalyForToken
                     , infoBtn "Log In" ClickedLogInUser
@@ -3033,8 +3055,8 @@ failureView str =
                 ]
 
 
-displayForToken : Data.Users.User -> Data.Global.Global -> String -> Element Msg 
-displayForToken userVal sGlobal errorMsg = 
+displayForRegisteredUser : Data.Users.User -> Data.Global.Global -> String -> Element Msg 
+displayForRegisteredUser userVal sGlobal errorMsg = 
     case userVal of
         Data.Users.Spectator userInfo userState ->
             -- Err
@@ -4255,9 +4277,6 @@ displayRegisterNewUser :  Data.Users.User -> Data.Users.Users -> Element Msg
 displayRegisterNewUser userVal sUsers =
     case userVal of
         Data.Users.Spectator userInfo userState ->
-            Element.text "Should have switched to a Registered user already"
-        
-        (Data.Users.Registered userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
             , Element.wrappedRow (Card.fill ++ Grid.simple)
@@ -4304,13 +4323,16 @@ displayRegisterNewUser userVal sUsers =
             , SR.Elements.justParasimpleUserInfoText
             , userDetailsConfirmPanel (userVal) sUsers
             ]
+        
+        (Data.Users.Registered userId token userInfo userState) ->
+            Element.text "Should be a Spectator"
 
         (Data.Users.NoWallet userId token userInfo userState) ->
-            Element.text "Should be a Registered user"
+            Element.text "Should be a Spectator"
         (Data.Users.NoCredit addr userId token userInfo userState) ->
-            Element.text "Should be a Registered user"
+            Element.text "Should be a Spectator"
         (Data.Users.Credited addr userId token userInfo userState) ->
-            Element.text "Should be a Registered user"
+            Element.text "Should be a Spectator"
     
     
                 
