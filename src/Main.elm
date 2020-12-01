@@ -807,7 +807,7 @@ update msg model =
                         let
                             -- rf?: currently having to re-create Global here
                             newDataKind = Global    <| Data.Global.GlobalRankings (Data.Global.asEverySet 
-                                                    <| Data.Global.created sRankings sUsers) Data.Global.DisplayGlobalOnly
+                                                    <| Data.Global.created sRankings sUsers) Data.Global.DisplayLoggedIn
                             newDataState = Fetched sUsers sRankings newDataKind
 
                         in
@@ -824,6 +824,18 @@ update msg model =
                         in
                             -- UIEnterResultTxProblem is deliberately wrong - remove eventually
                             ( AppOps newDataState user SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )
+
+        -- (Cancel, AppOps 
+        --     (Fetched sUsers sRankings 
+        --         (Selected (Data.Selected.SelectedRanking playerUP rnkId selectedOwnerStatus sPlayers 
+        --             Data.Selected.DisplayRanking ))) 
+        --                 user uiState txRec ) ->
+        --                 let
+        --                     newDataKind = Selected    <| (Data.Selected.SelectedRanking playerUP rnkId selectedOwnerStatus sPlayers Data.Selected.DisplayRanking)   
+        --                     newDataState = Fetched sUsers sRankings newDataKind
+        --                 in
+        --                     -- UIEnterResultTxProblem is deliberately wrong - remove eventually
+        --                     ( AppOps newDataState user SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )
         
         (Cancel, AppOps 
             (Fetched sUsers sRankings 
@@ -2735,7 +2747,7 @@ view model =
                                     sUsers user
                                 , infoBtn "Delete" ClickedDeleteRanking
                                 , Element.text "\n"
-                                , infoBtn "Home" Cancel
+                                , infoBtn "Cancel" Cancel
                                 ]
 
                 (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId 
@@ -2744,7 +2756,7 @@ view model =
                         [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " --++ userInfo.username
                         , Element.el Heading.h6 <| Element.text "Click to continue ..."
                     --, playerbuttons dataState appInfo
-                        , infoBtn "Home" Cancel
+                        , infoBtn "Home1" Cancel
                         ]
 
                 (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId 
@@ -2755,7 +2767,7 @@ view model =
                         --, playerbuttons dataState sSelected
                         
                         , joinBtn user
-                        , infoBtn "Home" Cancel
+                        , infoBtn "Home2" Cancel
                         ]
 
 
