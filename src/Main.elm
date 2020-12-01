@@ -2661,9 +2661,9 @@ view model =
                         user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) ""
 
                 ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin))
-                    , Data.Users.Registered _ _ _ _ ) ->
-                    generalLoginView 
-                        user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) ""
+                    , Data.Users.Registered userId token userInfo userState ) ->
+                    generalLoggedInView 
+                        (Data.Users.Registered userId token userInfo userState ) sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayLoggedIn)
 
                 ( Fetched _ _ (Global (Data.Global.GlobalRankings _ Data.Global.DisplayGlobalLogin)), Data.Users.Spectator _ Data.Users.Updated ) ->
                     Html.text ("User Updated")
@@ -2771,6 +2771,8 @@ generalLoginView userVal sUsers sGlobal errorMsg =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
+                    , Element.text ("\n")
+                    , displayCreateNewRankingBtn
                     , displayForToken userVal sGlobal errorMsg
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
@@ -2817,6 +2819,8 @@ generalLoggedInView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
+                    , Element.text ("\n")
+                    , displayCreateNewRankingBtn
                     , displayForToken userVal sGlobal ""
                     , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
@@ -3109,8 +3113,9 @@ ownedrankingbuttons urankingList user =
                     , Element.column (Card.simple ++ Grid.simple) <| [infoBtn "Create New Ladder" ClickedCreateNewLadder]
                     ]
             else
-                Element.column Grid.section <|
-                    [ Element.el Heading.h5 <| Element.text "Your Created Rankings:"
+                Element.column Grid.section <| 
+                    [ 
+                    Element.el Heading.h5 <| Element.text "Your Created Rankings:"
                     , Element.column (Card.simple ++ Grid.simple) <| List.map ownedRankingInfoBtn (List.map (\ur -> ur.rankingInfo) urankingList)
                     ]
                     
@@ -3981,6 +3986,14 @@ infoBtn label msg =
 --             , label = Element.text "Register"
 --             }
 
+displayCreateNewRankingBtn : Element Msg
+displayCreateNewRankingBtn = 
+    Input.button
+            (Button.simple ++ Button.fill ++ Color.info ++ [ Element.htmlAttribute (Html.Attributes.id "enableEthereumButton") ] ++ [ Element.htmlAttribute (Html.Attributes.class "enableEthereumButton") ])
+        <|
+            { onPress = Just ClickedCreateNewLadder
+            , label = Element.text "Create New Ladder"
+            }
 
 displayEnableEthereumBtn : Element Msg
 displayEnableEthereumBtn = 
