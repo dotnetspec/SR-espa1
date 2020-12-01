@@ -3100,20 +3100,7 @@ ownedrankingbuttons : List Data.Global.UserRanking -> Data.Users.User -> Element
 ownedrankingbuttons urankingList user =
     case user of 
         Data.Users.Spectator userInfo userState ->
-        -- Err
-             if List.isEmpty urankingList then
-                Element.column Grid.section <|
-                    [ Element.el Heading.h5 <| Element.text "Your Created Rankings:"
-                    , Element.column (Card.simple ++ Grid.simple) <| [infoBtn "Create New Ladder" ClickedCreateNewLadder]
-                    ]
-              else
-                Element.paragraph Heading.h5 
-                [
-                    Element.text "Your Created Rankings:"
-                    , List.map (\ur -> ur.rankingInfo) urankingList
-                    |> List.map ownedRankingInfoBtn
-                    |> Element.column (Card.simple ++ Grid.simple)
-                ]
+            Element.text "If you register you can \ncreate your own rankings"
 
         (Data.Users.Registered userId token userInfo userState) ->
             if List.isEmpty urankingList then
@@ -3122,10 +3109,10 @@ ownedrankingbuttons urankingList user =
                     , Element.column (Card.simple ++ Grid.simple) <| [infoBtn "Create New Ladder" ClickedCreateNewLadder]
                     ]
             else
-                Element.paragraph Heading.h5 <| [Element.text "Your Created Rankings:"
-                    , List.map (\ur -> ur.rankingInfo) urankingList
-                    |> List.map ownedRankingInfoBtn
-                    |> Element.column (Card.simple ++ Grid.simple)]
+                Element.column Grid.section <|
+                    [ Element.el Heading.h5 <| Element.text "Your Created Rankings:"
+                    , Element.column (Card.simple ++ Grid.simple) <| List.map ownedRankingInfoBtn (List.map (\ur -> ur.rankingInfo) urankingList)
+                    ]
                     
         (Data.Users.NoWallet userId token userInfo userState) ->
             Element.column Grid.section <|
