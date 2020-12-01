@@ -152,7 +152,7 @@ type Msg
     ClickedSelectedOwnedRanking Internal.Types.RankingId String String
     | ClickedSelectedMemberRanking Internal.Types.RankingId String String
     | ClickedSelectedNeitherOwnerNorMember Internal.Types.RankingId String String
-    | ClickedSelectedRanking Internal.Types.RankingId String String
+    | ClickedSelectedRanking Internal.Types.RankingId String String Data.Selected.SelectedOwnerStatus
     | ClickedRegister
     | ClickedConfirmedRegisterNewUser
     | ClickedUpdateExistingUser
@@ -457,24 +457,25 @@ update msg model =
                 in
                     ( AppOps newDataState user SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )
 
-        (ClickedSelectedRanking rnkidstr rnkownerstr rnknamestr, AppOps 
+        (ClickedSelectedRanking rnkidstr rnkownerstr rnknamestr selectedOwnerStatus, AppOps 
             (Fetched sUsers sRankings _) 
                 (Data.Users.Spectator userInfo Data.Users.General) uiState txRec ) ->
                     let                                                     
-                        newDataKind = Selected (Data.Selected.created [] sUsers rnkidstr "")
+                        newDataKind = Selected (Data.Selected.SelectedRanking EverySet.empty rnkidstr selectedOwnerStatus Data.Players.empty Data.Selected.DisplayRanking rnknamestr)
                         newDataState = Fetched sUsers sRankings newDataKind
                     in
                         ( AppOps newDataState (Data.Users.Spectator userInfo Data.Users.General) SR.Types.UIEnterResultTxProblem emptyTxRecord, 
                         fetchedSingleRanking rnkidstr )
 
-        (ClickedSelectedRanking rnkidstr rnkownerstr rnknamestr, AppOps 
-            (Fetched sUsers sRankings _) 
+        (ClickedSelectedRanking rnkidstr rnkownerstr rnknamestr selectedOwnerStatus, AppOps 
+            (Fetched sUsers sRankings _)
                 (Data.Users.Registered userId token userInfo Data.Users.General) uiState txRec ) ->
-                    let                                                     
-                        newDataKind = Selected (Data.Selected.created [] sUsers rnkidstr rnknamestr)
+                    let
+                        newDataKind = Selected (Data.Selected.SelectedRanking EverySet.empty rnkidstr selectedOwnerStatus Data.Players.empty Data.Selected.DisplayRanking rnknamestr)
                         newDataState = Fetched sUsers sRankings newDataKind
                     in
-                        ( AppOps newDataState (Data.Users.Registered userId token userInfo Data.Users.General) SR.Types.UIEnterResultTxProblem emptyTxRecord, 
+                        (AppOps newDataState
+                            (Data.Users.Registered userId token userInfo Data.Users.General) uiState txRec,
                         fetchedSingleRanking rnkidstr )
 
 
@@ -3243,7 +3244,7 @@ ownedRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
 ownedRankingInfoBtn rankingobj =
     Element.column Grid.simple <|
         [ Input.button (Button.fill ++ Color.primary) <|
-            { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId rankingobj.id_) rankingobj.rankingownerid rankingobj.rankingname)
+            { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId rankingobj.id_) rankingobj.rankingownerid rankingobj.rankingname Data.Selected.UserIsOwner)
             , label = Element.text rankingobj.rankingname
             }
         ]
