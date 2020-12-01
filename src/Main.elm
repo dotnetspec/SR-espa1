@@ -720,7 +720,7 @@ update msg model =
                     let
                         newDataKind = Global <| Data.Global.GlobalRankings 
                             (Data.Global.asEverySet sGlobal) 
-                            (Data.Global.CreatingNewLadder Data.Rankings.emptyRanking)
+                            (Data.Global.CreatingNewLadder (Data.Rankings.Ranking "" True "" Nothing userId))
                         newDataState = Fetched sUsers sRankings newDataKind
                         newModel = 
                                 AppOps newDataState (Data.Users.Registered userId token userInfo userState)
@@ -1308,7 +1308,7 @@ update msg model =
                 in
                     ( AppOps newDataState (Data.Users.Registered userId token userInfo userState)
                         uiState txRec
-                            ,Cmd.none)
+                            , createNewRanking ranking)
 
         (ClickedConfirmCreateNewLadder,  AppOps (Fetched sUsers sRankings 
             (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewLadder ranking)))) 
@@ -1862,13 +1862,13 @@ updateWithReceivedUsers model response =
             (Failure "Unable to obtain User data. \nPlease check your network connection ...")
 
         (AppOps (Fetched sUsers sRankings dKind) user uiState txRec, Err _)  ->
-            (Failure "Network problem 1 ... please re-load or change your location")
+            (Failure "Network problem ... please re-load or change your location")
 
         (AppOps (Updated sUsers sRankings dKind) user uiState txRec, Err _ ) ->
             (Failure "updateWithReceivedUsers11")
 
         (Failure _, Ok lusers) ->
-            (Failure "updateWithReceivedUsers20")
+            (Failure "Network problem ... please re-load or change your location")
 
         (Failure _, Err str) ->
             (Failure "Unable to obtain User data. \nPlease check your network connection ...")
@@ -1961,7 +1961,7 @@ updateWithReceivedRankings model response =
             (Failure "Unable to obtain Rankings data. Please check your network connection ...")
 
         (AppOps (Fetched sUsers sRankings dKind) user uiState txRec, Err _)  ->
-            (Failure "updateWithReceivedRankings15")
+            (Failure "Essential data missing. Please check network and re-try")
 
         (AppOps (Updated sUsers sRankings dKind) user uiState txRec, Err _ ) ->
             (Failure "updateWithReceivedRankings16")

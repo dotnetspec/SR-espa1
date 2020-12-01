@@ -78,6 +78,7 @@ requestCreateNewUser userInfo =
         , email = Present userInfo.extrauserinfo.email, mobile = Present userInfo.extrauserinfo.mobile })
         ({ active = True, username = userInfo.username, password = userInfo.password } ) loginResultSelectionSet)
         |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
+        
 
 requestCreateNewRanking : Data.Rankings.Ranking -> Http.Request Data.Rankings.FRanking
 requestCreateNewRanking ranking =
