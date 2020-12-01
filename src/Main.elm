@@ -4321,7 +4321,6 @@ displayRegisterNewUser userVal sUsers =
                 ]
             , Element.text "* required"
             , SR.Elements.justParasimpleUserInfoText
-            , userDetailsConfirmPanel (userVal) sUsers
             ]
         
         (Data.Users.Registered userId token userInfo userState) ->
