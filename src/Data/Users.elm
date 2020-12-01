@@ -39,6 +39,7 @@ module Data.Users exposing (Users
     , handleDeletionFromUserJoined
     , removedDeletedRankingsFromUserJoined
     , gotName
+    , gotId
     )
 
 
@@ -333,6 +334,20 @@ gotName user =
             userInfo.username
         Credited _ _ _ userInfo _ ->
             userInfo.username
+
+gotId : User -> UserId 
+gotId user = 
+    case user of 
+        Spectator _ _ ->
+            ""
+        Registered uid _ _ _ ->
+            uid
+        NoWallet uid _ _ _ ->
+            uid
+        NoCredit _ uid _ _ _ ->
+            uid
+        Credited _ uid _ _ _ ->
+            uid
 
     
 userSetLength : Users -> Int 

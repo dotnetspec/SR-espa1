@@ -1,4 +1,5 @@
 module Bridge exposing (requestLoginUser, requestCreateNewUser, requestAllUserNames
+    , requestCreateNewRanking
     , requestAllUsers
     , requestAllRankings
     , requestAllPlayers
@@ -78,6 +79,21 @@ requestCreateNewUser userInfo =
         ({ active = True, username = userInfo.username, password = userInfo.password } ) loginResultSelectionSet)
         |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
 
+requestCreateNewRanking : Data.Rankings.Ranking -> Http.Request Data.Rankings.FRanking
+requestCreateNewRanking ranking =
+    -- handling of optional args is addressed at https://elmlang.slack.com/archives/C0RSQNQ92/p1606277449291800
+    -- and https://thoughtbot.com/blog/optional-arguments-in-elm-queries
+    Http.mutationRequest SR.Constants.endpointURL (Mutation.createNewRanking
+        (\default -> { default | rankingdesc = Present (Maybe.withDefault "" ranking.rankingdesc) })
+        ({ active = True, rankingname = ranking.rankingname, rankingownerid = ranking.rankingownerid } ) rankingSelectionSet)
+        |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
+
+--  id_ : String
+--      --id_ : SRdb.ScalarCodecs.Id
+--     , active : Bool
+--     , rankingname : String
+--     , rankingdesc : Maybe String
+--     , rankingownerid : String
 
 requestAllUserNames : Data.Users.Token -> Http.Request (List String)
 requestAllUserNames token =

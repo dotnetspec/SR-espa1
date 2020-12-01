@@ -184,6 +184,7 @@ type Msg
     | ReceivedRankings (Result (GQLHttp.Error (Maybe (List (Maybe Data.Rankings.FRanking)))) (Maybe (List (Maybe Data.Rankings.FRanking))))
     | ReceivedPlayers (Result (GQLHttp.Error (Maybe (List (Maybe Data.Players.FPlayer)))) (Maybe (List (Maybe Data.Players.FPlayer))))
     | ReceivedPlayersByRankingId (Result (GQLHttp.Error (List Data.Players.FPlayer)) (List Data.Players.FPlayer))
+    | CreatedNewRanking (Result (GQLHttp.Error (Data.Rankings.FRanking)) (Data.Rankings.FRanking))
     | CreatedGlobal
       -- App Only Ops
     | MissingWalletInstructions
@@ -1295,13 +1296,7 @@ update msg model =
             (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewLadder ranking)))) 
             (Data.Users.Spectator userInfo userState) 
                 uiState txRec ) ->
-                let
-                    newDataKind = Global (Data.Global.asGlobalRankings esUserRanking (Data.Global.CreatedNewLadder ranking))
-                    newDataState = Fetched sUsers sRankings newDataKind
-                in
-                    ( AppOps newDataState (Data.Users.Spectator userInfo userState)
-                        uiState txRec
-                            ,Cmd.none)
+                (Failure "Cannot create a ladder as a spectator", Cmd.none)
 
         (ClickedConfirmCreateNewLadder,  AppOps (Fetched sUsers sRankings 
             (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewLadder ranking)))) 
@@ -1696,6 +1691,12 @@ update msg model =
             ( receivedUserNamesFaunaTest modelReDef response
             , Cmd.none
             )
+
+            
+        (CreatedNewRanking response, modelReDef) ->
+            ( createNewRankingResponse modelReDef response
+               , Cmd.none 
+            )
         
         (NoOp, _) ->
             let
@@ -1736,7 +1737,10 @@ loginUser user_name password =
 registerUser : Data.Users.UserInfo -> Cmd Msg
 registerUser userInfo =
     GQLHttp.send RegisteredNewUser (Bridge.requestCreateNewUser  userInfo )
-    --Cmd.none
+
+createNewRanking : Data.Rankings.Ranking -> Cmd Msg
+createNewRanking ranking =
+    GQLHttp.send CreatedNewRanking (Bridge.requestCreateNewRanking  ranking )
 
 commandFromLoggedInUser : Result (GQLHttp.Error (String)) (Data.Users.Token) -> Cmd Msg
 commandFromLoggedInUser response =
@@ -2078,6 +2082,93 @@ loginResponse model response =
         
         ( AppOps _ (_) _ _ , Err _ ) ->
             Failure "Only a Spectator should be able \nlogin or register."
+
+        (Failure _, _) ->
+            model
+
+createNewRankingResponse: Model -> Result (GQLHttp.Error (Data.Rankings.FRanking)) (Data.Rankings.FRanking) -> Model
+createNewRankingResponse model response =
+    case (model, response) of
+        (AppOps dataState (Data.Users.Spectator userInfo userState) uiState txRec
+            , Ok createNewRankingResult) ->
+                Failure "Spectator can't create a ranking!"
+        
+        ( AppOps (Fetched sUsers sRankings dKind) (Data.Users.Registered userId token userInfo userState) uiState txRec 
+            , Ok createNewRankingResult) ->
+                let 
+                    newRanking = Data.Rankings.convertFRankingToRanking createNewRankingResult
+                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.Player newRanking.id_  userId 1 "",
+                            user = Data.Users.Registered userId token userInfo userState})
+
+                    newDataKind = Selected 
+                        <| (Data.Selected.SelectedRanking firstUserPlayer (Internal.Types.RankingId newRanking.id_) Data.Selected.UserIsOwner Data.Players.empty Data.Selected.DisplayRanking )
+                    newDataState = Fetched sUsers sRankings newDataKind
+                in 
+                    AppOps newDataState  (Data.Users.Registered userId token userInfo userState) uiState txRec
+
+        ( AppOps (Fetched sUsers sRankings dKind) (Data.Users.NoWallet userId token userInfo userState) uiState txRec 
+            , Ok createNewRankingResult) ->
+                let 
+                    newRanking = Data.Rankings.convertFRankingToRanking createNewRankingResult
+                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.Player newRanking.id_  userId 1 "",
+                            user = Data.Users.Registered userId token userInfo userState})
+
+                    newDataKind = Selected 
+                        <| (Data.Selected.SelectedRanking firstUserPlayer (Internal.Types.RankingId newRanking.id_) Data.Selected.UserIsOwner Data.Players.empty Data.Selected.DisplayRanking )
+                    newDataState = Fetched sUsers sRankings newDataKind
+                in 
+                    AppOps newDataState  (Data.Users.Registered userId token userInfo userState) uiState txRec
+
+        ( AppOps (Fetched sUsers sRankings dKind) (Data.Users.NoCredit ethAddr userId token userInfo userState) uiState txRec 
+            , Ok createNewRankingResult) ->
+                let 
+                    newRanking = Data.Rankings.convertFRankingToRanking createNewRankingResult
+                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.Player newRanking.id_  userId 1 "",
+                            user = Data.Users.Registered userId token userInfo userState})
+
+                    newDataKind = Selected 
+                        <| (Data.Selected.SelectedRanking firstUserPlayer (Internal.Types.RankingId newRanking.id_) Data.Selected.UserIsOwner Data.Players.empty Data.Selected.DisplayRanking )
+                    newDataState = Fetched sUsers sRankings newDataKind
+                in 
+                    AppOps newDataState  (Data.Users.Registered userId token userInfo userState) uiState txRec
+
+        ( AppOps (Fetched sUsers sRankings dKind) (Data.Users.Credited ethAddr userId token userInfo userState) uiState txRec 
+            , Ok createNewRankingResult) ->
+                let 
+                    newRanking = Data.Rankings.convertFRankingToRanking createNewRankingResult
+                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.Player newRanking.id_  userId 1 "",
+                            user = Data.Users.Registered userId token userInfo userState})
+
+                    newDataKind = Selected 
+                        <| (Data.Selected.SelectedRanking firstUserPlayer (Internal.Types.RankingId newRanking.id_) Data.Selected.UserIsOwner Data.Players.empty Data.Selected.DisplayRanking )
+                    newDataState = Fetched sUsers sRankings newDataKind
+                in 
+                    AppOps newDataState  (Data.Users.Registered userId token userInfo userState) uiState txRec
+        
+        ( AppOps AllEmpty (Data.Users.Registered _ _ _ _) _ _, Ok _ ) ->
+            Failure "All empty"
+        ( AppOps (Updated _ _ _) (Data.Users.Registered _ _ _ _) _ _, Ok _ )->
+            Failure "Maybe use updated?"
+        ( AppOps AllEmpty (Data.Users.NoWallet _ _ _ _) _ _, Ok _ )->
+            Failure "All empty"
+        ( AppOps AllEmpty (Data.Users.NoCredit _ _ _ _ _) _ _, Ok _ )->
+            Failure "All empty"
+        ( AppOps AllEmpty (Data.Users.Credited _ _ _ _ _) _ _, Ok _ )->
+            Failure "All empty"
+        ( AppOps (Updated _ _ _) (Data.Users.NoWallet _ _ _ _) _ _, Ok _ )->
+            Failure "Maybe use updated?"
+        ( AppOps (Updated _ _ _) (Data.Users.NoCredit _ _ _ _ _) _ _, Ok _ )->
+            Failure "Maybe use updated?"
+        ( AppOps (Updated _ _ _) (Data.Users.Credited _ _ _ _ _) _ _, Ok _ )->
+            Failure "Maybe use updated?"
+
+        (AppOps dataState (Data.Users.Spectator userInfo _) uiState txRec
+            , Err _) ->
+                Failure "Spectator can't create a ranking!"
+        
+        -- rf: maybe create a userState for this?:
+        ( AppOps _ (_) _ _ , Err _ ) ->
+            Failure "There was a problem creating the ranking ... please try again"
 
         (Failure _, _) ->
             model

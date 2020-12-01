@@ -20,6 +20,7 @@ module Data.Rankings exposing (Rankings
     , removedById
     , handleServerDeletedRanking
     , asList, asRankings, getRanking, gotRanking, rankingsetLength
+    , emptyFRanking
     , isRankingNameValid)
 
 
@@ -63,6 +64,16 @@ type alias FRanking =
     , rankingname : String
     , rankingdesc : Maybe String
     , rankingownerid : String
+    }
+
+emptyFRanking : FRanking
+emptyFRanking = {
+    id_ =  SRdb.Scalar.Id ""
+    , active = False
+    , rankingname = ""
+    , rankingdesc = Nothing
+    --, ts_ = SRdb.Scalar.Long ""
+    , rankingownerid = ""
     }
 
 

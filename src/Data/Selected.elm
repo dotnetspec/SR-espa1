@@ -7,11 +7,8 @@ module Data.Selected exposing (Selected(..)
     , releasePlayerForUI
     , releaseChallengerForUI
     , asEverySet
-    , gotRankingOwnerAsPlayer
     , gotCurrentUserAsPlayerFromPlayerList
-    , gotUserPlayerFromPlayerListStrAddress
-    , gotUserAsPlayer
-    , gotOpponent
+    , gotUserPlayerByUserId
     , empty
     , assignedChallengerUIDForBOTHPlayers
     , updateSelectedRankingOnChallenge
@@ -39,6 +36,7 @@ module Data.Selected exposing (Selected(..)
     , sortedRank
     , gotStatus
     , gotPlayers
+    , gotOwnerAsUP
     )
 
 
@@ -133,26 +131,21 @@ gotStatus selected =
         SelectedRanking sSelected _ status _ _ ->
             status
 
--- gotUserPlayerFromPlayerListStrAddress : List UserPlayer -> String -> UserPlayer
--- gotUserPlayerFromPlayerListStrAddress luplayer addr =
---     let
---         existingUser =
---             List.head <|
---                 List.filter (\r -> r.player.uid == (String.toLower <| addr))
---                     luplayer
---     in
---     case existingUser of
---         Nothing ->
---             emptyUserPlayer
-
---         Just a ->
---             a
-
-gotUserPlayerFromPlayerListStrAddress : List UserPlayer -> String -> Maybe UserPlayer
-gotUserPlayerFromPlayerListStrAddress luplayer addr =
+gotUserPlayerByUserId : Selected -> String -> Maybe UserPlayer
+gotUserPlayerByUserId (SelectedRanking esSelected rnkId status sPlayers sState) uid =
     List.head <|
-        List.filter (\r -> r.player.uid == (String.toLower <| addr))
-            luplayer
+        List.filter (\r -> r.player.uid == (String.toLower <| uid))
+            <| EverySet.toList esSelected
+
+-- now can get eithe user or player with e.g.  (gotOwnerAbsUP selected).player
+-- NB. I don't think below works to get the Owner
+-- it's just matching a players.uid against all the users
+-- maybe a gotOwner function instead of got Id?
+gotOwnerAsUP : Selected -> Maybe UserPlayer
+gotOwnerAsUP (SelectedRanking esSelected rnkId status sPlayers sState) =
+    List.head <|
+    List.filter (\r -> r.player.uid == Data.Users.gotId r.user)
+    <| EverySet.toList esSelected
 
 gotRankingId : Selected -> Internal.Types.RankingId 
 gotRankingId selected = 
@@ -186,16 +179,6 @@ createdUserPlayer luser player =
                         }
                 in
                     newUserPlayer
-
-    
-
-gotUserAsPlayer : Selected -> Eth.Types.Address -> Maybe UserPlayer 
-gotUserAsPlayer sSelected uaddr = 
-    --todo: fix
-    --emptyUserPlayer
-    case sSelected of 
-        SelectedRanking esUserPlayer rnkId status sPlayers sState -> 
-            gotUserPlayerFromPlayerListStrAddress (EverySet.toList esUserPlayer) (Eth.Utils.addressToString uaddr)
 
 addUserPlayer : UserPlayer -> Selected -> Selected
 addUserPlayer uplayer sSelected = 
@@ -492,7 +475,7 @@ isPlayerCurrentUser user uplayer =
 printChallengerNameOrAvailable : Selected -> Data.Users.Users -> UserPlayer -> String 
 printChallengerNameOrAvailable sSelected sUsers uplayer = 
     let
-        m_opponent =  (gotOpponent sSelected uplayer)
+        m_opponent =  gotUserPlayerByUserId sSelected uplayer.player.challengerid
     in
         case m_opponent of
             Nothing ->
@@ -513,10 +496,6 @@ printChallengerNameOrAvailable sSelected sUsers uplayer =
                 else
                     "Available"
 
-gotOpponent : Selected -> UserPlayer -> Maybe UserPlayer
-gotOpponent sSelected uplayer = 
-    gotUserPlayerFromPlayerListStrAddress (asList sSelected) uplayer.player.challengerid
-
 
 updatePlayerRankWithWonResult : List UserPlayer -> UserPlayer -> List UserPlayer
 updatePlayerRankWithWonResult luPlayer uplayer =
@@ -524,8 +503,10 @@ updatePlayerRankWithWonResult luPlayer uplayer =
         filteredPlayerList =
             filterPlayerOutOfPlayerList uplayer.player.uid luPlayer
 
-        m_opponentAsPlayer =
-            gotUserPlayerFromPlayerListStrAddress luPlayer uplayer.player.challengerid
+        -- todo: fix get a real not empty selected
+        --m_opponentAsPlayer = gotOpponent empty uplayer
+        m_opponentAsPlayer = (gotUserPlayerByUserId empty uplayer.player.challengerid)
+            --gotUserPlayerFromPlayerListStrAddress luPlayer uplayer.player.challengerid
     in
         case m_opponentAsPlayer of
             Nothing ->
@@ -663,12 +644,16 @@ gotCurrentUserAsPlayerFromPlayerList luPlayer userRec =
     --         in
     --             existingPlayer
 
-gotRankingOwnerAsPlayer : String -> List UserPlayer -> Data.Players.Player
-gotRankingOwnerAsPlayer selectedRanking luplayer =
-    let 
-        up = Maybe.withDefault (emptyUserPlayer) (gotUserPlayerFromPlayerListStrAddress luplayer selectedRanking)
-    in
-        up.player
+-- gotRankingOwnerAsPlayer : Selected -> List UserPlayer -> Data.Players.Player
+-- gotRankingOwnerAsPlayer selected luplayer =
+    -- let 
+    --     -- up = Maybe.withDefault (emptyUserPlayer) (gotUserPlayerFromPlayerListStrAddress luplayer selectedRanking)
+    --     up = Maybe.withDefault (emptyUserPlayer) (gotUserPlayerByUserId luplayer selectedRanking)
+    --     gotOwnerAsUP selected
+
+    -- in
+    --     up.player
+       
 
 filterPlayerOutOfPlayerList : String -> List UserPlayer -> List UserPlayer
 filterPlayerOutOfPlayerList addr lplayer =

@@ -501,6 +501,7 @@ newJsonEncodedList lotherrankingInfo =
     encodedList
 
 -- todo: find another way to get a ranking owner ...
+-- do something like (gotOwnerAsUP selected).player <as you do in Selected> instead
 -- gotRankingOwner : Data.Rankings.Ranking -> List UserRanking -> List UserPlayer -> UserPlayer
 -- gotRankingOwner selectedRanking luranking luplayer =
 --     -- todo: fix
