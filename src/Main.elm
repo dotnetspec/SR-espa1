@@ -149,9 +149,7 @@ getTime =
 
 type Msg
     = -- User Ops
-    ClickedSelectedOwnedRanking Internal.Types.RankingId String String
-    | ClickedSelectedMemberRanking Internal.Types.RankingId String String
-    | ClickedSelectedNeitherOwnerNorMember Internal.Types.RankingId String String
+    ClickedSelectedMemberRanking Internal.Types.RankingId String String
     | ClickedSelectedRanking Internal.Types.RankingId String String Data.Selected.SelectedOwnerStatus
     | ClickedRegister
     | ClickedConfirmedRegisterNewUser
@@ -505,39 +503,6 @@ update msg model =
                             (model, Cmd.none)
                 _ -> 
                                 (model, Cmd.none)
-
-        --todo: below will be handled differently. clicking will fetch a set of players from fauna first, then replace newsSelected with real set of players
-        (ClickedSelectedNeitherOwnerNorMember rnkidstr rnkownerstr rnknamestr, AppOps dataState user uiState txRec)  ->
-            case dataState of
-                (Fetched sUsers sRankings (Global sGlobal )) ->
-                    let
-                        -- newAppInfo =
-                        --     createSelectedOnRankingSelected rnkidstr rnkownerstr rnknamestr
-
-                        -- initAppState = 
-                        --     --Data.AppState.updateAppState (Just appInfo.user) appInfo.player 
-                        --     Data.AppState.updateAppState
-                            --appInfo.challenger ( rnkidstr)
-                        
-                        --newDataKind = Selected Data.Selected.empty rnkidstr appInfo.user Data.Selected.UserIsNeitherOwnerNorMember (Data.Global.asRankings sGlobal)
-                        
-                        newsSelected = Data.Selected.created [] sUsers rnkidstr ""
-                        newDataKind = Selected newsSelected
-                        newDataState = Fetched sUsers sRankings newDataKind
-                    in
-                        ( AppOps newDataState user SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, 
-                        fetchedSingleRanking rnkidstr )
-                
-                (Fetched _ _ _) ->
-                    (Failure "err", Cmd.none)
-
-                ( AllEmpty)->
-                    (Failure "err", Cmd.none)
-
-                ( Updated _ _ _ )->
-                    (Failure "err", Cmd.none)
-        
-        
 
 
         (ClickedChangedUIStateToEnterResult player, AppOps dataState user uiState txRec)  ->
@@ -3323,7 +3288,9 @@ neitherOwnerNorMemberRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
 neitherOwnerNorMemberRankingInfoBtn rankingobj =
     Element.column Grid.simple <|
         [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "otherrankingbtn") ] ++ Button.fill ++ Color.primary) <|
-            { onPress = Just (ClickedSelectedNeitherOwnerNorMember (Internal.Types.RankingId rankingobj.id_) rankingobj.rankingownerid rankingobj.rankingname)
+            { 
+                onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId rankingobj.id_) rankingobj.rankingownerid rankingobj.rankingname Data.Selected.UserIsNeitherOwnerNorMember)
+            
             , label = Element.text rankingobj.rankingname
             }
         ]

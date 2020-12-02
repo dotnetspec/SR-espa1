@@ -50,6 +50,7 @@ type Query {
   allUserJoinedRanking: [UserJoinedRanking] @resolver(name: "all_userjoinedranking")
   allUsers: [User] @resolver(name: "all_users")
   loginUser(username: String!, password: String!): loginResult! @resolver(name: "login_user")
+  gotPlayersByRankingId (rankingid: String!): [Player] @resolver(name: "got_players_byrankingid")
 }
 
 type loginResult @embedded
