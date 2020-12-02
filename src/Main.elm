@@ -181,8 +181,8 @@ type Msg
     | ReceivedUserNames (Result (GQLHttp.Error (List String)) (List String))
     | ReceivedUsers (Result (GQLHttp.Error (Maybe (List (Maybe Data.Users.FUser)))) (Maybe (List (Maybe Data.Users.FUser))))
     | ReceivedRankings (Result (GQLHttp.Error (Maybe (List (Maybe Data.Rankings.FRanking)))) (Maybe (List (Maybe Data.Rankings.FRanking))))
-    | ReceivedPlayers (Result (GQLHttp.Error (Maybe (List (Maybe Data.Players.FPlayer)))) (Maybe (List (Maybe Data.Players.FPlayer))))
-    | ReceivedPlayersByRankingId (Result (GQLHttp.Error (List Data.Players.FPlayer)) (List Data.Players.FPlayer))
+    --| ReceivedPlayers (Result (GQLHttp.Error (Maybe (List (Maybe Data.Players.FPlayer)))) (Maybe (List (Maybe Data.Players.FPlayer))))
+    | ReceivedPlayersByRankingId (Result (GQLHttp.Error (Maybe (List (Maybe Data.Players.FPlayer))))  (Maybe (List (Maybe Data.Players.FPlayer))))
     | CreatedNewRanking (Result (GQLHttp.Error (Data.Rankings.FRanking)) (Data.Rankings.FRanking))
     | CreatedGlobal
       -- App Only Ops
@@ -1607,10 +1607,10 @@ update msg model =
             , Cmd.none
             )
             
-        (ReceivedPlayers response, modelReDef) ->
-            ( updateWithReceivedPlayers modelReDef response
-            , Cmd.none 
-            )
+        -- (ReceivedPlayers response, modelReDef) ->
+        --     ( updateWithReceivedPlayers modelReDef response
+        --     , Cmd.none 
+        --     )
 
         (ReceivedPlayersByRankingId response, modelReDef) ->
             ( updateWithReceivedPlayersByRankingId modelReDef response
@@ -1698,14 +1698,14 @@ allRankings  =
     GQLHttp.send ReceivedRankings (Bridge.requestAllRankings)
 
 -- do we actually need allPlayers? just gotRankingById
-allPlayers : Data.Users.Token -> Cmd Msg
-allPlayers  token =
-    GQLHttp.send ReceivedPlayers (Bridge.requestAllPlayers token)
+-- allPlayers : Data.Users.Token -> Cmd Msg
+-- allPlayers  token =
+--     GQLHttp.send ReceivedPlayers (Bridge.requestAllPlayers token)
 
 gotPlayersByRankingById : String -> Cmd Msg 
 gotPlayersByRankingById id = 
-    --GQLHttp.send ReceivedPlayersByRankingId (Bridge.requestPlayersByRankingId id)
-    Cmd.none
+    GQLHttp.send ReceivedPlayersByRankingId (Bridge.requestgotPlayersByRankingId id)
+    --Cmd.none
 
        
 -- model handlers
@@ -1806,9 +1806,9 @@ updateWithReceivedUsers model response =
         (Failure _, Err str) ->
             (Failure "Unable to obtain User data. \nPlease check your network connection ...")
 
+updateWithReceivedPlayersByRankingId : Model -> Result ((GQLHttp.Error (Maybe (List (Maybe Data.Players.FPlayer)))))
+        (Maybe (List (Maybe Data.Players.FPlayer))) -> Model
 
-
-updateWithReceivedPlayersByRankingId : Model -> Result (GQLHttp.Error (List Data.Players.FPlayer)) (List Data.Players.FPlayer) -> Model
 updateWithReceivedPlayersByRankingId model response =
     case (model, response) of -- AllEmpty, so fill the player set
         (AppOps AllEmpty user uiState txRec, Ok lplayers)  ->
@@ -1823,7 +1823,11 @@ updateWithReceivedPlayersByRankingId model response =
         ( AppOps (Fetched sUsers sRankings ((Selected (Data.Selected.SelectedRanking esUP rnkId ownerStatus sPlayers result name)))) user uiState txRec, Ok lplayers ) ->
             let
                 --filteredFPlayerList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lplayers)
-                lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer lplayers
+
+                --lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer lplayers
+                -- todo: rf, just for compile:
+                lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer []
+
                 --newsplayers = Data.Players.asPlayers (EverySet.fromList lFromFToPlayer)
                 -- todo: change createdSelected to accept a Set instead of a list
                 newsSelected = Data.Selected.created lFromFToPlayer sUsers rnkId name
@@ -3184,8 +3188,6 @@ memberrankingbuttons urankingList user =
                     |> Element.column (Card.simple ++ Grid.simple)
                     ]
                 
-
-
         (Data.Users.NoWallet userId token userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
