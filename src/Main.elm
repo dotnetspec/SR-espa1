@@ -149,8 +149,7 @@ getTime =
 
 type Msg
     = -- User Ops
-    ClickedSelectedMemberRanking Internal.Types.RankingId String String
-    | ClickedSelectedRanking Internal.Types.RankingId String String Data.Selected.SelectedOwnerStatus
+    ClickedSelectedRanking Internal.Types.RankingId String String Data.Selected.SelectedOwnerStatus
     | ClickedRegister
     | ClickedConfirmedRegisterNewUser
     | ClickedUpdateExistingUser
@@ -475,34 +474,6 @@ update msg model =
                         (AppOps newDataState
                             (Data.Users.Registered userId token userInfo Data.Users.General) uiState txRec,
                         fetchedSingleRanking rnkidstr )
-
-
-        (ClickedSelectedMemberRanking rnkidstr rnkownerstr rnknamestr, AppOps dataState user uiState txRec ) ->
-            case dataState of 
-                Fetched sUsers sRankings dKind ->
-                    case dKind of 
-                        Global sGlobal  ->
-                                    let
-                                        -- newAppInfo = createSelectedOnRankingSelected rnkidstr rnkownerstr rnknamestr
-
-                                        -- -- re-factor from appInfo to AppState over time
-                                        -- initAppState = Data.AppState.updateAppState
-                                            -- Data.AppState.updateAppState (Just appInfo.user) appInfo.player 
-                                            -- appInfo.challenger ( rnkidstr)
-
-
-                                        --newDataKind = Selected Data.Selected.empty (Internal.Types.RankingId "") appInfo.user Data.Selected.UserIsMember (Data.Players.empty)
-                                        --todo: we need to get the list of players from fauna
-                                        newDataKind = Selected (Data.Selected.created [] sUsers rnkidstr "")
-                                        --todo: replace with real players
-                                        newDataState = Fetched sUsers sRankings newDataKind
-                                    in
-                                        ( AppOps newDataState user SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, 
-                                        fetchedSingleRanking rnkidstr )
-                        _ -> 
-                            (model, Cmd.none)
-                _ -> 
-                                (model, Cmd.none)
 
 
         (ClickedChangedUIStateToEnterResult player, AppOps dataState user uiState txRec)  ->
@@ -3263,14 +3234,14 @@ memberRankingInfoBtn ranking =
     if ranking.rankingname /= "" then
         Element.column Grid.simple <|
             [ Input.button (Button.fill ++ Color.primary) <|
-                { onPress = Just (ClickedSelectedMemberRanking (Internal.Types.RankingId ranking.id_) ranking.rankingownerid ranking.rankingname)
+                { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId ranking.id_) ranking.rankingownerid ranking.rankingname Data.Selected.UserIsMember)
                 , label = Element.text ranking.rankingname
                 }
             ]
     else 
         Element.column Grid.simple <|
             [ Input.button (Button.fill ++ Color.primary) <|
-                { onPress = Just (ClickedSelectedMemberRanking (Internal.Types.RankingId ranking.id_) ranking.rankingownerid ranking.rankingname)
+                { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId ranking.id_) ranking.rankingownerid ranking.rankingname Data.Selected.UserIsMember)
                 , label = Element.el
                             [ Font.color (Element.rgb 1 0 0)
                             , Font.size 18
