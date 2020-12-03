@@ -20,7 +20,7 @@ module Data.Selected exposing (Selected(..)
     , convertPlayersToUserPlayers
     , extractAndSortPlayerList
     , convertUserPlayersToPlayers
-    , isPlayerCurrentUser
+    , isRegisteredPlayerCurrentUser
     , printChallengerNameOrAvailable
     , isChallenged
     , assignChallengerAddr
@@ -336,12 +336,6 @@ isChallenged (SelectedRanking sSelected rnkId status sPlayers sStat name) sUsers
             Nothing ->
                 False 
             Just challenger ->
-            --     if challenger.username /= "" then
-            --         True
-
-            --     else
-            --         False
-
                 case challenger of
                     Data.Users.Spectator _ _ ->
                         False
@@ -391,35 +385,18 @@ isChallenged (SelectedRanking sSelected rnkId status sPlayers sStat name) sUsers
 --                     |> addUserPlayer newUserPlayer
 --                     |> asList
     
-isPlayerCurrentUser : Data.Users.User -> UserPlayer -> Bool
-isPlayerCurrentUser user uplayer = 
+isRegisteredPlayerCurrentUser : Data.Users.User -> UserPlayer -> Bool
+isRegisteredPlayerCurrentUser user uplayer = 
+    --player display only deals with Registered players
     case user of
-        Data.Users.Spectator _ _ ->
-            False
         (Data.Users.Registered userId token userInfo sStatus) ->
             if uplayer.player.uid == userId then
                 True
-
             else
                 False
-        (Data.Users.NoWallet userId token userInfo sStatus) ->
-            if uplayer.player.uid == userId then
-                True
-
-            else
-                False
-        (Data.Users.NoCredit addr userId token userInfo sStatus) ->
-            if uplayer.player.uid == userId then
-                True
-
-            else
-                False
-        (Data.Users.Credited addr userId token userInfo sStatus) ->
-            if uplayer.player.uid == userId then
-                True
-
-            else
-                False
+        _ ->
+            False
+       
 
 printChallengerNameOrAvailable : Selected -> Data.Users.Users -> UserPlayer -> String 
 printChallengerNameOrAvailable sSelected sUsers uplayer = 

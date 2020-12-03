@@ -66,9 +66,6 @@ createdMaybePlayerFromPlayer player =
         , challengerid = player.challengerid
         }
 
-
-
-
 rankFromMaybeRank : Maybe Int -> Int
 rankFromMaybeRank int =
     case int of
@@ -92,8 +89,6 @@ asList sPlayers =
         Players setOfPlayers ->
             setOfPlayers
            |> EverySet.toList
-
-
 
 
 addPlayer : Player -> Players -> Players

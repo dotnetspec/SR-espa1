@@ -3307,11 +3307,28 @@ configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
         -- all players are considered Registered (only)
         case (uplayer.user) of
             (Data.Users.Registered userId token userInfo userState) ->
-                --isUserPlayerMemberOf this SelectedRanking
-                if not(EverySet.isEmpty (Data.Selected.asEverySet (Data.Selected.gotPlayer uplayer.user sSelected))) then
-                    if Data.Selected.isPlayerCurrentUser user uplayer then
-                        if Data.Selected.isChallenged sSelected sUsers uplayer then
-                            Element.column Grid.simple <|
+                        if not (Data.Selected.isChallenged sSelected sUsers uplayer) then
+                            if Data.Selected.isRegisteredPlayerCurrentUser user uplayer then
+                                --not challenged, is current user:
+                                Element.column Grid.simple <|
+                                [ Input.button (Button.fill ++ Color.disabled) <|
+                                    { onPress = Nothing
+                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    }
+                                ]
+                            
+                            else
+                                --available to challenge, not current user:
+                                Element.column Grid.simple <|
+                                [ Input.button (Button.fill ++ Color.info) <|
+                                    { onPress = Nothing
+                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    }
+                                ]
+                        else
+                            if Data.Selected.isRegisteredPlayerCurrentUser user uplayer then
+                                -- already in a challenge, is current user and therefore ready to enter a result
+                                Element.column Grid.simple <|
                                 [ Input.button (Button.fill ++ Color.success) <|
                                     { 
                                         --nb. this was appInfo.player - uplayer.player might not be quite correct:
@@ -3319,61 +3336,78 @@ configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
                                     , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
                                     }
                                 ]
-                        else
-                        -- player is current user, but not in a challenge:
-                        let 
-                            _ = Debug.log "player is current user, but not in a challenge" "here"
-                        in
+
+                            else
+                            -- already in a challenge, not current user
                             Element.column Grid.simple <|
-                                [ Input.button (Button.fill ++ Color.info) <|
-                                    { onPress = Nothing
-                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
-                                    }
-                                ]
+                            [ Input.button (Button.fill ++ Color.disabled) <|
+                                { onPress = Nothing
+                                , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                }
+                            ]
+
+                        
+                        -- else
+                        -- player is current user, but not in a challenge:
+                        -- let 
+                        --     _ = Debug.log "player is current user, but not in a challenge" "here"
+                        -- in
+                            
                         -- else if - this uplayer isn't the current user but the current user is in a challenge so disable any other players
 
-                    --else if isCurrentUserInAChallenge then
-                    else if Data.Selected.isChallenged sSelected sUsers uplayer then
-                        Element.column Grid.simple <|
-                            [ Input.button (Button.fill ++ Color.disabled) <|
-                                { onPress = Nothing
-                                , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
-                                }
-                            ]
+                    --else if isCurrentUser Player InAChallenge then
+                    
+                    
+                    -- else if Data.Selected.isChallenged sSelected sUsers uplayer then
+                    --     Element.column Grid.simple <|
+                    --         [ Input.button (Button.fill ++ Color.disabled) <|
+                    --             { onPress = Nothing
+                    --             , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                    --             }
+                    --         ]
+                        
+                        
+                        
                         -- else if - this uplayer isn't the current user but is being challenged
 
-                    else if Data.Selected.isChallenged sSelected sUsers uplayer then
-                        Element.column Grid.simple <|
-                            [ Input.button (Button.fill ++ Color.disabled) <|
-                                { onPress = Nothing
-                                , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
-                                }
-                            ]
-                    else
+                    -- else if Data.Selected.isChallenged sSelected sUsers uplayer then
+                    --     Element.column Grid.simple <|
+                    --         [ Input.button (Button.fill ++ Color.disabled) <|
+                    --             { onPress = Nothing
+                    --             , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                    --             }
+                    --         ]
+                    
+                    
+                   -- else
                     -- this uplayer isn't the current user and isn't challenged by anyone
-                        if not (Data.Selected.isChallenged sSelected sUsers uplayer) then
-                            Element.column Grid.simple <|
-                                [ Input.button (Button.fill ++ Color.light) <|
-                                    { onPress = Just <| ClickedChallengeOpponent uplayer
-                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
-                                    }
-                                ]
-                        else 
-                                Element.column Grid.simple <|
-                                [ Input.button (Button.fill ++ Color.disabled) <|
-                                    { onPress = Nothing
+                    -- so should be clickable for a challenge
+                        --if not (Data.Selected.isChallenged sSelected sUsers uplayer) then
+                            -- Element.column Grid.simple <|
+                            --     [ Input.button (Button.fill ++ Color.light) <|
+                            --         { onPress = Just <| ClickedChallengeOpponent uplayer
+                            --         , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                            --         }
+                            --     ]
+                        
+                        
+                        
+                        -- else 
+                        --         Element.column Grid.simple <|
+                        --         [ Input.button (Button.fill ++ Color.disabled) <|
+                        --             { onPress = Nothing
                                     
-                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
-                                    }
-                                ]
-                else
-                    -- the user is a Spectator or isn't a member of this ranking, so disable everything
-                    Element.column Grid.simple <|
-                        [ Input.button (Button.fill ++ Color.disabled) <|
-                            { onPress = Nothing
-                            , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
-                            }
-                        ]
+                        --             , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                        --             }
+                        --         ]
+                -- else
+                --     -- the user is a Spectator or isn't a member of this ranking, so disable everything
+                --     Element.column Grid.simple <|
+                --         [ Input.button (Button.fill ++ Color.disabled) <|
+                --             { onPress = Nothing
+                --             , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                --             }
+                --         ]
 
             (_) ->
                 Element.text "Unregistered user!"
