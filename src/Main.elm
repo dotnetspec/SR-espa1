@@ -458,7 +458,8 @@ update msg model =
             (Fetched sUsers sRankings _) 
                 (Data.Users.Spectator userInfo Data.Users.General) uiState txRec ) ->
                     let                                                     
-                        newDataKind = Selected (Data.Selected.SelectedRanking EverySet.empty rnkidstr selectedOwnerStatus Data.Players.empty Data.Selected.DisplayRanking rnknamestr)
+                        newDataKind = Selected (Data.Selected.SelectedRanking EverySet.empty 
+                            rnkidstr selectedOwnerStatus Data.Players.empty Data.Selected.DisplayRanking rnknamestr)
                         newDataState = Fetched sUsers sRankings newDataKind
                     in
                         ( AppOps newDataState (Data.Users.Spectator userInfo Data.Users.General) SR.Types.UIEnterResultTxProblem emptyTxRecord, 
@@ -1661,11 +1662,9 @@ loginUser user_name password =
     GQLHttp.send InitiallyLoggedInUser (Bridge.requestLoginUser user_name password)
     --Cmd.none
 
-
--- todo: implement
--- registeredUser : Data.Users.Token -> Cmd Msg
--- registeredUser token =
---     GQLHttp.send LoggedInUser (Bridge.requestLoginUser user_name password)
+fetchedSingleRanking : Internal.Types.RankingId -> Cmd Msg
+fetchedSingleRanking (Internal.Types.RankingId rankingId) =
+    GQLHttp.send ReceivedPlayersByRankingId (Bridge.requestgotPlayersByRankingId rankingId)
 
 registerUser : Data.Users.UserInfo -> Cmd Msg
 registerUser userInfo =
@@ -1820,13 +1819,15 @@ updateWithReceivedPlayersByRankingId model response =
         (AppOps (Updated sUsers sRankings dKind) user uiState txRec, Ok lplayers) ->
             (Failure "updateWithReceivedPlayersByRankingId13")
 
-        ( AppOps (Fetched sUsers sRankings ((Selected (Data.Selected.SelectedRanking esUP rnkId ownerStatus sPlayers result name)))) user uiState txRec, Ok lplayers ) ->
+        ( AppOps (Fetched sUsers sRankings 
+            ((Selected (Data.Selected.SelectedRanking esUP rnkId ownerStatus sPlayers result name)))) 
+                user uiState txRec, Ok lplayers ) ->
             let
-                --filteredFPlayerList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lplayers)
+                filteredFPlayerList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lplayers)
 
-                --lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer lplayers
+                lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer filteredFPlayerList
                 -- todo: rf, just for compile:
-                lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer []
+                --lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer []
 
                 --newsplayers = Data.Players.asPlayers (EverySet.fromList lFromFToPlayer)
                 -- todo: change createdSelected to accept a Set instead of a list
@@ -3225,7 +3226,8 @@ ownedRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
 ownedRankingInfoBtn rankingobj =
     Element.column Grid.simple <|
         [ Input.button (Button.fill ++ Color.primary) <|
-            { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId rankingobj.id_) rankingobj.rankingownerid rankingobj.rankingname Data.Selected.UserIsOwner)
+            { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId rankingobj.id_) 
+                rankingobj.rankingownerid rankingobj.rankingname Data.Selected.UserIsOwner)
             , label = Element.text rankingobj.rankingname
             }
         ]
@@ -3236,14 +3238,16 @@ memberRankingInfoBtn ranking =
     if ranking.rankingname /= "" then
         Element.column Grid.simple <|
             [ Input.button (Button.fill ++ Color.primary) <|
-                { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId ranking.id_) ranking.rankingownerid ranking.rankingname Data.Selected.UserIsMember)
+                { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId ranking.id_) 
+                    ranking.rankingownerid ranking.rankingname Data.Selected.UserIsMember)
                 , label = Element.text ranking.rankingname
                 }
             ]
     else 
         Element.column Grid.simple <|
             [ Input.button (Button.fill ++ Color.primary) <|
-                { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId ranking.id_) ranking.rankingownerid ranking.rankingname Data.Selected.UserIsMember)
+                { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId ranking.id_) 
+                ranking.rankingownerid ranking.rankingname Data.Selected.UserIsMember)
                 , label = Element.el
                             [ Font.color (Element.rgb 1 0 0)
                             , Font.size 18
@@ -3262,7 +3266,8 @@ neitherOwnerNorMemberRankingInfoBtn rankingobj =
     Element.column Grid.simple <|
         [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "otherrankingbtn") ] ++ Button.fill ++ Color.primary) <|
             { 
-                onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId rankingobj.id_) rankingobj.rankingownerid rankingobj.rankingname Data.Selected.UserIsNeitherOwnerNorMember)
+                onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId rankingobj.id_) 
+                rankingobj.rankingownerid rankingobj.rankingname Data.Selected.UserIsNeitherOwnerNorMember)
             
             , label = Element.text rankingobj.rankingname
             }
@@ -4671,24 +4676,6 @@ subscriptions model =
 
 
 -- Http ops
-
-
-fetchedSingleRanking : Internal.Types.RankingId -> Cmd Msg
-fetchedSingleRanking (Internal.Types.RankingId rankingId) =
-    Cmd.none
-    --PlayersReceived is the Msg handled by update whenever a request is made
-    -- Http.request
-    --     { body = Http.emptyBody
-    --     , expect =
-    --         SR.Decode.ladderOfPlayersDecoder
-    --             |> Http.expectJson (RemoteData.fromResult >> PlayersReceived)
-    --     , headers = [ SR.Defaults.secretKey ]
-    --     , method = "GET"
-    --     , timeout = Nothing
-    --     , tracker = Nothing
-    --     , url = SR.Constants.baseBinUrl ++ rankingId ++ "/latest"
-    --     }
-
 
 addedUserAsFirstPlayerInNewList : Data.Users.User -> Cmd Msg
 addedUserAsFirstPlayerInNewList user =
