@@ -1805,11 +1805,26 @@ updateWithReceivedUsers model response =
         (Failure _, Err str) ->
             (Failure "Unable to obtain User data. \nPlease check your network connection ...")
 
-updateWithReceivedPlayersByRankingId : Model -> Result ((GQLHttp.Error (Maybe (List (Maybe Data.Players.FPlayer)))))
-        (Maybe (List (Maybe Data.Players.FPlayer))) -> Model
-
+updateWithReceivedPlayersByRankingId : Model -> 
+    Result ((GQLHttp.Error (Maybe (List (Maybe Data.Players.FPlayer)))))
+         (Maybe (List (Maybe Data.Players.FPlayer))) -> Model
 updateWithReceivedPlayersByRankingId model response =
-    case (model, response) of -- AllEmpty, so fill the player set
+    case (model, response) of
+        ( AppOps (Fetched sUsers sRankings 
+            ((Selected (Data.Selected.SelectedRanking esUP rnkId ownerStatus sPlayers result name)))) 
+                user uiState txRec
+                , Ok lplayers ) ->
+            let
+                filteredFPlayerList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lplayers)
+                lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer filteredFPlayerList
+                --newsplayers = Data.Players.asPlayers (EverySet.fromList lFromFToPlayer)
+                -- todo: change createdSelected to accept a Set instead of a list
+                newsSelected = Data.Selected.created lFromFToPlayer sUsers rnkId name
+                newDataKind = Selected newsSelected
+                newDataState = Fetched sUsers sRankings newDataKind
+            in
+                AppOps newDataState user uiState txRec
+
         (AppOps AllEmpty user uiState txRec, Ok lplayers)  ->
             (Failure "updateWithReceivedPlayersByRankingId10")
 
@@ -1818,24 +1833,6 @@ updateWithReceivedPlayersByRankingId model response =
 
         (AppOps (Updated sUsers sRankings dKind) user uiState txRec, Ok lplayers) ->
             (Failure "updateWithReceivedPlayersByRankingId13")
-
-        ( AppOps (Fetched sUsers sRankings 
-            ((Selected (Data.Selected.SelectedRanking esUP rnkId ownerStatus sPlayers result name)))) 
-                user uiState txRec, Ok lplayers ) ->
-            let
-                filteredFPlayerList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lplayers)
-
-                lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer filteredFPlayerList
-                -- todo: rf, just for compile:
-                --lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer []
-
-                --newsplayers = Data.Players.asPlayers (EverySet.fromList lFromFToPlayer)
-                -- todo: change createdSelected to accept a Set instead of a list
-                newsSelected = Data.Selected.created lFromFToPlayer sUsers rnkId name
-                newDataKind = Selected newsSelected
-                newDataState = Fetched sUsers sRankings newDataKind
-            in
-                AppOps newDataState user uiState txRec
 
         (AppOps AllEmpty user uiState txRec, Err _ )  ->
             (Failure "Unable to obtain Rankings data. Please check your network connection ...")
@@ -2527,7 +2524,8 @@ view model =
 
                 -- Global
 
-                (Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayLoggedIn)), 
+                (Fetched sUsers sRankings 
+                    (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayLoggedIn)), 
                     Data.Users.Spectator userInfo 
                         Data.Users.General) ->
                             -- this may be on a 'Cancel'
@@ -2544,66 +2542,79 @@ view model =
                         Data.Users.CreatingNew) ->
                             inputUserDetailsView (Fetched sUsers sRankings dKind) user
 
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewRanking _ )))
+                ( Fetched _ _ 
+                    (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewRanking _ )))
                     , Data.Users.Spectator _ Data.Users.General ) ->
                     Html.text ("Not yet implemented")
                 
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewRanking ranking)))
+                ( Fetched _ _ 
+                    (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewRanking ranking)))
                     , Data.Users.Spectator _ Data.Users.General ) ->
                     Html.text ("Not yet implemented")
 
-                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin))
+                ( Fetched sUsers _ 
+                    (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin))
                     , Data.Users.Spectator _ Data.Users.LoginError ) ->
                         generalLoginView
                             user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Not found. Register?:"
                 
-                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly))
+                ( Fetched sUsers _ 
+                    (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly))
                     , Data.Users.Spectator _ Data.Users.LoginError ) ->
                         generalLoginView
                             user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Not found. Register?:"
                 
-                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR 
+                ( Fetched sUsers _ 
+                    (Global (Data.Global.GlobalRankings esUR 
                     (Data.Global.CreatingNewRanking _ )))
                     , Data.Users.Spectator _ Data.Users.LoginError ) ->
                         generalLoginView
                             user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Please register \nto create a new ladder:"
 
-                ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR 
+                ( Fetched sUsers sRankings 
+                    (Global (Data.Global.GlobalRankings esUR 
                     (Data.Global.CreatingNewRanking ranking)))
                     , (Data.Users.Registered _ _ _ _) as userVal ) ->
                         inputNewLadderview sRankings ranking userVal
                 
-                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewRanking ranking)))
+                ( Fetched sUsers _ 
+                    (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewRanking ranking)))
                     , Data.Users.Spectator _ Data.Users.LoginError ) ->
                         generalLoginView
                             user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) "Please register \nto create a new ladder:"
 
-                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly))
+                ( Fetched sUsers _ (
+                        Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly))
                     , Data.Users.Spectator _ Data.Users.General ) ->
                     globalOnlyView user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly)
 
-                ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly) )
+                ( Fetched sUsers sRankings 
+                    (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly) )
                     , Data.Users.Registered _ _ _ _ ) ->
                     globalOnlyView user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly)
 
                 
 
-                ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewRanking ranking)))
+                ( Fetched sUsers sRankings 
+                    (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewRanking ranking)))
                     , Data.Users.Registered userId token userInfo userState ) ->
                     generalLoggedInView 
                         (Data.Users.Registered userId token userInfo userState) sUsers 
                             (Data.Global.GlobalRankings esUR (Data.Global.CreatedNewRanking ranking))
 
-                ( Fetched sUsers sRankings  (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayLoggedIn)), userVal) ->
+                ( Fetched sUsers sRankings 
+                    (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayLoggedIn)), userVal) ->
                     generalLoggedInView 
                         userVal sUsers (Data.Global.GlobalRankings esUR (Data.Global.DisplayLoggedIn ))
 
-                (Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) )
+                (Fetched sUsers sRankings 
+                    (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) )
                     , Data.Users.Spectator userInfo Data.Users.General) ->
                     generalLoginView 
                         user sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin) ""
 
-                ( Fetched sUsers _ (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin))
+                ( Fetched sUsers _ 
+                    (Global (Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin))
                     , Data.Users.Registered userId token userInfo userState ) ->
                     generalLoggedInView 
                         (Data.Users.Registered userId token userInfo userState ) sUsers (Data.Global.GlobalRankings esUR Data.Global.DisplayLoggedIn)
@@ -2646,8 +2657,7 @@ view model =
                             [ Element.el Heading.h4 <| Element.text <| "SportRank - Spectator "
                             , infoBtn "Cancel" Cancel
                             , Element.text "\n"
-                            , playerbuttons sSelected        
-                                sUsers user
+                            , playerbuttons sSelected sUsers user
                             ]
                 
                 ( Fetched sUsers sRankings 
@@ -3290,27 +3300,23 @@ playerbuttons selectedRanking sUsers user =
 configureThenAddPlayerRankingBtns : Data.Selected.Selected -> Data.Users.Users -> Data.Users.User-> Data.Selected.UserPlayer -> Element Msg
 configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
    -- nb. 'uplayer' is the player that's being mapped cf. appInfo.player which is current user as player (single instance)
+   -- not sure at all about above comment - ignore for now and clarify later
     let
-        _ = Debug.log "configureThenAddPlayerRankingBtns" uplayer
         printChallengerNameOrAvailable = Data.Selected.printChallengerNameOrAvailable sSelected sUsers uplayer
     in
-        --case user of
-        case (user, uplayer.user) of
-            (Data.Users.Spectator _ _, _)  ->
-                Element.text "Spectator"
-
-            (Data.Users.Registered userId token userInfo userState, Data.Users.Registered _ _ userPlayerInfo _) ->
-                if Data.Selected.isUserPlayerMemberOfSelectedRanking sSelected user then
-                    
+        -- all players are considered Registered (only)
+        case (uplayer.user) of
+            (Data.Users.Registered userId token userInfo userState) ->
+                --isUserPlayerMemberOf this SelectedRanking
+                if not(EverySet.isEmpty (Data.Selected.asEverySet (Data.Selected.gotPlayer uplayer.user sSelected))) then
                     if Data.Selected.isPlayerCurrentUser user uplayer then
-                        --if isCurrentUserInAChallenge then
                         if Data.Selected.isChallenged sSelected sUsers uplayer then
                             Element.column Grid.simple <|
                                 [ Input.button (Button.fill ++ Color.success) <|
                                     { 
                                         --nb. this was appInfo.player - uplayer.player might not be quite correct:
                                         onPress = Just <| ClickedChangedUIStateToEnterResult uplayer
-                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
                                     }
                                 ]
                         else
@@ -3321,7 +3327,7 @@ configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
                             Element.column Grid.simple <|
                                 [ Input.button (Button.fill ++ Color.info) <|
                                     { onPress = Nothing
-                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
                                     }
                                 ]
                         -- else if - this uplayer isn't the current user but the current user is in a challenge so disable any other players
@@ -3331,7 +3337,7 @@ configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
                         Element.column Grid.simple <|
                             [ Input.button (Button.fill ++ Color.disabled) <|
                                 { onPress = Nothing
-                                , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
                                 }
                             ]
                         -- else if - this uplayer isn't the current user but is being challenged
@@ -3340,7 +3346,7 @@ configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
                         Element.column Grid.simple <|
                             [ Input.button (Button.fill ++ Color.disabled) <|
                                 { onPress = Nothing
-                                , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
                                 }
                             ]
                     else
@@ -3349,42 +3355,29 @@ configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
                             Element.column Grid.simple <|
                                 [ Input.button (Button.fill ++ Color.light) <|
                                     { onPress = Just <| ClickedChallengeOpponent uplayer
-                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
                                     }
                                 ]
                         else 
                                 Element.column Grid.simple <|
                                 [ Input.button (Button.fill ++ Color.disabled) <|
                                     { onPress = Nothing
-                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    
+                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
                                     }
                                 ]
                 else
-                    -- the user isn't a member of this ranking so disable everything
+                    -- the user is a Spectator or isn't a member of this ranking, so disable everything
                     Element.column Grid.simple <|
                         [ Input.button (Button.fill ++ Color.disabled) <|
                             { onPress = Nothing
-                            , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userPlayerInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                            , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
                             }
                         ]
 
-            (Data.Users.NoWallet userId token userInfo userState, _) ->
-                Element.text "No User3"
-            (Data.Users.NoCredit addr userId token userInfo userState, _) ->
-                Element.text "No User4"
-            (Data.Users.Credited addr userId token userInfo userState, _) ->
-                Element.text "No User5"
-            ( Data.Users.Registered _ _ _ _, Data.Users.Spectator _ _) ->
-                Element.text "No challenger"
-            ( Data.Users.Registered _ _ _ _, Data.Users.NoWallet _ _ _ _)->
-                Element.text "No challenger"
-            ( Data.Users.Registered _ _ _ _, Data.Users.NoCredit _ _ _ _ _)->
-                Element.text "No challenger"
-            ( Data.Users.Registered _ _ _ _, Data.Users.Credited _ _ _ _ _)->
-                Element.text "No challenger"
+            (_) ->
+                Element.text "Unregistered user!"
         
-
-
 joinBtn : Data.Users.User -> Element Msg
 joinBtn user  =
     case user of

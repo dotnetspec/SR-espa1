@@ -43,14 +43,14 @@ type alias Player =
 type alias FPlayer =
     { id_ : SRdb.ScalarCodecs.Id
     , rankingid : String
-    , address : String
+    , uid : String
     , rank : Int
     , challengerid : Maybe String
     }
 
 convertPlayerFromFPlayer : FPlayer -> Player 
 convertPlayerFromFPlayer fplayer = 
-    Player (fromScalarCodecId fplayer.id_) fplayer.address fplayer.rank (Maybe.withDefault "" fplayer.challengerid)
+    Player (fromScalarCodecId fplayer.id_) fplayer.uid fplayer.rank (Maybe.withDefault "" fplayer.challengerid)
 
 fromScalarCodecId : SRdb.ScalarCodecs.Id -> String
 fromScalarCodecId (Id id) =

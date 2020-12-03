@@ -31,11 +31,11 @@ module Data.Selected exposing (Selected(..)
     , changedRank
     , asSelected
     , isCurrentUserPlayerLowerRanked
-    , isUserPlayerMemberOfSelectedRanking
     , created
     , sortedRank
     , gotStatus
     , gotPlayers
+    , gotPlayer
     , gotOwnerAsUP
     )
 
@@ -254,59 +254,7 @@ isCurrentUserPlayerLowerRanked uplayer challenger =
     --n.b. for ranks lower int is higher rank!
     if uplayer.player.rank > challenger.player.rank then
         True 
-        else False
-
-isUserPlayerMemberOfSelectedRanking : Selected -> Data.Users.User -> Bool
-isUserPlayerMemberOfSelectedRanking sSelected user =
-    --todo: fix
-    False
-    -- let
-    --     filteredList =
-    --         gotPlayer user sSelected
-
-    --     filteredRec =
-    --         List.head filteredList
-    -- in
-    -- case filteredRec of
-    --     Nothing ->
-    --         False
-
-    --     Just a ->
-    --         case user of
-    --             Data.Users.Spectator _ _ ->
-    --                 False
-                    
-    --             (Data.Users.Registered userId token userInfo sStatus) ->
-    --                 if (String.toLower a.player.uid) == userId then
-    --                     True
-
-    --                 else
-    --                     False
-
-    --             (Data.Users.NoWallet userId token userInfo sStatus) ->
-    --                 if (String.toLower a.player.uid) == userId then
-    --                     True
-
-    --                 else
-    --                     False
-
-    --             (Data.Users.NoCredit addr userId token userInfo sStatus) ->
-    --                 if (String.toLower a.player.uid) == userId then
-    --                     True
-
-    --                 else
-    --                     False
-
-    --             (Data.Users.Credited addr userId token userInfo sStatus) ->
-    --                 if (String.toLower a.player.uid) == userId then
-    --                     True
-
-    --                 else
-    --                     False
-
-
-
-        
+        else False       
 
 gotPlayer : Data.Users.User -> Selected -> Selected
 gotPlayer user (SelectedRanking sSelected rnkId ownerStatus players sState name) =
