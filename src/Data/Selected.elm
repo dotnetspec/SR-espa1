@@ -11,7 +11,7 @@ module Data.Selected exposing (Selected(..)
     , gotUserPlayerByUserId
     , empty
     , assignedChallengerUIDForBOTHPlayers
-    , updateSelectedRankingOnChallenge
+    --, updateSelectedRankingOnChallenge
     , gotRankingId
     , handleWon
     , handleLost
@@ -836,8 +836,8 @@ isOpponentHigherRank uplayer opponent =
 --     encodedList
 
 --updateSelectedRankingOnChallenge : Selected -> SR.Types.AppInfo -> Selected
-updateSelectedRankingOnChallenge allSets appInfo =
-    allSets
+--updateSelectedRankingOnChallenge allSets appInfo =
+    --allSets
 
 --assignChallengerAddrsForBOTHPlayers : Selected -> SR.Types.AppInfo -> Selected
 -- assignChallengerAddrsForBOTHPlayers sSelected appInfo =

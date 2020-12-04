@@ -2405,56 +2405,34 @@ updatedForChallenge : Model -> List Data.Selected.UserPlayer -> Data.Selected.Us
 updatedForChallenge model luplayer opponentAsPlayer userMaybeCanDelete =
     case model of
         AppOps dataState user uiState txRec ->
-            let 
-                _ = Debug.log "updatedForChallenge 1 - dataState" dataState
-
-            in
             case dataState of
                 Fetched sUsers sRankings dKind -> 
                     case dKind of 
                             Selected sSelected ->
                                 case user of 
                                     Data.Users.Spectator userInfo userState ->
-                                        Failure "updateChallenge fix"
+                                        Failure "Would you like to Register?"
                                     (Data.Users.Registered userId token userInfo userState) ->
-                                        Failure "updateChallenge fix"
+                                        case opponentAsPlayer.player of 
+                                            Data.Players.IndividualPlayer challengerInfo challengerState -> 
+                                                let
+                                                    newDataKind = Selected (Data.Selected.assignedChallengerUIDForBOTHPlayers sSelected user challengerInfo.uid)
+                                                    
+                                                    newDataState = Fetched sUsers sRankings newDataKind
+                                                in
+                                                    AppOps newDataState user SR.Types.UIChallenge txRec
+                                    
                                     (Data.Users.NoWallet userId token userInfo userState) ->
                                         Failure "updateChallenge fix"
                                     (Data.Users.NoCredit addr userId token userInfo userState) ->
                                         Failure "updateChallenge fix"
                                     (Data.Users.Credited addr userId token userInfo userState) ->
                                         Failure "updateChallenge fix"
-                                    -- Nothing ->
-                                    --     Failure "updateChallenge" 
-                                    -- Just user ->
-                                    --     let
-                                    --         m_uplayer = Data.Selected.gotCurrentUserAsPlayerFromPlayerList luplayer user
-                                    --     in
-                                    --         case m_uplayer of
-                                    --             Nothing -> 
-                                    --                 model
-                                    --             Just uplayer ->
-                                    --                 let
-                                    --                     newAppInfoWithPlayer = { appInfo | player = uplayer }
-                                
-                                    --                     newAppInfoWithChallengerAndPlayer = { newAppInfoWithPlayer | challenger = opponentAsPlayer }
-                                                    
-                                    --                     newDataKind = Selected (Data.Selected.updateSelectedRankingOnChallenge sSelected newAppInfoWithChallengerAndPlayer)
-                                    --                     newDataState = Fetched sUsers sRankings newDataKind
-                                    --                 in
-                                    --                     AppOps newDataState newAppInfoWithChallengerAndPlayer SR.Types.UIChallenge txRec
-                                    
                             _ -> 
-                                let 
-                                    _ = Debug.log "updatedForChallenge - dataState" dataState
-                                in
-                                    model
+                                    (Failure "Fell thru updatedForChallenge")
 
                 _ -> 
-                            let 
-                                _ = Debug.log "updatedForChallenge - dataState" dataState
-                            in
-                                model
+                    (Failure "Fell thru updatedForChallenge")
         _ ->
             Failure <| "updatedForChallenge : "
 
@@ -2683,12 +2661,12 @@ view model =
                                 ]
 
                 ( Fetched _ _ (Selected (Data.Selected.SelectedRanking _ _ Data.Selected.UserIsMember _ _ _)), Data.Users.Registered _ _ _ _ ) ->
-                    Html.text "selected user"
+                    Html.text "selected user UserIsMember"
                 ( Fetched _ _ (Selected (Data.Selected.SelectedRanking _ _ Data.Selected.UserIsNeitherOwnerNorMember _ _ _)), Data.Users.Registered _ _ _ _ ) ->
-                    Html.text "selected user"
+                    Html.text "wrong shouldn't be UserIsNeitherOwnerNorMember"
 
                 ( Fetched _ _ (Selected _), Data.Users.NoWallet _ _ _ _ ) ->
-                    Html.text "selected user"
+                    Html.text "selected user3"
 
                 ( Fetched _ _ (Selected _), Data.Users.NoCredit _ _ _ _ _ ) ->
                     Html.text "selected user"
@@ -3326,7 +3304,7 @@ configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
                                 --available to challenge, not current user:
                                 Element.column Grid.simple <|
                                 [ Input.button (Button.fill ++ Color.info) <|
-                                    { onPress = Nothing
+                                    { onPress = Just <| ClickedChallengeOpponent uplayer
                                     , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
                                     }
                                 ]
