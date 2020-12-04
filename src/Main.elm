@@ -49,6 +49,7 @@ import Bridge
 import Graphql.Http as GQLHttp
 import Data.Users
 import Data.Rankings
+import Data.Players
 
 main =
     Browser.element
@@ -2032,7 +2033,8 @@ createNewRankingResponse model response =
             , Ok createNewRankingResult) ->
                 let 
                     newRanking = Data.Rankings.convertFRankingToRanking createNewRankingResult
-                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.Player newRanking.id_  userId 1 "",
+                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.IndividualPlayer (Data.Players.PlayerInfo newRanking.id_  userId 1 "")
+                                Data.Players.Available,
                             user = Data.Users.Registered userId token userInfo userState})
 
                     newDataKind = Selected 
@@ -2045,7 +2047,8 @@ createNewRankingResponse model response =
             , Ok createNewRankingResult) ->
                 let 
                     newRanking = Data.Rankings.convertFRankingToRanking createNewRankingResult
-                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.Player newRanking.id_  userId 1 "",
+                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.IndividualPlayer (Data.Players.PlayerInfo newRanking.id_  userId 1 "")
+                                Data.Players.Available,
                             user = Data.Users.Registered userId token userInfo userState})
 
                     newDataKind = Selected 
@@ -2058,7 +2061,8 @@ createNewRankingResponse model response =
             , Ok createNewRankingResult) ->
                 let 
                     newRanking = Data.Rankings.convertFRankingToRanking createNewRankingResult
-                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.Player newRanking.id_  userId 1 "",
+                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.IndividualPlayer (Data.Players.PlayerInfo newRanking.id_  userId 1 "")
+                                Data.Players.Available,
                             user = Data.Users.Registered userId token userInfo userState})
 
                     newDataKind = Selected 
@@ -2071,7 +2075,8 @@ createNewRankingResponse model response =
             , Ok createNewRankingResult) ->
                 let 
                     newRanking = Data.Rankings.convertFRankingToRanking createNewRankingResult
-                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.Player newRanking.id_  userId 1 "",
+                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.IndividualPlayer (Data.Players.PlayerInfo newRanking.id_  userId 1 "")
+                                Data.Players.Available,
                             user = Data.Users.Registered userId token userInfo userState})
 
                     newDataKind = Selected 
@@ -3305,15 +3310,15 @@ configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
         printChallengerNameOrAvailable = Data.Selected.printChallengerNameOrAvailable sSelected sUsers uplayer
     in
         -- all players are considered Registered (only)
-        case (uplayer.user) of
-            (Data.Users.Registered userId token userInfo userState) ->
+        case (uplayer.user, uplayer.player) of
+            (Data.Users.Registered userId token userInfo userState, Data.Players.IndividualPlayer playerInfo playerStatus) ->
                         if not (Data.Selected.isChallenged sSelected sUsers uplayer) then
                             if Data.Selected.isRegisteredPlayerCurrentUser user uplayer then
                                 --not challenged, is current user:
                                 Element.column Grid.simple <|
                                 [ Input.button (Button.fill ++ Color.disabled) <|
                                     { onPress = Nothing
-                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
                                     }
                                 ]
                             
@@ -3322,7 +3327,7 @@ configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
                                 Element.column Grid.simple <|
                                 [ Input.button (Button.fill ++ Color.info) <|
                                     { onPress = Nothing
-                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
                                     }
                                 ]
                         else
@@ -3333,7 +3338,7 @@ configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
                                     { 
                                         --nb. this was appInfo.player - uplayer.player might not be quite correct:
                                         onPress = Just <| ClickedChangedUIStateToEnterResult uplayer
-                                    , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
                                     }
                                 ]
 
@@ -3342,7 +3347,7 @@ configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
                             Element.column Grid.simple <|
                             [ Input.button (Button.fill ++ Color.disabled) <|
                                 { onPress = Nothing
-                                , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
                                 }
                             ]
 
@@ -4792,82 +4797,6 @@ updateExistingUser  updatedUserInfo =
 httpUpdateUsers : Data.Users.Users -> Cmd Msg
 httpUpdateUsers  updatedUsers =
     Cmd.none
-
-
--- jsonEncodeNewUsersList : List Data.Users.User -> Json.Encode.Value
--- jsonEncodeNewUsersList luserInfo =
---     let
---         encodeNewUserObj : Data.Users.User -> Json.Encode.Value
---         encodeNewUserObj userInfo =
---             case userInfo.m_ethaddress of
---                 Nothing ->
---                     Json.Encode.object
---                         [ ( "datestamp", Json.Encode.int 1569839363942 )
---                         , ( "active", Json.Encode.bool True )
---                         , ( "username", Json.Encode.string userInfo.username )
---                         , ( "m_ethaddress", Json.Encode.string "")
---                         , ( "description", Json.Encode.string userInfo.description )
---                         , ( "email", Json.Encode.string userInfo.email )
---                         , ( "mobile", Json.Encode.string userInfo.mobile )
---                         , ( "userjoinrankings", Json.Encode.list encodeRankingIdList userInfo.userjoinrankings )
---                         ]
---                 Just addr ->
---                     Json.Encode.object
---                         [ ( "datestamp", Json.Encode.int 1569839363942 )
---                         , ( "active", Json.Encode.bool True )
---                         , ( "username", Json.Encode.string userInfo.username )
---                         , ( "m_ethaddress", Json.Encode.string (String.toLower (Eth.Utils.addressToString addr)) )
---                         , ( "description", Json.Encode.string userInfo.description )
---                         , ( "email", Json.Encode.string userInfo.email )
---                         , ( "mobile", Json.Encode.string userInfo.mobile )
---                         , ( "userjoinrankings", Json.Encode.list encodeRankingIdList userInfo.userjoinrankings )
---                         ]
-
---         encodeRankingIdList : String -> Json.Encode.Value
---         encodeRankingIdList rankingIdstr =
---             Json.Encode.string
---                 rankingIdstr
-
---         encodedList =
---             Json.Encode.list encodeNewUserObj luserInfo
---     in
---     encodedList
-
-
-httpAddCurrentUserToPlayerList : DataState -> Data.Users.User -> Cmd Msg
-httpAddCurrentUserToPlayerList dataState userRec =
-    Cmd.none
-    -- case dataState of
-    --     Updated sUsers sRankings dKind -> 
-    --         case dKind of 
-    --                 Selected sSelected -> 
-    --                     --ReturnFromPlayerListUpdate is the Msg handled by update whenever a request is made
-    --                     --RemoteData is used throughout the module, including update
-    --                     -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
-    --                     -- the Decoder decodes what comes back in the response
-    --                     Http.request
-    --                         { body =
-    --                             Http.jsonBody <| Data.Selected.jsonEncodeNewSelectedRankingPlayerList (Data.Selected.userAdded sUsers (Data.Rankings.stringFromRankingId rnkId) (Data.Selected.asList sSelected) userRec)
-    --                         , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromPlayerListUpdate) SR.Decode.decodeNewPlayerListServerResponse
-    --                         , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
-    --                         , method = "PUT"
-    --                         , timeout = Nothing
-    --                         , tracker = Nothing
-    --                         , url = SR.Constants.jsonbinUrlStubForUpdateExistingBinAndRespond ++ (Data.Rankings.stringFromRankingId rnkId)
-                            
-    --                         }
-    --                 _ -> 
-    --                     let 
-    --                         _ = Debug.log "httpAddCurrentUserToPlayerList - dataState" dataState
-    --                     in
-    --                         Cmd.none
-    --     _ -> 
-    --         let 
-    --             _ = Debug.log "httpAddCurrentUserToPlayerList - dataState" dataState
-    --         in
-    --             Cmd.none
-
-
 
 httpPutRequestForAddGlobal : Json.Encode.Value -> List Data.Rankings.Ranking -> Cmd Msg
 httpPutRequestForAddGlobal newJsonEncodedList globalListWithJsonObjAdded =

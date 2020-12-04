@@ -247,11 +247,11 @@ sortPlayerListTest1 =
 --               }
 --             ]
 --     in
---     describe "assignChallengerAddr test"
+--     describe "assignChallengerId test"
 --         [
 --             -- test "Sub func - Challenge successfully updates player's challenger address in list " <|
 --             --     \() ->
---             --         Data.Players.assignChallengerAddr Testdata.UserPlayerTestData.userPlayerList 
+--             --         Data.Players.assignChallengerId Testdata.UserPlayerTestData.userPlayerList 
 --             --         Testdata.UserPlayerTestData.singleUserPlayer1 Testdata.UserPlayerTestData.singleUserPlayer2.player.uid
 --             --             |> Expect.equal output
             
@@ -260,9 +260,9 @@ sortPlayerListTest1 =
 --             test "Whole func - Challenge successfully updates player's challenger address in list " <|
 --                 \() ->
                     
---                     Data.Selected.assignChallengerAddr 
+--                     Data.Selected.assignChallengerId 
 --                     --Testdata.UserPlayerTestData.userPlayerList 
---                     (Data.Selected.assignChallengerAddr 
+--                     (Data.Selected.assignChallengerId 
 --                     Testdata.UserPlayerTestData.userPlayerList 
 --                     Testdata.UserPlayerTestData.singleUserPlayer2 
 --                     Testdata.UserPlayerTestData.singleUserPlayer1.player.uid)
