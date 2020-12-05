@@ -158,7 +158,7 @@ type Msg
     | ClickedCreateNewLadder
     | ClickedConfirmCreateNewRanking
     | ClickedNewChallengeConfirm String
-    | ClickedChallengeOpponent Data.Selected.UserPlayer
+    | ClickedChallengeOpponent Data.Selected.UserPlayer (Maybe Data.Selected.UserPlayer)
     | ClickedJoinSelected
     | ClickedChangedUIStateToEnterResult Data.Selected.UserPlayer
     | ClickedDeleteRanking
@@ -882,26 +882,51 @@ update msg model =
             (model, Cmd.none)
 
 
-        (ClickedChallengeOpponent opponentAsPlayer, AppOps dataState user uiState txRec )  ->
-            case dataState of
-                Fetched sUsers sRankings dKind ->                   
-                    case dKind of 
-                        Selected sSelected ->
-                            case user of
-                                Data.Users.Spectator userInfo userState ->
-                                    (model, Cmd.none)
-                                (Data.Users.Registered userId token userInfo userState) ->
-                                    ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer user, Cmd.none )
-                                (Data.Users.NoWallet userId token userInfo userState) ->
-                                    ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer user, Cmd.none )
-                                (Data.Users.NoCredit addr userId token userInfo userState) ->
-                                    ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer user, Cmd.none )
-                                (Data.Users.Credited addr userId token userInfo userState) ->
-                                    ( updatedForChallenge model (Data.Selected.asList sSelected) opponentAsPlayer user, Cmd.none )
-                        _ ->
-                            (model, Cmd.none)
-                _ ->
-                    (model, Cmd.none)
+        (ClickedChallengeOpponent opponentAsUserPlayer userAsUserPlayer,
+            AppOps (Fetched sUsers sRankings (Selected sSelected))
+                (Data.Users.Spectator userInfo userState) uiState txRec ) ->
+                (Failure "Spectator should'nt be able to challenge", Cmd.none)
+        
+        (ClickedChallengeOpponent opponentAsUserPlayer userAsUserPlayer,
+            AppOps (Fetched sUsers sRankings (Selected sSelected))
+                (Data.Users.Registered userId token userInfo userState) uiState txRec ) ->
+                    case userAsUserPlayer of 
+                        Nothing ->
+                            (Failure "User couldn't be found as UP!", Cmd.none)
+                        
+                        Just uAsUP ->
+                            let
+                                newDataKind = Selected (Data.Selected.assignedChallengerUIDForBOTHPlayers sSelected uAsUP opponentAsUserPlayer)
+                                newDataState = Fetched sUsers sRankings newDataKind
+                            in
+                                (AppOps newDataState (Data.Users.Registered userId token userInfo userState) uiState txRec, Cmd.none)
+
+        (ClickedChallengeOpponent opponentAsUserPlayer userAsUserPlayer, 
+            AppOps (Fetched sUsers sRankings (Selected sSelected))
+                (Data.Users.NoWallet userId token userInfo userState) uiState txRec ) ->
+                case userAsUserPlayer of
+                    Nothing ->
+                        (Failure "Not yet implemented", Cmd.none)
+                    Just uAsUP -> 
+                        (Failure "Not yet implemented", Cmd.none)
+
+        (ClickedChallengeOpponent opponentAsUserPlayer userAsUserPlayer, 
+            AppOps (Fetched sUsers sRankings (Selected sSelected))
+                (Data.Users.NoCredit addr userId token userInfo userState) uiState txRec ) ->
+                case userAsUserPlayer of
+                    Nothing ->
+                        (Failure "Not yet implemented", Cmd.none)
+                    Just uAsUP -> 
+                        (Failure "Not yet implemented", Cmd.none)
+
+        (ClickedChallengeOpponent opponentAsUserPlayer userAsUserPlayer,
+            AppOps (Fetched sUsers sRankings (Selected sSelected))
+                (Data.Users.Credited addr userId token userInfo userState) uiState txRec) ->
+                case userAsUserPlayer of
+                    Nothing -> 
+                        (Failure "Not yet implemented", Cmd.none)
+                    Just uAsUP -> 
+                        (Failure "Not yet implemented", Cmd.none)
 
 
         (ClickedDeleteRanking, AppOps dataState user uiState txRec )  ->
@@ -2033,7 +2058,7 @@ createNewRankingResponse model response =
             , Ok createNewRankingResult) ->
                 let 
                     newRanking = Data.Rankings.convertFRankingToRanking createNewRankingResult
-                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.IndividualPlayer (Data.Players.PlayerInfo newRanking.id_  userId 1 "")
+                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.IndividualPlayer (Data.Players.PlayerInfo newRanking.id_  userId 1)
                                 Data.Players.Available,
                             user = Data.Users.Registered userId token userInfo userState})
 
@@ -2047,7 +2072,7 @@ createNewRankingResponse model response =
             , Ok createNewRankingResult) ->
                 let 
                     newRanking = Data.Rankings.convertFRankingToRanking createNewRankingResult
-                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.IndividualPlayer (Data.Players.PlayerInfo newRanking.id_  userId 1 "")
+                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.IndividualPlayer (Data.Players.PlayerInfo newRanking.id_  userId 1)
                                 Data.Players.Available,
                             user = Data.Users.Registered userId token userInfo userState})
 
@@ -2061,7 +2086,7 @@ createNewRankingResponse model response =
             , Ok createNewRankingResult) ->
                 let 
                     newRanking = Data.Rankings.convertFRankingToRanking createNewRankingResult
-                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.IndividualPlayer (Data.Players.PlayerInfo newRanking.id_  userId 1 "")
+                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.IndividualPlayer (Data.Players.PlayerInfo newRanking.id_  userId 1)
                                 Data.Players.Available,
                             user = Data.Users.Registered userId token userInfo userState})
 
@@ -2075,7 +2100,7 @@ createNewRankingResponse model response =
             , Ok createNewRankingResult) ->
                 let 
                     newRanking = Data.Rankings.convertFRankingToRanking createNewRankingResult
-                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.IndividualPlayer (Data.Players.PlayerInfo newRanking.id_  userId 1 "")
+                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.IndividualPlayer (Data.Players.PlayerInfo newRanking.id_  userId 1)
                                 Data.Players.Available,
                             user = Data.Users.Registered userId token userInfo userState})
 
@@ -2399,43 +2424,6 @@ updateUserMobile mobilefield userInfo =
         newUserInfo = {userInfo | extrauserinfo = newExtraInfo}
     in
         newUserInfo
-
-
-updatedForChallenge : Model -> List Data.Selected.UserPlayer -> Data.Selected.UserPlayer -> Data.Users.User -> Model
-updatedForChallenge model luplayer opponentAsPlayer userMaybeCanDelete =
-    case model of
-        AppOps dataState user uiState txRec ->
-            case dataState of
-                Fetched sUsers sRankings dKind -> 
-                    case dKind of 
-                            Selected sSelected ->
-                                case user of 
-                                    Data.Users.Spectator userInfo userState ->
-                                        Failure "Would you like to Register?"
-                                    (Data.Users.Registered userId token userInfo userState) ->
-                                        case opponentAsPlayer.player of 
-                                            Data.Players.IndividualPlayer challengerInfo challengerState -> 
-                                                let
-                                                    newDataKind = Selected (Data.Selected.assignedChallengerUIDForBOTHPlayers sSelected user challengerInfo.uid)
-                                                    
-                                                    newDataState = Fetched sUsers sRankings newDataKind
-                                                in
-                                                    AppOps newDataState user SR.Types.UIChallenge txRec
-                                    
-                                    (Data.Users.NoWallet userId token userInfo userState) ->
-                                        Failure "updateChallenge fix"
-                                    (Data.Users.NoCredit addr userId token userInfo userState) ->
-                                        Failure "updateChallenge fix"
-                                    (Data.Users.Credited addr userId token userInfo userState) ->
-                                        Failure "updateChallenge fix"
-                            _ -> 
-                                    (Failure "Fell thru updatedForChallenge")
-
-                _ -> 
-                    (Failure "Fell thru updatedForChallenge")
-        _ ->
-            Failure <| "updatedForChallenge : "
-
 
 
 updateSelectedRankingPlayerList : Model -> List Data.Selected.UserPlayer -> Model
@@ -3282,8 +3270,7 @@ playerbuttons selectedRanking sUsers user =
 
 configureThenAddPlayerRankingBtns : Data.Selected.Selected -> Data.Users.Users -> Data.Users.User-> Data.Selected.UserPlayer -> Element Msg
 configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
-   -- nb. 'uplayer' is the player that's being mapped cf. appInfo.player which is current user as player (single instance)
-   -- not sure at all about above comment - ignore for now and clarify later
+   -- nb. 'uplayer' is the player that's being mapped cf. user which is current user (single instance)
     let
         printChallengerNameOrAvailable = Data.Selected.printChallengerNameOrAvailable sSelected sUsers uplayer
     in
@@ -3301,10 +3288,11 @@ configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
                                 ]
                             
                             else
-                                --available to challenge, not current user:
+                                --available to challenge, not current user.
+                                -- uplayer for ClickedChallengeOpponent here is the opponent:
                                 Element.column Grid.simple <|
                                 [ Input.button (Button.fill ++ Color.info) <|
-                                    { onPress = Just <| ClickedChallengeOpponent uplayer
+                                    { onPress = Just <| ClickedChallengeOpponent uplayer (Data.Selected.gotUserPlayerByUserId sSelected userId)
                                     , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
                                     }
                                 ]

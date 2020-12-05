@@ -108,7 +108,7 @@ type UIState
     | UISelectedRankingUserIsNeitherOwnerNorPlayer
     | UIEnterResult
     | UIEnterResultTxProblem
-    | UIChallenge
+    --| UIChallenge
     | UIWaitingForTxReceipt
     | UIDeleteRankingConfirm
     | UIEnableEthereum

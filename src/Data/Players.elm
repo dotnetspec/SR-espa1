@@ -5,6 +5,7 @@ module Data.Players exposing (Players
     , PlayerInfo
     , PlayerStatus(..)
     , gotUid
+    , assignChallengerUID
     --, validatedPlayerList
     , handleFetchedPlayers
     , extractPlayersFromWebData
@@ -43,7 +44,7 @@ type alias PlayerInfo =
     { rankingid : String
     , uid : Data.Users.UserId
     , rank : Int
-    , challengerid : String
+    --, challengerid : String
     }
 
 type alias FPlayer =
@@ -56,8 +57,8 @@ type alias FPlayer =
 
 convertPlayerFromFPlayer : FPlayer -> Player 
 convertPlayerFromFPlayer fplayer = 
-    IndividualPlayer (PlayerInfo (fromScalarCodecId fplayer.id_) fplayer.uid fplayer.rank 
-    (Maybe.withDefault "" fplayer.challengerid)) (determinePlayerStatus (fplayer.challengerid))
+    IndividualPlayer (PlayerInfo (fromScalarCodecId fplayer.id_) fplayer.uid fplayer.rank)
+        (Maybe.withDefault Available (Just (determinePlayerStatus fplayer.challengerid)))
 
 determinePlayerStatus : Maybe String -> PlayerStatus 
 determinePlayerStatus challengerid = 
@@ -95,6 +96,12 @@ asList sPlayers =
             setOfPlayers
            |> EverySet.toList
 
+assignChallengerUID : Player -> String -> Player 
+assignChallengerUID player challengerUID =
+    case player of 
+        IndividualPlayer playerInfo playerStatus ->
+            IndividualPlayer (PlayerInfo playerInfo.rankingid  playerInfo.uid playerInfo.rank)
+                (Challenged challengerUID)
 
 addPlayer : Player -> Players -> Players
 addPlayer player sPlayers = 

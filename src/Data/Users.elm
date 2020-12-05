@@ -125,7 +125,7 @@ type Users = Users (EverySet User)
 type UserNames = UserNames (EverySet String)
 
 type alias UserInfo =
-    { --datestamp to become creditsremaining
+    { --datestamp to become creditsremaining - check member_since works as expected
     datestamp : Int
     , active : Bool
     , username : String
@@ -161,6 +161,20 @@ type alias ExtraUserInfo =
 convertedStrToUserId : String -> UserId 
 convertedStrToUserId uid =
     uid
+
+-- assignChallengerId : Data.Users.User -> String -> Data.Users.User 
+-- assignChallengerId user challengerUID = 
+--     case user of 
+--         Registered userId token userInfo userStatus ->
+--             Registered userId token (Data.Users.UserInfo userInfo.datestamp 
+--     userInfo.active
+--     userInfo.username
+--     userInfo.password
+--     (ExtraUserInfo userInfo.extrauserinfo.
+--     userInfo.userjoinrankings
+--     userInfo.member_since 
+--     userStatus
+
 
 gotUserIdFromUser : User -> String 
 gotUserIdFromUser user = 
