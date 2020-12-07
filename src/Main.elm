@@ -2031,7 +2031,10 @@ loginResponse model response =
     case (model, response) of
         (AppOps dataState (Data.Users.Spectator userInfo userState) uiState txRec
             , Ok loginResult) ->
-                AppOps dataState (Data.Users.convertFUserToUser (Maybe.withDefault (Data.Users.emptyFUser) loginResult.user)) uiState txRec
+                let 
+                    convertedUser = (Data.Users.convertFUserToUser (Maybe.withDefault (Data.Users.emptyFUser) loginResult.user))
+                in
+                AppOps (reconfigureDataState dataState convertedUser) convertedUser uiState txRec
         
         ( AppOps _ (_) _ _ 
             , Ok loginResult) ->
@@ -2046,6 +2049,27 @@ loginResponse model response =
 
         (Failure _, _) ->
             model
+
+reconfigureDataState : DataState -> Data.Users.User -> DataState 
+reconfigureDataState dataState user = 
+    case (dataState, user) of 
+        (Fetched sUsers sRankings (Global (Data.Global.GlobalRankings (Data.Global.All esAllUR) Data.Global.DisplayLoggedIn)), Data.Users.Spectator _ _) ->
+            -- let 
+                
+            --     esOwnedUR = (EverySet.filter (Data.Global.isOwned user) esAllUR)
+            --     esMemberUR = (EverySet.filter (Data.Global.isMember user) esAllUR)
+            --     dKindWithOtherRankings = Data.Global.gotOthers sGlobal user
+                
+            --     newDataKind = Global    <| Data.Global.GlobalRankings (Data.Global.All (Data.Global.asEverySet 
+            --                                 <| Data.Global.created sRankings sUsers)) Data.Global.DisplayGlobalOnly
+            --     newDataState = Fetched sUsers sRankings newDataKind
+            -- in 
+            dataState
+            --newDataState
+
+        (_, _) ->
+            dataState
+
 
 createNewRankingResponse: Model -> Result (GQLHttp.Error (Data.Rankings.FRanking)) (Data.Rankings.FRanking) -> Model
 createNewRankingResponse model response =

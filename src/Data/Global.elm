@@ -8,6 +8,8 @@ module Data.Global exposing (Global(..)
     , listUserRankingsToGlobal
     , gotOthers
     , gotOwned
+    , gotMember
+    , isOwned
     , filteredSelected
     , createdPlayers
     , rankingsAsList
@@ -18,7 +20,7 @@ module Data.Global exposing (Global(..)
     , gotUserRankingByRankingId
     , empty
     , asGlobalRankings
-    , gotMember, addUserRanking, removeUserRanking, asList
+    , addUserRanking, removeUserRanking, asList
     , removedUserRankingByRankingId
     , removedDeletedRankingsFromUserJoined
     , gotNewRankingIdFromWebData)
@@ -286,13 +288,13 @@ gotMember sGlobal user =
         Data.Users.Spectator _ _ ->
             []
         (Data.Users.Registered _ _ userInfo _) ->
-            List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinrankings
+            List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
         (Data.Users.NoWallet userId token userInfo userState) ->
-            List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinrankings
+            List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
         (Data.Users.NoCredit addr userId token userInfo userState) ->
-            List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinrankings
+            List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
         (Data.Users.Credited addr userId token userInfo userState) ->
-            List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinrankings
+            List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
 
 --GlobalRankings RankingType GlobalState
 gotOthers : Global -> Data.Users.User -> Global
@@ -365,9 +367,9 @@ removedDeletedRankingsFromUserJoined user sGlobal =
 
             (Data.Users.Registered userId token userInfo userState) ->
                 let
-                    lwithDeletedRankingIdsRemoved = List.filter (Data.Rankings.isIdInSet (asRankings sGlobal)) (Data.Rankings.stringListToRankingIdList userInfo.userjoinrankings)
+                    lwithDeletedRankingIdsRemoved = List.filter (Data.Rankings.isIdInSet (asRankings sGlobal)) (Data.Rankings.stringListToRankingIdList userInfo.userjoinedrankings)
 
-                    newUserInfo = {userInfo | userjoinrankings = Data.Rankings.rankingIdListToStringList lwithDeletedRankingIdsRemoved}
+                    newUserInfo = {userInfo | userjoinedrankings = Data.Rankings.rankingIdListToStringList lwithDeletedRankingIdsRemoved}
                 in
                     Data.Users.Registered userId token newUserInfo Data.Users.General
 

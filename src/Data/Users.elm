@@ -131,7 +131,7 @@ type alias UserInfo =
     , username : String
     , password : String
     , extrauserinfo : ExtraUserInfo
-    , userjoinrankings : List String
+    , userjoinedrankings : List String
     , member_since : String
     }
 
@@ -171,7 +171,7 @@ convertedStrToUserId uid =
 --     userInfo.username
 --     userInfo.password
 --     (ExtraUserInfo userInfo.extrauserinfo.
---     userInfo.userjoinrankings
+--     userInfo.userjoinedrankings
 --     userInfo.member_since 
 --     userStatus
 
@@ -404,7 +404,7 @@ addedNewJoinedRankingId rankingId user lUser =
 
         -- if there's anything wrong with the existing joinrankings data fix it here:
         -- userJoinRankings =
-        --     List.Unique.filterDuplicates (List.filterMap removedInvalidRankingId user.userjoinrankings)
+        --     List.Unique.filterDuplicates (List.filterMap removedInvalidRankingId user.userjoinedrankings)
         -- todo: temp fix
 
         userJoinRankings =
@@ -424,8 +424,8 @@ addedNewJoinedRankingId rankingId user lUser =
             List.Unique.filterDuplicates (List.filterMap removedInvalidRankingId validatedRankingAdded)
 
         -- userUpdated =
-        --     --{ user | userjoinrankings =  validatedRankingAdded}
-        --     { user | userjoinrankings =  validatedUserJoinRankings}
+        --     --{ user | userjoinedrankings =  validatedRankingAdded}
+        --     { user | userjoinedrankings =  validatedUserJoinRankings}
 
         -- newUserList =
         --     userUpdated :: lUser
@@ -457,7 +457,7 @@ removedRankindIdFromUser  rnkId user =
     let
         -- if there's anything wrong with the existing joinrankings data fix it here:
         -- todo: temp fix
-        --userJoinRankings = List.Unique.filterDuplicates (List.filterMap removedInvalidRankingId user.userjoinrankings)
+        --userJoinRankings = List.Unique.filterDuplicates (List.filterMap removedInvalidRankingId user.userjoinedrankings)
         userJoinRankings = List.Unique.filterDuplicates (List.filterMap removedInvalidRankingId [""])
         --_ = Debug.log "userJoinRankings" userJoinRankings
 
@@ -466,7 +466,7 @@ removedRankindIdFromUser  rnkId user =
 
         --_ = Debug.log "filteredOutRanking" filteredOutRanking
 
-        --userUpdated = {user | userjoinrankings = filteredOutRanking}
+        --userUpdated = {user | userjoinedrankings = filteredOutRanking}
     in
         --userUpdated
         -- todo: temp fix
@@ -502,8 +502,8 @@ asList susers =
 handleDeletionFromUserJoined : UserInfo -> Data.Rankings.Rankings -> UserInfo
 handleDeletionFromUserJoined userInfo sRankings = 
     let
-        lwithDeletedRankingIdsRemoved = List.filter (Data.Rankings.isIdInSet sRankings) (Data.Rankings.stringListToRankingIdList userInfo.userjoinrankings)
-        newUserInfo = {userInfo | userjoinrankings = Data.Rankings.rankingIdListToStringList lwithDeletedRankingIdsRemoved} 
+        lwithDeletedRankingIdsRemoved = List.filter (Data.Rankings.isIdInSet sRankings) (Data.Rankings.stringListToRankingIdList userInfo.userjoinedrankings)
+        newUserInfo = {userInfo | userjoinedrankings = Data.Rankings.rankingIdListToStringList lwithDeletedRankingIdsRemoved} 
     in
         newUserInfo
 

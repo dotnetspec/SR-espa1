@@ -210,7 +210,7 @@ sortPlayerListTest1 =
 --                 email = "t5@t.com",
 --                 ethaddress = "0xf5003cea9657a15123b1cc83c305f87555d190cf",
 --                 mobile = "55555555",
---                 userjoinrankings = ["5e96c74b5fa47104cea0c7c6", "5e8e879d8e85c8437012e2a7"],
+--                 userjoinedrankings = ["5e96c74b5fa47104cea0c7c6", "5e8e879d8e85c8437012e2a7"],
 --                 username = "Test 5"
 --             }
 
@@ -222,7 +222,7 @@ sortPlayerListTest1 =
 --                 email = "t4@t.com",
 --                 ethaddress = "0x3bb244dec13253d39e22606850f4704b469a4b93",
 --                 mobile = "123456",
---                 userjoinrankings = ["5e96c74b5fa47104cea0c7c6", "5e96c9ed2940c704e1d8685e"],
+--                 userjoinedrankings = ["5e96c74b5fa47104cea0c7c6", "5e96c9ed2940c704e1d8685e"],
 --                 username = "Test 4"
 --             }
 

@@ -20,7 +20,7 @@ singleUserRanking =
         , description = "t10"
         , email = "t10@t.com"
         , mobile = "10101000"
-        , userjoinrankings = []
+        , userjoinedrankings = []
         }
     }
 
@@ -40,7 +40,7 @@ userRankingList =
                     , description = "t10"
                     , email = "t10@t.com"
                     , mobile = "10101000"
-                    , userjoinrankings = 
+                    , userjoinedrankings = 
                       ["5e96c74b5fa47104cea0c7c6"
                       , "5e8e879d8e85c8437012e2a7"
                       , "5e96baff2940c704e1d86316"]
@@ -63,7 +63,7 @@ userRankingList =
           , description = "t8"
           , email = "t8@t.com"
           , mobile = "8888888"
-          , userjoinrankings = []
+          , userjoinedrankings = []
           }
         }
   ]
@@ -77,7 +77,7 @@ userRankingList =
 --       , description = "t10"
 --       , email = "t10@t.com"
 --       , mobile = "10101000"
---       , userjoinrankings = []
+--       , userjoinedrankings = []
 --       }
 --     , { datestamp = 1569839363942
 --       , active = True
@@ -86,7 +86,7 @@ userRankingList =
 --       , description = "t8"
 --       , email = "t8@t.com"
 --       , mobile = "8888888"
---       , userjoinrankings = []
+--       , userjoinedrankings = []
 --       }
 --     , { datestamp = 1569839363942
 --       , active = True
@@ -95,7 +95,7 @@ userRankingList =
 --       , description = "t7"
 --       , email = "t7@t.com"
 --       , mobile = "7777777"
---       , userjoinrankings = []
+--       , userjoinedrankings = []
 --       }
 --     , { datestamp = 1569839363942
 --       , active = True
@@ -104,7 +104,7 @@ userRankingList =
 --       , description = "t2"
 --       , email = "t2@t.com"
 --       , mobile = "222222222"
---       , userjoinrankings = []
+--       , userjoinedrankings = []
 --       }
 --     , { datestamp = 1569839363942
 --       , active = True
@@ -113,7 +113,7 @@ userRankingList =
 --       , description = "t1"
 --       , email = "t1@t.com"
 --       , mobile = "11111111"
---       , userjoinrankings = []
+--       , userjoinedrankings = []
 --       }
 --     , { datestamp = 1569839363942
 --       , active = True
@@ -122,7 +122,7 @@ userRankingList =
 --       , description = "t5"
 --       , email = "t5@t.com"
 --       , mobile = "55555555"
---       , userjoinrankings = []
+--       , userjoinedrankings = []
 --       }
 --     , { datestamp = 1569839363942
 --       , active = True
@@ -131,7 +131,7 @@ userRankingList =
 --       , description = "t6"
 --       , email = "t6@t.com"
 --       , mobile = "123456"
---       , userjoinrankings = []
+--       , userjoinedrankings = []
 --       }
 --     , { datestamp = 1569839363942
 --       , active = True
@@ -140,7 +140,7 @@ userRankingList =
 --       , description = "t4"
 --       , email = "t4@t.com"
 --       , mobile = "123456"
---       , userjoinrankings = []
+--       , userjoinedrankings = []
 --       }
 --     , { datestamp = 1569839363942
 --       , active = True
@@ -149,7 +149,7 @@ userRankingList =
 --       , description = "t3"
 --       , email = "test3@t3.com"
 --       , mobile = "777777777777"
---       , userjoinrankings = []
+--       , userjoinedrankings = []
 --       }
 --     ]
 
@@ -164,7 +164,7 @@ userRankingList =
 --           , description = "t10"
 --           , email = "t10@t.com"
 --           , mobile = "10101000"
---           , userjoinrankings = []
+--           , userjoinedrankings = []
 --           }
 --         , { datestamp = 1569839363942
 --           , active = True
@@ -173,7 +173,7 @@ userRankingList =
 --           , description = "t8"
 --           , email = "t8@t.com"
 --           , mobile = "8888888"
---           , userjoinrankings = []
+--           , userjoinedrankings = []
 --           }
 --         , { datestamp = 1569839363942
 --           , active = True
@@ -182,7 +182,7 @@ userRankingList =
 --           , description = "t7"
 --           , email = "t7@t.com"
 --           , mobile = "7777777"
---           , userjoinrankings = []
+--           , userjoinedrankings = []
 --           }
 --         , { datestamp = 1569839363942
 --           , active = True
@@ -191,7 +191,7 @@ userRankingList =
 --           , description = "t2"
 --           , email = "t2@t.com"
 --           , mobile = "222222222"
---           , userjoinrankings = []
+--           , userjoinedrankings = []
 --           }
 --         , { datestamp = 1569839363942
 --           , active = True
@@ -200,7 +200,7 @@ userRankingList =
 --           , description = "t1"
 --           , email = "t1@t.com"
 --           , mobile = "11111111"
---           , userjoinrankings = []
+--           , userjoinedrankings = []
 --           }
 --         , { datestamp = 1569839363942
 --           , active = True
@@ -209,7 +209,7 @@ userRankingList =
 --           , description = "t5"
 --           , email = "t5@t.com"
 --           , mobile = "55555555"
---           , userjoinrankings = []
+--           , userjoinedrankings = []
 --           }
 --         , { datestamp = 1569839363942
 --           , active = True
@@ -218,7 +218,7 @@ userRankingList =
 --           , description = "t6"
 --           , email = "t6@t.com"
 --           , mobile = "123456"
---           , userjoinrankings = []
+--           , userjoinedrankings = []
 --           }
 --         , { datestamp = 1569839363942
 --           , active = True
@@ -227,7 +227,7 @@ userRankingList =
 --           , description = "t4"
 --           , email = "t4@t.com"
 --           , mobile = "123456"
---           , userjoinrankings = []
+--           , userjoinedrankings = []
 --           }
 --         , { datestamp = 1569839363942
 --           , active = True
@@ -236,7 +236,7 @@ userRankingList =
 --           , description = "t3"
 --           , email = "test3@t3.com"
 --           , mobile = "777777777777"
---           , userjoinrankings = []
+--           , userjoinedrankings = []
 --           }
 --         ]
 
@@ -249,7 +249,7 @@ userRankingList =
 --       , description = "Tough"
 --       , email = "j@j.com"
 --       , mobile = "123456"
---       , userjoinrankings = []
+--       , userjoinedrankings = []
 --       }
 --     , { datestamp = 123456
 --       , active = True
@@ -258,7 +258,7 @@ userRankingList =
 --       , description = "Fit"
 --       , email = "j@j.com"
 --       , mobile = "123456"
---       , userjoinrankings = []
+--       , userjoinedrankings = []
 --       }
 --     , { datestamp = 123456
 --       , active = True
@@ -267,7 +267,7 @@ userRankingList =
 --       , description = "Fit"
 --       , email = "j@j.com"
 --       , mobile = "123456"
---       , userjoinrankings = []
+--       , userjoinedrankings = []
 --       }
 --     ]
 
@@ -280,7 +280,7 @@ userRankingList =
 --       , description = "First Cypress Test Acct"
 --       , email = "j@2.com"
 --       , mobile = "1234567890"
---       , userjoinrankings =
+--       , userjoinedrankings =
 --             [ "5e9a96572940c704e1da6f9f"
 --             ]
 --       }
@@ -291,7 +291,7 @@ userRankingList =
 --       , description = "First Cypress Test Acct"
 --       , email = "j@2.com"
 --       , mobile = "1234567890"
---       , userjoinrankings =
+--       , userjoinedrankings =
 --             [ "5e9d8a00435f5604bb44c3bf"
 --             ]
 --       }
@@ -302,7 +302,7 @@ userRankingList =
 --       , description = "ctest 2"
 --       , email = "c@t.com"
 --       , mobile = "999999"
---       , userjoinrankings = []
+--       , userjoinedrankings = []
 --       }
 --     , { datestamp = 1569839363942
 --       , active = True
@@ -311,7 +311,7 @@ userRankingList =
 --       , description = "First Cypress Test Acct"
 --       , email = "j@2.com"
 --       , mobile = "1234567890"
---       , userjoinrankings = []
+--       , userjoinedrankings = []
 --       }
 --     , { datestamp = 1569839363942
 --       , active = True
@@ -320,7 +320,7 @@ userRankingList =
 --       , description = "t10"
 --       , email = "t10@t.com"
 --       , mobile = "10101000"
---       , userjoinrankings =
+--       , userjoinedrankings =
 --             [ "5e8e879d8e85c8437012e2a7"
 --             ]
 --       }
@@ -331,7 +331,7 @@ userRankingList =
 --       , description = "t8"
 --       , email = "t8@t.com"
 --       , mobile = "8888888"
---       , userjoinrankings =
+--       , userjoinedrankings =
 --             [ "5e96baff2940c704e1d86316"
 --             ]
 --       }
@@ -342,7 +342,7 @@ userRankingList =
 --       , description = "t7"
 --       , email = "t7@t.com"
 --       , mobile = "7777777"
---       , userjoinrankings =
+--       , userjoinedrankings =
 --             [ "5e96c74b5fa47104cea0c7c6"
 --             ]
 --       }
@@ -353,7 +353,7 @@ userRankingList =
 --       , description = "t2"
 --       , email = "t2@t.com"
 --       , mobile = "222222222"
---       , userjoinrankings = []
+--       , userjoinedrankings = []
 --       }
 --     , { datestamp = 1569839363942
 --       , active = True
@@ -362,7 +362,7 @@ userRankingList =
 --       , description = "t1"
 --       , email = "t1@t.com"
 --       , mobile = "11111111"
---       , userjoinrankings =
+--       , userjoinedrankings =
 --             [ "5e8e879d8e85c8437012e2a7"
 --             ]
 --       }
@@ -373,7 +373,7 @@ userRankingList =
 --       , description = "t5"
 --       , email = "t5@t.com"
 --       , mobile = "55555555"
---       , userjoinrankings =
+--       , userjoinedrankings =
 --             [ "5e96c74b5fa47104cea0c7c6"
 --             , "5e8e879d8e85c8437012e2a7"
 --             ]
@@ -385,7 +385,7 @@ userRankingList =
 --       , description = "t6"
 --       , email = "t6@t.com"
 --       , mobile = "123456"
---       , userjoinrankings = []
+--       , userjoinedrankings = []
 --       }
 --     , { datestamp = 1569839363942
 --       , active = True
@@ -394,7 +394,7 @@ userRankingList =
 --       , description = "t4"
 --       , email = "t4@t.com"
 --       , mobile = "123456"
---       , userjoinrankings =
+--       , userjoinedrankings =
 --             [ "5e96c74b5fa47104cea0c7c6"
 --             , "5e96c9ed2940c704e1d8685e"
 --             ]
@@ -406,7 +406,7 @@ userRankingList =
 --       , description = "t3"
 --       , email = "test3@t3.com"
 --       , mobile = "777777777777"
---       , userjoinrankings =
+--       , userjoinedrankings =
 --             [ "5e96c9ed2940c704e1d8685e"
 --             ]
 --       }
@@ -421,7 +421,7 @@ userRankingList =
 --       , description = "ctest 2"
 --       , email = "c@t.com"
 --       , mobile = "999999"
---       , userjoinrankings = []
+--       , userjoinedrankings = []
 --       }
 --     , { datestamp = 1569839363942
 --       , active = True
@@ -430,7 +430,7 @@ userRankingList =
 --       , description = "First Cypress Test Acct"
 --       , email = "j@2.com"
 --       , mobile = "1234567890"
---       , userjoinrankings = [ "5e9a96572940c704e1da6f9f" ]
+--       , userjoinedrankings = [ "5e9a96572940c704e1da6f9f" ]
 --       }
 --     , { datestamp = 1569839363942
 --       , active = True
@@ -439,7 +439,7 @@ userRankingList =
 --       , description = "t10"
 --       , email = "t10@t.com"
 --       , mobile = "10101000"
---       , userjoinrankings =
+--       , userjoinedrankings =
 --             [ "5e8e879d8e85c8437012e2a7"
 --             ]
 --       }
@@ -450,7 +450,7 @@ userRankingList =
 --       , description = "t8"
 --       , email = "t8@t.com"
 --       , mobile = "8888888"
---       , userjoinrankings =
+--       , userjoinedrankings =
 --             [ "5e96baff2940c704e1d86316"
 --             ]
 --       }
@@ -461,7 +461,7 @@ userRankingList =
 --       , description = "t7"
 --       , email = "t7@t.com"
 --       , mobile = "7777777"
---       , userjoinrankings =
+--       , userjoinedrankings =
 --             [ "5e96c74b5fa47104cea0c7c6"
 --             ]
 --       }
@@ -472,7 +472,7 @@ userRankingList =
 --       , description = "t2"
 --       , email = "t2@t.com"
 --       , mobile = "222222222"
---       , userjoinrankings = []
+--       , userjoinedrankings = []
 --       }
 --     , { datestamp = 1569839363942
 --       , active = True
@@ -481,7 +481,7 @@ userRankingList =
 --       , description = "t1"
 --       , email = "t1@t.com"
 --       , mobile = "11111111"
---       , userjoinrankings =
+--       , userjoinedrankings =
 --             [ "5e8e879d8e85c8437012e2a7"
 --             ]
 --       }
@@ -492,7 +492,7 @@ userRankingList =
 --       , description = "t5"
 --       , email = "t5@t.com"
 --       , mobile = "55555555"
---       , userjoinrankings =
+--       , userjoinedrankings =
 --             [ "5e96c74b5fa47104cea0c7c6"
 --             , "5e8e879d8e85c8437012e2a7"
 --             ]
@@ -504,7 +504,7 @@ userRankingList =
 --       , description = "t6"
 --       , email = "t6@t.com"
 --       , mobile = "123456"
---       , userjoinrankings = []
+--       , userjoinedrankings = []
 --       }
 --     , { datestamp = 1569839363942
 --       , active = True
@@ -513,7 +513,7 @@ userRankingList =
 --       , description = "t4"
 --       , email = "t4@t.com"
 --       , mobile = "123456"
---       , userjoinrankings =
+--       , userjoinedrankings =
 --             [ "5e96c74b5fa47104cea0c7c6"
 --             , "5e96c9ed2940c704e1d8685e"
 --             ]
@@ -525,7 +525,7 @@ userRankingList =
 --       , description = "t3"
 --       , email = "test3@t3.com"
 --       , mobile = "777777777777"
---       , userjoinrankings =
+--       , userjoinedrankings =
 --             [ "5e96c9ed2940c704e1d8685e"
 --             ]
 --       }

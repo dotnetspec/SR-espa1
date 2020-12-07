@@ -218,7 +218,7 @@ addNewUserPlayerJoinRanking uplayer (Internal.Types.RankingId rnkId) =
 
             (Data.Users.Registered userId token userInfo sStatus) ->
                  let 
-                    updatedUserJoinRankings = {userInfo | userjoinrankings = rnkId :: userInfo.userjoinrankings}
+                    updatedUserJoinRankings = {userInfo | userjoinedrankings = rnkId :: userInfo.userjoinedrankings}
                     newUser = Data.Users.Registered userId token updatedUserJoinRankings
                     newUserPlayer =  { uplayer | player = uplayer.player, user = newUser Data.Users.General}
                     
@@ -227,7 +227,7 @@ addNewUserPlayerJoinRanking uplayer (Internal.Types.RankingId rnkId) =
             
             (Data.Users.NoWallet userId token userInfo sStatus) ->
                 let 
-                    updatedUserJoinRankings = {userInfo | userjoinrankings = rnkId :: userInfo.userjoinrankings}
+                    updatedUserJoinRankings = {userInfo | userjoinedrankings = rnkId :: userInfo.userjoinedrankings}
                     newUser = Data.Users.NoWallet userId token updatedUserJoinRankings
                     newUserPlayer =  { uplayer | player = uplayer.player, user = newUser Data.Users.General}
                     
@@ -236,7 +236,7 @@ addNewUserPlayerJoinRanking uplayer (Internal.Types.RankingId rnkId) =
             
             (Data.Users.NoCredit addr userId token userInfo sStatus) ->
                 let 
-                    updatedUserJoinRankings = {userInfo | userjoinrankings = rnkId :: userInfo.userjoinrankings}
+                    updatedUserJoinRankings = {userInfo | userjoinedrankings = rnkId :: userInfo.userjoinedrankings}
                     newUser = Data.Users.NoCredit addr userId token updatedUserJoinRankings
                     newUserPlayer =  { uplayer | player = uplayer.player, user = newUser Data.Users.General}
                     
@@ -246,7 +246,7 @@ addNewUserPlayerJoinRanking uplayer (Internal.Types.RankingId rnkId) =
 
             (Data.Users.Credited addr userId token userInfo sStatus) ->
                 let 
-                    updatedUserJoinRankings = {userInfo | userjoinrankings = rnkId :: userInfo.userjoinrankings}
+                    updatedUserJoinRankings = {userInfo | userjoinedrankings = rnkId :: userInfo.userjoinedrankings}
                     newUser = Data.Users.Credited addr userId token updatedUserJoinRankings
                     newUserPlayer =  { uplayer | player = uplayer.player, user = newUser Data.Users.General}
                     
