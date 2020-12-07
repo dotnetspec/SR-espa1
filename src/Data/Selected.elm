@@ -852,21 +852,6 @@ assignedChallengerUIDForBOTHPlayers sSelected user challenger =
                         (_) ->
                             sSelected
 
--- assignedChallengerUIDForBOTHPlayers : Selected -> Data.Users.User -> String -> Selected
--- assignedChallengerUIDForBOTHPlayers sSelected user challengerUID =
---     -- todo: fix
---     --empty
---     case (sSelected, user) of 
---         (SelectedRanking sselected rnkId status sPlayers sState name, Data.Users.Registered userId token userInfo userStatus ->
---             let
---                 sUserUpdated = assignChallengerId (asSelected sselected rnkId status sPlayers sState name) appInfo.player challengerUID
---                 updatedUser = Data.Players.assignChallengerUID 
-
---                 sChallengerUpdated = assignChallengerId sUserUpdated appInfo.challenger appInfo.player.player.uid --sUsers rnkId
---             in 
---                 sChallengerUpdated
-
-
 
 extractAndSortPlayerList : RemoteData.WebData (List Data.Players.Player) -> List Data.Users.User -> List UserPlayer
 extractAndSortPlayerList rdlPlayer luser =
