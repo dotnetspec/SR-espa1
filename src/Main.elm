@@ -445,12 +445,12 @@ update msg model =
             (model, Cmd.none)
 
         (ClickedDisplayGlobalOnly, AppOps 
-            (Fetched sUsers sRankings _) 
+            (Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR
+                    (Data.Global.DisplayGlobalLogin)))) 
                 user uiState txRec ) ->
                 let
                     -- rf?: currently having to re-create Global here
-                    newDataKind = Global    <| Data.Global.GlobalRankings (Data.Global.All (Data.Global.asEverySet 
-                                            <| Data.Global.created sRankings sUsers)) Data.Global.DisplayGlobalOnly
+                    newDataKind = Global <| Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly
                     newDataState = Fetched sUsers sRankings newDataKind
                 in
                     ( AppOps newDataState user SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )
@@ -629,12 +629,12 @@ update msg model =
                 Data.Selected.NoResult ->
                     (Failure "No Result", Cmd.none)
 
-        (ClickedCreateNewLadder, AppOps (Fetched sUsers sRankings (Global sGlobal)) 
+        (ClickedCreateNewLadder, AppOps (Fetched sUsers sRankings (Global (Data.Global.GlobalRankings (esUR) 
+                    (Data.Global.DisplayGlobalOnly)))) 
             (Data.Users.Registered userId token userInfo userState) 
                 uiState txRec) ->
                     let
-                        newDataKind = Global <| Data.Global.GlobalRankings (Data.Global.All 
-                            (Data.Global.asEverySet sGlobal))
+                        newDataKind = Global <| Data.Global.GlobalRankings esUR
                             (Data.Global.CreatingNewRanking (Data.Rankings.Ranking "" True "" Nothing userId))
                         newDataState = Fetched sUsers sRankings newDataKind
                         newModel = 
@@ -647,13 +647,12 @@ update msg model =
 
         (Cancel, AppOps 
             (Fetched sUsers sRankings 
-                (Global sGlobal))
+                (Global (Data.Global.GlobalRankings (esUR) 
+                    (Data.Global.DisplayGlobalOnly))))
                     (Data.Users.Spectator userInfo Data.Users.Updating) 
                         uiState txRec ) ->
                         let
-                            -- rf?: currently having to re-create Global here
-                            newDataKind = Global    <| Data.Global.GlobalRankings (Data.Global.All (Data.Global.asEverySet 
-                                                    <| Data.Global.created sRankings sUsers)) Data.Global.DisplayLoggedIn
+                            newDataKind = Global <| Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin
                             newDataState = Fetched sUsers sRankings newDataKind
 
                         in
@@ -664,13 +663,12 @@ update msg model =
 
         (Cancel, AppOps 
             (Fetched sUsers sRankings 
-                (Global sGlobal))
+                (Global (Data.Global.GlobalRankings (esUR) 
+                    (Data.Global.DisplayGlobalOnly))))
                     (Data.Users.Spectator userInfo Data.Users.CreatingNew) 
                         uiState txRec ) ->
                         let
-                            -- rf?: currently having to re-create Global here
-                            newDataKind = Global    <| Data.Global.GlobalRankings (Data.Global.All (Data.Global.asEverySet 
-                                                    <| Data.Global.created sRankings sUsers)) Data.Global.DisplayLoggedIn
+                            newDataKind = Global <| Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin
                             newDataState = Fetched sUsers sRankings newDataKind
 
                         in
@@ -681,13 +679,12 @@ update msg model =
 
         (Cancel, AppOps 
             (Fetched sUsers sRankings 
-                (Global sGlobal))
+                (Global (Data.Global.GlobalRankings (esUR) 
+                    (Data.Global.DisplayGlobalOnly))))
                     (Data.Users.Spectator userInfo Data.Users.General) 
                         uiState txRec ) ->
                         let
-                            -- rf?: currently having to re-create Global here
-                            newDataKind = Global    <| Data.Global.GlobalRankings (Data.Global.All (Data.Global.asEverySet 
-                                                    <| Data.Global.created sRankings sUsers)) Data.Global.DisplayLoggedIn
+                            newDataKind = Global <| Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin
                             newDataState = Fetched sUsers sRankings newDataKind
 
                         in
@@ -698,13 +695,11 @@ update msg model =
 
         (Cancel, AppOps 
             (Fetched sUsers sRankings 
-                (Global (Data.Global.GlobalRankings (Data.Global.All esUR) 
+                (Global (Data.Global.GlobalRankings (esUR) 
                     (Data.Global.DisplayGlobalOnly))))
                     user uiState txRec ) ->
                         let
-                            -- rf?: currently having to re-create Global here
-                            newDataKind = Global    <| Data.Global.GlobalRankings (Data.Global.All (Data.Global.asEverySet 
-                                                    <| Data.Global.created sRankings sUsers)) Data.Global.DisplayLoggedIn
+                            newDataKind = Global <| Data.Global.GlobalRankings esUR Data.Global.DisplayLoggedIn
                             newDataState = Fetched sUsers sRankings newDataKind
                         in
                             ( AppOps 
@@ -720,8 +715,8 @@ update msg model =
                         user uiState txRec ) ->
                         let
                             -- rf?: currently having to re-create Global here
-                            newDataKind = Global    <| Data.Global.GlobalRankings (Data.Global.All (Data.Global.asEverySet 
-                                                    <| Data.Global.created sRankings sUsers)) Data.Global.DisplayLoggedIn
+                            newDataKind = Global <| Data.Global.created sRankings sUsers
+                                                    
                             newDataState = Fetched sUsers sRankings newDataKind
 
                         in
@@ -741,12 +736,12 @@ update msg model =
         
         (Cancel, AppOps 
             (Fetched sUsers sRankings 
-                (Global (Data.Global.GlobalRankings (Data.Global.All esUR) 
+                (Global (Data.Global.GlobalRankings (esUR) 
                     (Data.Global.CreatingNewRanking _))))
                         (Data.Users.Registered userId token userInfo userState)
                             uiState txRec ) ->
             let
-                newDataKind = Global (Data.Global.GlobalRankings (Data.Global.All esUR) 
+                newDataKind = Global (Data.Global.GlobalRankings (esUR) 
                     (Data.Global.DisplayLoggedIn))               
                 newDataState = Fetched sUsers sRankings newDataKind
             in
@@ -800,20 +795,20 @@ update msg model =
 
 
         (LadderNameInputChg namefield
-            , AppOps ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings (Data.Global.All esUR) (Data.Global.CreatingNewRanking ranking)))) 
+            , AppOps ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewRanking ranking))))
                 user uiState txRec ) ->
             let
-                newDataKind = Global (Data.Global.asGlobalRankings esUR (Data.Global.CreatingNewRanking { ranking | rankingname = namefield } ))
+                newDataKind = Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewRanking { ranking | rankingname = namefield } ))
                 newDataState = Fetched sUsers sRankings newDataKind
             in
             ( AppOps newDataState user uiState emptyTxRecord, Cmd.none )
 
 
         (LadderDescInputChg descfield
-            , AppOps ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings (Data.Global.All esUR) (Data.Global.CreatingNewRanking ranking)))) 
+            , AppOps ( Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewRanking ranking)))) 
                 user uiState txRec ) ->
             let
-                newDataKind = Global (Data.Global.asGlobalRankings esUR (Data.Global.CreatingNewRanking { ranking | rankingdesc = Just descfield } ))
+                newDataKind = Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewRanking { ranking | rankingdesc = Just descfield } ))
                 newDataState = Fetched sUsers sRankings newDataKind
             in
             ( AppOps newDataState user uiState emptyTxRecord, Cmd.none )
@@ -1250,18 +1245,18 @@ update msg model =
 
 
         (ClickedConfirmCreateNewRanking,  AppOps (Fetched sUsers sRankings 
-            (Global (Data.Global.GlobalRankings (Data.Global.All esUserRanking) (Data.Global.CreatingNewRanking ranking))))
+            (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewRanking ranking))))
             (Data.Users.Spectator userInfo userState) 
                 uiState txRec ) ->
                 (Failure "Cannot create a ladder as a spectator", Cmd.none)
 
         (ClickedConfirmCreateNewRanking,  AppOps (Fetched sUsers sRankings 
-            (Global (Data.Global.GlobalRankings (Data.Global.All esUserRanking) (Data.Global.CreatingNewRanking ranking)))) 
+            (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
             (Data.Users.Registered userId token userInfo userState) 
                 uiState txRec ) ->
                 let
                     newesRankings = Data.Rankings.addRanking ranking sRankings 
-                    newDataKind = Global (Data.Global.asGlobalRankings esUserRanking (Data.Global.CreatedNewRanking ranking))
+                    newDataKind = Global (Data.Global.GlobalRankings EverySet.empty (Data.Global.CreatedNewRanking ranking))
                     newDataState = Fetched sUsers newesRankings newDataKind
                 in
                     ( AppOps newDataState (Data.Users.Registered userId token userInfo userState)
@@ -1269,12 +1264,12 @@ update msg model =
                             , createNewRanking ranking)
 
         (ClickedConfirmCreateNewRanking,  AppOps (Fetched sUsers sRankings 
-            (Global (Data.Global.GlobalRankings (Data.Global.All esUserRanking) (Data.Global.CreatingNewRanking ranking)))) 
+            (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
             (Data.Users.NoWallet userId token userInfo userState) 
                 uiState txRec ) ->
                 let
                     newesRankings = Data.Rankings.addRanking ranking sRankings 
-                    newDataKind = Global (Data.Global.asGlobalRankings esUserRanking (Data.Global.CreatedNewRanking ranking))
+                    newDataKind = Global (Data.Global.GlobalRankings EverySet.empty (Data.Global.CreatedNewRanking ranking))
                     newDataState = Fetched sUsers newesRankings newDataKind
                 in
                     ( AppOps newDataState (Data.Users.NoWallet userId token userInfo userState)
@@ -1282,12 +1277,12 @@ update msg model =
                             ,Cmd.none)
 
         (ClickedConfirmCreateNewRanking,  AppOps (Fetched sUsers sRankings 
-            (Global (Data.Global.GlobalRankings (Data.Global.All esUserRanking) (Data.Global.CreatingNewRanking ranking)))) 
+            (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
             (Data.Users.NoCredit ethAddr userId token userInfo userState) 
                 uiState txRec ) ->
                 let
                     newesRankings = Data.Rankings.addRanking ranking sRankings 
-                    newDataKind = Global (Data.Global.asGlobalRankings esUserRanking (Data.Global.CreatedNewRanking ranking))
+                    newDataKind = Global (Data.Global.GlobalRankings EverySet.empty (Data.Global.CreatedNewRanking ranking))
                     newDataState = Fetched sUsers newesRankings newDataKind
                 in
                     ( AppOps newDataState (Data.Users.NoCredit ethAddr userId token userInfo userState)
@@ -1295,7 +1290,7 @@ update msg model =
                             ,Cmd.none)
 
         (ClickedConfirmCreateNewRanking,  AppOps (Fetched sUsers sRankings 
-            (Global (Data.Global.GlobalRankings (Data.Global.All esUserRanking) (Data.Global.CreatingNewRanking ranking)))) 
+            (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
             (Data.Users.Credited ethAddr userId token userInfo userState) 
                 uiState txRec ) ->
                 let
@@ -1319,7 +1314,7 @@ update msg model =
                             txParams
                 
                     newesRankings = Data.Rankings.addRanking ranking sRankings 
-                    newDataKind = Global (Data.Global.asGlobalRankings esUserRanking (Data.Global.CreatedNewRanking ranking))
+                    newDataKind = Global (Data.Global.GlobalRankings EverySet.empty (Data.Global.CreatedNewRanking ranking))
                     newDataState = Fetched sUsers newesRankings newDataKind
                 in
                     ( AppOps newDataState (Data.Users.Credited ethAddr userId token userInfo 
@@ -2034,7 +2029,8 @@ loginResponse model response =
                 let 
                     convertedUser = (Data.Users.convertFUserToUser (Maybe.withDefault (Data.Users.emptyFUser) loginResult.user))
                 in
-                AppOps (reconfigureDataState dataState convertedUser) convertedUser uiState txRec
+                --AppOps (reconfigureDataState dataState convertedUser) convertedUser uiState txRec
+                AppOps dataState convertedUser uiState txRec
         
         ( AppOps _ (_) _ _ 
             , Ok loginResult) ->
@@ -2053,17 +2049,36 @@ loginResponse model response =
 reconfigureDataState : DataState -> Data.Users.User -> DataState 
 reconfigureDataState dataState user = 
     case (dataState, user) of 
-        (Fetched sUsers sRankings (Global (Data.Global.GlobalRankings (Data.Global.All esAllUR) Data.Global.DisplayLoggedIn)), Data.Users.Spectator _ _) ->
+        (Fetched sUsers sRankings _, Data.Users.Spectator _ _) ->
             -- let 
+            --     -- dummy userjoined rankings array string:
+            --     --userjoinedrankings = ["282953512300577285", "283673261521240581"]
                 
+            --     --Registered UserId Token UserInfo UserState
+            --     --sGlobal = Data.Global.GlobalRankings (esAllUR) Data.Global.DisplayLoggedIn
+            --     --global = Data.Global.created sUsers sRankings
             --     esOwnedUR = (EverySet.filter (Data.Global.isOwned user) esAllUR)
-            --     esMemberUR = (EverySet.filter (Data.Global.isMember user) esAllUR)
-            --     dKindWithOtherRankings = Data.Global.gotOthers sGlobal user
+
+            --     newDataStateWithOwned = Fetched sUsers sRankings (Global(Data.Global.GlobalRankings (Data.Global.Owned esOwnedUR) Data.Global.DisplayLoggedIn))
+            --     --esMemberUR = Data.Global.gotMember sGlobal Data.Users.dummyUserWithUserJoinedRankings
+            --     esMemberUR = EverySet.empty
+            --     esOthersUR = EverySet.empty
+
+            --     --esMemberUR = (EverySet.filter ((Data.Users.dummyUserWithUserJoinedRankings).userjoinedrankings) esAllUR)
+            --     --dKindWithOtherRankings = Data.Global.gotOthers sGlobal user
+            --     --esOthersUR = (EverySet.filter (Data.Global.isMember user) esAllUR)
+
+            --     newDataState = 
+            --         Fetched sUsers sRankings 
+            --             (Global(Data.Global.GlobalRankings ((Data.Global.Owned esOwnedUR) (Data.Global.Member esMemberUR) (Data.Global.Other esOthersUR)) Data.Global.DisplayLoggedIn))
                 
-            --     newDataKind = Global    <| Data.Global.GlobalRankings (Data.Global.All (Data.Global.asEverySet 
-            --                                 <| Data.Global.created sRankings sUsers)) Data.Global.DisplayGlobalOnly
-            --     newDataState = Fetched sUsers sRankings newDataKind
-            -- in 
+                -- newDataKind = Global    <| Data.Global.GlobalRankings ((Data.Global.asEverySet 
+                --                         <| Data.Global.created sRankings sUsers)) Data.Global.DisplayGlobalOnly
+                -- newDataState = Fetched sUsers sRankings newDataKind
+            --in 
+                -- case newDataStateWithOwned of 
+                --     (Fetched sUsers sRankings (Global(Data.Global.GlobalRankings (Data.Global.Owned esOwnedUR) Data.Global.DisplayLoggedIn))) ->
+                        
             dataState
             --newDataState
 
@@ -2520,12 +2535,12 @@ view model =
                 -- Global
 
                 (Fetched sUsers sRankings 
-                    (Global (Data.Global.GlobalRankings (Data.Global.All esUR) Data.Global.DisplayLoggedIn)), 
+                    (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayLoggedIn)), 
                     Data.Users.Spectator userInfo 
                         Data.Users.General) ->
                             -- this may be on a 'Cancel'
                             generalLoggedInView 
-                                user sUsers (Data.Global.GlobalRankings (Data.Global.All esUR) Data.Global.DisplayLoggedIn)
+                                user sUsers (Data.Global.GlobalRankings (esUR) Data.Global.DisplayLoggedIn)
 
                 (Fetched sUsers sRankings dKind, 
                     Data.Users.Spectator userInfo 
@@ -2538,89 +2553,89 @@ view model =
                             inputUserDetailsView (Fetched sUsers sRankings dKind) user
 
                 ( Fetched _ _ 
-                    (Global (Data.Global.GlobalRankings (Data.Global.All esUR) (Data.Global.CreatingNewRanking _ )))
+                    (Global (Data.Global.GlobalRankings esUR (Data.Global.CreatingNewRanking _ )))
                     , Data.Users.Spectator _ Data.Users.General ) ->
                     Html.text ("Not yet implemented")
                 
                 ( Fetched _ _ 
-                    (Global (Data.Global.GlobalRankings (Data.Global.All esUR) (Data.Global.CreatedNewRanking ranking)))
+                    (Global (Data.Global.GlobalRankings (esUR) (Data.Global.CreatedNewRanking ranking)))
                     , Data.Users.Spectator _ Data.Users.General ) ->
                     Html.text ("Not yet implemented")
 
                 ( Fetched sUsers _ 
-                    (Global (Data.Global.GlobalRankings (Data.Global.All esUR) Data.Global.DisplayGlobalLogin))
+                    (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin))
                     , Data.Users.Spectator _ Data.Users.LoginError ) ->
                         generalLoginView
-                            user sUsers (Data.Global.GlobalRankings (Data.Global.All esUR) Data.Global.DisplayGlobalLogin) "Not found. Register?:"
+                            user sUsers (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin) "Not found. Register?:"
                 
                 ( Fetched sUsers _ 
-                    (Global (Data.Global.GlobalRankings (Data.Global.All esUR) Data.Global.DisplayGlobalOnly))
+                    (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalOnly))
                     , Data.Users.Spectator _ Data.Users.LoginError ) ->
                         generalLoginView
-                            user sUsers (Data.Global.GlobalRankings (Data.Global.All esUR) Data.Global.DisplayGlobalLogin) "Not found. Register?:"
+                            user sUsers (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin) "Not found. Register?:"
                 
                 ( Fetched sUsers _ 
-                    (Global (Data.Global.GlobalRankings (Data.Global.All esUR) 
+                    (Global (Data.Global.GlobalRankings (esUR) 
                     (Data.Global.CreatingNewRanking _ )))
                     , Data.Users.Spectator _ Data.Users.LoginError ) ->
                         generalLoginView
-                            user sUsers (Data.Global.GlobalRankings (Data.Global.All esUR) Data.Global.DisplayGlobalLogin) "Please register \nto create a new ladder:"
+                            user sUsers (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin) "Please register \nto create a new ladder:"
 
                 ( Fetched sUsers sRankings 
-                    (Global (Data.Global.GlobalRankings (Data.Global.All esUR) 
+                    (Global (Data.Global.GlobalRankings (esUR) 
                     (Data.Global.CreatingNewRanking ranking)))
                     , (Data.Users.Registered _ _ _ _) as userVal ) ->
                         inputNewLadderview sRankings ranking userVal
                 
                 ( Fetched sUsers _ 
-                    (Global (Data.Global.GlobalRankings (Data.Global.All esUR) (Data.Global.CreatedNewRanking ranking)))
+                    (Global (Data.Global.GlobalRankings (esUR) (Data.Global.CreatedNewRanking ranking)))
                     , Data.Users.Spectator _ Data.Users.LoginError ) ->
                         generalLoginView
-                            user sUsers (Data.Global.GlobalRankings (Data.Global.All esUR) Data.Global.DisplayGlobalLogin) "Please register \nto create a new ladder:"
+                            user sUsers (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin) "Please register \nto create a new ladder:"
 
                 ( Fetched sUsers _ (
-                        Global (Data.Global.GlobalRankings (Data.Global.All esUR) Data.Global.DisplayGlobalOnly))
+                        Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalOnly))
                     , Data.Users.Spectator _ Data.Users.General ) ->
-                    globalOnlyView user sUsers (Data.Global.GlobalRankings(Data.Global.All esUR) Data.Global.DisplayGlobalOnly)
+                    globalOnlyView user sUsers (Data.Global.GlobalRankings(esUR) Data.Global.DisplayGlobalOnly)
 
                 ( Fetched sUsers sRankings 
-                    (Global (Data.Global.GlobalRankings (Data.Global.All esUR) Data.Global.DisplayGlobalOnly) )
+                    (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalOnly) )
                     , Data.Users.Registered _ _ _ _ ) ->
-                    globalOnlyView user sUsers (Data.Global.GlobalRankings(Data.Global.All esUR) Data.Global.DisplayGlobalOnly)
+                    globalOnlyView user sUsers (Data.Global.GlobalRankings(esUR) Data.Global.DisplayGlobalOnly)
 
                 
 
                 ( Fetched sUsers sRankings 
-                    (Global (Data.Global.GlobalRankings (Data.Global.All esUR) (Data.Global.CreatedNewRanking ranking)))
+                    (Global (Data.Global.GlobalRankings (esUR) (Data.Global.CreatedNewRanking ranking)))
                     , Data.Users.Registered userId token userInfo userState ) ->
                     generalLoggedInView 
                         (Data.Users.Registered userId token userInfo userState) sUsers 
-                            (Data.Global.GlobalRankings (Data.Global.All esUR) (Data.Global.CreatedNewRanking ranking))
+                            (Data.Global.GlobalRankings (esUR) (Data.Global.CreatedNewRanking ranking))
 
                 ( Fetched sUsers sRankings 
-                    (Global (Data.Global.GlobalRankings (Data.Global.All esUR) Data.Global.DisplayLoggedIn)), userVal) ->
+                    (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayLoggedIn)), userVal) ->
                     generalLoggedInView 
-                        userVal sUsers (Data.Global.GlobalRankings (Data.Global.All esUR) (Data.Global.DisplayLoggedIn ))
+                        userVal sUsers (Data.Global.GlobalRankings (esUR) (Data.Global.DisplayLoggedIn ))
 
                 (Fetched sUsers sRankings 
-                    (Global (Data.Global.GlobalRankings (Data.Global.All esUR) Data.Global.DisplayGlobalLogin) )
+                    (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin) )
                     , Data.Users.Spectator userInfo Data.Users.General) ->
                     generalLoginView 
-                        user sUsers (Data.Global.GlobalRankings (Data.Global.All esUR) Data.Global.DisplayGlobalLogin) ""
+                        user sUsers (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin) ""
 
                 ( Fetched sUsers _ 
-                    (Global (Data.Global.GlobalRankings (Data.Global.All esUR) Data.Global.DisplayGlobalLogin))
+                    (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin))
                     , Data.Users.Registered userId token userInfo userState ) ->
                     generalLoggedInView 
-                        (Data.Users.Registered userId token userInfo userState ) sUsers (Data.Global.GlobalRankings (Data.Global.All esUR) Data.Global.DisplayLoggedIn)
+                        (Data.Users.Registered userId token userInfo userState ) sUsers (Data.Global.GlobalRankings (esUR) Data.Global.DisplayLoggedIn)
 
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.All _) Data.Global.DisplayGlobalLogin)), Data.Users.Spectator _ Data.Users.Updated ) ->
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings (_) Data.Global.DisplayGlobalLogin)), Data.Users.Spectator _ Data.Users.Updated ) ->
                     Html.text ("User Updated")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.All _) Data.Global.DisplayGlobalOnly)), Data.Users.Spectator _ Data.Users.Updated ) ->
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings (_) Data.Global.DisplayGlobalOnly)), Data.Users.Spectator _ Data.Users.Updated ) ->
                     Html.text ("User Updated")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.All _) (Data.Global.CreatingNewRanking _ ))), Data.Users.Spectator _ Data.Users.Updated ) ->
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings (_) (Data.Global.CreatingNewRanking _ ))), Data.Users.Spectator _ Data.Users.Updated ) ->
                     Html.text ("User Updated")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.All _) (Data.Global.CreatedNewRanking ranking))), Data.Users.Spectator _ Data.Users.Updated ) ->
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings (_) (Data.Global.CreatedNewRanking ranking))), Data.Users.Spectator _ Data.Users.Updated ) ->
                     Html.text ("User Updated")
                 
         
@@ -2632,16 +2647,16 @@ view model =
                 ( Fetched _ _ (Global _), Data.Users.Credited _ _ _ _ _ ) ->
                     Html.text ("Not yet implemented")
 
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.All _) Data.Global.DisplayGlobalLogin)), Data.Users.Spectator _ _ ) ->
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings (_) Data.Global.DisplayGlobalLogin)), Data.Users.Spectator _ _ ) ->
                     Html.text ("Not yet implemented")
                 
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.All _) Data.Global.DisplayGlobalOnly)), Data.Users.Spectator _ _ ) ->
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings (_) Data.Global.DisplayGlobalOnly)), Data.Users.Spectator _ _ ) ->
                      Html.text ("Not yet implemented")
                 
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.All _) (Data.Global.CreatingNewRanking _ ))), Data.Users.Spectator _ _ ) ->
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings (_) (Data.Global.CreatingNewRanking _ ))), Data.Users.Spectator _ _ ) ->
                     Html.text ("Not yet implemented")
                 
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.All _) (Data.Global.CreatedNewRanking ranking))), Data.Users.Spectator _ _ ) ->
+                ( Fetched _ _ (Global (Data.Global.GlobalRankings (_) (Data.Global.CreatedNewRanking ranking))), Data.Users.Spectator _ _ ) ->
                      Html.text ("Not yet implemented")
                 
 
@@ -2723,54 +2738,54 @@ view model =
                 --         , infoBtn "Home2" Cancel
                 --         ]
 
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Registered _ _ _ _ ) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Registered _ _ _ _ ) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Registered _ _ _ _ ) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.General) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.Updated) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.LoginError) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.WalletOperational) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.WalletWaitingForTransactionReceipt) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.Subscribe) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.StopSubscription) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.General) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.Updated) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.LoginError) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.WalletOperational) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.WalletWaitingForTransactionReceipt) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.Subscribe) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.StopSubscription) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.General) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.Updated) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.LoginError) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.WalletOperational) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.WalletWaitingForTransactionReceipt) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.Subscribe) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.StopSubscription) ->
-                    Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Registered _ _ _ _ ) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Registered _ _ _ _ ) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Registered _ _ _ _ ) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.General) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.Updated) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.LoginError) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.WalletOperational) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.WalletWaitingForTransactionReceipt) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.Subscribe) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.StopSubscription) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.General) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.Updated) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.LoginError) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.WalletOperational) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.WalletWaitingForTransactionReceipt) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.Subscribe) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.StopSubscription) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.General) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.Updated) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.LoginError) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.WalletOperational) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.WalletWaitingForTransactionReceipt) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.Subscribe) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.StopSubscription) ->
+                --     Html.text ("Not yet implemented")
 
                 (Updated _ _ _, _) ->
                     Html.text ("No User - No Update")
@@ -4731,7 +4746,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
         AppOps (Fetched sUsers sRankings 
-            (Global (Data.Global.GlobalRankings (Data.Global.All esUserRanking) (Data.Global.CreatingNewRanking ranking)))) 
+            (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
             (Data.Users.Credited ethAddr userId token userInfo userState) 
                 uiState txRec ->
                     Sub.batch

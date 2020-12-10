@@ -40,6 +40,7 @@ module Data.Users exposing (Users
     , removedDeletedRankingsFromUserJoined
     , gotName
     , gotId
+    , dummyUserWithUserJoinedRankings
     )
 
 
@@ -138,6 +139,11 @@ type alias UserInfo =
 emptyUserInfo : UserInfo
 emptyUserInfo =
     UserInfo 0 True "" "" (ExtraUserInfo "" "" "") [] ""
+
+dummyUserWithUserJoinedRankings : User
+dummyUserWithUserJoinedRankings = 
+    Registered "" "" (UserInfo 0 True "" "" 
+        (ExtraUserInfo "" "" "") ["282953512300577285", "283673261521240581"] "") General
 
 type alias UserId =
     String
