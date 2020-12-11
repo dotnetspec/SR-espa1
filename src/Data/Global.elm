@@ -149,41 +149,131 @@ gotRanking uranking =
     uranking.rankingInfo
 
 
-created : Data.Rankings.Rankings -> Data.Users.Users -> Global
-created sRankings sUser =
+created : Data.Rankings.Rankings -> Data.Users.Users -> Data.Users.User -> Global
+created sRankings sUser user =
     let
-        esUserRanking = List.map (createdUserRanking sUser) (Data.Rankings.asList sRankings)
+        _ = Debug.log "user in created is : " user
+        esUserRanking = List.map (createdUserRanking sUser user) (Data.Rankings.asList sRankings)
                         |> Utils.MyUtils.removeNothingFromList
                         |> EverySet.fromList 
     in
-        GlobalRankings esUserRanking DisplayGlobalLogin
+        case user of 
+            Data.Users.Spectator _ _ ->
+                GlobalRankings esUserRanking DisplayGlobalLogin
+            _ ->
+                GlobalRankings esUserRanking DisplayLoggedIn
     
 
-createdUserRanking : Data.Users.Users -> Data.Rankings.Ranking -> Maybe UserRanking
-createdUserRanking sUser ranking =
+createdUserRanking : Data.Users.Users -> Data.Users.User -> Data.Rankings.Ranking -> Maybe UserRanking
+createdUserRanking sUser user ranking =
     let
-        luserId = List.map (\x -> Data.Users.gotUserIdFromUser x ) <| Data.Users.asList sUser
-        userOwnerId = List.filter (\x -> x == ranking.rankingownerid) <| luserId
+        -- luserId = List.map (\x -> Data.Users.gotUserIdFromUser x ) <| Data.Users.asList sUser
+        -- userOwnerId = List.filter (\x -> x == ranking.rankingownerid) <| luserId
+        -- m_lmemberRankings = List.filter (\x -> x == ranking.id_) <| user.userjoinedrankings
+        --dummy userjoined rankings array string:
+        userjoinedrankings = ["282953512300577285", "283673261521240581"]
+        _ = Debug.log "user in createdUserRanking is : " user
     in
-        case userOwnerId of
-            id :: nothingHere ->
-                let
-                    m_user = Data.Users.gotUser sUser (Data.Users.convertedStrToUserId id)
-                in
-                    case m_user of
-                        Nothing ->
-                            Nothing 
-                        Just user -> 
+    case user of
+        Data.Users.Spectator _ _ ->
+            case Data.Users.gotUser sUser ranking.rankingownerid of 
+                Nothing ->
+                    Nothing
+                Just userVal ->
+                    Just { rankingInfo = ranking
+                    , userInfo = userVal
+                    , rankingtype = Other
+                    }
+
+        Data.Users.Registered userId _ _ _->
+            let
+                _ = Debug.log "here2?""yes"
+                
+            in
+            if (Data.Users.convertedStrToUserId ranking.rankingownerid) == userId then
+                Just
+                    { rankingInfo = ranking
+                    , userInfo = user
+                    , rankingtype = Owned
+                    } 
+            -- this will need to be user.userjoinedrankings eventually
+            else if (List.member ranking.id_ userjoinedrankings) then
+                Just
+                    { rankingInfo = ranking
+                    , userInfo = user
+                    , rankingtype = Member
+                    }
+            else 
+                case Data.Users.gotUser sUser (Data.Users.convertedStrToUserId ranking.rankingownerid) of 
+                    Nothing ->
+                        let
+                                _ = Debug.log "Other?""yes"
+                                
+                            in
+                        Nothing
+                    Just userVal ->
                             let
-                                newOwnedRanking =
-                                    { rankingInfo = ranking
-                                    , userInfo = user
-                                    , rankingtype = Owned
-                                    }
-                            in 
-                                Just newOwnedRanking
-            [] ->
-                Nothing
+                                _ = Debug.log "Data.Users.convertedStrToUserId ranking.rankingownerid" Data.Users.convertedStrToUserId ranking.rankingownerid
+                                _ = Debug.log "userId" userId
+                            in
+                        if (Data.Users.convertedStrToUserId ranking.rankingownerid) == userId then
+                            Nothing 
+                        else 
+                            Just { rankingInfo = ranking
+                            , userInfo = userVal
+                            , rankingtype = Other
+                            }
+
+        (Data.Users.NoWallet userId _ _ _) ->
+            Just
+                    { rankingInfo = ranking
+                    , userInfo = user
+                    , rankingtype = Other
+                    }
+
+        (Data.Users.NoCredit addr userId _ _ _) ->
+            Just
+                    { rankingInfo = ranking
+                    , userInfo = user
+                    , rankingtype = Other
+                    }
+
+        (Data.Users.Credited addr userId _ _ _) ->
+           Just
+                    { rankingInfo = ranking
+                    , userInfo = user
+                    , rankingtype = Other
+                    }
+
+        
+
+
+        -- case userOwnerId of
+        --     id :: nothingHere ->
+        --         let
+        --             m_user = Data.Users.gotUser sUser (Data.Users.convertedStrToUserId id)
+        --         in
+        --             case m_user of
+        --                 Nothing ->
+        --                     case m_lmemberRankings of 
+        --                         joinedranking :: xs ->
+        --                             Just
+        --                             { rankingInfo = ranking
+        --                             , userInfo = user
+        --                             , rankingtype = Member
+        --                             }
+                                
+        --                         [] ->
+        --                             Nothing
+
+        --                 Just user ->
+        --                     Just
+        --                     { rankingInfo = ranking
+        --                     , userInfo = user
+        --                     , rankingtype = Owner
+        --                     }
+        --     [] ->
+        --         Nothing
 
 filteredSelected : String -> List Data.Rankings.Ranking -> List Data.Rankings.Ranking
 filteredSelected rankingid lrankinginfo =
@@ -326,7 +416,9 @@ removeUserRanking  sGlobal uRanking =
 
 removedUserRankingByRankingId : Global -> Internal.Types.RankingId -> Global 
 removedUserRankingByRankingId sGlobal rnkId = 
-    created (Data.Rankings.removedById rnkId (rankingsAsSet sGlobal) ) (usersAsSet sGlobal)
+--todo: fix
+    --created (Data.Rankings.removedById rnkId (rankingsAsSet sGlobal) ) (usersAsSet sGlobal)
+    sGlobal
 
 addEmptyUser : Data.Users.User -> Data.Rankings.Ranking -> UserRanking 
 addEmptyUser user ranking =

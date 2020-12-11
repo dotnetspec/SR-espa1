@@ -715,7 +715,7 @@ update msg model =
                         user uiState txRec ) ->
                         let
                             -- rf?: currently having to re-create Global here
-                            newDataKind = Global <| Data.Global.created sRankings sUsers
+                            newDataKind = Global <| Data.Global.created sRankings sUsers user
                                                     
                             newDataState = Fetched sUsers sRankings newDataKind
 
@@ -941,7 +941,7 @@ update msg model =
                                         --removedRanking = Data.Rankings.removedById rnkId sRanking
                                         --todo: replace with a real set of rankings
                                         removedRanking = Data.Rankings.removedById (Data.Selected.gotRankingId sSelected) Data.Rankings.empty
-                                        newDataKind = Global (Data.Global.created removedRanking sUsers)
+                                        newDataKind = Global (Data.Global.created removedRanking sUsers user)
                                         
                                         newDataState = Updated newsUsers sRankings newDataKind
                                         _ = Debug.log "ranking should have been removed from rankings" removedRanking
@@ -1741,7 +1741,8 @@ updateGlobal model =
                     case dKind of 
                         Global _ ->
                             let
-                                newDataKind = Global (Data.Global.created sRankings sUsers)
+                             
+                                newDataKind = Global (Data.Global.created sRankings sUsers user)
                                 newDataState = Updated sUsers sRankings newDataKind
                             in
                                 AppOps newDataState user uiState txRec
@@ -1793,12 +1794,13 @@ updateWithReceivedUsers model response =
 
                 else --if sRankings isn't empty we can populate Global now
                     let
+                        
                         filteredFUserList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lusers)
                         --lFromFToUser = List.map Data.Users.convertFUserToUser filteredFUserList
                         lFromFToUser = List.map Data.Users.convertFUserToUser filteredFUserList
                         newsUsers = Data.Users.asUsers (EverySet.fromList lFromFToUser)
                         
-                        newDataKind = Global (Data.Global.created sRankings newsUsers)
+                        newDataKind = Global (Data.Global.created sRankings newsUsers user)
                         
                         newDataState = Fetched newsUsers sRankings newDataKind
                     in
@@ -1902,7 +1904,8 @@ updateWithReceivedRankings model response =
                         filteredFRankingList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lrankings)
                         lFromFToRanking = List.map Data.Rankings.convertFRankingToRanking filteredFRankingList
                         newsRankings = Data.Rankings.asRankings (EverySet.fromList lFromFToRanking)
-                        newDataKind = Global (Data.Global.created newsRankings sUsers)
+                        _ = Debug.log "user in rankings is : " user
+                        newDataKind = Global (Data.Global.created newsRankings sUsers user)
                         newDataState = Fetched sUsers newsRankings newDataKind
                     in
                         AppOps newDataState user uiState txRec
@@ -2029,8 +2032,8 @@ loginResponse model response =
                 let 
                     convertedUser = (Data.Users.convertFUserToUser (Maybe.withDefault (Data.Users.emptyFUser) loginResult.user))
                 in
-                --AppOps (reconfigureDataState dataState convertedUser) convertedUser uiState txRec
-                AppOps dataState convertedUser uiState txRec
+                AppOps (reconfigureDataState dataState convertedUser) convertedUser uiState txRec
+                --AppOps dataState convertedUser uiState txRec
         
         ( AppOps _ (_) _ _ 
             , Ok loginResult) ->
@@ -2050,37 +2053,18 @@ reconfigureDataState : DataState -> Data.Users.User -> DataState
 reconfigureDataState dataState user = 
     case (dataState, user) of 
         (Fetched sUsers sRankings _, Data.Users.Spectator _ _) ->
-            -- let 
-            --     -- dummy userjoined rankings array string:
-            --     --userjoinedrankings = ["282953512300577285", "283673261521240581"]
-                
-            --     --Registered UserId Token UserInfo UserState
-            --     --sGlobal = Data.Global.GlobalRankings (esAllUR) Data.Global.DisplayLoggedIn
-            --     --global = Data.Global.created sUsers sRankings
-            --     esOwnedUR = (EverySet.filter (Data.Global.isOwned user) esAllUR)
-
-            --     newDataStateWithOwned = Fetched sUsers sRankings (Global(Data.Global.GlobalRankings (Data.Global.Owned esOwnedUR) Data.Global.DisplayLoggedIn))
-            --     --esMemberUR = Data.Global.gotMember sGlobal Data.Users.dummyUserWithUserJoinedRankings
-            --     esMemberUR = EverySet.empty
-            --     esOthersUR = EverySet.empty
-
-            --     --esMemberUR = (EverySet.filter ((Data.Users.dummyUserWithUserJoinedRankings).userjoinedrankings) esAllUR)
-            --     --dKindWithOtherRankings = Data.Global.gotOthers sGlobal user
-            --     --esOthersUR = (EverySet.filter (Data.Global.isMember user) esAllUR)
-
-            --     newDataState = 
-            --         Fetched sUsers sRankings 
-            --             (Global(Data.Global.GlobalRankings ((Data.Global.Owned esOwnedUR) (Data.Global.Member esMemberUR) (Data.Global.Other esOthersUR)) Data.Global.DisplayLoggedIn))
-                
-                -- newDataKind = Global    <| Data.Global.GlobalRankings ((Data.Global.asEverySet 
-                --                         <| Data.Global.created sRankings sUsers)) Data.Global.DisplayGlobalOnly
-                -- newDataState = Fetched sUsers sRankings newDataKind
-            --in 
-                -- case newDataStateWithOwned of 
-                --     (Fetched sUsers sRankings (Global(Data.Global.GlobalRankings (Data.Global.Owned esOwnedUR) Data.Global.DisplayLoggedIn))) ->
-                        
-            dataState
-            --newDataState
+            let
+                newDataKind = Global <| Data.Global.created sRankings sUsers user
+                newDataState = Fetched sUsers sRankings newDataKind
+            in 
+            newDataState
+        
+        (Fetched sUsers sRankings _, Data.Users.Registered _ _ _ _) ->
+            let
+                newDataKind = Global <| Data.Global.created sRankings sUsers user
+                newDataState = Fetched sUsers sRankings newDataKind
+            in 
+                newDataState
 
         (_, _) ->
             dataState
@@ -3283,9 +3267,9 @@ memberrankingbuttons urankingList user =
 otherrankingbuttons : List Data.Global.UserRanking -> Element Msg
 otherrankingbuttons urankingList =
     Element.column Grid.section <|
-    [ Element.el Heading.h5 <| Element.text "All Rankings: "
+    [ Element.el Heading.h5 <| Element.text "All Other Rankings: "
     , List.map (\ur -> ur.rankingInfo) urankingList
-        |> List.map neitherOwnerNorMemberRankingInfoBtn
+        |> List.map otherRankingInfoBtn
         |> Element.column (Card.simple ++ Grid.simple) 
     ]
 
@@ -3329,8 +3313,8 @@ memberRankingInfoBtn ranking =
                 }
             ]
 
-neitherOwnerNorMemberRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
-neitherOwnerNorMemberRankingInfoBtn rankingobj =
+otherRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
+otherRankingInfoBtn rankingobj =
     Element.column Grid.simple <|
         [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "otherrankingbtn") ] ++ Button.fill ++ Color.primary) <|
             { 
