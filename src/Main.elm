@@ -696,6 +696,22 @@ update msg model =
         (Cancel, AppOps 
             (Fetched sUsers sRankings 
                 (Global (Data.Global.GlobalRankings (esUR) 
+                    (Data.Global.DisplayGlobalLogin))))
+                    (Data.Users.Spectator userInfo Data.Users.CreatingNew) 
+                        uiState txRec ) ->
+                        let
+                            newDataKind = Global <| Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalLogin
+                            newDataState = Fetched sUsers sRankings newDataKind
+
+                        in
+                            ( AppOps 
+                               newDataState
+                                    (Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General) 
+                                        SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )
+
+        (Cancel, AppOps 
+            (Fetched sUsers sRankings 
+                (Global (Data.Global.GlobalRankings (esUR) 
                     (Data.Global.DisplayGlobalOnly))))
                     (Data.Users.Spectator userInfo Data.Users.General) 
                         uiState txRec ) ->
