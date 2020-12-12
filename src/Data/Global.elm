@@ -152,7 +152,6 @@ gotRanking uranking =
 created : Data.Rankings.Rankings -> Data.Users.Users -> Data.Users.User -> Global
 created sRankings sUser user =
     let
-        _ = Debug.log "user in created is : " user
         esUserRanking = List.map (createdUserRanking sUser user) (Data.Rankings.asList sRankings)
                         |> Utils.MyUtils.removeNothingFromList
                         |> EverySet.fromList 
@@ -167,12 +166,8 @@ created sRankings sUser user =
 createdUserRanking : Data.Users.Users -> Data.Users.User -> Data.Rankings.Ranking -> Maybe UserRanking
 createdUserRanking sUser user ranking =
     let
-        -- luserId = List.map (\x -> Data.Users.gotUserIdFromUser x ) <| Data.Users.asList sUser
-        -- userOwnerId = List.filter (\x -> x == ranking.rankingownerid) <| luserId
-        -- m_lmemberRankings = List.filter (\x -> x == ranking.id_) <| user.userjoinedrankings
         --dummy userjoined rankings array string:
         userjoinedrankings = ["282953512300577285", "283673261521240581"]
-        _ = Debug.log "user in createdUserRanking is : " user
     in
     case user of
         Data.Users.Spectator _ _ ->
@@ -186,10 +181,6 @@ createdUserRanking sUser user ranking =
                     }
 
         Data.Users.Registered userId _ _ _->
-            let
-                _ = Debug.log "here2?""yes"
-                
-            in
             if (Data.Users.convertedStrToUserId ranking.rankingownerid) == userId then
                 Just
                     { rankingInfo = ranking
@@ -206,16 +197,8 @@ createdUserRanking sUser user ranking =
             else 
                 case Data.Users.gotUser sUser (Data.Users.convertedStrToUserId ranking.rankingownerid) of 
                     Nothing ->
-                        let
-                                _ = Debug.log "Other?""yes"
-                                
-                            in
                         Nothing
                     Just userVal ->
-                            let
-                                _ = Debug.log "Data.Users.convertedStrToUserId ranking.rankingownerid" Data.Users.convertedStrToUserId ranking.rankingownerid
-                                _ = Debug.log "userId" userId
-                            in
                         if (Data.Users.convertedStrToUserId ranking.rankingownerid) == userId then
                             Nothing 
                         else 
@@ -244,36 +227,6 @@ createdUserRanking sUser user ranking =
                     , userInfo = user
                     , rankingtype = Other
                     }
-
-        
-
-
-        -- case userOwnerId of
-        --     id :: nothingHere ->
-        --         let
-        --             m_user = Data.Users.gotUser sUser (Data.Users.convertedStrToUserId id)
-        --         in
-        --             case m_user of
-        --                 Nothing ->
-        --                     case m_lmemberRankings of 
-        --                         joinedranking :: xs ->
-        --                             Just
-        --                             { rankingInfo = ranking
-        --                             , userInfo = user
-        --                             , rankingtype = Member
-        --                             }
-                                
-        --                         [] ->
-        --                             Nothing
-
-        --                 Just user ->
-        --                     Just
-        --                     { rankingInfo = ranking
-        --                     , userInfo = user
-        --                     , rankingtype = Owner
-        --                     }
-        --     [] ->
-        --         Nothing
 
 filteredSelected : String -> List Data.Rankings.Ranking -> List Data.Rankings.Ranking
 filteredSelected rankingid lrankinginfo =

@@ -643,6 +643,21 @@ update msg model =
                                  emptyTxRecord
                     in
                         (newModel, Cmd.none)
+
+        (ClickedCreateNewLadder, AppOps (Fetched sUsers sRankings (Global (Data.Global.GlobalRankings (esUR) 
+                    (Data.Global.DisplayLoggedIn)))) 
+            (Data.Users.Registered userId token userInfo userState) 
+                uiState txRec) ->
+                    let
+                        newDataKind = Global <| Data.Global.GlobalRankings esUR
+                            (Data.Global.CreatingNewRanking (Data.Rankings.Ranking "" True "" Nothing userId))
+                        newDataState = Fetched sUsers sRankings newDataKind
+                        newModel = 
+                                AppOps newDataState (Data.Users.Registered userId token userInfo userState)
+                                uiState 
+                                 emptyTxRecord
+                    in
+                        (newModel, Cmd.none)
                 
 
         (Cancel, AppOps 
@@ -1905,7 +1920,6 @@ updateWithReceivedRankings model response =
                         filteredFRankingList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lrankings)
                         lFromFToRanking = List.map Data.Rankings.convertFRankingToRanking filteredFRankingList
                         newsRankings = Data.Rankings.asRankings (EverySet.fromList lFromFToRanking)
-                        _ = Debug.log "user in rankings is : " user
                         newDataKind = Global (Data.Global.created newsRankings sUsers user)
                         newDataState = Fetched sUsers newsRankings newDataKind
                     in
@@ -3285,45 +3299,45 @@ configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
         -- all players are considered Registered (only)
         case (uplayer.user, uplayer.player) of
             (Data.Users.Registered userId token userInfo userState, Data.Players.IndividualPlayer playerInfo playerStatus) ->
-                        if not (Data.Selected.isChallenged sSelected sUsers uplayer) then
-                            if Data.Selected.isRegisteredPlayerCurrentUser user uplayer then
-                                --not challenged, is current user:
-                                Element.column Grid.simple <|
-                                [ Input.button (Button.fill ++ Color.disabled) <|
-                                    { onPress = Nothing
-                                    , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ challorAvail
-                                    }
-                                ]
-                            
-                            else
-                                --available to challenge, not current user.
-                                -- uplayer for ClickedChallengeOpponent here is the opponent:
-                                Element.column Grid.simple <|
-                                [ Input.button (Button.fill ++ Color.info) <|
-                                    { onPress = Just <| ClickedChallengeOpponent uplayer (Data.Selected.gotUserPlayerByUserId sSelected userId)
-                                    , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ challorAvail
-                                    }
-                                ]
-                        else
-                            if Data.Selected.isRegisteredPlayerCurrentUser user uplayer then
-                                -- already in a challenge, is current user and therefore ready to enter a result
-                                Element.column Grid.simple <|
-                                [ Input.button (Button.fill ++ Color.success) <|
-                                    { 
-                                        --nb. this was appInfo.player - uplayer.player might not be quite correct:
-                                        onPress = Just <| ClickedChangedUIStateToEnterResult uplayer
-                                    , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ challorAvail
-                                    }
-                                ]
+                if not (Data.Selected.isChallenged sSelected sUsers uplayer) then
+                    if Data.Selected.isRegisteredPlayerCurrentUser user uplayer then
+                        --not challenged, is current user:
+                        Element.column Grid.simple <|
+                        [ Input.button (Button.fill ++ Color.disabled) <|
+                            { onPress = Nothing
+                            , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ challorAvail
+                            }
+                        ]
+                    
+                    else
+                        --available to challenge, not current user.
+                        -- uplayer for ClickedChallengeOpponent here is the opponent:
+                        Element.column Grid.simple <|
+                        [ Input.button (Button.fill ++ Color.info) <|
+                            { onPress = Just <| ClickedChallengeOpponent uplayer (Data.Selected.gotUserPlayerByUserId sSelected userId)
+                            , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ challorAvail
+                            }
+                        ]
+                else
+                    if Data.Selected.isRegisteredPlayerCurrentUser user uplayer then
+                        -- already in a challenge, is current user and therefore ready to enter a result
+                        Element.column Grid.simple <|
+                        [ Input.button (Button.fill ++ Color.success) <|
+                            { 
+                                --nb. this was appInfo.player - uplayer.player might not be quite correct:
+                                onPress = Just <| ClickedChangedUIStateToEnterResult uplayer
+                            , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ challorAvail
+                            }
+                        ]
 
-                            else
-                            -- already in a challenge, not current user
-                            Element.column Grid.simple <|
-                            [ Input.button (Button.fill ++ Color.disabled) <|
-                                { onPress = Nothing
-                                , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ challorAvail
-                                }
-                            ]
+                    else
+                    -- already in a challenge, not current user
+                    Element.column Grid.simple <|
+                    [ Input.button (Button.fill ++ Color.disabled) <|
+                        { onPress = Nothing
+                        , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ challorAvail
+                        }
+                    ]
 
             (_) ->
                 Element.text "Unregistered user!"
