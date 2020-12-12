@@ -21,7 +21,7 @@ module Data.Selected exposing (Selected(..)
     , extractAndSortPlayerList
     , convertUserPlayersToPlayers
     , isRegisteredPlayerCurrentUser
-    , printChallengerNameOrAvailable
+    , challorAvail
     , isChallenged
     --, assignChallengerId
     , addUserPlayer
@@ -398,8 +398,8 @@ isRegisteredPlayerCurrentUser user uplayer =
             False
        
 
-printChallengerNameOrAvailable : Selected -> Data.Users.Users -> UserPlayer -> String 
-printChallengerNameOrAvailable sSelected sUsers uplayer = 
+challorAvail : Selected -> Data.Users.Users -> UserPlayer -> String 
+challorAvail sSelected sUsers uplayer = 
     case uplayer.player of 
         Data.Players.IndividualPlayer playerInfo playerStatus ->
             case playerStatus of 

@@ -1803,6 +1803,7 @@ updateWithReceivedUsers model response =
                         newDataKind = Global (Data.Global.created sRankings newsUsers user)
                         
                         newDataState = Fetched newsUsers sRankings newDataKind
+                        
                     in
                         AppOps newDataState user uiState txRec
 
@@ -2032,7 +2033,7 @@ loginResponse model response =
                 let 
                     convertedUser = (Data.Users.convertFUserToUser (Maybe.withDefault (Data.Users.emptyFUser) loginResult.user))
                 in
-                AppOps (reconfigureDataState dataState convertedUser) convertedUser uiState txRec
+                AppOps (createGlobal dataState convertedUser) convertedUser uiState txRec
                 --AppOps dataState convertedUser uiState txRec
         
         ( AppOps _ (_) _ _ 
@@ -2049,8 +2050,8 @@ loginResponse model response =
         (Failure _, _) ->
             model
 
-reconfigureDataState : DataState -> Data.Users.User -> DataState 
-reconfigureDataState dataState user = 
+createGlobal : DataState -> Data.Users.User -> DataState 
+createGlobal dataState user = 
     case (dataState, user) of 
         (Fetched sUsers sRankings _, Data.Users.Spectator _ _) ->
             let
@@ -2516,7 +2517,7 @@ view model =
                 (AllEmpty, _) ->
                     Html.text ("Loading ...")
 
-                -- Global
+                -- Global -- Spectator
 
                 (Fetched sUsers sRankings 
                     (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayLoggedIn)), 
@@ -2582,13 +2583,26 @@ view model =
                     , Data.Users.Spectator _ Data.Users.General ) ->
                     globalOnlyView user sUsers (Data.Global.GlobalRankings(esUR) Data.Global.DisplayGlobalOnly)
 
+                (Fetched sUsers sRankings 
+                    (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin) )
+                    , Data.Users.Spectator userInfo Data.Users.General) ->
+                    generalLoginView 
+                        user sUsers (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin) ""
+
+                -- Global -- Registered
+
+                ( Fetched sUsers _ 
+                    (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin))
+                    , Data.Users.Registered userId token userInfo userState ) ->
+                    generalLoggedInView 
+                        (Data.Users.Registered userId token userInfo userState ) sUsers (Data.Global.GlobalRankings (esUR) Data.Global.DisplayLoggedIn)
+
                 ( Fetched sUsers sRankings 
                     (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalOnly) )
                     , Data.Users.Registered _ _ _ _ ) ->
                     globalOnlyView user sUsers (Data.Global.GlobalRankings(esUR) Data.Global.DisplayGlobalOnly)
 
                 
-
                 ( Fetched sUsers sRankings 
                     (Global (Data.Global.GlobalRankings (esUR) (Data.Global.CreatedNewRanking ranking)))
                     , Data.Users.Registered userId token userInfo userState ) ->
@@ -2596,22 +2610,16 @@ view model =
                         (Data.Users.Registered userId token userInfo userState) sUsers 
                             (Data.Global.GlobalRankings (esUR) (Data.Global.CreatedNewRanking ranking))
 
+                
+
                 ( Fetched sUsers sRankings 
                     (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayLoggedIn)), userVal) ->
                     generalLoggedInView 
                         userVal sUsers (Data.Global.GlobalRankings (esUR) (Data.Global.DisplayLoggedIn ))
 
-                (Fetched sUsers sRankings 
-                    (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin) )
-                    , Data.Users.Spectator userInfo Data.Users.General) ->
-                    generalLoginView 
-                        user sUsers (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin) ""
+                
 
-                ( Fetched sUsers _ 
-                    (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin))
-                    , Data.Users.Registered userId token userInfo userState ) ->
-                    generalLoggedInView 
-                        (Data.Users.Registered userId token userInfo userState ) sUsers (Data.Global.GlobalRankings (esUR) Data.Global.DisplayLoggedIn)
+                
 
                 ( Fetched _ _ (Global (Data.Global.GlobalRankings (_) Data.Global.DisplayGlobalLogin)), Data.Users.Spectator _ Data.Users.Updated ) ->
                     Html.text ("User Updated")
@@ -2685,92 +2693,6 @@ view model =
                 ( Fetched _ _ (Selected _), Data.Users.Credited _ _ _ _ _ ) ->
                     Html.text "selected user"
 
-
-
-                -- (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId 
-                --     Data.Selected.UserIsOwner 
-                --         sPlayers selectedState name)), _) ->
-                --             Framework.responsiveLayout [] <| Element.column Framework.container
-                --                 [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner " --++ userInfo.username
-                --                 , Element.el Heading.h6 <| Element.text "Click to continue ..."
-                --                 , playerbuttons (Data.Selected.SelectedRanking esUP rnkId 
-                --                         Data.Selected.UserIsOwner 
-                --                         sPlayers selectedState name)           
-                --                     sUsers user
-                --                 , infoBtn "Delete" ClickedDeleteRanking
-                --                 , Element.text "\n"
-                --                 , infoBtn "Cancel" Cancel
-                --                 ]
-
-                -- (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId 
-                --     Data.Selected.UserIsMember sPlayers selectedState name)), _) ->
-                --     Framework.responsiveLayout [] <| Element.column Framework.container
-                --         [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " --++ userInfo.username
-                --         , Element.el Heading.h6 <| Element.text "Click to continue ..."
-                --     --, playerbuttons dataState appInfo
-                --         , infoBtn "Home1" Cancel
-                --         ]
-
-                -- (Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId 
-                --     Data.Selected.UserIsNeitherOwnerNorMember sPlayers selectedState name)), _) ->
-                --     Framework.responsiveLayout [] <| Element.column Framework.container
-                --         [ Element.el Heading.h4 <| Element.text <| "SportRank - Spectator " --++ userInfo.username
-                --         , Element.el Heading.h6 <| Element.text "Click to continue ..."
-                --         --, playerbuttons dataState sSelected
-                        
-                --         , joinBtn user
-                --         , infoBtn "Home2" Cancel
-                --         ]
-
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Registered _ _ _ _ ) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Registered _ _ _ _ ) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Registered _ _ _ _ ) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.General) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.Updated) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.LoginError) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.WalletOperational) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.WalletWaitingForTransactionReceipt) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.Subscribe) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Owned _) _)), Data.Users.Spectator _ Data.Users.StopSubscription) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.General) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.Updated) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.LoginError) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.WalletOperational) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.WalletWaitingForTransactionReceipt) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.Subscribe) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Member _) _)),Data.Users.Spectator _ Data.Users.StopSubscription) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.General) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.Updated) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.LoginError) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.WalletOperational) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.WalletWaitingForTransactionReceipt) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.Subscribe) ->
-                --     Html.text ("Not yet implemented")
-                -- ( Fetched _ _ (Global (Data.Global.GlobalRankings (Data.Global.Other _) _)), Data.Users.Spectator _ Data.Users.StopSubscription) ->
-                --     Html.text ("Not yet implemented")
-
                 (Updated _ _ _, _) ->
                     Html.text ("No User - No Update")
 
@@ -2801,8 +2723,8 @@ generalLoginView userVal sUsers sGlobal errorMsg =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome Spectator")
                     , displayEnableEthereumBtn
-                    , displayForRegisteredUser userVal sGlobal errorMsg
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Spectator userInfo userState)))
+                    , displayRankingBtns userVal sGlobal errorMsg
+        
                 ]
         (Data.Users.Registered userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
@@ -2811,32 +2733,32 @@ generalLoginView userVal sUsers sGlobal errorMsg =
                     , displayEnableEthereumBtn
                     , Element.text ("\n")
                     , displayCreateNewRankingBtn
-                    , displayForRegisteredUser userVal sGlobal errorMsg
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                    , displayRankingBtns userVal sGlobal errorMsg
+                    
                 ]
         (Data.Users.NoWallet userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForRegisteredUser userVal sGlobal errorMsg
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                    , displayRankingBtns userVal sGlobal errorMsg
+                    
                 ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForRegisteredUser userVal sGlobal errorMsg
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                    , displayRankingBtns userVal sGlobal errorMsg
+                    
                 ]
         (Data.Users.Credited addr userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForRegisteredUser userVal sGlobal errorMsg
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                    , displayRankingBtns userVal sGlobal errorMsg
+                    
                 ]
 
 
@@ -2849,9 +2771,10 @@ generalLoggedInView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome Spectator")
                     , displayEnableEthereumBtn
-                    , displayForRegisteredUser userVal sGlobal ""
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Spectator userInfo userState)))
+                    , displayRankingBtns userVal sGlobal ""
+        
                 ]
+
         (Data.Users.Registered userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
@@ -2859,32 +2782,35 @@ generalLoggedInView userVal sUsers sGlobal =
                     , displayEnableEthereumBtn
                     , Element.text ("\n")
                     , displayCreateNewRankingBtn
-                    , displayForRegisteredUser userVal sGlobal ""
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                    , displayRankingBtns userVal sGlobal ""
+                    --, otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
                 ]
+
         (Data.Users.NoWallet userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForRegisteredUser userVal sGlobal ""
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                    , displayRankingBtns userVal sGlobal ""
+                    --(Data.Global.gotOthers sGlobal userVal))
                 ]
+
         (Data.Users.NoCredit addr userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForRegisteredUser userVal sGlobal ""
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                    , displayRankingBtns userVal sGlobal ""
+                    
                 ]
+
         (Data.Users.Credited addr userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForRegisteredUser userVal sGlobal ""
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                    , displayRankingBtns userVal sGlobal ""
+                    
                 ]
 
 
@@ -2897,8 +2823,8 @@ globalOnlyView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome Spectator")
                     , displayEnableEthereumBtn
-                    , displayForRegisteredUser userVal sGlobal ""
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal (Data.Users.Spectator userInfo userState)))
+                    , displayRankingBtns userVal sGlobal ""
+        
                 ]
         (Data.Users.Registered userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
@@ -2907,31 +2833,31 @@ globalOnlyView userVal sUsers sGlobal =
                     , displayEnableEthereumBtn
                     , Element.text "\n"
                     , infoBtn "Cancel" Cancel
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                    
                 ]
         (Data.Users.NoWallet userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForRegisteredUser userVal sGlobal ""
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                    , displayRankingBtns userVal sGlobal ""
+                    
                 ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForRegisteredUser userVal sGlobal ""
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                    , displayRankingBtns userVal sGlobal ""
+                    
                 ]
         (Data.Users.Credited addr userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayForRegisteredUser userVal sGlobal ""
-                    , otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
+                    , displayRankingBtns userVal sGlobal ""
+                    
                 ]
 
 
@@ -3058,7 +2984,7 @@ failureView str =
                     , Element.text ("\n")
                     , Element.el Color.danger <| Element.text str
                     , Element.text ("\n")
-                    --, displayForRegisteredUser userVal sGlobal
+                    --, displayRankingBtns userVal sGlobal
                     -- if the UI following is an issue needing branching
                     -- do it in a separate function like dispalyForToken
                     , infoBtn "Log In" ClickedLogInUser
@@ -3067,8 +2993,8 @@ failureView str =
                 ]
 
 
-displayForRegisteredUser : Data.Users.User -> Data.Global.Global -> String -> Element Msg 
-displayForRegisteredUser userVal sGlobal errorMsg = 
+displayRankingBtns : Data.Users.User -> Data.Global.Global -> String -> Element Msg 
+displayRankingBtns userVal (Data.Global.GlobalRankings esUR gState) errorMsg = 
     case userVal of
         Data.Users.Spectator userInfo userState ->
             -- Err
@@ -3097,6 +3023,7 @@ displayForRegisteredUser userVal sGlobal errorMsg =
                 , infoBtn "Log In" ClickedLogInUser
                 , SR.Elements.warningText errorMsg
                 , infoBtn "Register" ClickedRegister
+                , otherrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Other ) esUR)) userVal
                 ]
 
                 
@@ -3104,26 +3031,27 @@ displayForRegisteredUser userVal sGlobal errorMsg =
         (Data.Users.Registered userId token userInfo userState) ->
             Element.column Grid.section <|
                 [
-                ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
-                , memberrankingbuttons (Data.Global.gotMember sGlobal userVal) userVal
+                    ownedrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Owned ) esUR)) userVal
+                    , memberrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Member ) esUR)) userVal
+                    , otherrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Other ) esUR)) userVal
                 ]
         (Data.Users.NoWallet userId token userInfo userState) ->
             Element.column Grid.section <|
-                [Element.text ("\n")
-                , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
-                , memberrankingbuttons (Data.Global.gotMember sGlobal userVal) userVal
+                [   ownedrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Owned ) esUR)) userVal
+                    , memberrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Member ) esUR)) userVal
+                    , otherrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Other ) esUR)) userVal
                 ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
             Element.column Grid.section <|
-                [Element.text ("\n")
-                , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
-                , memberrankingbuttons (Data.Global.gotMember sGlobal userVal) userVal
+                [   ownedrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Owned ) esUR)) userVal
+                    , memberrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Member ) esUR)) userVal
+                    , otherrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Other ) esUR)) userVal
                 ]
         (Data.Users.Credited addr userId token userInfo userState) ->
             Element.column Grid.section <|
-                [Element.text ("\n")
-                , ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned sGlobal userVal)) userVal
-                , memberrankingbuttons (Data.Global.gotMember sGlobal userVal) userVal
+                [   ownedrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Owned ) esUR)) userVal
+                    , memberrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Member ) esUR)) userVal
+                    , otherrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Other ) esUR)) userVal
                 ]
   
 
@@ -3264,14 +3192,23 @@ memberrankingbuttons urankingList user =
             ]
 
 
-otherrankingbuttons : List Data.Global.UserRanking -> Element Msg
-otherrankingbuttons urankingList =
-    Element.column Grid.section <|
-    [ Element.el Heading.h5 <| Element.text "All Other Rankings: "
-    , List.map (\ur -> ur.rankingInfo) urankingList
-        |> List.map otherRankingInfoBtn
-        |> Element.column (Card.simple ++ Grid.simple) 
-    ]
+otherrankingbuttons : List Data.Global.UserRanking -> Data.Users.User -> Element Msg
+otherrankingbuttons urankingList user =
+    case user of 
+        Data.Users.Spectator _ _ ->
+            Element.column Grid.section <|
+            [ Element.el Heading.h5 <| Element.text "View The Rankings: "
+            , List.map (\ur -> ur.rankingInfo) urankingList
+                |> List.map otherRankingInfoBtn
+                |> Element.column (Card.simple ++ Grid.simple) 
+            ]
+        _ ->
+            Element.column Grid.section <|
+            [ Element.el Heading.h5 <| Element.text "All Other Rankings: "
+            , List.map (\ur -> ur.rankingInfo) urankingList
+                |> List.map otherRankingInfoBtn
+                |> Element.column (Card.simple ++ Grid.simple) 
+            ]
 
 
 ownedRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
@@ -3343,7 +3280,7 @@ configureThenAddPlayerRankingBtns : Data.Selected.Selected -> Data.Users.Users -
 configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
    -- nb. 'uplayer' is the player that's being mapped cf. user which is current user (single instance)
     let
-        printChallengerNameOrAvailable = Data.Selected.printChallengerNameOrAvailable sSelected sUsers uplayer
+        challorAvail = Data.Selected.challorAvail sSelected sUsers uplayer
     in
         -- all players are considered Registered (only)
         case (uplayer.user, uplayer.player) of
@@ -3354,7 +3291,7 @@ configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
                                 Element.column Grid.simple <|
                                 [ Input.button (Button.fill ++ Color.disabled) <|
                                     { onPress = Nothing
-                                    , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ challorAvail
                                     }
                                 ]
                             
@@ -3364,7 +3301,7 @@ configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
                                 Element.column Grid.simple <|
                                 [ Input.button (Button.fill ++ Color.info) <|
                                     { onPress = Just <| ClickedChallengeOpponent uplayer (Data.Selected.gotUserPlayerByUserId sSelected userId)
-                                    , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ challorAvail
                                     }
                                 ]
                         else
@@ -3375,7 +3312,7 @@ configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
                                     { 
                                         --nb. this was appInfo.player - uplayer.player might not be quite correct:
                                         onPress = Just <| ClickedChangedUIStateToEnterResult uplayer
-                                    , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                    , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ challorAvail
                                     }
                                 ]
 
@@ -3384,72 +3321,9 @@ configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
                             Element.column Grid.simple <|
                             [ Input.button (Button.fill ++ Color.disabled) <|
                                 { onPress = Nothing
-                                , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
+                                , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ challorAvail
                                 }
                             ]
-
-                        
-                        -- else
-                        -- player is current user, but not in a challenge:
-                        -- let 
-                        --     _ = Debug.log "player is current user, but not in a challenge" "here"
-                        -- in
-                            
-                        -- else if - this uplayer isn't the current user but the current user is in a challenge so disable any other players
-
-                    --else if isCurrentUser Player InAChallenge then
-                    
-                    
-                    -- else if Data.Selected.isChallenged sSelected sUsers uplayer then
-                    --     Element.column Grid.simple <|
-                    --         [ Input.button (Button.fill ++ Color.disabled) <|
-                    --             { onPress = Nothing
-                    --             , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
-                    --             }
-                    --         ]
-                        
-                        
-                        
-                        -- else if - this uplayer isn't the current user but is being challenged
-
-                    -- else if Data.Selected.isChallenged sSelected sUsers uplayer then
-                    --     Element.column Grid.simple <|
-                    --         [ Input.button (Button.fill ++ Color.disabled) <|
-                    --             { onPress = Nothing
-                    --             , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
-                    --             }
-                    --         ]
-                    
-                    
-                   -- else
-                    -- this uplayer isn't the current user and isn't challenged by anyone
-                    -- so should be clickable for a challenge
-                        --if not (Data.Selected.isChallenged sSelected sUsers uplayer) then
-                            -- Element.column Grid.simple <|
-                            --     [ Input.button (Button.fill ++ Color.light) <|
-                            --         { onPress = Just <| ClickedChallengeOpponent uplayer
-                            --         , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
-                            --         }
-                            --     ]
-                        
-                        
-                        
-                        -- else 
-                        --         Element.column Grid.simple <|
-                        --         [ Input.button (Button.fill ++ Color.disabled) <|
-                        --             { onPress = Nothing
-                                    
-                        --             , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
-                        --             }
-                        --         ]
-                -- else
-                --     -- the user is a Spectator or isn't a member of this ranking, so disable everything
-                --     Element.column Grid.simple <|
-                --         [ Input.button (Button.fill ++ Color.disabled) <|
-                --             { onPress = Nothing
-                --             , label = Element.text <| String.fromInt uplayer.player.rank ++ ". " ++ userInfo.username ++ " vs " ++ printChallengerNameOrAvailable
-                --             }
-                --         ]
 
             (_) ->
                 Element.text "Unregistered user!"
