@@ -1,9 +1,12 @@
 -- Players will be mainly used to communicate externally to the jsonbin server
 module Data.Players exposing (Players
-    , Player
+    , Player(..)
     , FPlayer
-    , gotAddress
-    , validatedPlayerList
+    , PlayerInfo
+    , PlayerStatus(..)
+    , gotUid
+    , assignChallengerUID
+    --, validatedPlayerList
     , handleFetchedPlayers
     , extractPlayersFromWebData
     , empty
@@ -13,6 +16,7 @@ module Data.Players exposing (Players
     , asPlayers
     , playersetLength
     , convertPlayerFromFPlayer)
+
 
 
 --import SR.Types
@@ -25,48 +29,48 @@ import Http
 import List.Unique
 import SRdb.Scalar exposing (Id(..))
 import SRdb.ScalarCodecs
-
-
-
+import Data.Users
 
 type Players = Players (EverySet Player)
 type PlayerNames = PlayerNames (EverySet String)
 
-type alias Player =
+type Player = IndividualPlayer PlayerInfo PlayerStatus
+
+type PlayerStatus = 
+    Available
+    | Challenged String
+
+type alias PlayerInfo =
     { rankingid : String
-    , uid : String
+    , uid : Data.Users.UserId
     , rank : Int
-    , challengerid : String
+    --, challengerid : String
     }
 
 type alias FPlayer =
     { id_ : SRdb.ScalarCodecs.Id
     , rankingid : String
-    , address : String
+    , uid : String
     , rank : Int
     , challengerid : Maybe String
     }
 
 convertPlayerFromFPlayer : FPlayer -> Player 
 convertPlayerFromFPlayer fplayer = 
-    Player (fromScalarCodecId fplayer.id_) fplayer.address fplayer.rank (Maybe.withDefault "" fplayer.challengerid)
+    IndividualPlayer (PlayerInfo (fromScalarCodecId fplayer.id_) fplayer.uid fplayer.rank)
+        (Maybe.withDefault Available (Just (determinePlayerStatus fplayer.challengerid)))
+
+determinePlayerStatus : Maybe String -> PlayerStatus 
+determinePlayerStatus challengerid = 
+    case challengerid of
+        Nothing ->
+            Available
+        Just chid ->
+            Challenged chid
 
 fromScalarCodecId : SRdb.ScalarCodecs.Id -> String
 fromScalarCodecId (Id id) =
     id
-
-
-createdMaybePlayerFromPlayer : Player -> Maybe Player
-createdMaybePlayerFromPlayer player =
-    Just
-        { rankingid = player.rankingid 
-        , uid = player.uid
-        , rank = player.rank
-        , challengerid = player.challengerid
-        }
-
-
-
 
 rankFromMaybeRank : Maybe Int -> Int
 rankFromMaybeRank int =
@@ -92,8 +96,12 @@ asList sPlayers =
             setOfPlayers
            |> EverySet.toList
 
-
-
+assignChallengerUID : Player -> String -> Player 
+assignChallengerUID player challengerUID =
+    case player of 
+        IndividualPlayer playerInfo playerStatus ->
+            IndividualPlayer (PlayerInfo playerInfo.rankingid  playerInfo.uid playerInfo.rank)
+                (Challenged challengerUID)
 
 addPlayer : Player -> Players -> Players
 addPlayer player sPlayers = 
@@ -149,20 +157,20 @@ removePlayer player sPlayers =
 --         Just a ->
 --             a
 
-validatedPlayerList : List Player -> List Player
-validatedPlayerList lPlayer =
-    List.filterMap
-        isValidPlayerAddrInList
-        lPlayer
+-- validatedPlayerList : List Player -> List Player
+-- validatedPlayerList lPlayer =
+--     List.filterMap
+--         isValidPlayerAddrInList
+--         lPlayer
 
 
-isValidPlayerAddrInList : Player -> Maybe Player
-isValidPlayerAddrInList player =
-    if Eth.Utils.isAddress player.uid then
-        Just player
+-- isValidPlayerAddrInList : Player -> Maybe Player
+-- isValidPlayerAddrInList player =
+--     if Eth.Utils.isAddress player.uid then
+--         Just player
 
-    else
-        Nothing
+--     else
+--         Nothing
 
 
 
@@ -221,9 +229,9 @@ handleFetchedPlayers lplayer =
                     (empty, s)
 
 
-gotAddress : Player -> String
-gotAddress player =
-    player.uid
+gotUid : Player -> String
+gotUid (IndividualPlayer playerInfo _)  =
+    playerInfo.uid
 
 -- removeCurrentPlayerEntryFromPlayerList : List Player -> String -> List Player
 -- removeCurrentPlayerEntryFromPlayerList lplayer uaddr =

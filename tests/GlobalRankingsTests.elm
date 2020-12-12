@@ -97,7 +97,7 @@ createAllUserAsOwnerGlobalRankingListTest =
                     , description = "t10"
                     , email = "t10@t.com"
                     , mobile = "10101000"
-                    , userjoinrankings = ["5e96c74b5fa47104cea0c7c6","5e8e879d8e85c8437012e2a7", "5e96baff2940c704e1d86316"]
+                    , userjoinedrankings = ["5e96c74b5fa47104cea0c7c6","5e8e879d8e85c8437012e2a7", "5e96baff2940c704e1d86316"]
                     }
 
                 output =
@@ -131,7 +131,7 @@ removedDeletedRankingsFromUserJoinedTest =
                             , description = "t10"
                             , email = "t10@t.com"
                             , mobile = "10101000"
-                            , userjoinrankings = ["5e96baff2940c704e1d86316"]
+                            , userjoinedrankings = ["5e96baff2940c704e1d86316"]
                             }
     in
     --only <|

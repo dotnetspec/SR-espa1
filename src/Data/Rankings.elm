@@ -7,7 +7,7 @@ module Data.Rankings exposing (Rankings
     , gotRankingFromRankingList
     , stringListToRankingIdList
     , rankingIdListToStringList
-    , isUniqueRankingName
+    --, isUniqueRankingName
     , isIdInSet
     , isIdInList
     , isEmpty
@@ -20,7 +20,8 @@ module Data.Rankings exposing (Rankings
     , removedById
     , handleServerDeletedRanking
     , asList, asRankings, getRanking, gotRanking, rankingsetLength
-    , isRankingNameValidated)
+    , emptyFRanking
+    , isRankingNameValid)
 
 
 --import SR.Types
@@ -34,6 +35,7 @@ import Css exposing (ex)
 import SRdb.Scalar exposing (Id(..))
 import SRdb.ScalarCodecs
 import Set
+import Regex
 
 type alias Ranking =
     { 
@@ -64,6 +66,16 @@ type alias FRanking =
     , rankingownerid : String
     }
 
+emptyFRanking : FRanking
+emptyFRanking = {
+    id_ =  SRdb.Scalar.Id ""
+    , active = False
+    , rankingname = ""
+    , rankingdesc = Nothing
+    --, ts_ = SRdb.Scalar.Long ""
+    , rankingownerid = ""
+    }
+
 
 fromScalarCodecId : SRdb.ScalarCodecs.Id -> String
 fromScalarCodecId (Id id) =
@@ -83,13 +95,20 @@ addRanking ranking sRankings =
         Rankings setOfRankings  ->
                 asRankings (EverySet.insert ranking setOfRankings)
 
-isRankingNameValidated : Ranking -> Rankings -> Bool
-isRankingNameValidated rankingInfo sRanking =
-    if String.length rankingInfo.rankingname > 3 && String.length rankingInfo.rankingname < 9 && isUniqueRankingName rankingInfo.rankingname sRanking then
-        True
-
-    else
-        False
+-- isRankingNameValidated : Ranking -> Rankings -> Bool
+-- isRankingNameValidated rankingInfo sRanking =
+--     -- let 
+--     --     _ = Debug.log "sRanking " sRanking
+--     --     _ = Debug.log "rankingInfo " rankingInfo
+--     --     torF = String.length rankingInfo.rankingname > 3 && String.length rankingInfo.rankingname < 9 
+--     --             --&& isUniqueRankingName rankingInfo.rankingname sRanking
+--     --     _ = Debug.log "TorF " torF
+--     --in
+--     if String.length rankingInfo.rankingname > 3 && String.length rankingInfo.rankingname < 9 
+--     && isUniqueRankingName rankingInfo.rankingname sRanking then
+--         True
+--     else
+--         False
 
 
 isEmpty : Rankings -> Bool
@@ -321,11 +340,24 @@ extractRankingsFromWebData remData =
             []
 
 
-isUniqueRankingName : String -> Rankings -> Bool
-isUniqueRankingName str sRanking =
-    --currently only know how to do this by converting to List first
-    Set.member str (Set.fromList <|  List.map  (\r -> r.rankingname) (asList sRanking))
-    --Set.member str <| Set.map  (\r -> r.rankingname) sRanking
+-- isUniqueRankingName : String -> Rankings -> Bool
+-- isUniqueRankingName str sRanking =
+--     let 
+--             nameSet = (Set.fromList <|  List.map  (\r -> r.rankingname) (asList sRanking))
+--             _ = Debug.log "nameset " nameSet
+--             _ = Debug.log "str " str
+--     in 
+--     --False
+--     --currently only know how to do this by converting to List first
+--     not <| Set.member str (Set.fromList <|  List.map  (\r -> r.rankingname) (asList sRanking))
+--     --Set.member str <| Set.map  (\r -> r.rankingname) sRanking
+
+isRankingNameValid : String -> Rankings -> Bool 
+isRankingNameValid newName (Rankings esRanking) =
+    if EverySet.member newName <| EverySet.map (\r -> r.rankingname) esRanking then
+        False 
+    else 
+        Regex.contains (Maybe.withDefault Regex.never (Regex.fromString "(?!.*[\\.\\-\\_]{2,})^[a-zA-Z0-9\\.\\-\\_]{4,8}$")) newName
 
 
 

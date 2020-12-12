@@ -1,12 +1,12 @@
 module SR.Types exposing
     ( PlayerId, RankingId(..)
-    , WalletState(..)
+    --, WalletState(..)
     , UIState(..)
     , Colors, CreateNewLadderFormFields, FormValidations, LadderState(..), ModalState(..)
     , NewRankingListServerResponse, ResultRadioOptions(..)
     , UserListState(..)
     , colors
-    , SubState(..)
+    --, SubState(..)
     , DeleteBinResponse
     )
 
@@ -92,28 +92,14 @@ type Username
     = Username String
 
 
-type WalletState
-    = 
-    WalletStateMissing
-    | WalletStateLocked
-    | WalletStateAwaitOpening
-    | WalletWaitingForTransactionReceipt
-    | WalletOpened
-    | WalletOperational
-    | WalletStopSub
-    | WalletOpenedNoUserAccount
-
-
 type LadderState
     = ExistingLadder Data.Rankings.Ranking
     | NewLadder Data.Rankings.Ranking
 
 
 type UIState
-    = UIRenderAllRankings
-    | UICreateNewLadder
-    | UIRegisterNewUser
-    | UIUpdateExistingUser
+    = 
+    UIUpdateExistingUser
     | UIWalletMissingInstructions
     | UIDisplayWalletLockedInstructions
     | UIDisplayWalletInfoToUser
@@ -122,19 +108,17 @@ type UIState
     | UISelectedRankingUserIsNeitherOwnerNorPlayer
     | UIEnterResult
     | UIEnterResultTxProblem
-    | UIChallenge
-    | UILoading
+    --| UIChallenge
     | UIWaitingForTxReceipt
     | UIDeleteRankingConfirm
     | UIEnableEthereum
     | UIOwnerDeletedRanking
     | UIUnableToFindGlobalRankings
     | UIEthAlreadyEnabled
-    | UILogIn
 
-type SubState 
-    = Subscribe 
-    | StopSubscription
+-- type SubState 
+--     = Subscribe 
+--     | StopSubscription
 
 
 

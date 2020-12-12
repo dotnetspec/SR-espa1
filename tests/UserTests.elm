@@ -78,7 +78,7 @@ validSetTest =
 addedNewJoinedRankingIdToUserTest : Test
 addedNewJoinedRankingIdToUserTest = 
     --only <|
-        describe "correctly add a rankingId to a User's userjoinrankings list"
+        describe "correctly add a rankingId to a User's userjoinedrankings list"
             [
             --fuzzWith { runs = 1 } (Fuzz.list userFuzzer) """addedNewJoinedRankingId must only add a valid rnkId to a User in the (fuzzy) set""" <|
             fuzz (Fuzz.list userFuzzer) """addedNewJoinedRankingId must only add a valid rnkId to a User in the (fuzzy) set""" <|
@@ -100,7 +100,7 @@ addedNewJoinedRankingIdToUserTest =
                                             Expect.pass
                                         -- x is a User:
                                         x :: xs ->
-                                            x.userjoinrankings
+                                            x.userjoinedrankings
                                             |>
                                             Expect.all
                                                 [ 
@@ -111,7 +111,7 @@ addedNewJoinedRankingIdToUserTest =
                                                 ]
                             -- user:
                             x :: xs ->
-                                    case x.userjoinrankings of 
+                                    case x.userjoinedrankings of 
                                         [] ->
                                             Expect.pass
                                         --single rankingid:
@@ -127,16 +127,16 @@ addedNewJoinedRankingIdToUserTest =
                                                 --user:
                                                 z :: zs ->
                                                     -- let 
-                                                    --     _ = Debug.log " z" z.userjoinrankings
-                                                    --     _ = Debug.log " x" x.userjoinrankings
+                                                    --     _ = Debug.log " z" z.userjoinedrankings
+                                                    --     _ = Debug.log " x" x.userjoinedrankings
                                                     -- in 
                                                     -- following seeds provide valid data that won't result in an empty list for z:
                                                     -- 151412038146962
-                                                    z.userjoinrankings
+                                                    z.userjoinedrankings
                                                     |>
                                                     Expect.all
                                                         [ 
-                                                            Expect.notEqual x.userjoinrankings 
+                                                            Expect.notEqual x.userjoinedrankings 
                                                             --, Expect.notEqual []
                                                         ]
                    
@@ -145,7 +145,7 @@ addedNewJoinedRankingIdToUserTest =
 removedRankingIdFromAllUsersTest : Test 
 removedRankingIdFromAllUsersTest =
     --only <|
-        describe "correctly remove a rankingId from each User's userjoinrankings list"
+        describe "correctly remove a rankingId from each User's userjoinedrankings list"
             [
             fuzz (Fuzz.list userFuzzer)"""removeRankingIdFromAllUsers must remove the correct rnkId from every User in the (fuzzy) set"""  <|
             --fuzz (Fuzz.list userFuzzer) """removeRankingIdFromAllUsers must remove the correct rnkId from every User in the (fuzzy) set"""  <|
@@ -168,7 +168,7 @@ removedRankingIdFromAllUsersTest =
                                             Expect.pass
                                         -- x is a User:
                                         x :: xs ->
-                                            x.userjoinrankings
+                                            x.userjoinedrankings
                                             |>
                                             Expect.all
                                                 [ 
@@ -180,7 +180,7 @@ removedRankingIdFromAllUsersTest =
                             -- fuzz has generated a list
                             -- take the first user:
                             x :: xs ->
-                                    case x.userjoinrankings of 
+                                    case x.userjoinedrankings of 
                                         [] ->
                                             Expect.pass
                                         --take a single rankingid:
@@ -199,12 +199,12 @@ removedRankingIdFromAllUsersTest =
                                                 z :: zs ->
                                                     -- following seeds provide valid data that won't result in an empty list for z:
                                                     -- 151412038146962
-                                                    z.userjoinrankings
+                                                    z.userjoinedrankings
                                                     |>
                                                     Expect.all
                                                         [ 
                                                             -- it's only fair to test against a validated fuzz user (x)
-                                                            Expect.equal (List.filterMap Data.Users.removedInvalidRankingId x.userjoinrankings)
+                                                            Expect.equal (List.filterMap Data.Users.removedInvalidRankingId x.userjoinedrankings)
                                                             -- if fuzz data is invalid, lists may equal [] cos first 'rankingid' won't be added
                                                             --, Expect.notEqual []
                                                         ]
@@ -224,7 +224,7 @@ gotUserFromUserListTest =
               , description = "t1"
               , email = "t1@t.com"
               , mobile = "11111111"
-              , userjoinrankings = ["5e96c74b5fa47104cea0c7c6"
+              , userjoinedrankings = ["5e96c74b5fa47104cea0c7c6"
           , "5e8e879d8e85c8437012e2a7"]
               }
             ]
@@ -249,7 +249,7 @@ removedDuplicateUserFromUserListTest =
               , description = "Tough"
               , email = "j@j.com"
               , mobile = "123456"
-              , userjoinrankings = []
+              , userjoinedrankings = []
               }
             , { datestamp = 123456
               , active = True
@@ -258,7 +258,7 @@ removedDuplicateUserFromUserListTest =
               , description = "Fit"
               , email = "j@j.com"
               , mobile = "123456"
-              , userjoinrankings = []
+              , userjoinedrankings = []
               }
             ]
     in

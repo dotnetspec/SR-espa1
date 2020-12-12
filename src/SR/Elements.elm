@@ -27,6 +27,7 @@ import SR.Types
 import Utils.MyUtils
 import Data.Rankings
 import Data.Users
+import Data.Selected
 
 
 warningText : String -> Element msg
@@ -125,9 +126,9 @@ globalHeading user =
 
 
 
-selectedRankingHeaderEl : Data.Rankings.Ranking -> Element msg
-selectedRankingHeaderEl rnkInfo =
-    Element.el Heading.h5 <| Element.text <| "Selected Ranking " ++ "-" ++ rnkInfo.rankingname
+selectedRankingHeaderEl : Data.Selected.Selected -> Element msg
+selectedRankingHeaderEl (Data.Selected.SelectedRanking esUP rnkId selectedOwnerStatus sPlayers selectedState name) =
+    Element.el Heading.h5 <| Element.text <| "Selected Ranking " ++ "-" ++ name
 
 
 simpleUserInfoText : Element msg

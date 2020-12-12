@@ -1,8 +1,12 @@
-module Bridge exposing (requestLoginUser, requestCreateNewUser, requestAllUserNames
+module Bridge exposing (
+    requestLoginUser
+    , requestCreateNewUser
+    , requestAllUserNames
+    , requestCreateNewRanking
     , requestAllUsers
     , requestAllRankings
-    , requestAllPlayers
-    --, requestPlayersByRankingId
+    --, requestAllPlayers
+    , requestgotPlayersByRankingId
     , LoginResult
     )
 
@@ -77,6 +81,17 @@ requestCreateNewUser userInfo =
         , email = Present userInfo.extrauserinfo.email, mobile = Present userInfo.extrauserinfo.mobile })
         ({ active = True, username = userInfo.username, password = userInfo.password } ) loginResultSelectionSet)
         |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
+        
+
+requestCreateNewRanking : Data.Rankings.Ranking -> Http.Request Data.Rankings.FRanking
+requestCreateNewRanking ranking =
+    -- handling of optional args is addressed at https://elmlang.slack.com/archives/C0RSQNQ92/p1606277449291800
+    -- and https://thoughtbot.com/blog/optional-arguments-in-elm-queries
+    Http.mutationRequest SR.Constants.endpointURL (Mutation.createNewRanking
+        (\default -> { default | rankingdesc = Present (Maybe.withDefault "" ranking.rankingdesc) })
+        ({ active = True, rankingname = ranking.rankingname, rankingownerid = ranking.rankingownerid } ) rankingSelectionSet)
+        |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
+
 
 
 requestAllUserNames : Data.Users.Token -> Http.Request (List String)
@@ -131,15 +146,15 @@ rankingSelectionSet =
             |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingdesc
             |> Graphql.SelectionSet.with SRdb.Object.Ranking.rankingownerid
 
-requestAllPlayers : Data.Users.Token ->  Http.Request (Maybe (List (Maybe Data.Players.FPlayer)))
-requestAllPlayers token =
-    Http.queryRequest SR.Constants.endpointURL (queryAllPlayers playerSelectionSet)
-        |> Http.withHeader "authorization" ("Bearer " ++ token)
+-- requestAllPlayers : Data.Users.Token ->  Http.Request (List Data.Players.FPlayer)
+-- requestAllPlayers token =
+--     Http.queryRequest SR.Constants.endpointURL (queryAllPlayers playerSelectionSet)
+--         |> Http.withHeader "authorization" ("Bearer " ++ token)
 
-queryAllPlayers : SelectionSet Data.Players.FPlayer SRdb.Object.Player
-     -> SelectionSet (Maybe (List (Maybe Data.Players.FPlayer))) RootQuery
-queryAllPlayers playerSelectSet =
-    Query.allPlayers playerSelectSet
+-- queryAllPlayers : SelectionSet (List Data.Players.FPlayer) SRdb.Object.Player
+--      -> SelectionSet (List Data.Players.FPlayer) SRdb.Object.Player
+-- queryAllPlayers playerSelectSet =
+--     Query.allPlayers playerSelectSet
 
 playerSelectionSet :  SelectionSet Data.Players.FPlayer SRdb.Object.Player
 playerSelectionSet =
@@ -153,18 +168,18 @@ playerSelectionSet =
 
 
 -- it needs to be players by ranking id - all players for a given ranking
--- requestPlayersByRankingId : String -> Http.Request (List Data.Players.FPlayer)
--- requestPlayersByRankingId rankingId  =
---     let
---         --requiredArgs = {id  = (SRdb.Scalar.Id rankingId)}
---         requiredArgs = {rankingid = rankingId}
---     in
---         Http.queryRequest SR.Constants.endpointURL (queryfindPlayersByRankingID requiredArgs playerSelectionSet)
---         |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
+requestgotPlayersByRankingId : String -> Http.Request (Maybe (List (Maybe Data.Players.FPlayer)))
+requestgotPlayersByRankingId rankingId  =
+    let
+        --requiredArgs = {id  = (SRdb.Scalar.Id rankingId)}
+        requiredArgs = {rankingid = rankingId}
+    in
+        Http.queryRequest SR.Constants.endpointURL (querygotPlayersByRankingID requiredArgs playerSelectionSet)
+        |> Http.withHeader "authorization" SR.Constants.customKeyBearerToken
 
 
--- queryfindPlayersByRankingID : Query.FindPlayerByIDRequiredArguments ->  SelectionSet Data.Players.FPlayer SRdb.Object.Player
---      -> SelectionSet (List Data.Players.FPlayer) RootQuery
--- queryfindPlayersByRankingID requiredArgs playerSelectSet =
---     Query.findPlayersByRankingId requiredArgs playerSelectSet
+querygotPlayersByRankingID : Query.GotPlayersByRankingIdRequiredArguments ->  SelectionSet Data.Players.FPlayer SRdb.Object.Player
+     -> SelectionSet (Maybe (List (Maybe Data.Players.FPlayer))) RootQuery
+querygotPlayersByRankingID requiredArgs playerSelectSet =
+    Query.gotPlayersByRankingId requiredArgs playerSelectSet
 

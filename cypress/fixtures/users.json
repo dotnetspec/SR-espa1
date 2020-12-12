@@ -7,7 +7,7 @@
         "description": "t10",
         "email": "t10@t.com",
         "mobile": "10101000",
-        "userjoinrankings": []
+        "userjoinedrankings": []
     },
     {
         "datestamp": 1569839363942,
@@ -17,7 +17,7 @@
         "description": "t8",
         "email": "t8@t.com",
         "mobile": "8888888",
-        "userjoinrankings": []
+        "userjoinedrankings": []
     },
     {
         "datestamp": 1569839363942,
@@ -27,7 +27,7 @@
         "description": "t7",
         "email": "t7@t.com",
         "mobile": "7777777",
-        "userjoinrankings": []
+        "userjoinedrankings": []
     },
     {
         "datestamp": 1569839363942,
@@ -37,7 +37,7 @@
         "description": "t2",
         "email": "t2@t.com",
         "mobile": "222222222",
-        "userjoinrankings": []
+        "userjoinedrankings": []
     },
     {
         "datestamp": 1569839363942,
@@ -47,7 +47,7 @@
         "description": "t1",
         "email": "t1@t.com",
         "mobile": "11111111",
-        "userjoinrankings": []
+        "userjoinedrankings": []
     },
     {
         "datestamp": 1569839363942,
@@ -57,7 +57,7 @@
         "description": "t5",
         "email": "t5@t.com",
         "mobile": "55555555",
-        "userjoinrankings": []
+        "userjoinedrankings": []
     },
     {
         "datestamp": 1569839363942,
@@ -67,7 +67,7 @@
         "description": "t6",
         "email": "t6@t.com",
         "mobile": "123456",
-        "userjoinrankings": []
+        "userjoinedrankings": []
     },
     {
         "datestamp": 1569839363942,
@@ -77,7 +77,7 @@
         "description": "t4",
         "email": "t4@t.com",
         "mobile": "123456",
-        "userjoinrankings": []
+        "userjoinedrankings": []
     },
     {
         "datestamp": 1569839363942,
@@ -87,6 +87,6 @@
         "description": "t3",
         "email": "test3@t3.com",
         "mobile": "777777777777",
-        "userjoinrankings": []
+        "userjoinedrankings": []
     }
 ]
