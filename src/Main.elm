@@ -470,7 +470,8 @@ update msg model =
             (Fetched sUsers sRankings _)
                 (Data.Users.Registered userId token userInfo Data.Users.General) uiState txRec ) ->
                     let
-                        newDataKind = Selected (Data.Selected.SelectedRanking EverySet.empty rnkidstr selectedOwnerStatus Data.Players.empty Data.Selected.DisplayRanking rnknamestr)
+                        newDataKind = Selected (Data.Selected.SelectedRanking EverySet.empty 
+                            rnkidstr selectedOwnerStatus Data.Players.empty Data.Selected.DisplayRanking rnknamestr)
                         newDataState = Fetched sUsers sRankings newDataKind
                     in
                         (AppOps newDataState
@@ -1643,11 +1644,6 @@ update msg model =
             ( updateWithReceivedRankings modelReDef response
             , Cmd.none
             )
-            
-        -- (ReceivedPlayers response, modelReDef) ->
-        --     ( updateWithReceivedPlayers modelReDef response
-        --     , Cmd.none 
-        --     )
 
         (ReceivedPlayersByRankingId response, modelReDef) ->
             ( updateWithReceivedPlayersByRankingId modelReDef response
@@ -1858,7 +1854,7 @@ updateWithReceivedPlayersByRankingId model response =
                 lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer filteredFPlayerList
                 --newsplayers = Data.Players.asPlayers (EverySet.fromList lFromFToPlayer)
                 -- todo: change createdSelected to accept a Set instead of a list
-                newsSelected = Data.Selected.created lFromFToPlayer sUsers rnkId name
+                newsSelected = Data.Selected.created lFromFToPlayer sUsers rnkId name ownerStatus
                 newDataKind = Selected newsSelected
                 newDataState = Fetched sUsers sRankings newDataKind
             in
@@ -1960,17 +1956,23 @@ updateWithReceivedPlayers model response =
         (AppOps (Updated sUsers sRankings dKind) user uiState txRec, Ok lplayers) ->
             (Failure "updateWithReceivedPlayers2")
 
-        ( AppOps (Fetched sUsers sRankings (Selected _)) user uiState txRec, Ok lplayers ) ->
+        ( AppOps (Fetched sUsers sRankings 
+            (Selected (Data.Selected.SelectedRanking esUP rnkId selectedOwnerStatus sPlayers selectedState ""))) 
+                user uiState txRec
+                , Ok lplayers ) ->
 
                     let
                         filteredFPlayerList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lplayers)
                         lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer filteredFPlayerList
                         --newSPlayers = Data.Players.asPlayers (EverySet.fromList lFromFToPlayer)
                         _ = Debug.log "players" lFromFToPlayer
-                        newDataKind = Selected (Data.Selected.created lFromFToPlayer sUsers (Internal.Types.RankingId "280892229782864389") "") -- i.e. rnkId
+                        newDataKind = Selected (Data.Selected.created lFromFToPlayer sUsers (Internal.Types.RankingId "280892229782864389") "" selectedOwnerStatus) -- i.e. rnkId
                         newDataState = Fetched sUsers sRankings newDataKind
                     in
                         AppOps newDataState user uiState txRec
+
+        ( AppOps (Fetched _ _ (Selected (Data.Selected.SelectedRanking _ _ _ _ _ _))) _ _ _, Ok _ ) ->
+            (Failure "tbc in updateWithReceivedPlayers ")
 
         (AppOps AllEmpty user uiState txRec, Err _ )  ->
             (Failure "Unable to obtain Players data. Please check your network connection ...")
@@ -2471,11 +2473,11 @@ updateSelectedRankingPlayerList model luplayers =
             case dataState of
                 Updated sUsers sRankings dKind -> 
                     case dKind of 
-                        Selected sSelected ->
+                        Selected (Data.Selected.SelectedRanking esUP rnkId selectedOwnerStatus sPlayers selectedState "") ->
                             let 
                             --todo: I think this means we lose the update - need to do differently ...
-                                newDataKind = Selected (Data.Selected.created (Data.Selected.convertUserPlayersToPlayers luplayers) sUsers
-                                    (Data.Selected.gotRankingId sSelected) "")
+                                newDataKind = Selected ((Data.Selected.created (Data.Selected.convertUserPlayersToPlayers luplayers) sUsers
+                                    (rnkId) "") selectedOwnerStatus)
                                 newDataState = Updated sUsers sRankings newDataKind 
                             in
                                 AppOps newDataState user uiState txRec
@@ -2493,33 +2495,6 @@ updateSelectedRankingPlayerList model luplayers =
 
         _ ->
             Failure <| "updateSelectedRankingPlayerList : "
-
-
--- populatedSelected : Model -> List Data.Selected.UserPlayer -> Model
--- populatedSelected model luplayer =
---     case model of
---         AppOps dataState user uiState txRec ->
---             case dataState of 
---                 Selected sSelected sUsers _ ->
---                     let
---                         newSSelected = Data.Selected.asSelected (EverySet.fromList luplayer ) sUsers (Internal.Types.RankingId appInfo.selectedRanking.id_)
-
---                         stateToSelected = Selected newSSelected sUsers (Internal.Types.RankingId appInfo.selectedRanking.id_)
-                        
---                         newAppPlayer = { appInfo | player = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer appInfo.user.m_ethaddress }
-
---                         newAppChallengerAndPlayer = { newAppPlayer | challenger = Data.Selected.gotUserPlayerFromPlayerListStrAddress luplayer newAppPlayer.player.player.challengerid }
-
---                         --_ = Debug.log "in populatedSelected" <| stateToSelected
-                    
---                     in
---                         AppOps stateToSelected newAppChallengerAndPlayer uiState  emptyTxRecord
---                 _ ->
---                     Failure <| "populatedSelected : "
---         _ ->
---             Failure <| "populatedSelected : "
-
-
 
 -- view
 
@@ -2624,16 +2599,11 @@ view model =
                         (Data.Users.Registered userId token userInfo userState) sUsers 
                             (Data.Global.GlobalRankings (esUR) (Data.Global.CreatedNewRanking ranking))
 
-                
 
                 ( Fetched sUsers sRankings 
                     (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayLoggedIn)), userVal) ->
                     generalLoggedInView 
                         userVal sUsers (Data.Global.GlobalRankings (esUR) (Data.Global.DisplayLoggedIn ))
-
-                
-
-                
 
                 ( Fetched _ _ (Global (Data.Global.GlobalRankings (_) Data.Global.DisplayGlobalLogin)), Data.Users.Spectator _ Data.Users.Updated ) ->
                     Html.text ("User Updated")
@@ -2678,25 +2648,43 @@ view model =
                 
                 ( Fetched sUsers sRankings 
                     (Selected (Data.Selected.SelectedRanking esUP rnkId 
-                                        Data.Selected.UserIsOwner 
-                                        sPlayers selectedState name)  )
-                                        , Data.Users.Registered userId token userInfo userState ) ->
-                    Framework.responsiveLayout [] <| Element.column Framework.container
-                                [ Element.el Heading.h4 <| Element.text <| "SportRank - " ++ userInfo.username
-                                , playerbuttons (Data.Selected.SelectedRanking esUP rnkId 
-                                        Data.Selected.UserIsOwner 
-                                        sPlayers selectedState name)   
-                                -- , playerbuttons sSelected        
-                                     sUsers user
-                                , infoBtn "Delete" ClickedDeleteRanking
-                                , Element.text "\n"
-                                , infoBtn "Cancel" Cancel
-                                ]
+                        Data.Selected.UserIsOwner 
+                        sPlayers selectedState name)  )
+                        , Data.Users.Registered userId token userInfo userState ) ->
+                            Framework.responsiveLayout [] <| Element.column Framework.container
+                            [ Element.el Heading.h4 <| Element.text <| "SportRank - " ++ userInfo.username
+                            , playerbuttons (Data.Selected.SelectedRanking esUP rnkId 
+                                    Data.Selected.UserIsOwner 
+                                    sPlayers selectedState name)        
+                                    sUsers user
+                            , infoBtn "Delete" ClickedDeleteRanking
+                            , Element.text "\n"
+                            , infoBtn "Cancel" Cancel
+                            ]
 
-                ( Fetched _ _ (Selected (Data.Selected.SelectedRanking _ _ Data.Selected.UserIsMember _ _ _)), Data.Users.Registered _ _ _ _ ) ->
-                    Html.text "selected user UserIsMember"
-                ( Fetched _ _ (Selected (Data.Selected.SelectedRanking _ _ Data.Selected.UserIsNeitherOwnerNorMember _ _ _)), Data.Users.Registered _ _ _ _ ) ->
-                    Html.text "wrong shouldn't be UserIsNeitherOwnerNorMember"
+                ( Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId Data.Selected.UserIsMember sPlayers selectedState name))
+                    , Data.Users.Registered userId token userInfo userState ) ->
+                            Framework.responsiveLayout [] <| Element.column Framework.container
+                            [ Element.el Heading.h4 <| Element.text <| "SportRank - " ++ userInfo.username
+                            , playerbuttons (Data.Selected.SelectedRanking esUP rnkId 
+                                    Data.Selected.UserIsOwner 
+                                    sPlayers selectedState name)       
+                                    sUsers user
+                            , Element.text "\n"
+                            , infoBtn "Cancel" Cancel
+                            ]
+                            
+                ( Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId Data.Selected.UserIsNeitherOwnerNorMember sPlayers selectedState name))
+                    , Data.Users.Registered userId token userInfo userState  ) ->
+                    Framework.responsiveLayout [] <| Element.column Framework.container
+                    [ Element.el Heading.h4 <| Element.text <| "SportRank - " ++ userInfo.username
+                    , playerbuttons (Data.Selected.SelectedRanking esUP rnkId 
+                            Data.Selected.UserIsOwner 
+                            sPlayers selectedState name)       
+                            sUsers user
+                    , Element.text "\n"
+                    , infoBtn "Cancel" Cancel
+                    ]
 
                 ( Fetched _ _ (Selected _), Data.Users.NoWallet _ _ _ _ ) ->
                     Html.text "selected user3"
@@ -2716,17 +2704,17 @@ view model =
 
 -- view helpers
 
-resultView : Data.Selected.SelectedOwnerStatus -> SR.Types.UIState
-resultView  status = 
-    case status of
-            Data.Selected.UserIsOwner -> 
-                SR.Types.UISelectedRankingUserIsOwner
+-- resultView : Data.Selected.SelectedOwnerStatus -> SR.Types.UIState
+-- resultView  status = 
+--     case status of
+--             Data.Selected.UserIsOwner -> 
+--                 SR.Types.UISelectedRankingUserIsOwner
 
-            Data.Selected.UserIsMember -> 
-                SR.Types.UISelectedRankingUserIsPlayer
+--             Data.Selected.UserIsMember -> 
+--                 SR.Types.UISelectedRankingUserIsPlayer
 
-            Data.Selected.UserIsNeitherOwnerNorMember -> 
-                SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
+--             Data.Selected.UserIsNeitherOwnerNorMember -> 
+--                 SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
 
 
 generalLoginView : Data.Users.User -> Data.Users.Users -> Data.Global.Global -> String -> Html Msg 

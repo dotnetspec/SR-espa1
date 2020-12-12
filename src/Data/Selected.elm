@@ -108,8 +108,8 @@ asEverySet : Selected -> EverySet UserPlayer
 asEverySet (SelectedRanking esSelected rnkId status sPlayers sState name)  = 
      esSelected
 
-created : List Data.Players.Player -> Data.Users.Users -> Internal.Types.RankingId -> String -> Selected
-created lplayer sUser rnkId name =
+created : List Data.Players.Player -> Data.Users.Users -> Internal.Types.RankingId -> String -> SelectedOwnerStatus -> Selected
+created lplayer sUser rnkId name selectedOwnerStatus =
     let
         --lplayer = Data.Players.extractPlayersFromWebData lplayer
         luser = Data.Users.asList sUser
@@ -117,7 +117,9 @@ created lplayer sUser rnkId name =
             List.map (createdUserPlayer luser) lplayer
             |> EverySet.fromList
     in
-        asSelected esUserPlayers rnkId UserIsOwner (Data.Players.asPlayers (EverySet.fromList lplayer)) DisplayRanking name
+        asSelected esUserPlayers rnkId selectedOwnerStatus (Data.Players.asPlayers (EverySet.fromList lplayer)) DisplayRanking name
+           
+        
 
 updatedUPInSet : Selected -> UserPlayer -> Selected
 updatedUPInSet sSelected updatedUP =
