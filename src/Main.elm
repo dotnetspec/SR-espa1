@@ -267,16 +267,17 @@ update msg model =
             (model, Cmd.none)
 
         (ClickedEnableEthereum, AppOps dataState user uiState txRec ) ->
-            (model, Cmd.none)
-            -- case accountState of
-            --     Data.Users.Spectator userInfo userState ->
-            --         (AppOps dataState user SR.Types.UIRegisterNewUser txRec, Cmd.none)
-            --     Data.Users.Registered _ _ _->
-            --         (AppOps dataState user SR.Types.UIEnableEthereum txRec, Ports.log "eth_requestAccounts")
-            --     SR.Types.EthEnabled ->
-            --         (AppOps dataState user SR.Types.UIEthAlreadyEnabled txRec, Cmd.none)
-            --     SR.Types.EthEnabledAndRegistered ->
-            --         (AppOps dataState user SR.Types.UIEthAlreadyEnabled txRec, Cmd.none)
+            case user of
+                Data.Users.Spectator userInfo userState ->
+                    (AppOps dataState user uiState txRec, Cmd.none)
+                Data.Users.Registered _ _ _ _->
+                    (AppOps dataState user uiState txRec, Ports.log "eth_requestAccounts")
+                Data.Users.NoWallet userId token userInfo userState ->
+                    (AppOps dataState user uiState txRec, Ports.log "eth_requestAccounts")
+                Data.Users.NoCredit addr userId token userInfo userState ->
+                    (AppOps dataState user uiState txRec, Ports.log "eth_requestAccounts")
+                Data.Users.Credited addr userId token userInfo userState ->
+                    (AppOps dataState user uiState txRec, Ports.log "eth_requestAccounts")
             
 
         (ClickedRemoveFromUserMemberRankings, AppOps dataState user uiState txRec ) ->
@@ -446,7 +447,7 @@ update msg model =
 
         (ClickedDisplayGlobalOnly, AppOps 
             (Fetched sUsers sRankings (Global (Data.Global.GlobalRankings esUR
-                    (Data.Global.DisplayGlobalLogin)))) 
+                    (Data.Global.DisplayLoggedIn)))) 
                 user uiState txRec ) ->
                 let
                     -- rf?: currently having to re-create Global here
@@ -2841,7 +2842,9 @@ globalOnlyView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome Spectator")
                     , displayEnableEthereumBtn
-                    , displayRankingBtns userVal sGlobal ""
+                    , case sGlobal of 
+                        Data.Global.GlobalRankings esUR gState -> 
+                            otherrankingbuttons (EverySet.toList esUR) userVal 
         
                 ]
         (Data.Users.Registered userId token userInfo userState) ->
@@ -2851,14 +2854,18 @@ globalOnlyView userVal sUsers sGlobal =
                     , displayEnableEthereumBtn
                     , Element.text "\n"
                     , infoBtn "Cancel" Cancel
-                    
+                    , case sGlobal of 
+                        Data.Global.GlobalRankings esUR gState -> 
+                            otherrankingbuttons (EverySet.toList esUR) userVal 
                 ]
         (Data.Users.NoWallet userId token userInfo userState) ->
             Framework.responsiveLayout [] <| Element.column Framework.container 
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayRankingBtns userVal sGlobal ""
+                    , case sGlobal of 
+                        Data.Global.GlobalRankings esUR gState -> 
+                            otherrankingbuttons (EverySet.toList esUR) userVal 
                     
                 ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
@@ -2866,7 +2873,9 @@ globalOnlyView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayRankingBtns userVal sGlobal ""
+                    , case sGlobal of 
+                        Data.Global.GlobalRankings esUR gState -> 
+                            otherrankingbuttons (EverySet.toList esUR) userVal 
                     
                 ]
         (Data.Users.Credited addr userId token userInfo userState) ->
@@ -2874,7 +2883,9 @@ globalOnlyView userVal sUsers sGlobal =
                 [ Element.el (Heading.h5) <|
                     Element.text ("SportRank - Welcome " ++ userInfo.username)
                     , displayEnableEthereumBtn
-                    , displayRankingBtns userVal sGlobal ""
+                    , case sGlobal of 
+                        Data.Global.GlobalRankings esUR gState -> 
+                            otherrankingbuttons (EverySet.toList esUR) userVal
                     
                 ]
 
@@ -3177,7 +3188,7 @@ memberrankingbuttons urankingList user =
             if List.isEmpty urankingList then
                 Element.column Grid.section <|
                     [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
-                    , Element.column (Card.simple ++ Grid.simple) <| [infoBtn "View All Ladders" ClickedDisplayGlobalOnly]
+                    , Element.column (Card.simple ++ Grid.simple) <| [infoBtn "Join A Ladder?" ClickedDisplayGlobalOnly]
                     ]
             else 
                 Element.column Grid.section <|
@@ -3941,7 +3952,7 @@ infoBtn label msg =
 displayCreateNewRankingBtn : Element Msg
 displayCreateNewRankingBtn = 
     Input.button
-            (Button.simple ++ Button.fill ++ Color.info ++ [ Element.htmlAttribute (Html.Attributes.id "enableEthereumButton") ] ++ [ Element.htmlAttribute (Html.Attributes.class "enableEthereumButton") ])
+            (Button.simple ++ Button.fill ++ Color.info)
         <|
             { onPress = Just ClickedCreateNewLadder
             , label = Element.text "Create New Ladder"

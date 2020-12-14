@@ -167,7 +167,8 @@ createdUserRanking : Data.Users.Users -> Data.Users.User -> Data.Rankings.Rankin
 createdUserRanking sUser user ranking =
     let
         --dummy userjoined rankings array string:
-        userjoinedrankings = ["282953512300577285", "283673261521240581"]
+        --userjoinedrankings = ["282953512300577285", "283673261521240581"]
+        userjoinedrankings = []
     in
     case user of
         Data.Users.Spectator _ _ ->
