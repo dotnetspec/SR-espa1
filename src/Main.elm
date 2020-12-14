@@ -450,7 +450,6 @@ update msg model =
                     (Data.Global.DisplayLoggedIn)))) 
                 user uiState txRec ) ->
                 let
-                    -- rf?: currently having to re-create Global here
                     newDataKind = Global <| Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly
                     newDataState = Fetched sUsers sRankings newDataKind
                 in
@@ -2590,6 +2589,8 @@ view model =
                     , Data.Users.Spectator _ Data.Users.General ) ->
                     globalView user sUsers (Data.Global.GlobalRankings(esUR) Data.Global.DisplayGlobalOnly) ""
 
+                -- Global -- Registered
+
                 ( Fetched sUsers _ 
                     (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin))
                     , Data.Users.Registered userId token userInfo userState ) ->
@@ -2749,19 +2750,48 @@ globalView userVal sUsers sGlobal errorMsg =
                             Data.Global.GlobalRankings esUR Data.Global.DisplayLoggedIn -> 
                                 displayRankingBtns userVal sGlobal errorMsg
                             Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly ->
-                                otherrankingbuttons (EverySet.toList esUR) userVal
+                                otherrankingbuttons (EverySet.toList esUR) Data.Global.DisplayGlobalOnly userVal
+                                
                             Data.Global.GlobalRankings esUR _ ->
                                 Element.text ("tbc in globalView")]
 
-                    Data.Users.NoWallet _ _ _ _ ->
-                        [ Element.text (" ") ]
+                    Data.Users.NoWallet _ _ userInfo _ ->
+                        [Element.el (Heading.h5) <| (Element.text ("SportRank -" ++ userInfo.username) )
+                        , displayEnableEthereumBtn
+                        , Element.text ("\n")
+                        , displayCreateNewRankingBtn
+                        , case sGlobal of 
+                            Data.Global.GlobalRankings esUR Data.Global.DisplayLoggedIn -> 
+                                displayRankingBtns userVal sGlobal errorMsg
+                            Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly ->
+                                otherrankingbuttons (EverySet.toList esUR) Data.Global.DisplayGlobalOnly userVal
+                            Data.Global.GlobalRankings esUR _ ->
+                                Element.text ("tbc in globalView")]
                             
-                    Data.Users.NoCredit _ _ _ _ _ ->
-                        [ Element.text (" ") ]
+                    Data.Users.NoCredit _ _ _ userInfo _ ->
+                        [Element.el (Heading.h5) <| (Element.text ("SportRank -" ++ userInfo.username) )
+                        , displayEnableEthereumBtn
+                        , Element.text ("\n")
+                        , displayCreateNewRankingBtn
+                        , case sGlobal of 
+                            Data.Global.GlobalRankings esUR Data.Global.DisplayLoggedIn -> 
+                                displayRankingBtns userVal sGlobal errorMsg
+                            Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly ->
+                                otherrankingbuttons (EverySet.toList esUR) Data.Global.DisplayGlobalOnly userVal
+                            Data.Global.GlobalRankings esUR _ ->
+                                Element.text ("tbc in globalView")]
 
                     Data.Users.Credited _ _ _ userInfo _ ->
-                        [Element.el (Heading.h5) <| (Element.text ("SportRank -" ++ userInfo.username) )
-                        , displayRankingBtns userVal sGlobal errorMsg]
+                       [Element.el (Heading.h5) <| (Element.text ("SportRank -" ++ userInfo.username) )
+                        , Element.text ("\n")
+                        , displayCreateNewRankingBtn
+                        , case sGlobal of 
+                            Data.Global.GlobalRankings esUR Data.Global.DisplayLoggedIn -> 
+                                displayRankingBtns userVal sGlobal errorMsg
+                            Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly ->
+                                otherrankingbuttons (EverySet.toList esUR) Data.Global.DisplayGlobalOnly userVal
+                            Data.Global.GlobalRankings esUR _ ->
+                                Element.text ("tbc in globalView")]
         
 
 
@@ -2926,7 +2956,7 @@ displayRankingBtns userVal (Data.Global.GlobalRankings esUR gState) errorMsg =
                 , infoBtn "Log In" ClickedLogInUser
                 , SR.Elements.warningText errorMsg
                 , infoBtn "Register" ClickedRegister
-                , otherrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Other ) esUR)) userVal
+                , otherrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Other ) esUR)) gState userVal
                 ]
 
                 
@@ -2936,25 +2966,25 @@ displayRankingBtns userVal (Data.Global.GlobalRankings esUR gState) errorMsg =
                 [
                     ownedrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Owned ) esUR)) userVal
                     , memberrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Member ) esUR)) userVal
-                    , otherrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Other ) esUR)) userVal
+                    , otherrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Other ) esUR)) gState userVal
                 ]
         (Data.Users.NoWallet userId token userInfo userState) ->
             Element.column Grid.section <|
                 [   ownedrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Owned ) esUR)) userVal
                     , memberrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Member ) esUR)) userVal
-                    , otherrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Other ) esUR)) userVal
+                    , otherrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Other ) esUR)) gState userVal
                 ]
         (Data.Users.NoCredit addr userId token userInfo userState) ->
             Element.column Grid.section <|
                 [   ownedrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Owned ) esUR)) userVal
                     , memberrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Member ) esUR)) userVal
-                    , otherrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Other ) esUR)) userVal
+                    , otherrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Other ) esUR)) gState userVal
                 ]
         (Data.Users.Credited addr userId token userInfo userState) ->
             Element.column Grid.section <|
                 [   ownedrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Owned ) esUR)) userVal
                     , memberrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Member ) esUR)) userVal
-                    , otherrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Other ) esUR)) userVal
+                    , otherrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Other ) esUR)) gState userVal
                 ]
   
 
@@ -3094,24 +3124,36 @@ memberrankingbuttons urankingList user =
                 |> Element.column (Card.simple ++ Grid.simple)
             ]
 
-
-otherrankingbuttons : List Data.Global.UserRanking -> Data.Users.User -> Element Msg
-otherrankingbuttons urankingList user =
+otherrankingbuttons : List Data.Global.UserRanking -> Data.Global.GlobalState -> Data.Users.User  -> Element Msg
+otherrankingbuttons lUR gState user  =
     case user of 
         Data.Users.Spectator _ _ ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "View The Rankings: "
-            , List.map (\ur -> ur.rankingInfo) urankingList
-                |> List.map otherRankingInfoBtn
-                |> Element.column (Card.simple ++ Grid.simple) 
+                , List.map (\ur -> ur.rankingInfo) lUR
+                    |> List.map otherRankingInfoBtn
+                    |> Element.column (Card.simple ++ Grid.simple)
             ]
+
         _ ->
             Element.column Grid.section <|
-            [ Element.el Heading.h5 <| Element.text "All Other Rankings: "
-            , List.map (\ur -> ur.rankingInfo) urankingList
-                |> List.map otherRankingInfoBtn
-                |> Element.column (Card.simple ++ Grid.simple) 
-            ]
+            case gState of
+                Data.Global.DisplayGlobalOnly ->
+                    [ Element.el Heading.h5 <|  Element.text "All Other Rankings: "
+                    , infoBtn "Cancel" Cancel
+                    , Element.text "\n"
+                    , 
+                        Element.column (Card.simple ++ Grid.simple) (List.map otherRankingInfoBtn (List.map (\ur -> ur.rankingInfo) lUR))
+                    ]
+
+                Data.Global.DisplayLoggedIn ->
+                    [ Element.el Heading.h5 <|  Element.text "All Other Rankings: "
+                    , 
+                        Element.column (Card.simple ++ Grid.simple) (List.map otherRankingInfoBtn (List.map (\ur -> ur.rankingInfo) lUR))
+                    ]
+                
+                _ ->
+                    [Element.text "tbc : All Other Rankings: "]
 
 
 ownedRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
