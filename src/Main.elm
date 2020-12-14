@@ -2530,8 +2530,9 @@ view model =
                     Data.Users.Spectator userInfo 
                         Data.Users.General) ->
                             -- this may be on a 'Cancel'
-                            generalLoggedInView 
+                            globalView 
                                 user sUsers (Data.Global.GlobalRankings (esUR) Data.Global.DisplayLoggedIn)
+                                ""
 
                 (Fetched sUsers sRankings dKind, 
                     Data.Users.Spectator userInfo 
@@ -2552,24 +2553,18 @@ view model =
                     (Global (Data.Global.GlobalRankings (esUR) (Data.Global.CreatedNewRanking ranking)))
                     , Data.Users.Spectator _ Data.Users.General ) ->
                     Html.text ("Not yet implemented")
-
-                ( Fetched sUsers _ 
-                    (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin))
-                    , Data.Users.Spectator _ Data.Users.LoginError ) ->
-                        generalLoginView
-                            user sUsers (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin) "Not found. Register?:"
                 
                 ( Fetched sUsers _ 
                     (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalOnly))
                     , Data.Users.Spectator _ Data.Users.LoginError ) ->
-                        generalLoginView
+                        globalView
                             user sUsers (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin) "Not found. Register?:"
                 
                 ( Fetched sUsers _ 
                     (Global (Data.Global.GlobalRankings (esUR) 
                     (Data.Global.CreatingNewRanking _ )))
                     , Data.Users.Spectator _ Data.Users.LoginError ) ->
-                        generalLoginView
+                        globalView
                             user sUsers (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin) "Please register \nto create a new ladder:"
 
                 ( Fetched sUsers sRankings 
@@ -2581,46 +2576,49 @@ view model =
                 ( Fetched sUsers _ 
                     (Global (Data.Global.GlobalRankings (esUR) (Data.Global.CreatedNewRanking ranking)))
                     , Data.Users.Spectator _ Data.Users.LoginError ) ->
-                        generalLoginView
+                        globalView
                             user sUsers (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin) "Please register \nto create a new ladder:"
 
                 ( Fetched sUsers _ (
                         Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalOnly))
                     , Data.Users.Spectator _ Data.Users.General ) ->
-                    globalOnlyView user sUsers (Data.Global.GlobalRankings(esUR) Data.Global.DisplayGlobalOnly)
+                    globalView user sUsers (Data.Global.GlobalRankings(esUR) Data.Global.DisplayGlobalOnly) ""
 
-                (Fetched sUsers sRankings 
-                    (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin) )
-                    , Data.Users.Spectator userInfo Data.Users.General) ->
-                    generalLoginView 
-                        user sUsers (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin) ""
-
-                -- Global -- Registered
+                ( Fetched sUsers _ (
+                        Global (Data.Global.GlobalRankings (esUR) 
+                        Data.Global.DisplayGlobalLogin))
+                    , Data.Users.Spectator _ Data.Users.General ) ->
+                    globalView user sUsers (Data.Global.GlobalRankings(esUR) Data.Global.DisplayGlobalOnly) ""
 
                 ( Fetched sUsers _ 
                     (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalLogin))
                     , Data.Users.Registered userId token userInfo userState ) ->
-                    generalLoggedInView 
-                        (Data.Users.Registered userId token userInfo userState ) sUsers (Data.Global.GlobalRankings (esUR) Data.Global.DisplayLoggedIn)
+                    globalView 
+                        (Data.Users.Registered userId token userInfo userState ) sUsers 
+                        (Data.Global.GlobalRankings (esUR) Data.Global.DisplayLoggedIn)
+                        ""
 
                 ( Fetched sUsers sRankings 
                     (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayGlobalOnly) )
                     , Data.Users.Registered _ _ _ _ ) ->
-                    globalOnlyView user sUsers (Data.Global.GlobalRankings(esUR) Data.Global.DisplayGlobalOnly)
+                    globalView user sUsers (Data.Global.GlobalRankings(esUR) Data.Global.DisplayGlobalOnly)
+                    ""
 
                 
                 ( Fetched sUsers sRankings 
                     (Global (Data.Global.GlobalRankings (esUR) (Data.Global.CreatedNewRanking ranking)))
                     , Data.Users.Registered userId token userInfo userState ) ->
-                    generalLoggedInView 
+                    globalView 
                         (Data.Users.Registered userId token userInfo userState) sUsers 
                             (Data.Global.GlobalRankings (esUR) (Data.Global.CreatedNewRanking ranking))
+                            ""
 
 
                 ( Fetched sUsers sRankings 
                     (Global (Data.Global.GlobalRankings (esUR) Data.Global.DisplayLoggedIn)), userVal) ->
-                    generalLoggedInView 
+                    globalView 
                         userVal sUsers (Data.Global.GlobalRankings (esUR) (Data.Global.DisplayLoggedIn ))
+                        ""
 
                 ( Fetched _ _ (Global (Data.Global.GlobalRankings (_) Data.Global.DisplayGlobalLogin)), Data.Users.Spectator _ Data.Users.Updated ) ->
                     Html.text ("User Updated")
@@ -2630,8 +2628,6 @@ view model =
                     Html.text ("User Updated")
                 ( Fetched _ _ (Global (Data.Global.GlobalRankings (_) (Data.Global.CreatedNewRanking ranking))), Data.Users.Spectator _ Data.Users.Updated ) ->
                     Html.text ("User Updated")
-                
-        
 
                 ( Fetched _ _ (Global _), Data.Users.NoWallet _ _ _ _ ) ->
                     Html.text ("Not yet implemented")
@@ -2734,161 +2730,39 @@ view model =
 --                 SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer
 
 
-generalLoginView : Data.Users.User -> Data.Users.Users -> Data.Global.Global -> String -> Html Msg 
-generalLoginView userVal sUsers sGlobal errorMsg =
-    case userVal of
-        Data.Users.Spectator userInfo userState ->
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome Spectator")
-                    , displayEnableEthereumBtn
-                    , displayRankingBtns userVal sGlobal errorMsg
+
+globalView : Data.Users.User -> Data.Users.Users -> Data.Global.Global -> String -> Html Msg 
+globalView userVal sUsers sGlobal errorMsg =
+            Framework.responsiveLayout [] <| Element.column Framework.container <|
+                case userVal of
+                    Data.Users.Spectator _ _ ->
+                        [Element.el (Heading.h5) <| (Element.text ("SportRank - Welcome Spectator"))
+                        , displayEnableEthereumBtn
+                        , displayRankingBtns userVal sGlobal errorMsg]
+
+                    Data.Users.Registered _ _ userInfo userState ->
+                        [Element.el (Heading.h5) <| (Element.text ("SportRank -" ++ userInfo.username) )
+                        , displayEnableEthereumBtn
+                        , Element.text ("\n")
+                        , displayCreateNewRankingBtn
+                        , case sGlobal of 
+                            Data.Global.GlobalRankings esUR Data.Global.DisplayLoggedIn -> 
+                                displayRankingBtns userVal sGlobal errorMsg
+                            Data.Global.GlobalRankings esUR Data.Global.DisplayGlobalOnly ->
+                                otherrankingbuttons (EverySet.toList esUR) userVal
+                            Data.Global.GlobalRankings esUR _ ->
+                                Element.text ("tbc in globalView")]
+
+                    Data.Users.NoWallet _ _ _ _ ->
+                        [ Element.text (" ") ]
+                            
+                    Data.Users.NoCredit _ _ _ _ _ ->
+                        [ Element.text (" ") ]
+
+                    Data.Users.Credited _ _ _ userInfo _ ->
+                        [Element.el (Heading.h5) <| (Element.text ("SportRank -" ++ userInfo.username) )
+                        , displayRankingBtns userVal sGlobal errorMsg]
         
-                ]
-        (Data.Users.Registered userId token userInfo userState) ->
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome " ++ userInfo.username)
-                    , displayEnableEthereumBtn
-                    , Element.text ("\n")
-                    , displayCreateNewRankingBtn
-                    , displayRankingBtns userVal sGlobal errorMsg
-                    
-                ]
-        (Data.Users.NoWallet userId token userInfo userState) ->
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome " ++ userInfo.username)
-                    , displayEnableEthereumBtn
-                    , displayRankingBtns userVal sGlobal errorMsg
-                    
-                ]
-        (Data.Users.NoCredit addr userId token userInfo userState) ->
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome " ++ userInfo.username)
-                    , displayEnableEthereumBtn
-                    , displayRankingBtns userVal sGlobal errorMsg
-                    
-                ]
-        (Data.Users.Credited addr userId token userInfo userState) ->
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome " ++ userInfo.username)
-                    , displayEnableEthereumBtn
-                    , displayRankingBtns userVal sGlobal errorMsg
-                    
-                ]
-
-
-generalLoggedInView : Data.Users.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
-generalLoggedInView userVal sUsers sGlobal =
-    case userVal of
-        Data.Users.Spectator userInfo userState ->
-            -- Err
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome Spectator")
-                    , displayEnableEthereumBtn
-                    , displayRankingBtns userVal sGlobal ""
-        
-                ]
-
-        (Data.Users.Registered userId token userInfo userState) ->
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome " ++ userInfo.username)
-                    , displayEnableEthereumBtn
-                    , Element.text ("\n")
-                    , displayCreateNewRankingBtn
-                    , displayRankingBtns userVal sGlobal ""
-                    --, otherrankingbuttons (Data.Global.asList (Data.Global.gotOthers sGlobal userVal))
-                ]
-
-        (Data.Users.NoWallet userId token userInfo userState) ->
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome " ++ userInfo.username)
-                    , displayEnableEthereumBtn
-                    , displayRankingBtns userVal sGlobal ""
-                    --(Data.Global.gotOthers sGlobal userVal))
-                ]
-
-        (Data.Users.NoCredit addr userId token userInfo userState) ->
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome " ++ userInfo.username)
-                    , displayEnableEthereumBtn
-                    , displayRankingBtns userVal sGlobal ""
-                    
-                ]
-
-        (Data.Users.Credited addr userId token userInfo userState) ->
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome " ++ userInfo.username)
-                    , displayEnableEthereumBtn
-                    , displayRankingBtns userVal sGlobal ""
-                    
-                ]
-
-
-globalOnlyView : Data.Users.User -> Data.Users.Users -> Data.Global.Global -> Html Msg 
-globalOnlyView userVal sUsers sGlobal =
-    case userVal of
-        Data.Users.Spectator userInfo userState ->
-            -- Err
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome Spectator")
-                    , displayEnableEthereumBtn
-                    , case sGlobal of 
-                        Data.Global.GlobalRankings esUR gState -> 
-                            otherrankingbuttons (EverySet.toList esUR) userVal 
-        
-                ]
-        (Data.Users.Registered userId token userInfo userState) ->
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - " ++ userInfo.username)
-                    , displayEnableEthereumBtn
-                    , Element.text "\n"
-                    , infoBtn "Cancel" Cancel
-                    , case sGlobal of 
-                        Data.Global.GlobalRankings esUR gState -> 
-                            otherrankingbuttons (EverySet.toList esUR) userVal 
-                ]
-        (Data.Users.NoWallet userId token userInfo userState) ->
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome " ++ userInfo.username)
-                    , displayEnableEthereumBtn
-                    , case sGlobal of 
-                        Data.Global.GlobalRankings esUR gState -> 
-                            otherrankingbuttons (EverySet.toList esUR) userVal 
-                    
-                ]
-        (Data.Users.NoCredit addr userId token userInfo userState) ->
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome " ++ userInfo.username)
-                    , displayEnableEthereumBtn
-                    , case sGlobal of 
-                        Data.Global.GlobalRankings esUR gState -> 
-                            otherrankingbuttons (EverySet.toList esUR) userVal 
-                    
-                ]
-        (Data.Users.Credited addr userId token userInfo userState) ->
-            Framework.responsiveLayout [] <| Element.column Framework.container 
-                [ Element.el (Heading.h5) <|
-                    Element.text ("SportRank - Welcome " ++ userInfo.username)
-                    , displayEnableEthereumBtn
-                    , case sGlobal of 
-                        Data.Global.GlobalRankings esUR gState -> 
-                            otherrankingbuttons (EverySet.toList esUR) userVal
-                    
-                ]
-
 
 
 -- registerNewUserView : Data.Users.User -> Data.Users.Users -> Html Msg 
