@@ -233,10 +233,9 @@ update msg model =
 
                         Just uaddr ->
                         -- and here:
-                            let
-                                newModel = AppOps dataState (gotWalletAddrApplyToUser (Data.Users.Registered userId token userInfo userState) uaddr) uiState emptyTxRecord
-                            in
-                            (newModel, Cmd.none)
+                            (AppOps dataState 
+                                (gotWalletAddrApplyToUser (Data.Users.Registered userId token userInfo userState) uaddr) 
+                                    uiState emptyTxRecord, Cmd.none)
                 _ ->
                     (model, Cmd.none)
 
@@ -2329,20 +2328,20 @@ gotWalletAddrApplyToUser user uaddr =
     -- todo: fix - no  idea what's happening here currently
     -- go from addr to UID
     case user of
-            Data.Users.Spectator userInfo userState ->
-                user
-            
             (Data.Users.Registered userId token userInfo userState) ->
                 Data.Users.NoCredit uaddr userId token userInfo userState
 
-            (Data.Users.NoWallet userId token userInfo userState) ->
-                Data.Users.NoCredit uaddr userId token userInfo userState
-                
-            (Data.Users.NoCredit addr userId token userInfo userState) ->
+            _ ->
                 user
 
-            (Data.Users.Credited addr userId token userInfo userState) ->
-                user
+            -- (Data.Users.NoWallet userId token userInfo userState) ->
+            --     Data.Users.NoCredit uaddr userId token userInfo userState
+                
+            -- (Data.Users.NoCredit addr userId token userInfo userState) ->
+            --     user
+
+            -- (Data.Users.Credited addr userId token userInfo userState) ->
+            --     user
 
 
 -- handleNewUserInputs : Model -> Msg -> Model
