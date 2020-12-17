@@ -62,7 +62,7 @@ import Regex
 
 type User =
     Spectator UserInfo UserState
-    | Registered Token UserInfo UserState
+    | Registered UserInfo UserState
     | NoWallet Token UserInfo UserState
     | NoCredit Eth.Types.Address Token UserInfo UserState
     | Credited Eth.Types.Address Token UserInfo UserState
@@ -70,7 +70,8 @@ type User =
 
 type alias UserInfo =
     { --datestamp to become creditsremaining - check member_since works as expected
-     id: String
+     id : String
+    , token : String
     , datestamp : Int
     , active : Bool
     , username : String
@@ -138,11 +139,11 @@ type UserNames = UserNames (EverySet String)
 
 emptyUserInfo : UserInfo
 emptyUserInfo =
-    UserInfo "" 0 True "" "" (ExtraUserInfo "" "" "") [] ""
+    UserInfo "" "" 0 True "" "" (ExtraUserInfo "" "" "") [] ""
 
 dummyUserWithUserJoinedRankings : User
 dummyUserWithUserJoinedRankings = 
-    Registered "" (UserInfo "" 0 True "" "" 
+    Registered (UserInfo "" "" 0 True "" "" 
         (ExtraUserInfo "" "" "") ["282953512300577285", "283673261521240581"] "") General
 
 
@@ -167,7 +168,7 @@ type alias ExtraUserInfo =
 -- assignChallengerId : Data.Users.User -> String -> Data.Users.User 
 -- assignChallengerId user challengerUID = 
 --     case user of 
---         Registered token userInfo userStatus ->
+--         Registered userInfo userStatus ->
 --             Registered userInfo.id token (Data.Users.UserInfo userInfo.datestamp 
 --     userInfo.active
 --     userInfo.username
@@ -213,7 +214,7 @@ convertFUserToUser fuser =
         email = Maybe.withDefault "" fuser.email
         mobile = Maybe.withDefault "" fuser.mobile
     in
-    Registered "" (UserInfo (fromScalarCodecId fuser.id_) 1 True fuser.username "" (ExtraUserInfo desc email mobile) [""] (fromScalarCodecLong fuser.ts_)) General
+    Registered (UserInfo (fromScalarCodecId fuser.id_) "" 1 True fuser.username "" (ExtraUserInfo desc email mobile) [""] (fromScalarCodecLong fuser.ts_)) General
 
 type alias FUser = {
     id_ :  SRdb.ScalarCodecs.Id
@@ -248,7 +249,7 @@ fromScalarCodecLong (Long ts) =
 
 newUser : String -> String -> String -> String -> String -> User
 newUser username password desc email mobile =
-    Registered "" (UserInfo "" 10 True username password (ExtraUserInfo desc email mobile) [""] "") General
+    Registered (UserInfo "" "" 10 True username password (ExtraUserInfo desc email mobile) [""] "") General
 
 --nb. this is not an EverySet, it's a Users type.
 empty : Users
@@ -270,7 +271,7 @@ gotUserName user =
     case user of
         Spectator _ _ ->
             "Spectator"
-        (Registered token userInfo userState) ->
+        (Registered userInfo userState) ->
             userInfo.username
         (NoWallet token userInfo userState) ->
             userInfo.username
@@ -284,8 +285,8 @@ removedDeletedRankingsFromUserJoined user sRankings =
     case user of
         Spectator userInfo _ ->
             Spectator userInfo General
-        (Registered token userInfo userState) ->
-            Registered token (handleDeletionFromUserJoined userInfo sRankings) userState
+        (Registered userInfo userState) ->
+            Registered (handleDeletionFromUserJoined userInfo sRankings) userState
         (NoWallet token userInfo userState) ->
             NoWallet token (handleDeletionFromUserJoined userInfo sRankings) userState
         (NoCredit addr token userInfo userState) ->
@@ -329,7 +330,7 @@ gotName user =
     case user of 
         Spectator userInfo _ ->
             userInfo.username
-        Registered _ userInfo _ ->
+        Registered userInfo _ ->
             userInfo.username
         NoWallet _ userInfo _ ->
             userInfo.username
@@ -343,7 +344,7 @@ gotId user =
     case user of 
         Spectator _ _ ->
             ""
-        Registered _ userInfo _ ->
+        Registered userInfo _ ->
             userInfo.id
         NoWallet _ userInfo _ ->
             userInfo.id
@@ -486,7 +487,7 @@ updatedUserInSet susers updatedUser =
     case updatedUser of
         Spectator userInfo user ->
             susers
-        (Registered token userInfo userState) ->
+        (Registered userInfo userState) ->
             -- remove the original user, then add the new one
             addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
         (NoWallet token userInfo userState) ->

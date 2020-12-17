@@ -127,7 +127,7 @@ updatedUPInSet sSelected updatedUP =
     --case updatedUP of
         -- Spectator userInfo user ->
         --     sSelected
-        --(Registered token userInfo userState) ->
+        --(Registered userInfo userState) ->
             -- remove the original user, then add the new one
             addUserPlayer updatedUP <| removeUserPlayer updatedUP sSelected
         -- (NoWallet token userInfo userState) ->
@@ -218,10 +218,10 @@ addNewUserPlayerJoinRanking uplayer (Internal.Types.RankingId rnkId) =
             Data.Users.Spectator _ _ ->
                 uplayer
 
-            (Data.Users.Registered token userInfo sStatus) ->
+            (Data.Users.Registered userInfo sStatus) ->
                  let 
                     updatedUserJoinRankings = {userInfo | userjoinedrankings = rnkId :: userInfo.userjoinedrankings}
-                    newUser = Data.Users.Registered token updatedUserJoinRankings
+                    newUser = Data.Users.Registered updatedUserJoinRankings
                     newUserPlayer =  { uplayer | player = uplayer.player, user = newUser Data.Users.General}
                     
                 in
@@ -295,7 +295,7 @@ gotPlayer user (SelectedRanking sSelected rnkId ownerStatus players sState name)
                 Data.Users.Spectator _ _ ->
                     empty
                     
-                (Data.Users.Registered token userInfo sStatus) ->
+                (Data.Users.Registered userInfo sStatus) ->
                 --todo: fix 
                     empty
                     -- asSelected <| 
@@ -389,7 +389,7 @@ isRegisteredPlayerCurrentUser : Data.Users.User -> UserPlayer -> Bool
 isRegisteredPlayerCurrentUser user uplayer = 
     --player display only deals with Registered players
     case user of
-        (Data.Users.Registered token userInfo sStatus) ->
+        (Data.Users.Registered userInfo sStatus) ->
             case uplayer.player of
                 Data.Players.IndividualPlayer playerInfo playerStatus  -> 
                     if playerInfo.uid == userInfo.id then
@@ -413,7 +413,7 @@ challorAvail sSelected sUsers uplayer =
                             "Available"
                         Just user ->
                             case user of 
-                                (Data.Users.Registered token userInfo userState) ->
+                                (Data.Users.Registered userInfo userState) ->
                                     userInfo.username
                                 _ ->
                                     "Available"
@@ -840,7 +840,7 @@ assignedChallengerUIDForBOTHPlayers sSelected user challenger =
             case (user.player, challenger.player) of 
                 (Data.Players.IndividualPlayer playerInfo playerStatus, Data.Players.IndividualPlayer challengerInfo challengerStatus) ->
                     case (user.user, challenger.user) of 
-                        (Data.Users.Registered token userInfo userStatus, Data.Users.Registered ctoken cuserInfo cuserStatus) ->
+                        (Data.Users.Registered userInfo userStatus, Data.Users.Registered cuserInfo cuserStatus) ->
                             let
                                 updatedUserAsPlayer = Data.Players.assignChallengerUID user.player cuserInfo.id
                                 updatedChallengerAsPlayer = Data.Players.assignChallengerUID challenger.player userInfo.id

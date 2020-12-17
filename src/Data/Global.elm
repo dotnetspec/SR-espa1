@@ -111,7 +111,7 @@ isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
                 Data.Users.Spectator _ _ ->
                     False
 
-                (Data.Users.Registered token userInfo userState) ->
+                (Data.Users.Registered userInfo userState) ->
                     if a.rankingInfo.rankingownerid == userInfo.id then
                         True
 
@@ -181,7 +181,7 @@ createdUserRanking sUser user ranking =
                     , rankingtype = Other
                     }
 
-        Data.Users.Registered _ userInfo _->
+        Data.Users.Registered userInfo _->
             if (ranking.rankingownerid) == userInfo.id then
                 Just
                     { rankingInfo = ranking
@@ -267,9 +267,9 @@ isOwned user ownedrnk =
         Data.Users.Spectator _ _ ->
             False
         --UserRanking.userInfo will always be Registered only
-        Data.Users.Registered  _ userInfo _->
+        Data.Users.Registered userInfo _->
             case ownedrnk.userInfo of 
-                Data.Users.Registered  _ owneruserInfo _ ->
+                Data.Users.Registered owneruserInfo _ ->
                     if owneruserInfo.id == userInfo.id then
                         True
                     else
@@ -280,7 +280,7 @@ isOwned user ownedrnk =
 
         (Data.Users.NoWallet _ userInfo _) ->
             case ownedrnk.userInfo of 
-                Data.Users.Registered  _ owneruserInfo _ ->
+                Data.Users.Registered owneruserInfo _ ->
                     if owneruserInfo.id == userInfo.id then
                         True
                     else
@@ -291,7 +291,7 @@ isOwned user ownedrnk =
 
         (Data.Users.NoCredit addr _ userInfo _) ->
             case ownedrnk.userInfo of 
-                Data.Users.Registered  _ owneruserInfo _ ->
+                Data.Users.Registered owneruserInfo _ ->
                     if owneruserInfo.id == userInfo.id then
                         True
                     else
@@ -302,7 +302,7 @@ isOwned user ownedrnk =
 
         (Data.Users.Credited addr _ userInfo _) ->
             case ownedrnk.userInfo of 
-                Data.Users.Registered  _ owneruserInfo _ ->
+                Data.Users.Registered owneruserInfo _ ->
                     if owneruserInfo.id == userInfo.id then
                         True
                     else
@@ -317,7 +317,7 @@ gotMember sGlobal user =
     case user of
         Data.Users.Spectator _ _ ->
             []
-        (Data.Users.Registered _ userInfo _) ->
+        (Data.Users.Registered userInfo _) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
         (Data.Users.NoWallet token userInfo userState) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
@@ -395,13 +395,13 @@ removedDeletedRankingsFromUserJoined user sGlobal =
             Data.Users.Spectator _ _ ->
                 Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General
 
-            (Data.Users.Registered token userInfo userState) ->
+            (Data.Users.Registered userInfo userState) ->
                 let
                     lwithDeletedRankingIdsRemoved = List.filter (Data.Rankings.isIdInSet (asRankings sGlobal)) (Data.Rankings.stringListToRankingIdList userInfo.userjoinedrankings)
 
                     newUserInfo = {userInfo | userjoinedrankings = Data.Rankings.rankingIdListToStringList lwithDeletedRankingIdsRemoved}
                 in
-                    Data.Users.Registered token newUserInfo Data.Users.General
+                    Data.Users.Registered newUserInfo Data.Users.General
 
             --todo: as above for the others or refactor
             (Data.Users.NoWallet token userInfo userState) ->
