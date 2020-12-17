@@ -64,7 +64,7 @@ type User =
     Spectator UserInfo UserState
     | Registered UserInfo UserState
     | NoWallet UserInfo UserState
-    | NoCredit Eth.Types.Address Token UserInfo UserState
+    | NoCredit Eth.Types.Address UserInfo UserState
     | Credited Eth.Types.Address Token UserInfo UserState
 
 
@@ -275,7 +275,7 @@ gotUserName user =
             userInfo.username
         (NoWallet userInfo userState) ->
             userInfo.username
-        (NoCredit addr token userInfo userState) ->
+        (NoCredit addr userInfo userState) ->
             userInfo.username
         (Credited addr token userInfo userState) ->
             userInfo.username
@@ -289,8 +289,8 @@ removedDeletedRankingsFromUserJoined user sRankings =
             Registered (handleDeletionFromUserJoined userInfo sRankings) userState
         (NoWallet userInfo userState) ->
             NoWallet (handleDeletionFromUserJoined userInfo sRankings) userState
-        (NoCredit addr token userInfo userState) ->
-            NoCredit addr token (handleDeletionFromUserJoined userInfo sRankings) userState
+        (NoCredit addr userInfo userState) ->
+            NoCredit addr (handleDeletionFromUserJoined userInfo sRankings) userState
         (Credited addr token userInfo userState) ->
             Credited addr token (handleDeletionFromUserJoined userInfo sRankings) userState
 
@@ -334,7 +334,7 @@ gotName user =
             userInfo.username
         NoWallet userInfo _ ->
             userInfo.username
-        NoCredit _ _ userInfo _ ->
+        NoCredit _ userInfo _ ->
             userInfo.username
         Credited _ _ userInfo _ ->
             userInfo.username
@@ -348,7 +348,7 @@ gotId user =
             userInfo.id
         NoWallet userInfo _ ->
             userInfo.id
-        NoCredit _ _ userInfo _ ->
+        NoCredit _ userInfo _ ->
             userInfo.id
         Credited _ _ userInfo _ ->
             userInfo.id
@@ -492,7 +492,7 @@ updatedUserInSet susers updatedUser =
             addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
         (NoWallet userInfo userState) ->
             addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
-        (NoCredit addr token userInfo userState) ->
+        (NoCredit addr userInfo userState) ->
             addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
         (Credited addr token userInfo userState) ->
             addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers

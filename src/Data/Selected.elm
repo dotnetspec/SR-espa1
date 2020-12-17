@@ -132,7 +132,7 @@ updatedUPInSet sSelected updatedUP =
             addUserPlayer updatedUP <| removeUserPlayer updatedUP sSelected
         -- (NoWallet userInfo userState) ->
         --     addUser updatedUser <| removeUser (gotUser sSelected userInfo.id) sSelected
-        -- (NoCredit addr token userInfo userState) ->
+        -- (NoCredit addr  userInfo userState) ->
         --     addUser updatedUser <| removeUser (gotUser sSelected userInfo.id) sSelected
         -- (Credited addr token userInfo userState) ->
         --     addUser updatedUser <| removeUser (gotUser sSelected userInfo.id) sSelected
@@ -236,10 +236,10 @@ addNewUserPlayerJoinRanking uplayer (Internal.Types.RankingId rnkId) =
                 in
                     newUserPlayer
             
-            (Data.Users.NoCredit addr token userInfo sStatus) ->
+            (Data.Users.NoCredit addr userInfo sStatus) ->
                 let 
                     updatedUserJoinRankings = {userInfo | userjoinedrankings = rnkId :: userInfo.userjoinedrankings}
-                    newUser = Data.Users.NoCredit addr token updatedUserJoinRankings
+                    newUser = Data.Users.NoCredit addr updatedUserJoinRankings
                     newUserPlayer =  { uplayer | player = uplayer.player, user = newUser Data.Users.General}
                     
                 in
@@ -310,7 +310,7 @@ gotPlayer user (SelectedRanking sSelected rnkId ownerStatus players sState name)
                 (Data.Users.NoWallet userInfo sStatus) ->
                     empty
 
-                (Data.Users.NoCredit addr token userInfo sStatus) ->
+                (Data.Users.NoCredit addr userInfo sStatus) ->
                     empty
 
                 (Data.Users.Credited addr token userInfo sStatus) ->

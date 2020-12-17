@@ -108,7 +108,7 @@ globalHeading user =
                     ]
                 ]
 
-        (Data.Users.NoCredit _ _ userInfo _) -> 
+        (Data.Users.NoCredit _ userInfo _) -> 
             Element.column Grid.section <|
                 [ Element.el Heading.h5 <| Element.text "Global Rankings"
                 , Element.column Card.fill
