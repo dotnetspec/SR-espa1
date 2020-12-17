@@ -63,7 +63,7 @@ import Regex
 type User =
     Spectator UserInfo UserState
     | Registered UserInfo UserState
-    | NoWallet Token UserInfo UserState
+    | NoWallet UserInfo UserState
     | NoCredit Eth.Types.Address Token UserInfo UserState
     | Credited Eth.Types.Address Token UserInfo UserState
 
@@ -273,7 +273,7 @@ gotUserName user =
             "Spectator"
         (Registered userInfo userState) ->
             userInfo.username
-        (NoWallet token userInfo userState) ->
+        (NoWallet userInfo userState) ->
             userInfo.username
         (NoCredit addr token userInfo userState) ->
             userInfo.username
@@ -287,8 +287,8 @@ removedDeletedRankingsFromUserJoined user sRankings =
             Spectator userInfo General
         (Registered userInfo userState) ->
             Registered (handleDeletionFromUserJoined userInfo sRankings) userState
-        (NoWallet token userInfo userState) ->
-            NoWallet token (handleDeletionFromUserJoined userInfo sRankings) userState
+        (NoWallet userInfo userState) ->
+            NoWallet (handleDeletionFromUserJoined userInfo sRankings) userState
         (NoCredit addr token userInfo userState) ->
             NoCredit addr token (handleDeletionFromUserJoined userInfo sRankings) userState
         (Credited addr token userInfo userState) ->
@@ -332,7 +332,7 @@ gotName user =
             userInfo.username
         Registered userInfo _ ->
             userInfo.username
-        NoWallet _ userInfo _ ->
+        NoWallet userInfo _ ->
             userInfo.username
         NoCredit _ _ userInfo _ ->
             userInfo.username
@@ -346,7 +346,7 @@ gotId user =
             ""
         Registered userInfo _ ->
             userInfo.id
-        NoWallet _ userInfo _ ->
+        NoWallet userInfo _ ->
             userInfo.id
         NoCredit _ _ userInfo _ ->
             userInfo.id
@@ -490,7 +490,7 @@ updatedUserInSet susers updatedUser =
         (Registered userInfo userState) ->
             -- remove the original user, then add the new one
             addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
-        (NoWallet token userInfo userState) ->
+        (NoWallet userInfo userState) ->
             addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
         (NoCredit addr token userInfo userState) ->
             addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers

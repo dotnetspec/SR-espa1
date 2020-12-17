@@ -118,7 +118,7 @@ isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
                     else
                         False
 
-                (Data.Users.NoWallet token userInfo userState) ->
+                (Data.Users.NoWallet userInfo userState) ->
                     if a.rankingInfo.rankingownerid == userInfo.id then
                         True
 
@@ -208,7 +208,7 @@ createdUserRanking sUser user ranking =
                             , rankingtype = Other
                             }
 
-        (Data.Users.NoWallet _ userInfo _) ->
+        (Data.Users.NoWallet userInfo _) ->
             Just
                     { rankingInfo = ranking
                     , userInfo = user
@@ -278,7 +278,7 @@ isOwned user ownedrnk =
                 _ ->
                     False 
 
-        (Data.Users.NoWallet _ userInfo _) ->
+        (Data.Users.NoWallet userInfo _) ->
             case ownedrnk.userInfo of 
                 Data.Users.Registered owneruserInfo _ ->
                     if owneruserInfo.id == userInfo.id then
@@ -319,7 +319,7 @@ gotMember sGlobal user =
             []
         (Data.Users.Registered userInfo _) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
-        (Data.Users.NoWallet token userInfo userState) ->
+        (Data.Users.NoWallet userInfo userState) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
         (Data.Users.NoCredit addr token userInfo userState) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
@@ -404,8 +404,8 @@ removedDeletedRankingsFromUserJoined user sGlobal =
                     Data.Users.Registered newUserInfo Data.Users.General
 
             --todo: as above for the others or refactor
-            (Data.Users.NoWallet token userInfo userState) ->
-                Data.Users.NoWallet token userInfo userState
+            (Data.Users.NoWallet userInfo userState) ->
+                Data.Users.NoWallet userInfo userState
             (Data.Users.NoCredit addr token userInfo userState) ->
                 Data.Users.NoCredit addr token userInfo userState
             (Data.Users.Credited addr token userInfo userState) ->
