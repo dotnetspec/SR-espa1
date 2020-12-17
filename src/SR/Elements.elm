@@ -92,7 +92,7 @@ globalHeading user =
                 ]
             ]
         
-        (Data.Users.Registered _ _ userInfo _) -> 
+        (Data.Users.Registered _ userInfo _) -> 
             Element.column Grid.section <|
                 [ Element.el Heading.h5 <| Element.text "Global Rankings"
                 , Element.column Card.fill
@@ -100,7 +100,7 @@ globalHeading user =
                     ]
                 ]
 
-        (Data.Users.NoWallet _ _ userInfo _) -> 
+        (Data.Users.NoWallet _ userInfo _) -> 
             Element.column Grid.section <|
                 [ Element.el Heading.h5 <| Element.text "Global Rankings"
                 , Element.column Card.fill
@@ -108,7 +108,7 @@ globalHeading user =
                     ]
                 ]
 
-        (Data.Users.NoCredit _ _ _ userInfo _) -> 
+        (Data.Users.NoCredit _ _ userInfo _) -> 
             Element.column Grid.section <|
                 [ Element.el Heading.h5 <| Element.text "Global Rankings"
                 , Element.column Card.fill
@@ -116,7 +116,7 @@ globalHeading user =
                     ]
                 ]
 
-        (Data.Users.Credited _ _ _ userInfo _) -> 
+        (Data.Users.Credited _ _ userInfo _) -> 
             Element.column Grid.section <|
                 [ Element.el Heading.h5 <| Element.text "Global Rankings"
                 , Element.column Card.fill

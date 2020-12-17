@@ -8,7 +8,7 @@ module Data.Selected exposing (Selected(..)
     , releaseChallengerForUI
     , asEverySet
     , gotCurrentUserAsPlayerFromPlayerList
-    , gotUserPlayerByUserId
+    , gotUserPlayerByuserId
     , empty
     --, assignChallengerUID
     , assignedChallengerUIDForBOTHPlayers
@@ -127,15 +127,15 @@ updatedUPInSet sSelected updatedUP =
     --case updatedUP of
         -- Spectator userInfo user ->
         --     sSelected
-        --(Registered userId token userInfo userState) ->
+        --(Registered token userInfo userState) ->
             -- remove the original user, then add the new one
             addUserPlayer updatedUP <| removeUserPlayer updatedUP sSelected
-        -- (NoWallet userId token userInfo userState) ->
-        --     addUser updatedUser <| removeUser (gotUser sSelected userId) sSelected
-        -- (NoCredit addr userId token userInfo userState) ->
-        --     addUser updatedUser <| removeUser (gotUser sSelected userId) sSelected
-        -- (Credited addr userId token userInfo userState) ->
-        --     addUser updatedUser <| removeUser (gotUser sSelected userId) sSelected
+        -- (NoWallet token userInfo userState) ->
+        --     addUser updatedUser <| removeUser (gotUser sSelected userInfo.id) sSelected
+        -- (NoCredit addr token userInfo userState) ->
+        --     addUser updatedUser <| removeUser (gotUser sSelected userInfo.id) sSelected
+        -- (Credited addr token userInfo userState) ->
+        --     addUser updatedUser <| removeUser (gotUser sSelected userInfo.id) sSelected
 
 gotPlayers : Selected -> Data.Players.Players 
 gotPlayers  (SelectedRanking sSelected _ _ sPlayers sState name) = 
@@ -147,8 +147,8 @@ gotStatus selected =
         SelectedRanking sSelected _ status _ _ _ ->
             status
 
-gotUserPlayerByUserId : Selected -> String -> Maybe UserPlayer
-gotUserPlayerByUserId (SelectedRanking esSelected rnkId status sPlayers sState name) uid =
+gotUserPlayerByuserId : Selected -> String -> Maybe UserPlayer
+gotUserPlayerByuserId (SelectedRanking esSelected rnkId status sPlayers sState name) uid =
     List.head <|
         List.filter (\r -> (gotPlayerUID r) == (String.toLower <| uid))
             <| EverySet.toList esSelected
@@ -218,38 +218,38 @@ addNewUserPlayerJoinRanking uplayer (Internal.Types.RankingId rnkId) =
             Data.Users.Spectator _ _ ->
                 uplayer
 
-            (Data.Users.Registered userId token userInfo sStatus) ->
+            (Data.Users.Registered token userInfo sStatus) ->
                  let 
                     updatedUserJoinRankings = {userInfo | userjoinedrankings = rnkId :: userInfo.userjoinedrankings}
-                    newUser = Data.Users.Registered userId token updatedUserJoinRankings
+                    newUser = Data.Users.Registered token updatedUserJoinRankings
                     newUserPlayer =  { uplayer | player = uplayer.player, user = newUser Data.Users.General}
                     
                 in
                     newUserPlayer
             
-            (Data.Users.NoWallet userId token userInfo sStatus) ->
+            (Data.Users.NoWallet token userInfo sStatus) ->
                 let 
                     updatedUserJoinRankings = {userInfo | userjoinedrankings = rnkId :: userInfo.userjoinedrankings}
-                    newUser = Data.Users.NoWallet userId token updatedUserJoinRankings
+                    newUser = Data.Users.NoWallet token updatedUserJoinRankings
                     newUserPlayer =  { uplayer | player = uplayer.player, user = newUser Data.Users.General}
                     
                 in
                     newUserPlayer
             
-            (Data.Users.NoCredit addr userId token userInfo sStatus) ->
+            (Data.Users.NoCredit addr token userInfo sStatus) ->
                 let 
                     updatedUserJoinRankings = {userInfo | userjoinedrankings = rnkId :: userInfo.userjoinedrankings}
-                    newUser = Data.Users.NoCredit addr userId token updatedUserJoinRankings
+                    newUser = Data.Users.NoCredit addr token updatedUserJoinRankings
                     newUserPlayer =  { uplayer | player = uplayer.player, user = newUser Data.Users.General}
                     
                 in
                     newUserPlayer
 
 
-            (Data.Users.Credited addr userId token userInfo sStatus) ->
+            (Data.Users.Credited addr token userInfo sStatus) ->
                 let 
                     updatedUserJoinRankings = {userInfo | userjoinedrankings = rnkId :: userInfo.userjoinedrankings}
-                    newUser = Data.Users.Credited addr userId token updatedUserJoinRankings
+                    newUser = Data.Users.Credited addr token updatedUserJoinRankings
                     newUserPlayer =  { uplayer | player = uplayer.player, user = newUser Data.Users.General}
                     
                 in
@@ -295,25 +295,25 @@ gotPlayer user (SelectedRanking sSelected rnkId ownerStatus players sState name)
                 Data.Users.Spectator _ _ ->
                     empty
                     
-                (Data.Users.Registered userId token userInfo sStatus) ->
+                (Data.Users.Registered token userInfo sStatus) ->
                 --todo: fix 
                     empty
                     -- asSelected <| 
                     --     (EverySet.filter
                     --         (isThisPlayerId
-                    --             (userId)
+                    --             (userInfo.id)
                     --         )
                     --         sSelected)
                     --         rnkId sStatus players
 
                      
-                (Data.Users.NoWallet userId token userInfo sStatus) ->
+                (Data.Users.NoWallet token userInfo sStatus) ->
                     empty
 
-                (Data.Users.NoCredit addr userId token userInfo sStatus) ->
+                (Data.Users.NoCredit addr token userInfo sStatus) ->
                     empty
 
-                (Data.Users.Credited addr userId token userInfo sStatus) ->
+                (Data.Users.Credited addr token userInfo sStatus) ->
                     empty
 
 
@@ -389,10 +389,10 @@ isRegisteredPlayerCurrentUser : Data.Users.User -> UserPlayer -> Bool
 isRegisteredPlayerCurrentUser user uplayer = 
     --player display only deals with Registered players
     case user of
-        (Data.Users.Registered userId token userInfo sStatus) ->
+        (Data.Users.Registered token userInfo sStatus) ->
             case uplayer.player of
                 Data.Players.IndividualPlayer playerInfo playerStatus  -> 
-                    if playerInfo.uid == userId then
+                    if playerInfo.uid == userInfo.id then
                         True
                     else
                         False
@@ -413,7 +413,7 @@ challorAvail sSelected sUsers uplayer =
                             "Available"
                         Just user ->
                             case user of 
-                                (Data.Users.Registered userId token userInfo userState) ->
+                                (Data.Users.Registered token userInfo userState) ->
                                     userInfo.username
                                 _ ->
                                     "Available"
@@ -430,7 +430,7 @@ updatePlayerRankWithWonResult luPlayer uplayer =
     --                 filterPlayerOutOfPlayerList playerInfo.uid luPlayer
     --             -- todo: fix get a real not empty selected
     --             --m_opponentAsPlayer = gotOpponent empty uplayer
-    --             m_opponentAsPlayer = (gotUserPlayerByUserId empty)
+    --             m_opponentAsPlayer = (gotUserPlayerByuserId empty)
     --                 --gotUserPlayerFromPlayerListStrAddress luPlayer uplayer.player.challengerid
     --         in
                 -- case m_opponentAsPlayer of
@@ -571,7 +571,7 @@ gotCurrentUserAsPlayerFromPlayerList luPlayer userRec =
 -- gotRankingOwnerAsPlayer selected luplayer =
     -- let 
     --     -- up = Maybe.withDefault (emptyUserPlayer) (gotUserPlayerFromPlayerListStrAddress luplayer selectedRanking)
-    --     up = Maybe.withDefault (emptyUserPlayer) (gotUserPlayerByUserId luplayer selectedRanking)
+    --     up = Maybe.withDefault (emptyUserPlayer) (gotUserPlayerByuserId luplayer selectedRanking)
     --     gotOwnerAsUP selected
 
     -- in
@@ -840,10 +840,10 @@ assignedChallengerUIDForBOTHPlayers sSelected user challenger =
             case (user.player, challenger.player) of 
                 (Data.Players.IndividualPlayer playerInfo playerStatus, Data.Players.IndividualPlayer challengerInfo challengerStatus) ->
                     case (user.user, challenger.user) of 
-                        (Data.Users.Registered userId token userInfo userStatus, Data.Users.Registered cuserId ctoken cuserInfo cuserStatus) ->
+                        (Data.Users.Registered token userInfo userStatus, Data.Users.Registered ctoken cuserInfo cuserStatus) ->
                             let
-                                updatedUserAsPlayer = Data.Players.assignChallengerUID user.player cuserId
-                                updatedChallengerAsPlayer = Data.Players.assignChallengerUID challenger.player userId
+                                updatedUserAsPlayer = Data.Players.assignChallengerUID user.player cuserInfo.id
+                                updatedChallengerAsPlayer = Data.Players.assignChallengerUID challenger.player userInfo.id
 
                                 newSelectedWithUser = updatedUPInSet sSelected {player = updatedUserAsPlayer, user = user.user} 
                                 newSelectedWithChallenger = updatedUPInSet newSelectedWithUser {player = updatedChallengerAsPlayer, user = challenger.user}  

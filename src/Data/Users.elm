@@ -2,14 +2,11 @@
 module Data.Users exposing (Users
     , User(..)
     , UserState(..)
-    , UserId
     , FUser
     , UserInfo
     , Token
     , UserName
     , Password
-    , gotUserIdFromUser
-    , convertedStrToUserId
     , updatedDesc
     , updatedEmail
     , updatedMobile
@@ -65,10 +62,23 @@ import Regex
 
 type User =
     Spectator UserInfo UserState
-    | Registered UserId Token UserInfo UserState
-    | NoWallet UserId Token UserInfo UserState
-    | NoCredit Eth.Types.Address UserId Token UserInfo UserState
-    | Credited Eth.Types.Address UserId Token UserInfo UserState
+    | Registered Token UserInfo UserState
+    | NoWallet Token UserInfo UserState
+    | NoCredit Eth.Types.Address Token UserInfo UserState
+    | Credited Eth.Types.Address Token UserInfo UserState
+
+
+type alias UserInfo =
+    { --datestamp to become creditsremaining - check member_since works as expected
+     id: String
+    , datestamp : Int
+    , active : Bool
+    , username : String
+    , password : String
+    , extrauserinfo : ExtraUserInfo
+    , userjoinedrankings : List String
+    , member_since : String
+    }
 
 type UserState = 
     General
@@ -125,28 +135,16 @@ type UserState =
 type Users = Users (EverySet User)
 type UserNames = UserNames (EverySet String)
 
-type alias UserInfo =
-    { --datestamp to become creditsremaining - check member_since works as expected
-    datestamp : Int
-    , active : Bool
-    , username : String
-    , password : String
-    , extrauserinfo : ExtraUserInfo
-    , userjoinedrankings : List String
-    , member_since : String
-    }
 
 emptyUserInfo : UserInfo
 emptyUserInfo =
-    UserInfo 0 True "" "" (ExtraUserInfo "" "" "") [] ""
+    UserInfo "" 0 True "" "" (ExtraUserInfo "" "" "") [] ""
 
 dummyUserWithUserJoinedRankings : User
 dummyUserWithUserJoinedRankings = 
-    Registered "" "" (UserInfo 0 True "" "" 
+    Registered "" (UserInfo "" 0 True "" "" 
         (ExtraUserInfo "" "" "") ["282953512300577285", "283673261521240581"] "") General
 
-type alias UserId =
-    String
 
 type alias Token =
     String
@@ -164,15 +162,13 @@ type alias ExtraUserInfo =
     , mobile : String
     }
 
-convertedStrToUserId : String -> UserId 
-convertedStrToUserId uid =
-    uid
+
 
 -- assignChallengerId : Data.Users.User -> String -> Data.Users.User 
 -- assignChallengerId user challengerUID = 
 --     case user of 
---         Registered userId token userInfo userStatus ->
---             Registered userId token (Data.Users.UserInfo userInfo.datestamp 
+--         Registered token userInfo userStatus ->
+--             Registered userInfo.id token (Data.Users.UserInfo userInfo.datestamp 
 --     userInfo.active
 --     userInfo.username
 --     userInfo.password
@@ -181,20 +177,6 @@ convertedStrToUserId uid =
 --     userInfo.member_since 
 --     userStatus
 
-
-gotUserIdFromUser : User -> String 
-gotUserIdFromUser user = 
-    case user of 
-        Spectator _ _ ->
-            ""
-        Registered uid _ _ _ ->
-            uid
-        NoWallet uid _ _ _ ->
-            uid
-        NoCredit _ uid _ _ _ ->
-            uid
-        Credited _ uid _ _ _ ->
-            uid
 
 
 
@@ -231,7 +213,7 @@ convertFUserToUser fuser =
         email = Maybe.withDefault "" fuser.email
         mobile = Maybe.withDefault "" fuser.mobile
     in
-    Registered (fromScalarCodecId fuser.id_) "" (UserInfo 1 True fuser.username "" (ExtraUserInfo desc email mobile) [""] (fromScalarCodecLong fuser.ts_)) General
+    Registered "" (UserInfo (fromScalarCodecId fuser.id_) 1 True fuser.username "" (ExtraUserInfo desc email mobile) [""] (fromScalarCodecLong fuser.ts_)) General
 
 type alias FUser = {
     id_ :  SRdb.ScalarCodecs.Id
@@ -266,7 +248,7 @@ fromScalarCodecLong (Long ts) =
 
 newUser : String -> String -> String -> String -> String -> User
 newUser username password desc email mobile =
-    Registered "" "" (UserInfo 10 True username password (ExtraUserInfo desc email mobile) [""] "") General
+    Registered "" (UserInfo "" 10 True username password (ExtraUserInfo desc email mobile) [""] "") General
 
 --nb. this is not an EverySet, it's a Users type.
 empty : Users
@@ -288,13 +270,13 @@ gotUserName user =
     case user of
         Spectator _ _ ->
             "Spectator"
-        (Registered userId token userInfo userState) ->
+        (Registered token userInfo userState) ->
             userInfo.username
-        (NoWallet userId token userInfo userState) ->
+        (NoWallet token userInfo userState) ->
             userInfo.username
-        (NoCredit addr userId token userInfo userState) ->
+        (NoCredit addr token userInfo userState) ->
             userInfo.username
-        (Credited addr userId token userInfo userState) ->
+        (Credited addr token userInfo userState) ->
             userInfo.username
 
 removedDeletedRankingsFromUserJoined : User -> Data.Rankings.Rankings -> User 
@@ -302,14 +284,14 @@ removedDeletedRankingsFromUserJoined user sRankings =
     case user of
         Spectator userInfo _ ->
             Spectator userInfo General
-        (Registered userId token userInfo userState) ->
-            Registered userId token (handleDeletionFromUserJoined userInfo sRankings) userState
-        (NoWallet userId token userInfo userState) ->
-            NoWallet userId token (handleDeletionFromUserJoined userInfo sRankings) userState
-        (NoCredit addr userId token userInfo userState) ->
-            NoCredit addr userId token (handleDeletionFromUserJoined userInfo sRankings) userState
-        (Credited addr userId token userInfo userState) ->
-            Credited addr userId token (handleDeletionFromUserJoined userInfo sRankings) userState
+        (Registered token userInfo userState) ->
+            Registered token (handleDeletionFromUserJoined userInfo sRankings) userState
+        (NoWallet token userInfo userState) ->
+            NoWallet token (handleDeletionFromUserJoined userInfo sRankings) userState
+        (NoCredit addr token userInfo userState) ->
+            NoCredit addr token (handleDeletionFromUserJoined userInfo sRankings) userState
+        (Credited addr token userInfo userState) ->
+            Credited addr token (handleDeletionFromUserJoined userInfo sRankings) userState
 
 -- isUserNameValidated : String -> List User -> Bool
 -- isUserNameValidated username luser =
@@ -347,28 +329,28 @@ gotName user =
     case user of 
         Spectator userInfo _ ->
             userInfo.username
-        Registered _ _ userInfo _ ->
+        Registered _ userInfo _ ->
             userInfo.username
-        NoWallet _ _ userInfo _ ->
+        NoWallet _ userInfo _ ->
             userInfo.username
-        NoCredit _ _ _ userInfo _ ->
+        NoCredit _ _ userInfo _ ->
             userInfo.username
-        Credited _ _ _ userInfo _ ->
+        Credited _ _ userInfo _ ->
             userInfo.username
 
-gotId : User -> UserId 
+gotId : User -> String
 gotId user = 
     case user of 
         Spectator _ _ ->
             ""
-        Registered uid _ _ _ ->
-            uid
-        NoWallet uid _ _ _ ->
-            uid
-        NoCredit _ uid _ _ _ ->
-            uid
-        Credited _ uid _ _ _ ->
-            uid
+        Registered _ userInfo _ ->
+            userInfo.id
+        NoWallet _ userInfo _ ->
+            userInfo.id
+        NoCredit _ _ userInfo _ ->
+            userInfo.id
+        Credited _ _ userInfo _ ->
+            userInfo.id
 
     
 userSetLength : Users -> Int 
@@ -376,29 +358,12 @@ userSetLength (Users susers) =
     EverySet.size susers
 
 
-gotUser : Users -> UserId -> Maybe User
+gotUser : Users -> String -> Maybe User
 gotUser (Users susers) userId =
     let 
-        esUser = EverySet.filter (\user -> (gotUIDFromUser user) == userId) susers
+        esUser = EverySet.filter (\user -> (gotId user) == userId) susers
     in
         List.head (EverySet.toList esUser)
-
-gotUIDFromUser : User -> UserId
-gotUIDFromUser user = 
-    case user of
-        Spectator _ _ ->
-            ""
-        (Registered userId _ _ _) ->
-            userId
-        (NoWallet userId _ _ _) ->
-            userId
-        (NoCredit _ userId _ _ _) ->
-            userId
-        (Credited _ userId _ _ _) ->
-            userId
-
-
-
 
 -- probably should be updated to return a set, not a list:
 addedNewJoinedRankingId : String -> User -> List User -> List User
@@ -514,21 +479,22 @@ handleDeletionFromUserJoined userInfo sRankings =
         newUserInfo
 
 
+
 updatedUserInSet : Users -> User -> Users
 updatedUserInSet susers updatedUser =
 --the user is 'Registered' for the purposes of updating the Set
     case updatedUser of
         Spectator userInfo user ->
             susers
-        (Registered userId token userInfo userState) ->
+        (Registered token userInfo userState) ->
             -- remove the original user, then add the new one
-            addUser updatedUser <| removeUser (gotUser susers userId) susers
-        (NoWallet userId token userInfo userState) ->
-            addUser updatedUser <| removeUser (gotUser susers userId) susers
-        (NoCredit addr userId token userInfo userState) ->
-            addUser updatedUser <| removeUser (gotUser susers userId) susers
-        (Credited addr userId token userInfo userState) ->
-            addUser updatedUser <| removeUser (gotUser susers userId) susers
+            addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
+        (NoWallet token userInfo userState) ->
+            addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
+        (NoCredit addr token userInfo userState) ->
+            addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
+        (Credited addr token userInfo userState) ->
+            addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
 
 
 

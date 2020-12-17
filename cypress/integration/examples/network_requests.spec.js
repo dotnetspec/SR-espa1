@@ -88,7 +88,7 @@ context('Network Requests', () => {
   })
 
   it('cy.request() - pass result to the second request', () => {
-    // first, let's find out the userId of the first user we have
+    // first, let's find out the userInfo.id of the first user we have
     cy.request('https://jsonplaceholder.cypress.io/users?_limit=1')
       .its('body') // yields the response object
       .its('0') // yields the first element of the returned list
@@ -99,7 +99,7 @@ context('Network Requests', () => {
         expect(user).property('id').to.be.a('number')
         // make a new post on behalf of the user
         cy.request('POST', 'https://jsonplaceholder.cypress.io/posts', {
-          userId: user.id,
+          userInfo.id: user.id,
           title: 'Cypress Test Runner',
           body: 'Fast, easy and reliable testing for anything that runs in a browser.',
         })
@@ -114,7 +114,7 @@ context('Network Requests', () => {
         })
         // we don't know the user id here - since it was in above closure
         // so in this test just confirm that the property is there
-        expect(response.body).property('userId').to.be.a('number')
+        expect(response.body).property('userInfo.id').to.be.a('number')
       })
   })
 
@@ -131,7 +131,7 @@ context('Network Requests', () => {
         //  the "function () { ... }" callback form,
         //  otherwise "this" points at a wrong or undefined object!
         cy.request('POST', 'https://jsonplaceholder.cypress.io/posts', {
-          userId: this.user.id,
+          userInfo.id: this.user.id,
           title: 'Cypress Test Runner',
           body: 'Fast, easy and reliable testing for anything that runs in a browser.',
         })
@@ -141,7 +141,7 @@ context('Network Requests', () => {
         // When this callback runs, both "cy.request" API commands have finished
         // and the test context has "user" and "post" objects set.
         // Let's verify them.
-        expect(this.post, 'post has the right user id').property('userId').to.equal(this.user.id)
+        expect(this.post, 'post has the right user id').property('userInfo.id').to.equal(this.user.id)
       })
   })
 

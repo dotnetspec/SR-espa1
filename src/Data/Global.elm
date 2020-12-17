@@ -111,29 +111,29 @@ isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
                 Data.Users.Spectator _ _ ->
                     False
 
-                (Data.Users.Registered userId token userInfo userState) ->
-                    if a.rankingInfo.rankingownerid == userId then
+                (Data.Users.Registered token userInfo userState) ->
+                    if a.rankingInfo.rankingownerid == userInfo.id then
                         True
 
                     else
                         False
 
-                (Data.Users.NoWallet userId token userInfo userState) ->
-                    if a.rankingInfo.rankingownerid == userId then
+                (Data.Users.NoWallet token userInfo userState) ->
+                    if a.rankingInfo.rankingownerid == userInfo.id then
                         True
 
                     else
                         False
 
-                (Data.Users.NoCredit addr userId token userInfo userState) ->
-                    if a.rankingInfo.rankingownerid == userId then
+                (Data.Users.NoCredit addr token userInfo userState) ->
+                    if a.rankingInfo.rankingownerid == userInfo.id then
                         True
 
                     else
                         False
 
-                (Data.Users.Credited addr userId token userInfo userState) ->
-                    if a.rankingInfo.rankingownerid == userId then
+                (Data.Users.Credited addr token userInfo userState) ->
+                    if a.rankingInfo.rankingownerid == userInfo.id then
                         True
 
                     else
@@ -181,8 +181,8 @@ createdUserRanking sUser user ranking =
                     , rankingtype = Other
                     }
 
-        Data.Users.Registered userId _ _ _->
-            if (Data.Users.convertedStrToUserId ranking.rankingownerid) == userId then
+        Data.Users.Registered _ userInfo _->
+            if (ranking.rankingownerid) == userInfo.id then
                 Just
                     { rankingInfo = ranking
                     , userInfo = user
@@ -196,11 +196,11 @@ createdUserRanking sUser user ranking =
                     , rankingtype = Member
                     }
             else 
-                case Data.Users.gotUser sUser (Data.Users.convertedStrToUserId ranking.rankingownerid) of 
+                case Data.Users.gotUser sUser (ranking.rankingownerid) of 
                     Nothing ->
                         Nothing
                     Just userVal ->
-                        if (Data.Users.convertedStrToUserId ranking.rankingownerid) == userId then
+                        if (ranking.rankingownerid) == userInfo.id then
                             Nothing 
                         else 
                             Just { rankingInfo = ranking
@@ -208,21 +208,21 @@ createdUserRanking sUser user ranking =
                             , rankingtype = Other
                             }
 
-        (Data.Users.NoWallet userId _ _ _) ->
+        (Data.Users.NoWallet _ userInfo _) ->
             Just
                     { rankingInfo = ranking
                     , userInfo = user
                     , rankingtype = Other
                     }
 
-        (Data.Users.NoCredit addr userId _ _ _) ->
+        (Data.Users.NoCredit addr _ userInfo _) ->
             Just
                     { rankingInfo = ranking
                     , userInfo = user
                     , rankingtype = Other
                     }
 
-        (Data.Users.Credited addr userId _ _ _) ->
+        (Data.Users.Credited addr _ userInfo _) ->
            Just
                     { rankingInfo = ranking
                     , userInfo = user
@@ -267,10 +267,10 @@ isOwned user ownedrnk =
         Data.Users.Spectator _ _ ->
             False
         --UserRanking.userInfo will always be Registered only
-        Data.Users.Registered userId _ _ _->
+        Data.Users.Registered  _ userInfo _->
             case ownedrnk.userInfo of 
-                Data.Users.Registered owneruserId _ _ _ ->
-                    if owneruserId == userId then
+                Data.Users.Registered  _ owneruserInfo _ ->
+                    if owneruserInfo.id == userInfo.id then
                         True
                     else
                         False
@@ -278,10 +278,10 @@ isOwned user ownedrnk =
                 _ ->
                     False 
 
-        (Data.Users.NoWallet userId _ _ _) ->
+        (Data.Users.NoWallet _ userInfo _) ->
             case ownedrnk.userInfo of 
-                Data.Users.Registered owneruserId _ _ _ ->
-                    if owneruserId == userId then
+                Data.Users.Registered  _ owneruserInfo _ ->
+                    if owneruserInfo.id == userInfo.id then
                         True
                     else
                         False
@@ -289,10 +289,10 @@ isOwned user ownedrnk =
                 _ ->
                     False 
 
-        (Data.Users.NoCredit addr userId _ _ _) ->
+        (Data.Users.NoCredit addr _ userInfo _) ->
             case ownedrnk.userInfo of 
-                Data.Users.Registered owneruserId _ _ _ ->
-                    if owneruserId == userId then
+                Data.Users.Registered  _ owneruserInfo _ ->
+                    if owneruserInfo.id == userInfo.id then
                         True
                     else
                         False
@@ -300,10 +300,10 @@ isOwned user ownedrnk =
                 _ ->
                     False
 
-        (Data.Users.Credited addr userId _ _ _) ->
+        (Data.Users.Credited addr _ userInfo _) ->
             case ownedrnk.userInfo of 
-                Data.Users.Registered owneruserId _ _ _ ->
-                    if owneruserId == userId then
+                Data.Users.Registered  _ owneruserInfo _ ->
+                    if owneruserInfo.id == userInfo.id then
                         True
                     else
                         False
@@ -317,13 +317,13 @@ gotMember sGlobal user =
     case user of
         Data.Users.Spectator _ _ ->
             []
-        (Data.Users.Registered _ _ userInfo _) ->
+        (Data.Users.Registered _ userInfo _) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
-        (Data.Users.NoWallet userId token userInfo userState) ->
+        (Data.Users.NoWallet token userInfo userState) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
-        (Data.Users.NoCredit addr userId token userInfo userState) ->
+        (Data.Users.NoCredit addr token userInfo userState) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
-        (Data.Users.Credited addr userId token userInfo userState) ->
+        (Data.Users.Credited addr token userInfo userState) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
 
 --GlobalRankings RankingType GlobalState
@@ -395,21 +395,21 @@ removedDeletedRankingsFromUserJoined user sGlobal =
             Data.Users.Spectator _ _ ->
                 Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General
 
-            (Data.Users.Registered userId token userInfo userState) ->
+            (Data.Users.Registered token userInfo userState) ->
                 let
                     lwithDeletedRankingIdsRemoved = List.filter (Data.Rankings.isIdInSet (asRankings sGlobal)) (Data.Rankings.stringListToRankingIdList userInfo.userjoinedrankings)
 
                     newUserInfo = {userInfo | userjoinedrankings = Data.Rankings.rankingIdListToStringList lwithDeletedRankingIdsRemoved}
                 in
-                    Data.Users.Registered userId token newUserInfo Data.Users.General
+                    Data.Users.Registered token newUserInfo Data.Users.General
 
             --todo: as above for the others or refactor
-            (Data.Users.NoWallet userId token userInfo userState) ->
-                Data.Users.NoWallet userId token userInfo userState
-            (Data.Users.NoCredit addr userId token userInfo userState) ->
-                Data.Users.NoCredit addr userId token userInfo userState
-            (Data.Users.Credited addr userId token userInfo userState) ->
-                Data.Users.Credited addr userId token userInfo userState
+            (Data.Users.NoWallet token userInfo userState) ->
+                Data.Users.NoWallet token userInfo userState
+            (Data.Users.NoCredit addr token userInfo userState) ->
+                Data.Users.NoCredit addr token userInfo userState
+            (Data.Users.Credited addr token userInfo userState) ->
+                Data.Users.Credited addr token userInfo userState
         --newUser
     
 

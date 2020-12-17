@@ -42,7 +42,7 @@ type PlayerStatus =
 
 type alias PlayerInfo =
     { rankingid : String
-    , uid : Data.Users.UserId
+    , uid : String
     , rank : Int
     --, challengerid : String
     }
