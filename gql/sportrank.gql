@@ -1,30 +1,31 @@
-type User {  
-  active: Boolean!
-  username: String!
-  description: String
-  email: String 
-  mobile: String
-  playedAs: [Player!]! @relation
+type User {
+active: Boolean!
+username: String!
+description: String
+email: String
+mobile: String
+playedAs: [Player!]! @relation
 }
 
 type Player {
-  rank: Int!
-  ranking: Ranking @relation
-  challenger: User! @relation
+rank: Int!
+ranking: Ranking @relation
+challenger: User! @relation
 }
 
-type Ranking { 
-  active: Boolean!
-  rankingname: String!
-  rankingdesc: String
-  player: Player
+type Ranking {
+active: Boolean!
+rankingname: String!
+rankingdesc: String
+player: Player
 }
 
 type Mutation {
-  createNewPlayer(ranking: String!, uid: String!, rank: Int!, challenger: String): Player! @resolver(name: "create_new_player")
-  createNewRanking(active: Boolean!, rankingname : String!, rankingdesc : String, player : String!): Ranking! @resolver(name: "create_new_ranking")
-  createNewUser(active: Boolean!, username : String!, password : String!, description: String, email: String, mobile: String, playedAs: [Player!]!): loginResult! @resolver(name: "create_new_user")
-  loginUser(username: String!, password: String!): loginResult! @resolver(name: "login_user") 
+  createNewPlayer(rankingid: String!, uid: String!, rank: Int!, challengerid: String): Player! @resolver(name: "create_new_player")
+  createNewRanking(active: Boolean!, rankingname : String!, rankingdesc : String, rankingownerid : String!): Ranking! @resolver(name: "create_new_ranking")
+  createNewUser(active: Boolean!, username : String!, password : String!, description: String, email: String, mobile: String): loginResult! @resolver(name: "create_new_user")
+  loginUser(username: String!, password: String!): loginResult! @resolver(name: "login_user")
+}
 
 type Query {
   allUserNames: [String!]! @resolver(name: "all_user_names")
@@ -35,22 +36,11 @@ type Query {
   allRankings: [Ranking] @resolver(name: "all_rankings")
   allUsers: [User] @resolver(name: "all_users")
   gotPlayersByRankingId (rankingid: String!): [Player] @resolver(name: "got_players_byrankingid")
+  gotRankingIdsByPlayer (uid: String!): [String] @resolver(name: "got_rankings_byplayerid")
 }
 
 type loginResult @embedded
 {
-    token
-    logginUser {
-      _id
-      playedAs {
-        _id
-        ranking {
-          _id
-          active
-          rankingname
-          rankingdesc
-        }
-      }
-    }
-  }
+  token : String
+  logginUser : User
 }
