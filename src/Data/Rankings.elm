@@ -55,7 +55,7 @@ type Rankings = Rankings (EverySet Ranking)
 
 convertFRankingToRanking : FRanking -> Ranking 
 convertFRankingToRanking franking = 
-    Ranking (fromScalarCodecId franking.id_) True franking.rankingname franking.rankingdesc franking.rankingownerid
+    Ranking (fromScalarCodecId franking.id_) True franking.rankingname franking.rankingdesc franking.player
 
 type alias FRanking =
 
@@ -63,7 +63,7 @@ type alias FRanking =
     , active : Bool
     , rankingname : String
     , rankingdesc : Maybe String
-    , rankingownerid : String
+    , player : String
     }
 
 emptyFRanking : FRanking
@@ -73,7 +73,7 @@ emptyFRanking = {
     , rankingname = ""
     , rankingdesc = Nothing
     --, ts_ = SRdb.Scalar.Long ""
-    , rankingownerid = ""
+    , player = ""
     }
 
 

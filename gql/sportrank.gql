@@ -21,7 +21,7 @@ player: Player
 }
 
 type Mutation {
-  createNewPlayer(rankingid: String!, uid: String!, rank: Int!, challengerid: String): Player! @resolver(name: "create_new_player")
+  
   createNewRanking(active: Boolean!, rankingname : String!, rankingdesc : String, rankingownerid : String!): Ranking! @resolver(name: "create_new_ranking")
   createNewUser(active: Boolean!, username : String!, password : String!, description: String, email: String, mobile: String): loginResult! @resolver(name: "create_new_user")
   loginUser(username: String!, password: String!): loginResult! @resolver(name: "login_user")

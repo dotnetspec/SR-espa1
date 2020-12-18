@@ -275,7 +275,7 @@ update msg model =
                     (AppOps dataState user uiState txRec, Ports.log "eth_requestAccounts")
                 Data.Users.NoCredit addr  userInfo userState ->
                     (AppOps dataState user uiState txRec, Ports.log "eth_requestAccounts")
-                Data.Users.Credited addr token userInfo userState ->
+                Data.Users.Credited addr userInfo userState ->
                     (AppOps dataState user uiState txRec, Ports.log "eth_requestAccounts")
             
 
@@ -302,7 +302,7 @@ update msg model =
                                     (Failure "Err", Cmd.none)
                                 (Data.Users.NoCredit addr  userInfo userState) ->
                                     (Failure "Err", Cmd.none)
-                                (Data.Users.Credited addr token userInfo userState) ->
+                                (Data.Users.Credited addr userInfo userState) ->
                                     (Failure "Err", Cmd.none)
                                
                         _ ->
@@ -947,7 +947,7 @@ update msg model =
 
         (ClickedChallengeOpponent opponentAsUserPlayer userAsUserPlayer,
             AppOps (Fetched sUsers sRankings (Selected sSelected))
-                (Data.Users.Credited addr token userInfo userState) uiState txRec) ->
+                (Data.Users.Credited addr userInfo userState) uiState txRec) ->
                 case userAsUserPlayer of
                     Nothing -> 
                         (Failure "Not yet implemented", Cmd.none)
@@ -990,7 +990,7 @@ update msg model =
                                     (Failure "Err", Cmd.none)
                                 (Data.Users.NoCredit addr  userInfo userState) ->
                                     (Failure "Err", Cmd.none)
-                                (Data.Users.Credited addr token userInfo userState) ->
+                                (Data.Users.Credited addr userInfo userState) ->
                                     (Failure "Err", Cmd.none)
                           
                         _ -> 
@@ -1239,7 +1239,7 @@ update msg model =
             --                                     (model, Cmd.none)
             --                                 (Data.Users.NoCredit addr  userInfo userState) ->
             --                                     (model, Cmd.none)
-            --                                 (Data.Users.Credited addr token userInfo userState) ->
+            --                                 (Data.Users.Credited addr userInfo userState) ->
             --                                     (model, Cmd.none)
                                             
             --                         _ -> 
@@ -1322,7 +1322,7 @@ update msg model =
 
         (ClickedConfirmCreateNewRanking,  AppOps (Fetched sUsers sRankings 
             (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
-            (Data.Users.Credited ethAddr token userInfo userState) 
+            (Data.Users.Credited ethAddr userInfo userState) 
                 uiState txRec ) ->
                 let
                     txParams =
@@ -1348,7 +1348,7 @@ update msg model =
                     newDataKind = Global (Data.Global.GlobalRankings EverySet.empty (Data.Global.CreatedNewRanking ranking))
                     newDataState = Fetched sUsers newesRankings newDataKind
                 in
-                    ( AppOps newDataState (Data.Users.Credited ethAddr token userInfo 
+                    ( AppOps newDataState (Data.Users.Credited ethAddr userInfo 
                     --Data.Users.WalletWaitingForTransactionReceipt
                     Data.Users.Subscribe
                     ) 
@@ -1504,7 +1504,7 @@ update msg model =
             --                                     (model, Cmd.none)
             --                                 (Data.Users.NoCredit addr  userInfo userState) ->
             --                                     (model, Cmd.none)
-            --                                 (Data.Users.Credited addr token userInfo userState) ->
+            --                                 (Data.Users.Credited addr userInfo userState) ->
             --                                     (model, Cmd.none)
             --                     _ -> 
             --                         let 
@@ -1581,7 +1581,7 @@ update msg model =
             in
             if handleTxSubMsg subMsg then
                 case (user, dataState) of 
-                    (Data.Users.Credited addr token userInfo userState
+                    (Data.Users.Credited addr userInfo userState
                         , Fetched sUsers sRankings
                         --nb. 'Selected' is a variant defined in Main (just a box or label), it is NOT a Set
                         -- you're only specifying it to distinguish from Global as a dKind
@@ -1606,12 +1606,12 @@ update msg model =
                                 Data.Selected.NoResult ->
                                     (Failure "Tx problem Should have been a result", Cmd.none)
                         
-                    (Data.Users.Credited addr token userInfo Data.Users.Updating, Fetched sUsers sRankings dKind ) ->
-                        ( AppOps dataState (Data.Users.Credited addr token userInfo Data.Users.WalletOperational) 
+                    (Data.Users.Credited addr userInfo Data.Users.Updating, Fetched sUsers sRankings dKind ) ->
+                        ( AppOps dataState (Data.Users.Credited addr userInfo Data.Users.WalletOperational) 
                         SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }
-                        , Cmd.batch [subCmd,  createNewUser sUsers (Data.Users.Credited addr token userInfo Data.Users.WalletOperational)])
+                        , Cmd.batch [subCmd,  createNewUser sUsers (Data.Users.Credited addr userInfo Data.Users.WalletOperational)])
                     
-                    -- (Data.Users.Credited addr token userInfo Data.Users.Updating, Fetched sUsers sRankings dKind ) ->
+                    -- (Data.Users.Credited addr userInfo Data.Users.Updating, Fetched sUsers sRankings dKind ) ->
                     --     ( AppOps SR.Types.WalletOperational dataState user SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }
                     --     , Cmd.batch [subCmd, addedUserAsFirstPlayerInNewList user] )
             
@@ -2151,7 +2151,7 @@ createNewRankingResponse model response =
                 in 
                     AppOps newDataState  (Data.Users.Registered userInfo userState) uiState txRec
 
-        ( AppOps (Fetched sUsers sRankings dKind) (Data.Users.Credited ethAddr token userInfo userState) uiState txRec 
+        ( AppOps (Fetched sUsers sRankings dKind) (Data.Users.Credited ethAddr userInfo userState) uiState txRec 
             , Ok createNewRankingResult) ->
                 let 
                     newRanking = Data.Rankings.convertFRankingToRanking createNewRankingResult
@@ -2173,13 +2173,13 @@ createNewRankingResponse model response =
             Failure "All empty"
         ( AppOps AllEmpty (Data.Users.NoCredit _ _ _) _ _, Ok _ )->
             Failure "All empty"
-        ( AppOps AllEmpty (Data.Users.Credited _ _ _ _) _ _, Ok _ )->
+        ( AppOps AllEmpty (Data.Users.Credited _ _ _) _ _, Ok _ )->
             Failure "All empty"
         ( AppOps (Updated _ _ _) (Data.Users.NoWallet _ _) _ _, Ok _ )->
             Failure "Maybe use updated?"
         ( AppOps (Updated _ _ _) (Data.Users.NoCredit _ _ _) _ _, Ok _ )->
             Failure "Maybe use updated?"
-        ( AppOps (Updated _ _ _) (Data.Users.Credited _ _ _ _) _ _, Ok _ )->
+        ( AppOps (Updated _ _ _) (Data.Users.Credited _ _ _) _ _, Ok _ )->
             Failure "Maybe use updated?"
 
         (AppOps dataState (Data.Users.Spectator userInfo _) uiState txRec
@@ -2212,7 +2212,7 @@ registeredResponse model response =
                     model
                 (Data.Users.NoCredit addr userInfo userState) ->
                     model
-                (Data.Users.Credited addr _ userInfo userState) ->
+                (Data.Users.Credited addr userInfo userState) ->
                     model
 
         (AppOps dataState user uiState txRec, Err _) ->
@@ -2239,7 +2239,7 @@ updateFromRegisteredNewUser model response =
                     model
                 (Data.Users.NoCredit addr userInfo userState) ->
                     model
-                (Data.Users.Credited addr _ userInfo userState) ->
+                (Data.Users.Credited addr userInfo userState) ->
                     model
 
         ( Ok _, Failure _ ) ->
@@ -2315,7 +2315,7 @@ gotWalletAddrApplyToUser user uaddr =
             -- (Data.Users.NoCredit addr  userInfo userState) ->
             --     user
 
-            -- (Data.Users.Credited addr token userInfo userState) ->
+            -- (Data.Users.Credited addr userInfo userState) ->
             --     user
 
 
@@ -2507,7 +2507,7 @@ view model =
                     Html.text ("Not yet implemented")
                 ( Fetched _ _ (Global _), Data.Users.NoCredit _ _ _ ) ->
                     Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global _), Data.Users.Credited _ _ _ _ ) ->
+                ( Fetched _ _ (Global _), Data.Users.Credited _ _ _ ) ->
                     Html.text ("Not yet implemented")
 
                 ( Fetched _ _ (Global (Data.Global.GlobalRankings (_) Data.Global.DisplayGlobalLogin)), Data.Users.Spectator _ _ ) ->
@@ -2579,7 +2579,7 @@ view model =
                 ( Fetched _ _ (Selected _), Data.Users.NoCredit _ _ _ ) ->
                     Html.text "selected user"
 
-                ( Fetched _ _ (Selected _), Data.Users.Credited _ _ _ _ ) ->
+                ( Fetched _ _ (Selected _), Data.Users.Credited _ _ _ ) ->
                     Html.text "selected user"
 
                 (Updated _ _ _, _) ->
@@ -2654,7 +2654,7 @@ globalView userVal sUsers sGlobal errorMsg =
                             Data.Global.GlobalRankings esUR _ ->
                                 Element.text ("tbc in globalView")]
 
-                    Data.Users.Credited _ _ userInfo _ ->
+                    Data.Users.Credited _ userInfo _ ->
                        [Element.el (Heading.h5) <| (Element.text ("SportRank -" ++ userInfo.username) )
                         , Element.text ("\n")
                         , displayCreateNewRankingBtn
@@ -2772,7 +2772,7 @@ globalView userVal sUsers sGlobal errorMsg =
 --             Html.text "Irrelevant view"
 --         (Data.Users.NoCredit addr  userInfo userState) ->
 --             Html.text "Irrelevant view"
---         (Data.Users.Credited addr token userInfo userState) ->
+--         (Data.Users.Credited addr userInfo userState) ->
 --             Html.text "Irrelevant view"
 
     
@@ -2853,7 +2853,7 @@ displayRankingBtns userVal (Data.Global.GlobalRankings esUR gState) errorMsg =
                     , memberrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Member ) esUR)) userVal
                     , otherrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Other ) esUR)) gState userVal
                 ]
-        (Data.Users.Credited addr token userInfo userState) ->
+        (Data.Users.Credited addr userInfo userState) ->
             Element.column Grid.section <|
                 [   ownedrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Owned ) esUR)) userVal
                     , memberrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Member ) esUR)) userVal
@@ -2933,7 +2933,7 @@ ownedrankingbuttons urankingList user =
                 |> List.map ownedRankingInfoBtn
                 |> Element.column (Card.simple ++ Grid.simple)
             ]
-        (Data.Users.Credited addr token userInfo userState) ->
+        (Data.Users.Credited addr userInfo userState) ->
             Element.column Grid.section <|
             [ if List.isEmpty urankingList then
                 Element.el [] <| 
@@ -2989,7 +2989,7 @@ memberrankingbuttons urankingList user =
                 |> List.map memberRankingInfoBtn
                 |> Element.column (Card.simple ++ Grid.simple)
             ]
-        (Data.Users.Credited addr token userInfo userState) ->
+        (Data.Users.Credited addr userInfo userState) ->
             Element.column Grid.section <|
             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
             , List.map (\ur -> ur.rankingInfo) urankingList
@@ -3169,7 +3169,7 @@ joinBtn user  =
             { onPress = Just ClickedRegister
             , label = Element.text "Join"
             }
-        (Data.Users.Credited addr token userInfo userState) ->
+        (Data.Users.Credited addr userInfo userState) ->
             Input.button ([ Element.htmlAttribute (Html.Attributes.id "newUserJoinbtn") ] ++ Button.simple ++ Color.info) <|
             { onPress = Just ClickedJoinSelected
             , label = Element.text "Join"
@@ -3302,7 +3302,7 @@ confirmChallengebutton model =
                     Element.text <| " No User3"
                 (Data.Users.NoCredit addr  userInfo userState, _) ->
                     Element.text <| " No User3"
-                (Data.Users.Credited addr token userInfo userState, _) ->
+                (Data.Users.Credited addr userInfo userState, _) ->
                     Element.text <| " No User3"
                 ( Data.Users.Registered _ _, _) ->
                     Element.text "No challenger"
@@ -3310,7 +3310,7 @@ confirmChallengebutton model =
                 --     Element.text "No challenger"
                 -- ( Data.Users.Registered _ _, Data.Users.NoCredit _ _ _ )->
                 --     Element.text "No challenger"
-                -- ( Data.Users.Registered _ _, Data.Users.Credited _ _ _ _ )->
+                -- ( Data.Users.Registered _ _, Data.Users.Credited _ _ _ )->
                     --Element.text "No challenger"
                     
         _ ->
@@ -3384,7 +3384,7 @@ confirmResultbutton model =
     --                                             Element.text "No challenger"
     --                                         (Data.Users.NoCredit addr  userInfo userState, _) ->
     --                                             Element.text "No challenger"
-    --                                         (Data.Users.Credited addr token userInfo userState, _) ->
+    --                                         (Data.Users.Credited addr userInfo userState, _) ->
     --                                             Element.text "No challenger"
     --                                         ( Data.Users.Registered _ _, Data.Users.Spectator ) ->
     --                                             Element.text "No challenger"
@@ -3392,7 +3392,7 @@ confirmResultbutton model =
     --                                             Element.text "No challenger"
     --                                         ( Data.Users.Registered _ _, Data.Users.NoCredit _ _ _ )->
     --                                             Element.text "No challenger"
-    --                                         ( Data.Users.Registered _ _, Data.Users.Credited _ _ _ _ )->
+    --                                         ( Data.Users.Registered _ _, Data.Users.Credited _ _ _ )->
     --                                             Element.text "No challenger"
                                             
     --                     _ ->
@@ -3590,7 +3590,7 @@ userDetailsConfirmPanel  user sUsers =
             Element.text "userDetailsConfirmPanel Err"
         (Data.Users.NoCredit addr  userInfo userState) ->
             Element.text "userDetailsConfirmPanel Err"
-        (Data.Users.Credited addr token userInfo userState) ->
+        (Data.Users.Credited addr userInfo userState) ->
             Element.text "userDetailsConfirmPanel Err"
 
 
@@ -3801,7 +3801,7 @@ displayEnableEthereumBtn =
                             --         , selecteduserIsOwnerhomebutton sSelected..user
                             --         , playerbuttons dataState sSelected.
                             --         ]
-                            -- (Data.Users.Credited addr token userInfo userState) ->
+                            -- (Data.Users.Credited addr userInfo userState) ->
                             --     Framework.responsiveLayout [] <| Element.column Framework.container
                             --         [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userInfo.username
                             --         , selecteduserIsOwnerhomebutton sSelected..user
@@ -3842,7 +3842,7 @@ displayEnableEthereumBtn =
 --                                     , selecteduserIsPlayerHomebutton appInfo.user
 --                                     , playerbuttons dataState appInfo
 --                                     ]
---                             (Data.Users.Credited addr token userInfo userState) ->
+--                             (Data.Users.Credited addr userInfo userState) ->
 --                                 Framework.responsiveLayout [] <| Element.column Framework.container
 --                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
 --                                     , selecteduserIsPlayerHomebutton appInfo.user
@@ -3882,7 +3882,7 @@ displayEnableEthereumBtn =
 --                                     , selecteduserIsPlayerHomebutton appInfo.user
 --                                     , playerbuttons dataState appInfo
 --                                     ]
---                             (Data.Users.Credited addr token userInfo userState) ->
+--                             (Data.Users.Credited addr userInfo userState) ->
 --                                 Framework.responsiveLayout [] <| Element.column Framework.container
 --                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
 --                                     , Element.text <| "Challenge is On! Good luck!"
@@ -3933,7 +3933,7 @@ newOrExistingUserNameDisplay user =
             Element.el Heading.h4 <| Element.text <| "Please Register and Enable Ethereum to join"
         (Data.Users.NoCredit addr  userInfo userState) ->
             Element.el Heading.h4 <| Element.text <| "Please Register and Enable Ethereum to join"
-        (Data.Users.Credited addr token userInfo userState) ->
+        (Data.Users.Credited addr userInfo userState) ->
             Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Join?"
 
 
@@ -3995,7 +3995,7 @@ inputUserDetailsView dataState user =
         Html.text "tbc"
     (Data.Users.NoCredit addr  userInfo userState) ->
         Html.text "tbc"
-    (Data.Users.Credited addr token userInfo userState) ->
+    (Data.Users.Credited addr userInfo userState) ->
         Html.text "tbc"
 
                 
@@ -4056,7 +4056,7 @@ displayRegisterNewUser userVal sUsers =
             Element.text "Should be a Spectator"
         (Data.Users.NoCredit addr  userInfo userState) ->
             Element.text "Should be a Spectator"
-        (Data.Users.Credited addr token userInfo userState) ->
+        (Data.Users.Credited addr userInfo userState) ->
             Element.text "Should be a Spectator"
     
     
@@ -4202,7 +4202,7 @@ inputNewLadderview sRankings ranking user =
                             Element.text ""
                         (Data.Users.NoCredit _ _ _) ->
                             Element.text ""
-                        (Data.Users.Credited _ _ _ _) ->
+                        (Data.Users.Credited _ _ _) ->
                             SR.Elements.warningParagraph
                         , 
                             SR.Elements.footer
@@ -4249,7 +4249,7 @@ displayChallengeBeforeConfirmView model =
                     [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Confirm Challenge"
                     , confirmChallengebutton model
                     ]
-                (Data.Users.Credited addr token userInfo userState) ->
+                (Data.Users.Credited addr userInfo userState) ->
                     Framework.responsiveLayout [] <| Element.column Framework.container
                     [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Confirm Challenge"
                     , confirmChallengebutton model
@@ -4292,7 +4292,7 @@ displayResultBeforeConfirmView model =
     --                                         [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Result"
     --                                         , confirmResultbutton model
     --                                         ]
-    --                                 (Data.Users.Credited addr token userInfo userState) ->
+    --                                 (Data.Users.Credited addr userInfo userState) ->
     --                                     Framework.responsiveLayout [] <| Element.column Framework.container
     --                                         [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Result"
     --                                         , confirmResultbutton model
@@ -4352,7 +4352,7 @@ txErrorView model =
     --                                 [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " Transaction Error"
     --                                 , acknoweldgeTxErrorbtn model
     --                                 ]
-    --                         (Data.Users.Credited addr token userInfo userState) ->
+    --                         (Data.Users.Credited addr userInfo userState) ->
     --                             Framework.responsiveLayout [] <| Element.column Framework.container
     --                                 [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " Transaction Error"
     --                                 , acknoweldgeTxErrorbtn model
@@ -4424,7 +4424,7 @@ subscriptions model =
     case model of
         AppOps (Fetched sUsers sRankings 
             (Global (Data.Global.GlobalRankings esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
-            (Data.Users.Credited ethAddr token userInfo userState) 
+            (Data.Users.Credited ethAddr userInfo userState) 
                 uiState txRec ->
                     Sub.batch
                         [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
@@ -4432,6 +4432,7 @@ subscriptions model =
                         ]
         _ ->
             Sub.none
+
 
 --Helper functions
 

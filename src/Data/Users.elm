@@ -65,7 +65,7 @@ type User =
     | Registered UserInfo UserState
     | NoWallet UserInfo UserState
     | NoCredit Eth.Types.Address UserInfo UserState
-    | Credited Eth.Types.Address Token UserInfo UserState
+    | Credited Eth.Types.Address UserInfo UserState
 
 
 type alias UserInfo =
@@ -277,7 +277,7 @@ gotUserName user =
             userInfo.username
         (NoCredit addr userInfo userState) ->
             userInfo.username
-        (Credited addr token userInfo userState) ->
+        (Credited addr userInfo userState) ->
             userInfo.username
 
 removedDeletedRankingsFromUserJoined : User -> Data.Rankings.Rankings -> User 
@@ -291,8 +291,8 @@ removedDeletedRankingsFromUserJoined user sRankings =
             NoWallet (handleDeletionFromUserJoined userInfo sRankings) userState
         (NoCredit addr userInfo userState) ->
             NoCredit addr (handleDeletionFromUserJoined userInfo sRankings) userState
-        (Credited addr token userInfo userState) ->
-            Credited addr token (handleDeletionFromUserJoined userInfo sRankings) userState
+        (Credited addr userInfo userState) ->
+            Credited addr (handleDeletionFromUserJoined userInfo sRankings) userState
 
 -- isUserNameValidated : String -> List User -> Bool
 -- isUserNameValidated username luser =
@@ -336,7 +336,7 @@ gotName user =
             userInfo.username
         NoCredit _ userInfo _ ->
             userInfo.username
-        Credited _ _ userInfo _ ->
+        Credited _ userInfo _ ->
             userInfo.username
 
 gotId : User -> String
@@ -350,7 +350,7 @@ gotId user =
             userInfo.id
         NoCredit _ userInfo _ ->
             userInfo.id
-        Credited _ _ userInfo _ ->
+        Credited _ userInfo _ ->
             userInfo.id
 
     
@@ -494,7 +494,7 @@ updatedUserInSet susers updatedUser =
             addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
         (NoCredit addr userInfo userState) ->
             addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
-        (Credited addr token userInfo userState) ->
+        (Credited addr userInfo userState) ->
             addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
 
 

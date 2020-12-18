@@ -132,7 +132,7 @@ isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
                     else
                         False
 
-                (Data.Users.Credited addr token userInfo userState) ->
+                (Data.Users.Credited addr userInfo userState) ->
                     if a.rankingInfo.rankingownerid == userInfo.id then
                         True
 
@@ -222,7 +222,7 @@ createdUserRanking sUser user ranking =
                     , rankingtype = Other
                     }
 
-        (Data.Users.Credited addr _ userInfo _) ->
+        (Data.Users.Credited addr userInfo _) ->
            Just
                     { rankingInfo = ranking
                     , userInfo = user
@@ -300,7 +300,7 @@ isOwned user ownedrnk =
                 _ ->
                     False
 
-        (Data.Users.Credited addr _ userInfo _) ->
+        (Data.Users.Credited addr userInfo _) ->
             case ownedrnk.userInfo of 
                 Data.Users.Registered owneruserInfo _ ->
                     if owneruserInfo.id == userInfo.id then
@@ -323,7 +323,7 @@ gotMember sGlobal user =
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
         (Data.Users.NoCredit addr userInfo userState) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
-        (Data.Users.Credited addr token userInfo userState) ->
+        (Data.Users.Credited addr userInfo userState) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
 
 --GlobalRankings RankingType GlobalState
@@ -408,8 +408,8 @@ removedDeletedRankingsFromUserJoined user sGlobal =
                 Data.Users.NoWallet userInfo userState
             (Data.Users.NoCredit addr userInfo userState) ->
                 Data.Users.NoCredit addr userInfo userState
-            (Data.Users.Credited addr token userInfo userState) ->
-                Data.Users.Credited addr token userInfo userState
+            (Data.Users.Credited addr userInfo userState) ->
+                Data.Users.Credited addr userInfo userState
         --newUser
     
 
