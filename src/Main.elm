@@ -2302,10 +2302,7 @@ gotWalletAddrApplyToUser : Data.Users.User -> Eth.Types.Address -> Data.Users.Us
 gotWalletAddrApplyToUser user uaddr =
     case user of
             (Data.Users.Registered userInfo userState) ->
-                let 
-                    newUserInfo = {userInfo | address = Just uaddr}
-                in
-                Data.Users.NoCredit newUserInfo userState
+                Data.Users.NoCredit {userInfo | address = Just uaddr} userState
 
             _ ->
                 user
