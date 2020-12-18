@@ -72,6 +72,7 @@ type alias UserInfo =
     { --datestamp to become creditsremaining - check member_since works as expected
      id : String
     , token : String
+    , address : Maybe Eth.Types.Address
     , datestamp : Int
     , active : Bool
     , username : String
@@ -139,11 +140,11 @@ type UserNames = UserNames (EverySet String)
 
 emptyUserInfo : UserInfo
 emptyUserInfo =
-    UserInfo "" "" 0 True "" "" (ExtraUserInfo "" "" "") [] ""
+    UserInfo "" "" Nothing 0 True "" "" (ExtraUserInfo "" "" "") [] ""
 
 dummyUserWithUserJoinedRankings : User
 dummyUserWithUserJoinedRankings = 
-    Registered (UserInfo "" "" 0 True "" "" 
+    Registered (UserInfo "" "" Nothing 0 True "" "" 
         (ExtraUserInfo "" "" "") ["282953512300577285", "283673261521240581"] "") General
 
 
@@ -214,7 +215,7 @@ convertFUserToUser fuser =
         email = Maybe.withDefault "" fuser.email
         mobile = Maybe.withDefault "" fuser.mobile
     in
-    Registered (UserInfo (fromScalarCodecId fuser.id_) "" 1 True fuser.username "" (ExtraUserInfo desc email mobile) [""] (fromScalarCodecLong fuser.ts_)) General
+    Registered (UserInfo (fromScalarCodecId fuser.id_) "" Nothing 1 True fuser.username "" (ExtraUserInfo desc email mobile) [""] (fromScalarCodecLong fuser.ts_)) General
 
 type alias FUser = {
     id_ :  SRdb.ScalarCodecs.Id
@@ -249,7 +250,7 @@ fromScalarCodecLong (Long ts) =
 
 newUser : String -> String -> String -> String -> String -> User
 newUser username password desc email mobile =
-    Registered (UserInfo "" "" 10 True username password (ExtraUserInfo desc email mobile) [""] "") General
+    Registered (UserInfo "" "" Nothing 10 True username password (ExtraUserInfo desc email mobile) [""] "") General
 
 --nb. this is not an EverySet, it's a Users type.
 empty : Users
