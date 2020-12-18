@@ -1,4 +1,3 @@
--- Users will be mainly used to communicate externally to the jsonbin server
 module Data.Users exposing (Users
     , User(..)
     , UserState(..)
@@ -59,19 +58,27 @@ import SRdb.ScalarCodecs
 import Regex
 
 
+-- Users (EverySet User) is not the same type as (EverySet User)
+-- Peter Damoc
+-- You can think about the tag ('Users') as a box containing a type.
+-- There can only ever be registered users in the User set
+-- Type 'Users' is a type with a variant 'Users' and assoc. data (EverySet User)
+type Users = Users (EverySet User)
+type UserNames = UserNames (EverySet String)
+
 
 type User =
     Spectator UserInfo UserState
     | Registered UserInfo UserState
     | NoWallet UserInfo UserState
-    | NoCredit Eth.Types.Address UserInfo UserState
-    | Credited Eth.Types.Address UserInfo UserState
+    | NoCredit UserInfo UserState
+    | Credited UserInfo UserState
 
 
 type alias UserInfo =
     { --datestamp to become creditsremaining - check member_since works as expected
      id : String
-    , token : String
+    , token : Maybe String
     , address : Maybe Eth.Types.Address
     , datestamp : Int
     , active : Bool
@@ -130,21 +137,14 @@ type UserState =
 --     | WalletStopSub
 --     | WalletOpenedNoUserAccount
 
--- Users (EverySet User) is not the same type as (EverySet User)
--- Peter Damoc
--- You can think about the tag ('Users') as a box containing a type.
--- There can only ever be registered users in the User set
-type Users = Users (EverySet User)
-type UserNames = UserNames (EverySet String)
-
 
 emptyUserInfo : UserInfo
 emptyUserInfo =
-    UserInfo "" "" Nothing 0 True "" "" (ExtraUserInfo "" "" "") [] ""
+    UserInfo "" Nothing Nothing 0 True "" "" (ExtraUserInfo "" "" "") [] ""
 
 dummyUserWithUserJoinedRankings : User
 dummyUserWithUserJoinedRankings = 
-    Registered (UserInfo "" "" Nothing 0 True "" "" 
+    Registered (UserInfo "" Nothing Nothing 0 True "" "" 
         (ExtraUserInfo "" "" "") ["282953512300577285", "283673261521240581"] "") General
 
 
@@ -215,7 +215,7 @@ convertFUserToUser fuser =
         email = Maybe.withDefault "" fuser.email
         mobile = Maybe.withDefault "" fuser.mobile
     in
-    Registered (UserInfo (fromScalarCodecId fuser.id_) "" Nothing 1 True fuser.username "" (ExtraUserInfo desc email mobile) [""] (fromScalarCodecLong fuser.ts_)) General
+    Registered (UserInfo (fromScalarCodecId fuser.id_) Nothing Nothing 1 True fuser.username "" (ExtraUserInfo desc email mobile) [""] (fromScalarCodecLong fuser.ts_)) General
 
 type alias FUser = {
     id_ :  SRdb.ScalarCodecs.Id
@@ -250,7 +250,7 @@ fromScalarCodecLong (Long ts) =
 
 newUser : String -> String -> String -> String -> String -> User
 newUser username password desc email mobile =
-    Registered (UserInfo "" "" Nothing 10 True username password (ExtraUserInfo desc email mobile) [""] "") General
+    Registered (UserInfo "" Nothing Nothing 10 True username password (ExtraUserInfo desc email mobile) [""] "") General
 
 --nb. this is not an EverySet, it's a Users type.
 empty : Users
@@ -276,9 +276,9 @@ gotUserName user =
             userInfo.username
         (NoWallet userInfo userState) ->
             userInfo.username
-        (NoCredit addr userInfo userState) ->
+        (NoCredit userInfo userState) ->
             userInfo.username
-        (Credited addr userInfo userState) ->
+        (Credited userInfo userState) ->
             userInfo.username
 
 removedDeletedRankingsFromUserJoined : User -> Data.Rankings.Rankings -> User 
@@ -290,10 +290,10 @@ removedDeletedRankingsFromUserJoined user sRankings =
             Registered (handleDeletionFromUserJoined userInfo sRankings) userState
         (NoWallet userInfo userState) ->
             NoWallet (handleDeletionFromUserJoined userInfo sRankings) userState
-        (NoCredit addr userInfo userState) ->
-            NoCredit addr (handleDeletionFromUserJoined userInfo sRankings) userState
-        (Credited addr userInfo userState) ->
-            Credited addr (handleDeletionFromUserJoined userInfo sRankings) userState
+        (NoCredit userInfo userState) ->
+            NoCredit (handleDeletionFromUserJoined userInfo sRankings) userState
+        (Credited userInfo userState) ->
+            Credited (handleDeletionFromUserJoined userInfo sRankings) userState
 
 -- isUserNameValidated : String -> List User -> Bool
 -- isUserNameValidated username luser =
@@ -335,9 +335,9 @@ gotName user =
             userInfo.username
         NoWallet userInfo _ ->
             userInfo.username
-        NoCredit _ userInfo _ ->
+        NoCredit userInfo _ ->
             userInfo.username
-        Credited _ userInfo _ ->
+        Credited userInfo _ ->
             userInfo.username
 
 gotId : User -> String
@@ -349,9 +349,9 @@ gotId user =
             userInfo.id
         NoWallet userInfo _ ->
             userInfo.id
-        NoCredit _ userInfo _ ->
+        NoCredit userInfo _ ->
             userInfo.id
-        Credited _ userInfo _ ->
+        Credited userInfo _ ->
             userInfo.id
 
     
@@ -493,9 +493,9 @@ updatedUserInSet susers updatedUser =
             addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
         (NoWallet userInfo userState) ->
             addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
-        (NoCredit addr userInfo userState) ->
+        (NoCredit userInfo userState) ->
             addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
-        (Credited addr userInfo userState) ->
+        (Credited userInfo userState) ->
             addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
 
 

@@ -125,14 +125,14 @@ isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
                     else
                         False
 
-                (Data.Users.NoCredit addr userInfo userState) ->
+                (Data.Users.NoCredit userInfo userState) ->
                     if a.rankingInfo.rankingownerid == userInfo.id then
                         True
 
                     else
                         False
 
-                (Data.Users.Credited addr userInfo userState) ->
+                (Data.Users.Credited userInfo userState) ->
                     if a.rankingInfo.rankingownerid == userInfo.id then
                         True
 
@@ -215,14 +215,14 @@ createdUserRanking sUser user ranking =
                     , rankingtype = Other
                     }
 
-        (Data.Users.NoCredit addr userInfo _) ->
+        (Data.Users.NoCredit userInfo _) ->
             Just
                     { rankingInfo = ranking
                     , userInfo = user
                     , rankingtype = Other
                     }
 
-        (Data.Users.Credited addr userInfo _) ->
+        (Data.Users.Credited userInfo _) ->
            Just
                     { rankingInfo = ranking
                     , userInfo = user
@@ -289,7 +289,7 @@ isOwned user ownedrnk =
                 _ ->
                     False 
 
-        (Data.Users.NoCredit addr userInfo _) ->
+        (Data.Users.NoCredit userInfo _) ->
             case ownedrnk.userInfo of 
                 Data.Users.Registered owneruserInfo _ ->
                     if owneruserInfo.id == userInfo.id then
@@ -300,7 +300,7 @@ isOwned user ownedrnk =
                 _ ->
                     False
 
-        (Data.Users.Credited addr userInfo _) ->
+        (Data.Users.Credited userInfo _) ->
             case ownedrnk.userInfo of 
                 Data.Users.Registered owneruserInfo _ ->
                     if owneruserInfo.id == userInfo.id then
@@ -321,9 +321,9 @@ gotMember sGlobal user =
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
         (Data.Users.NoWallet userInfo userState) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
-        (Data.Users.NoCredit addr userInfo userState) ->
+        (Data.Users.NoCredit userInfo userState) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
-        (Data.Users.Credited addr userInfo userState) ->
+        (Data.Users.Credited userInfo userState) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
 
 --GlobalRankings RankingType GlobalState
@@ -406,10 +406,10 @@ removedDeletedRankingsFromUserJoined user sGlobal =
             --todo: as above for the others or refactor
             (Data.Users.NoWallet userInfo userState) ->
                 Data.Users.NoWallet userInfo userState
-            (Data.Users.NoCredit addr userInfo userState) ->
-                Data.Users.NoCredit addr userInfo userState
-            (Data.Users.Credited addr userInfo userState) ->
-                Data.Users.Credited addr userInfo userState
+            (Data.Users.NoCredit userInfo userState) ->
+                Data.Users.NoCredit userInfo userState
+            (Data.Users.Credited userInfo userState) ->
+                Data.Users.Credited userInfo userState
         --newUser
     
 

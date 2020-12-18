@@ -134,7 +134,7 @@ updatedUPInSet sSelected updatedUP =
         --     addUser updatedUser <| removeUser (gotUser sSelected userInfo.id) sSelected
         -- (NoCredit addr  userInfo userState) ->
         --     addUser updatedUser <| removeUser (gotUser sSelected userInfo.id) sSelected
-        -- (Credited addr userInfo userState) ->
+        -- (Credited userInfo userState) ->
         --     addUser updatedUser <| removeUser (gotUser sSelected userInfo.id) sSelected
 
 gotPlayers : Selected -> Data.Players.Players 
@@ -236,20 +236,20 @@ addNewUserPlayerJoinRanking uplayer (Internal.Types.RankingId rnkId) =
                 in
                     newUserPlayer
             
-            (Data.Users.NoCredit addr userInfo sStatus) ->
+            (Data.Users.NoCredit userInfo sStatus) ->
                 let 
                     updatedUserJoinRankings = {userInfo | userjoinedrankings = rnkId :: userInfo.userjoinedrankings}
-                    newUser = Data.Users.NoCredit addr updatedUserJoinRankings
+                    newUser = Data.Users.NoCredit updatedUserJoinRankings
                     newUserPlayer =  { uplayer | player = uplayer.player, user = newUser Data.Users.General}
                     
                 in
                     newUserPlayer
 
 
-            (Data.Users.Credited addr userInfo sStatus) ->
+            (Data.Users.Credited userInfo sStatus) ->
                 let 
                     updatedUserJoinRankings = {userInfo | userjoinedrankings = rnkId :: userInfo.userjoinedrankings}
-                    newUser = Data.Users.Credited addr updatedUserJoinRankings
+                    newUser = Data.Users.Credited updatedUserJoinRankings
                     newUserPlayer =  { uplayer | player = uplayer.player, user = newUser Data.Users.General}
                     
                 in
@@ -310,10 +310,10 @@ gotPlayer user (SelectedRanking sSelected rnkId ownerStatus players sState name)
                 (Data.Users.NoWallet userInfo sStatus) ->
                     empty
 
-                (Data.Users.NoCredit addr userInfo sStatus) ->
+                (Data.Users.NoCredit userInfo sStatus) ->
                     empty
 
-                (Data.Users.Credited addr userInfo sStatus) ->
+                (Data.Users.Credited userInfo sStatus) ->
                     empty
 
 
