@@ -1,4 +1,4 @@
--- Rankings will be mainly used to communicate externally to the jsonbin server
+-- Rankings is an opaque type - create and expose functions to work with it
 
 module Data.Rankings exposing (Rankings
     , Ranking
@@ -21,7 +21,9 @@ module Data.Rankings exposing (Rankings
     , handleServerDeletedRanking
     , asList, asRankings, getRanking, gotRanking, rankingsetLength
     , emptyFRanking
-    , isRankingNameValid)
+    , isRankingNameValid
+    , testRanking
+    )
 
 
 --import SR.Types
@@ -37,6 +39,8 @@ import SRdb.ScalarCodecs
 import Set
 import Regex
 
+type Rankings = Rankings (EverySet Ranking)
+
 type alias Ranking =
     { 
         id_ : String
@@ -51,7 +55,9 @@ emptyRanking : Ranking
 emptyRanking =
     Ranking "" False "" Nothing ""
 
-type Rankings = Rankings (EverySet Ranking)
+testRanking : Ranking
+testRanking =
+    Ranking "282953512300577285" False "Test1Rnk" Nothing "283120055707763201"
 
 convertFRankingToRanking : FRanking -> Ranking 
 convertFRankingToRanking franking = 

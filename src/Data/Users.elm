@@ -1,4 +1,6 @@
-module Data.Users exposing (Users
+-- Users is an opaque type - create and expose functions to work with it
+module Data.Users exposing 
+    (Users
     , User(..)
     , UserState(..)
     , FUser
@@ -23,6 +25,7 @@ module Data.Users exposing (Users
     , isMobileValid
     , extractUsersFromWebData
     , empty
+    , emptyUser
     , emptyUserInfo
     , emptyFUser
     , addUser
@@ -65,6 +68,7 @@ import Regex
 -- Type 'Users' is a type with a variant 'Users' and assoc. data (EverySet User)
 type Users = Users (EverySet User)
 type UserNames = UserNames (EverySet String)
+
 
 
 type User =
@@ -255,7 +259,11 @@ newUser username password desc email mobile =
 --nb. this is not an EverySet, it's a Users type.
 empty : Users
 empty = 
-    Users (EverySet.empty) 
+    Users (EverySet.empty)
+
+emptyUser : User
+emptyUser =
+    Registered (UserInfo "" Nothing Nothing 10 True "" "" (ExtraUserInfo "" "" "") [""] "") General
 
 isEmpty : Users -> Bool
 -- 'Users' is a tag containing a box (of EverySet)

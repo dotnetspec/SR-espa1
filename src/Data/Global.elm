@@ -1,13 +1,18 @@
 -- Global will be mainly used to handle internal data of the global rankings listing as it relates to the current user
 -- Global currently uses the UserRankings type
-module Data.Global exposing (Global(..)
+module Data.Global exposing 
+    (Global(..)
     , UserRanking
     , GlobalState(..)
-    , RankingType(..)
-    --, listUserRankingsToGlobal
+    --, RankingType(..)
+    , setToOwnedUR
+    -- , memberUR
+    -- , otherUR
+    , fetchedOwned
     , gotOwned
-    , gotOthers
+    , gotOther
     , gotMember
+    --, listUserRankingsToGlobal
     , isOwned
     , filteredSelected
     , createdPlayers
@@ -43,19 +48,7 @@ import Data.Selected
 --import GlobalRankingsTests exposing (userOwner)
 -- Global came from Selected - there are many functions etc. not relevant to Global in here currently (even if renamed)
 -- nb. in main.elm 'Global' is a DataKind
-type Global = GlobalRankings (EverySet UserRanking) GlobalState
-
-type RankingType = 
-    Owned
-    | Member
-    | Other
-
---UserRanking.userInfo will always be Registered only
-type alias UserRanking =
-    { rankingInfo : Data.Rankings.Ranking
-    , userInfo : Data.Users.User
-    , rankingtype : RankingType
-    }
+type Global = Global (EverySet UserRanking) GlobalState
 
 type GlobalState =
     DisplayGlobalLogin
@@ -64,9 +57,64 @@ type GlobalState =
     | CreatingNewRanking Data.Rankings.Ranking
     | CreatedNewRanking Data.Rankings.Ranking
 
+type RankingType = 
+    Owned
+    | Member
+    | Other
+
+setToOwnedUR : Global -> Global
+setToOwnedUR (Global esUR gstate) =
+    Global (EverySet.map (\x -> setRankingType x Owned ) esUR) gstate
+    -- { rankingInfo = esUR.rankingInfo
+    -- , userInfo = esUR.userInfo
+    -- , rankingtype = Owned
+    -- }
+
+-- memberUR : Global -> Global
+-- memberUR (Global esUR gstate) =
+--     { rankingInfo = esUR.rankingInfo
+--     , userInfo = esUR.userInfo
+--     , rankingtype = Member
+--     }
+
+-- otherUR : Global -> Global
+-- otherUR (Global esUR gstate) =
+--     { rankingInfo = esUR.rankingInfo
+--     , userInfo = esUR.userInfo
+--     , rankingtype = Other
+--     }
+
+setRankingType : UserRanking -> RankingType -> UserRanking
+setRankingType ur rt = 
+    { rankingInfo = ur.rankingInfo
+    , userInfo = ur.userInfo
+    , rankingtype = rt
+    }
+
+--UserRanking.userInfo will always be Registered only
+type alias UserRanking =
+    { rankingInfo : Data.Rankings.Ranking
+    , userInfo : Data.Users.User
+    , rankingtype : RankingType
+    }
+
+-- displayGlobalLogin : Global -> Global
+-- displayGlobalLogin (Global esUR gstate) =
+--     (Global esUR DisplayGlobalLogin)
+
+
+gotGlobalState : Global -> GlobalState
+gotGlobalState (Global esUR gstate) =
+    case gstate of
+        DisplayLoggedIn ->
+            DisplayLoggedIn
+        _ ->
+            DisplayGlobalLogin
+
+
 empty : Global 
 empty = 
-    GlobalRankings EverySet.empty DisplayGlobalLogin
+    Global EverySet.empty DisplayGlobalLogin
 
 emptyUserRanking : UserRanking
 emptyUserRanking =
@@ -79,20 +127,20 @@ emptyUserRanking =
 
 -- asGlobalRankings : EverySet UserRanking -> GlobalState -> Global 
 -- asGlobalRankings esUserRanking  gState = 
---     GlobalRankings (All esUserRanking) gState
+--     Global (All esUserRanking) gState
 
 
 -- asEverySet : Global -> EverySet UserRanking
 -- asEverySet sGlobal  = 
 --     case sGlobal of 
---         GlobalRankings (All esUR) gState ->
+--         Global (All esUR) gState ->
 --             esUR
         
 
 
 -- listUserRankingsToGlobal : List UserRanking -> GlobalState -> Global 
 -- listUserRankingsToGlobal lUR gState =
---     GlobalRankings a b (EverySet.fromList lUR)
+--     Global a b (EverySet.fromList lUR)
 
 
 --although this refers to 'selected' the data types all relate to Global - so use here
@@ -158,9 +206,9 @@ created sRankings sUser user =
     in
         case user of 
             Data.Users.Spectator _ _ ->
-                GlobalRankings esUserRanking DisplayGlobalLogin
+                Global esUserRanking DisplayGlobalLogin
             _ ->
-                GlobalRankings esUserRanking DisplayLoggedIn
+                Global esUserRanking DisplayLoggedIn
     
 
 createdUserRanking : Data.Users.Users -> Data.Users.User -> Data.Rankings.Ranking -> Maybe UserRanking
@@ -254,11 +302,15 @@ isRnkIdMatch rankingid rnk =
     else
         False
 
+fetchedOwned : Global -> Global
+fetchedOwned (Global a b) = 
+    Global (EverySet.filter (\x -> x.rankingtype == Owned) a) b
+
 gotOwned : Global -> Data.Users.User -> Global 
 gotOwned sGlobal user = 
     case sGlobal of 
-        GlobalRankings a b  ->
-            GlobalRankings (EverySet.filter (isOwned user) a) b
+        Global a b  ->
+            Global (EverySet.filter (isOwned user) a) b
 
         
 isOwned : Data.Users.User -> UserRanking -> Bool
@@ -326,13 +378,13 @@ gotMember sGlobal user =
         (Data.Users.Credited userInfo userState) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
 
---GlobalRankings RankingType GlobalState
+--Global RankingType GlobalState
 -- this is now more like createOthers ...
 -- currently this is not doing anything
-gotOthers : Global -> Data.Users.User -> Global
-gotOthers sGlobal user =  
+gotOther : Global -> Data.Users.User -> Global
+gotOther sGlobal user =  
     case sGlobal of 
-        GlobalRankings a _ ->
+        Global a _ ->
             -- let
             --     --esOfOwned = asEverySet (gotOwned (asGlobalRankings a) user)
 
@@ -343,8 +395,8 @@ gotOthers sGlobal user =
             --     esWithMemberRemoved = EverySet.filter (isNotMember esOfMember) esWithOwnedRemoved
 
             -- in
-                --GlobalRankings a b esWithMemberRemoved
-                GlobalRankings a DisplayGlobalLogin
+                --Global a b esWithMemberRemoved
+                Global a DisplayGlobalLogin
 
         -- _ ->
         --     sGlobal
@@ -364,8 +416,8 @@ isNotMember esURanking uranking =
 removeUserRanking :  Global -> UserRanking -> Global
 removeUserRanking  sGlobal uRanking = 
     case sGlobal of
-        GlobalRankings a b ->
-            GlobalRankings (EverySet.remove uRanking a) b
+        Global a b ->
+            Global (EverySet.remove uRanking a) b
                
 
 removedUserRankingByRankingId : Global -> Internal.Types.RankingId -> Global 
@@ -424,7 +476,7 @@ gotAllRankindIds userRanking =
 gotUserRankingByRankingId : Global -> String -> Maybe UserRanking 
 gotUserRankingByRankingId sGlobal rnkId = 
     case sGlobal of
-        GlobalRankings a _ ->
+        Global a _ ->
             List.head (EverySet.toList (EverySet.filter (isUserRankingIdInList rnkId) a))
            
      
@@ -450,7 +502,7 @@ addUserRanking sGlobal newrnkId rnkInfo user =
 
     -- in
     --     case sGlobal of 
-    --         GlobalRankings (All rankedUserRankings) _ ->
+    --         Global (All rankedUserRankings) _ ->
     --             asGlobalRankings (EverySet.insert newUserRanking rankedUserRankings)
 
 
@@ -466,7 +518,7 @@ isUserRankingIdInList rankingid urnk =
 asList : Global -> List UserRanking 
 asList sGlobal =
     case sGlobal of
-        GlobalRankings a _ ->
+        Global a _ ->
             a
             |> EverySet.toList
                
@@ -474,7 +526,7 @@ asList sGlobal =
 rankingsAsList : Global -> List Data.Rankings.Ranking
 rankingsAsList sGlobal = 
     case sGlobal of      
-        GlobalRankings a _ ->
+        Global a _ ->
            EverySet.map removeUser a
                 |> EverySet.toList
                 
@@ -482,7 +534,7 @@ rankingsAsList sGlobal =
 rankingsAsSet : Global -> Data.Rankings.Rankings
 rankingsAsSet sGlobal = 
     case sGlobal of
-        GlobalRankings a _ ->
+        Global a _ ->
             Data.Rankings.asRankings (EverySet.map removeUser a)
                 
 
@@ -493,7 +545,7 @@ removeUser uranking =
 usersAsList : Global -> List Data.Users.User
 usersAsList sGlobal = 
    case sGlobal of 
-        GlobalRankings a _ ->
+        Global a _ ->
             EverySet.map removeRanking a
                 |> EverySet.toList
      
@@ -501,7 +553,7 @@ usersAsList sGlobal =
 usersAsSet : Global -> Data.Users.Users
 usersAsSet sGlobal = 
     case sGlobal of 
-        GlobalRankings a _ ->
+        Global a _ ->
             Data.Users.asUsers (EverySet.map removeRanking a)
                 
 
@@ -513,7 +565,7 @@ removeRanking uranking =
 asRankings : Global -> Data.Rankings.Rankings
 asRankings sGlobal = 
     case sGlobal of 
-        GlobalRankings a _ ->
+        Global a _ ->
             Data.Rankings.asRankings (EverySet.map removeUser a)
                 
 

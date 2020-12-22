@@ -1,18 +1,18 @@
 module SR.Types exposing
-    ( PlayerId, RankingId(..)
-    --, WalletState(..)
+    ( PlayerId
+    , RankingId(..)
     , UIState(..)
-    , Colors, CreateNewLadderFormFields, FormValidations, LadderState(..), ModalState(..)
-    , NewRankingListServerResponse, ResultRadioOptions(..)
-    , UserListState(..)
+    , Colors
+    , CreateNewLadderFormFields
+    , FormValidations
+    , ModalState(..)
+    , NewRankingListServerResponse
+    , ResultRadioOptions(..)
     , colors
-    --, SubState(..)
     , DeleteBinResponse
     )
 
 {-| Types
-
-
 
 # Simple
 
@@ -92,14 +92,12 @@ type Username
     = Username String
 
 
-type LadderState
-    = ExistingLadder Data.Rankings.Ranking
-    | NewLadder Data.Rankings.Ranking
-
-
-type UIState
-    = 
-    UIUpdateExistingUser
+type UIState =
+  GeneralUI General
+  | GlobalUI Global
+  | SelectedUI Selected
+  -- the old ones:
+   | UIUpdateExistingUser
     | UIWalletMissingInstructions
     | UIDisplayWalletLockedInstructions
     | UIDisplayWalletInfoToUser
@@ -115,18 +113,27 @@ type UIState
     | UIOwnerDeletedRanking
     | UIUnableToFindGlobalRankings
     | UIEthAlreadyEnabled
+  
+type General = 
+    Loading
+    | LogIn
+    | Register
+    | UserInfo
+    | UpdateUser
+   
+type Global = 
+  All
+  | NewLadder
+  
+type Selected = 
+   Challenge
+  | Result
+  | ConfirmResult
 
 -- type SubState 
 --     = Subscribe 
 --     | StopSubscription
 
-
-
-type UserListState
-    = Success (List Data.Users.User)
-    | Loading
-    | NotAsked
-    | Failure String
 
 
 type alias CreateNewLadderFormFields =

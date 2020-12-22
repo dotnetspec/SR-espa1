@@ -9,8 +9,8 @@ playedAs: [Player!]! @relation
 
 type Player {
 rank: Int!
-ranking: Ranking @relation
-challenger: User! @relation
+ranking: Ranking! @relation
+challenger: User @relation
 }
 
 type Ranking {
