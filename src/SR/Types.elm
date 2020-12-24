@@ -10,6 +10,9 @@ module SR.Types exposing
     , ResultRadioOptions(..)
     , colors
     , DeleteBinResponse
+    , Global(..)
+    , General(..)
+    , Selected(..)
     )
 
 {-| Types
@@ -98,21 +101,21 @@ type UIState =
   | SelectedUI Selected
   -- the old ones:
    | UIUpdateExistingUser
-    | UIWalletMissingInstructions
-    | UIDisplayWalletLockedInstructions
-    | UIDisplayWalletInfoToUser
-    | UISelectedRankingUserIsOwner
-    | UISelectedRankingUserIsPlayer
-    | UISelectedRankingUserIsNeitherOwnerNorPlayer
+    --| UIWalletMissingInstructions
+    --| UIDisplayWalletLockedInstructions
+    --| UIDisplayWalletInfoToUser
+    --| UISelectedRankingUserIsOwner
+    --| UISelectedRankingUserIsPlayer
+    --| UISelectedRankingUserIsNeitherOwnerNorPlayer
     | UIEnterResult
-    | UIEnterResultTxProblem
+    --| UIEnterResultTxProblem
     --| UIChallenge
     | UIWaitingForTxReceipt
     | UIDeleteRankingConfirm
-    | UIEnableEthereum
+    --| UIEnableEthereum
     | UIOwnerDeletedRanking
     | UIUnableToFindGlobalRankings
-    | UIEthAlreadyEnabled
+    --| UIEthAlreadyEnabled
   
 type General = 
     Loading
@@ -123,10 +126,12 @@ type General =
    
 type Global = 
   All
-  | NewLadder
+  | NewLadderCreate
+  | NewLadderConfirmed
   
 type Selected = 
-   Challenge
+    SelectedRanking
+  | Challenge
   | Result
   | ConfirmResult
 

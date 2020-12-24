@@ -278,7 +278,6 @@ asList sRankings =
            |> EverySet.toList
 
 
-
 updateAddr : Rankings -> String -> Rankings
 updateAddr sRankings addr =
             let 

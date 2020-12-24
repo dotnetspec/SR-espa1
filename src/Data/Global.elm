@@ -1,9 +1,9 @@
 -- Global will be mainly used to handle internal data of the global rankings listing as it relates to the current user
 -- Global currently uses the UserRankings type
 module Data.Global exposing 
-    (Global(..)
+    (Global
     , UserRanking
-    , GlobalState(..)
+    --, GlobalState(..)
     --, RankingType(..)
     , setToOwnedUR
     -- , memberUR
@@ -21,12 +21,17 @@ module Data.Global exposing
     , asRankings
     , newJsonEncodedList
     , created
+    , createdNewUR
     , gotUserRankingByRankingId
+    , updateRankingName
+    , updateRankingDesc
     , empty
     , addUserRanking, removeUserRanking, asList
     , removedUserRankingByRankingId
     , removedDeletedRankingsFromUserJoined
-    , gotNewRankingIdFromWebData)
+    , gotNewRankingIdFromWebData
+    , isEmpty
+    )
 
 
 import SR.Types
@@ -48,19 +53,16 @@ import Data.Selected
 --import GlobalRankingsTests exposing (userOwner)
 -- Global came from Selected - there are many functions etc. not relevant to Global in here currently (even if renamed)
 -- nb. in main.elm 'Global' is a DataKind
-type Global = Global (EverySet UserRanking) GlobalState
-
-type GlobalState =
-    DisplayGlobalLogin
-    | DisplayLoggedIn
-    | DisplayGlobalOnly
-    | CreatingNewRanking Data.Rankings.Ranking
-    | CreatedNewRanking Data.Rankings.Ranking
+type Global = Global (EverySet UserRanking) UserRanking
 
 type RankingType = 
     Owned
     | Member
     | Other
+
+isEmpty : Global -> Bool 
+isEmpty (Global esUR uR) = 
+    EverySet.isEmpty esUR
 
 setToOwnedUR : Global -> Global
 setToOwnedUR (Global esUR gstate) =
@@ -69,6 +71,32 @@ setToOwnedUR (Global esUR gstate) =
     -- , userInfo = esUR.userInfo
     -- , rankingtype = Owned
     -- }
+
+createdNewUR : Global -> Data.Users.User -> Global
+createdNewUR (Global esUR _ ) user = 
+    -- todo: user details will need to be added:
+    Global esUR emptyUserRanking 
+
+
+updateRankingName : Global -> String -> Global 
+updateRankingName (Global esUR uR) name = 
+    let
+        rankingInfo = uR.rankingInfo
+        newRankingInfo = { rankingInfo | rankingname = name}
+        newUserInfo = uR.userInfo
+    in
+        Global esUR { rankingInfo = newRankingInfo, userInfo = newUserInfo, rankingtype = Owned } 
+
+updateRankingDesc : Global -> String -> Global 
+updateRankingDesc (Global esUR uR) desc = 
+    let
+        rankingInfo = uR.rankingInfo
+        newRankingInfo = { rankingInfo | rankingdesc = Just desc}
+        newUserInfo = uR.userInfo
+    in
+        Global esUR { rankingInfo = newRankingInfo, userInfo = newUserInfo, rankingtype = Owned } 
+
+
 
 -- memberUR : Global -> Global
 -- memberUR (Global esUR gstate) =
@@ -103,18 +131,11 @@ type alias UserRanking =
 --     (Global esUR DisplayGlobalLogin)
 
 
-gotGlobalState : Global -> GlobalState
-gotGlobalState (Global esUR gstate) =
-    case gstate of
-        DisplayLoggedIn ->
-            DisplayLoggedIn
-        _ ->
-            DisplayGlobalLogin
 
 
 empty : Global 
 empty = 
-    Global EverySet.empty DisplayGlobalLogin
+    Global EverySet.empty emptyUserRanking
 
 emptyUserRanking : UserRanking
 emptyUserRanking =
@@ -206,9 +227,9 @@ created sRankings sUser user =
     in
         case user of 
             Data.Users.Spectator _ _ ->
-                Global esUserRanking DisplayGlobalLogin
+                Global esUserRanking emptyUserRanking
             _ ->
-                Global esUserRanking DisplayLoggedIn
+                Global esUserRanking emptyUserRanking
     
 
 createdUserRanking : Data.Users.Users -> Data.Users.User -> Data.Rankings.Ranking -> Maybe UserRanking
@@ -396,7 +417,7 @@ gotOther sGlobal user =
 
             -- in
                 --Global a b esWithMemberRemoved
-                Global a DisplayGlobalLogin
+                Global a emptyUserRanking --DisplayGlobalLogin
 
         -- _ ->
         --     sGlobal

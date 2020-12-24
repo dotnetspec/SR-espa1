@@ -43,14 +43,9 @@ import Data.Rankings
 import Data.Players
 import Widget exposing (..)
 import SR.Types
-import SR.Types
-import SR.Types
 import Bridge
 import Graphql.Http as GQLHttp
-import Data.Users
-import Data.Rankings
-import Data.Players
-import Data.Users
+
 
 main =
     Browser.element
@@ -90,7 +85,7 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     -- UIEnterResultTxProblem is wrong here, part of uiState rf
     -- WalletWaitingForTransactionReceipt same
-    ( AppOps  AllEmpty (Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General) SR.Types.UIEnterResultTxProblem   emptyTxRecord
+    ( AppOps  AllEmpty (Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General) (SR.Types.GeneralUI  SR.Types.Loading) emptyTxRecord
     , Cmd.batch
         [ 
         allUsers
@@ -157,7 +152,7 @@ type Msg
     | ClickedUpdateExistingUser
     | ClickedConfirmedUpdateExistingUser
     | ClickedCreateNewLadder
-    | ClickedConfirmCreateNewRanking
+    | ClickedConfirmCreateNewRanking Data.Rankings.Ranking
     | ClickedNewChallengeConfirm String
     | ClickedChallengeOpponent Data.Selected.UserPlayer (Maybe Data.Selected.UserPlayer)
     | ClickedJoinSelected
@@ -318,7 +313,7 @@ update msg model =
                 
         -- the only user UserState can be in here is General:
         (ClickedRegister, AppOps dataState user uiState txRec ) ->
-            (AppOps dataState (Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.CreatingNew) uiState txRec, Cmd.none)
+            (AppOps dataState user (SR.Types.GeneralUI SR.Types.Register) txRec, Cmd.none)
             --(AppOps dataState (Data.Users.Registered "" "" Data.Users.emptyUserInfo Data.Users.Updating) uiState txRec, Cmd.none)
 
         (PlayersReceived response, AppOps dataState user uiState txRec )  ->
@@ -445,15 +440,8 @@ update msg model =
         ( PlayersReceived _, Failure _ ) ->
             (model, Cmd.none)
 
-        (ClickedDisplayGlobalOnly, AppOps 
-            (Fetched sUsers sRankings (Global (Data.Global.Global esUR
-                    (Data.Global.DisplayLoggedIn)))) 
-                user uiState txRec ) ->
-                let
-                    newDataKind = Global <| Data.Global.Global esUR Data.Global.DisplayGlobalOnly
-                    newDataState = Fetched sUsers sRankings newDataKind
-                in
-                    ( AppOps newDataState user SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )
+        (ClickedDisplayGlobalOnly, AppOps dataState user uiState txRec ) ->
+                    ( AppOps dataState user (SR.Types.GlobalUI SR.Types.All) emptyTxRecord, Cmd.none )
 
         (ClickedSelectedRanking rnkidstr rnkownerstr rnknamestr selectedOwnerStatus, AppOps 
             (Fetched sUsers sRankings _) 
@@ -463,7 +451,7 @@ update msg model =
                             rnkidstr selectedOwnerStatus Data.Players.empty Data.Selected.DisplayRanking rnknamestr)
                         newDataState = Fetched sUsers sRankings newDataKind
                     in
-                        ( AppOps newDataState (Data.Users.Spectator userInfo Data.Users.General) SR.Types.UIEnterResultTxProblem emptyTxRecord, 
+                        ( AppOps newDataState (Data.Users.Spectator userInfo Data.Users.General) (SR.Types.SelectedUI SR.Types.SelectedRanking) emptyTxRecord, 
                         fetchedSingleRanking rnkidstr )
 
         (ClickedSelectedRanking rnkidstr rnkownerstr rnknamestr selectedOwnerStatus, AppOps 
@@ -529,7 +517,7 @@ update msg model =
                         )
                 
                 (Data.Selected.Undecided playerUP challengerUP) -> 
-                        ( AppOps dataState user SR.Types.UIEnterResultTxProblem 
+                        ( AppOps dataState user (SR.Types.SelectedUI SR.Types.ConfirmResult) 
                          emptyTxRecord
                             , sentryCmd
                             )
@@ -630,113 +618,112 @@ update msg model =
                 Data.Selected.NoResult ->
                     (Failure "No Result", Cmd.none)
 
-        (ClickedCreateNewLadder, AppOps (Fetched sUsers sRankings (Global (Data.Global.Global (esUR) 
-                    (Data.Global.DisplayGlobalOnly)))) 
-            (Data.Users.Registered userInfo userState) 
-                uiState txRec) ->
-                    let
-                        newDataKind = Global <| Data.Global.Global esUR
-                            (Data.Global.CreatingNewRanking (Data.Rankings.Ranking "" True "" Nothing userInfo.id))
-                        newDataState = Fetched sUsers sRankings newDataKind
-                        newModel = 
-                                AppOps newDataState (Data.Users.Registered userInfo userState)
-                                uiState 
-                                 emptyTxRecord
-                    in
-                        (newModel, Cmd.none)
+        -- (ClickedCreateNewLadder, AppOps (Fetched sUsers sRankings (Global (Data.Global.Global (esUR) 
+        --             (Data.Global.DisplayGlobalOnly)))) 
+        --     (Data.Users.Registered userInfo userState) 
+        --         uiState txRec) ->
+        --             let
+        --                 newDataKind = Global <| Data.Global.Global esUR
+        --                     (Data.Global.CreatingNewRanking (Data.Rankings.Ranking "" True "" Nothing userInfo.id))
+        --                 newDataState = Fetched sUsers sRankings newDataKind
+        --                 newModel = 
+        --                         AppOps newDataState (Data.Users.Registered userInfo userState)
+        --                         uiState 
+        --                          emptyTxRecord
+        --             in
+        --                 (newModel, Cmd.none)
 
-        (ClickedCreateNewLadder, AppOps (Fetched sUsers sRankings (Global (Data.Global.Global (esUR) 
-                    (Data.Global.DisplayLoggedIn)))) 
+        (ClickedCreateNewLadder, AppOps
+            (Fetched sUsers sRankings (Global g))
             (Data.Users.Registered userInfo userState) 
                 uiState txRec) ->
                     let
-                        newDataKind = Global <| Data.Global.Global esUR
-                            (Data.Global.CreatingNewRanking (Data.Rankings.Ranking "" True "" Nothing userInfo.id))
-                        newDataState = Fetched sUsers sRankings newDataKind
+                        newg = Data.Global.createdNewUR g (Data.Users.Registered userInfo userState)
+                        newDataState = Fetched sUsers sRankings (Global newg)
                         newModel = 
                                 AppOps newDataState (Data.Users.Registered userInfo userState)
-                                uiState 
+                                (SR.Types.GlobalUI SR.Types.NewLadderCreate) 
                                  emptyTxRecord
                     in
                         (newModel, Cmd.none)
                 
 
-        (Cancel, AppOps 
-            (Fetched sUsers sRankings 
-                (Global (Data.Global.Global (esUR) 
-                    (Data.Global.DisplayGlobalOnly))))
-                    (Data.Users.Spectator userInfo Data.Users.Updating) 
-                        uiState txRec ) ->
-                        let
-                            newDataKind = Global <| Data.Global.Global esUR Data.Global.DisplayGlobalLogin
-                            newDataState = Fetched sUsers sRankings newDataKind
+        -- (Cancel, AppOps 
+        --     (Fetched sUsers sRankings 
+        --         (Global (Data.Global.Global (esUR) 
+        --             (Data.Global.DisplayGlobalOnly))))
+        --             (Data.Users.Spectator userInfo Data.Users.Updating) 
+        --                 uiState txRec ) ->
+        --                 let
+        --                     newDataKind = Global <| Data.Global.Global esUR Data.Global.DisplayGlobalLogin
+        --                     newDataState = Fetched sUsers sRankings newDataKind
 
-                        in
-                            ( AppOps 
-                               newDataState
-                                    (Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General) 
-                                        SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )
+        --                 in
+        --                     ( AppOps 
+        --                        newDataState
+        --                             (Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General) 
+        --                                 SR.Types.GeneralUI emptyTxRecord, Cmd.none )
 
-        (Cancel, AppOps 
-            (Fetched sUsers sRankings 
-                (Global (Data.Global.Global (esUR) 
-                    (Data.Global.DisplayGlobalOnly))))
-                    (Data.Users.Spectator userInfo Data.Users.CreatingNew) 
-                        uiState txRec ) ->
-                        let
-                            newDataKind = Global <| Data.Global.Global esUR Data.Global.DisplayGlobalLogin
-                            newDataState = Fetched sUsers sRankings newDataKind
+        -- (Cancel, AppOps 
+        --     (Fetched sUsers sRankings 
+        --         (Global (Data.Global.Global (esUR) 
+        --             (Data.Global.DisplayGlobalOnly))))
+        --             (Data.Users.Spectator userInfo Data.Users.CreatingNew) 
+        --                 uiState txRec ) ->
+        --                 let
+        --                     newDataKind = Global <| Data.Global.Global esUR Data.Global.DisplayGlobalLogin
+        --                     newDataState = Fetched sUsers sRankings newDataKind
 
-                        in
-                            ( AppOps 
-                               newDataState
-                                    (Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General) 
-                                        SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )
+        --                 in
+        --                     ( AppOps 
+        --                        newDataState
+        --                             (Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General) 
+        --                                 SR.Types.GeneralUI emptyTxRecord, Cmd.none )
 
-        (Cancel, AppOps 
-            (Fetched sUsers sRankings 
-                (Global (Data.Global.Global (esUR) 
-                    (Data.Global.DisplayGlobalLogin))))
-                    (Data.Users.Spectator userInfo Data.Users.CreatingNew) 
-                        uiState txRec ) ->
-                        let
-                            newDataKind = Global <| Data.Global.Global esUR Data.Global.DisplayGlobalLogin
-                            newDataState = Fetched sUsers sRankings newDataKind
+        -- (Cancel, AppOps 
+        --     (Fetched sUsers sRankings 
+        --         (Global (Data.Global.Global (esUR) 
+        --             (Data.Global.DisplayGlobalLogin))))
+        --             (Data.Users.Spectator userInfo Data.Users.CreatingNew) 
+        --                 uiState txRec ) ->
+        --                 let
+        --                     newDataKind = Global <| Data.Global.Global esUR Data.Global.DisplayGlobalLogin
+        --                     newDataState = Fetched sUsers sRankings newDataKind
 
-                        in
-                            ( AppOps 
-                               newDataState
-                                    (Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General) 
-                                        SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )
+        --                 in
+        --                     ( AppOps 
+        --                        newDataState
+        --                             (Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General) 
+        --                                 SR.Types.GeneralUI emptyTxRecord, Cmd.none )
 
-        (Cancel, AppOps 
-            (Fetched sUsers sRankings 
-                (Global (Data.Global.Global (esUR) 
-                    (Data.Global.DisplayGlobalOnly))))
-                    (Data.Users.Spectator userInfo Data.Users.General) 
-                        uiState txRec ) ->
-                        let
-                            newDataKind = Global <| Data.Global.Global esUR Data.Global.DisplayGlobalLogin
-                            newDataState = Fetched sUsers sRankings newDataKind
+        -- (Cancel, AppOps 
+        --     (Fetched sUsers sRankings 
+        --         (Global (Data.Global.Global (esUR) 
+        --             (Data.Global.DisplayGlobalOnly))))
+        --             (Data.Users.Spectator userInfo Data.Users.General) 
+        --                 uiState txRec ) ->
+        --                 let
+        --                     newDataKind = Global <| Data.Global.Global esUR Data.Global.DisplayGlobalLogin
+        --                     newDataState = Fetched sUsers sRankings newDataKind
 
-                        in
-                            ( AppOps 
-                               newDataState
-                                    (Data.Users.Spectator userInfo Data.Users.General) 
-                                        SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )
+        --                 in
+        --                     ( AppOps 
+        --                        newDataState
+        --                             (Data.Users.Spectator userInfo Data.Users.General) 
+        --                                 SR.Types.GeneralUI emptyTxRecord, Cmd.none )
 
-        (Cancel, AppOps 
-            (Fetched sUsers sRankings 
-                (Global (Data.Global.Global (esUR) 
-                    (Data.Global.DisplayGlobalOnly))))
-                    user uiState txRec ) ->
-                        let
-                            newDataKind = Global <| Data.Global.Global esUR Data.Global.DisplayLoggedIn
-                            newDataState = Fetched sUsers sRankings newDataKind
-                        in
-                            ( AppOps 
-                               newDataState
-                                    user SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )
+        -- (Cancel, AppOps 
+        --     (Fetched sUsers sRankings 
+        --         (Global (Data.Global.Global (esUR) 
+        --             (Data.Global.DisplayGlobalOnly))))
+        --             user uiState txRec ) ->
+        --                 let
+        --                     newDataKind = Global <| Data.Global.Global esUR Data.Global.DisplayLoggedIn
+        --                     newDataState = Fetched sUsers sRankings newDataKind
+        --                 in
+        --                     ( AppOps 
+        --                        newDataState
+        --                             user SR.Types.GeneralUI emptyTxRecord, Cmd.none )
 
 
 
@@ -752,7 +739,7 @@ update msg model =
                             newDataState = Fetched sUsers sRankings newDataKind
 
                         in
-                            ( AppOps newDataState user SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )
+                            ( AppOps newDataState user (SR.Types.GlobalUI SR.Types.All) emptyTxRecord, Cmd.none )
 
         (Cancel, AppOps 
             (Fetched sUsers sRankings 
@@ -763,43 +750,43 @@ update msg model =
                             newDataKind = Selected    <| (Data.Selected.SelectedRanking playerUP rnkId selectedOwnerStatus sPlayers Data.Selected.DisplayRanking name)   
                             newDataState = Fetched sUsers sRankings newDataKind
                         in
-                            -- UIEnterResultTxProblem is deliberately wrong - remove eventually
-                            ( AppOps newDataState user SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )
+                            ( AppOps newDataState user (SR.Types.SelectedUI SR.Types.SelectedRanking) emptyTxRecord, Cmd.none )
         
-        (Cancel, AppOps 
-            (Fetched sUsers sRankings 
-                (Global (Data.Global.Global (esUR) 
-                    (Data.Global.CreatingNewRanking _))))
-                        (Data.Users.Registered userInfo userState)
+        (Cancel, AppOps dataState user 
+            -- (Fetched sUsers sRankings 
+            --     (Global (Data.Global.Global (esUR) 
+            --         (Data.Global.CreatingNewRanking _))))
+            --             (Data.Users.Registered userInfo userState)
                             uiState txRec ) ->
-            let
-                newDataKind = Global (Data.Global.Global (esUR) 
-                    (Data.Global.DisplayLoggedIn))               
-                newDataState = Fetched sUsers sRankings newDataKind
-            in
+            -- let
+            --     newDataKind = Global (Data.Global.Global (esUR) 
+            --         (Data.Global.DisplayLoggedIn))               
+            --     newDataState = Fetched sUsers sRankings newDataKind
+            -- in
             -- UIEnterResultTxProblem is deliberately wrong - remove eventually
-            ( AppOps newDataState 
-                (Data.Users.Registered userInfo userState) 
-                    SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )            
+            ( AppOps dataState 
+                user
+                    (SR.Types.GlobalUI SR.Types.All) emptyTxRecord, Cmd.none )            
 
-        (Cancel, AppOps (Updated sUsers sRankings dKind) user uiState txRec ) ->
-                        -- UIEnterResultTxProblem is deliberately wrong - remove eventually
-            ( AppOps 
-                (Fetched sUsers sRankings dKind) 
-                    user SR.Types.UIEnterResultTxProblem emptyTxRecord, Cmd.none )
+        -- (Cancel, AppOps (Updated sUsers sRankings dKind) user uiState txRec ) ->
+        --                 -- UIEnterResultTxProblem is deliberately wrong - remove eventually
+        --     ( AppOps 
+        --         (Fetched sUsers sRankings dKind) 
+        --             user SR.Types.GeneralUI emptyTxRecord, Cmd.none )
 
         (ResetToShowSelected, AppOps dataState user uiState txRec ) ->
             case dataState of 
                 Fetched sUsers sRankings dKind ->
                     case dKind of
                         Selected sSelected ->
-                            case (Data.Selected.gotStatus sSelected) of 
-                                Data.Selected.UserIsOwner ->
-                                    (AppOps dataState user SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, Cmd.none )
-                                Data.Selected.UserIsMember ->
-                                    (AppOps dataState user SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, Cmd.none )
-                                Data.Selected.UserIsNeitherOwnerNorMember ->
-                                    (AppOps dataState user SR.Types.UISelectedRankingUserIsNeitherOwnerNorPlayer emptyTxRecord, Cmd.none )
+                            (AppOps dataState user (SR.Types.SelectedUI SR.Types.SelectedRanking) emptyTxRecord, Cmd.none )
+                            -- case (Data.Selected.gotStatus sSelected) of 
+                            --     Data.Selected.UserIsOwner ->
+                            --         (AppOps dataState user SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, Cmd.none )
+                            --     Data.Selected.UserIsMember ->
+                            --         (AppOps dataState user SR.Types.UISelectedRankingUserIsPlayer emptyTxRecord, Cmd.none )
+                            --     Data.Selected.UserIsNeitherOwnerNorMember ->
+                            --         (AppOps dataState user SR.Types.SelectedUI SR.Types. emptyTxRecord, Cmd.none )
                         _ -> 
                             (model, Cmd.none)
                 _ -> 
@@ -827,27 +814,28 @@ update msg model =
 
 
         (LadderNameInputChg namefield
-            , AppOps ( Fetched sUsers sRankings (Global (Data.Global.Global esUR (Data.Global.CreatingNewRanking ranking))))
-                user uiState txRec ) ->
+            , AppOps ( Fetched sUsers sRankings (Global g)) user
+                uiState txRec ) ->
             let
-                newDataKind = Global (Data.Global.Global esUR (Data.Global.CreatingNewRanking { ranking | rankingname = namefield } ))
-                newDataState = Fetched sUsers sRankings newDataKind
+                newg = Data.Global.updateRankingName g namefield
+                newDataState = Fetched sUsers sRankings (Global newg)
             in
             ( AppOps newDataState user uiState emptyTxRecord, Cmd.none )
 
 
         (LadderDescInputChg descfield
-            , AppOps ( Fetched sUsers sRankings (Global (Data.Global.Global esUR (Data.Global.CreatingNewRanking ranking)))) 
-                user uiState txRec ) ->
+            , AppOps ( Fetched sUsers sRankings (Global g)) user
+                uiState txRec ) ->
             let
-                newDataKind = Global (Data.Global.Global esUR (Data.Global.CreatingNewRanking { ranking | rankingdesc = Just descfield } ))
-                newDataState = Fetched sUsers sRankings newDataKind
+                newg = Data.Global.updateRankingDesc g descfield
+                newDataState = Fetched sUsers sRankings (Global newg)
             in
             ( AppOps newDataState user uiState emptyTxRecord, Cmd.none )
 
         (UserNameInputChg updateField, AppOps dataState 
             (Data.Users.Spectator userInfo userState) uiState txRec) ->
-                (AppOps dataState (Data.Users.Spectator {userInfo | username = updateField} userState) uiState txRec, Cmd.none)
+                (AppOps dataState (Data.Users.Spectator {userInfo | username = updateField} userState) 
+                    uiState txRec, Cmd.none)
 
         
         (UserNameInputChg updateField, AppOps dataState 
@@ -1276,56 +1264,55 @@ update msg model =
         --             (model, Cmd.none)
 
 
-        (ClickedConfirmCreateNewRanking,  AppOps (Fetched sUsers sRankings 
-            (Global (Data.Global.Global esUserRanking (Data.Global.CreatingNewRanking ranking))))
+        (ClickedConfirmCreateNewRanking _,  AppOps _
             (Data.Users.Spectator userInfo userState) 
-                uiState txRec ) ->
+                _ _ ) ->
                 (Failure "Cannot create a ladder as a spectator", Cmd.none)
 
-        (ClickedConfirmCreateNewRanking,  AppOps (Fetched sUsers sRankings 
-            (Global (Data.Global.Global esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
+        (ClickedConfirmCreateNewRanking ranking,  AppOps (Fetched sUsers sRankings dKind)
+            -- (Global (Data.Global.Global esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
             (Data.Users.Registered userInfo userState) 
                 uiState txRec ) ->
                 let
                     newesRankings = Data.Rankings.addRanking ranking sRankings 
-                    newDataKind = Global (Data.Global.Global EverySet.empty (Data.Global.CreatedNewRanking ranking))
-                    newDataState = Fetched sUsers newesRankings newDataKind
+                    newg = Data.Global.created newesRankings sUsers (Data.Users.Registered userInfo userState)
+                    newDataState = Fetched sUsers newesRankings (Global newg)
                 in
                     ( AppOps newDataState (Data.Users.Registered userInfo userState)
-                        uiState txRec
+                        (SR.Types.GlobalUI SR.Types.NewLadderConfirmed) txRec
                             , createNewRanking ranking)
 
-        (ClickedConfirmCreateNewRanking,  AppOps (Fetched sUsers sRankings 
-            (Global (Data.Global.Global esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
+        (ClickedConfirmCreateNewRanking ranking,  AppOps (Fetched sUsers sRankings dKind)
+            --(Global (Data.Global.Global esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
             (Data.Users.NoWallet userInfo userState) 
                 uiState txRec ) ->
                 let
                     newesRankings = Data.Rankings.addRanking ranking sRankings 
-                    newDataKind = Global (Data.Global.Global EverySet.empty (Data.Global.CreatedNewRanking ranking))
-                    newDataState = Fetched sUsers newesRankings newDataKind
+                    newg = Data.Global.created newesRankings sUsers (Data.Users.NoWallet userInfo userState)
+                    newDataState = Fetched sUsers newesRankings (Global newg)
                 in
                     ( AppOps newDataState (Data.Users.NoWallet userInfo userState)
-                        uiState txRec
+                        (SR.Types.GlobalUI SR.Types.NewLadderConfirmed) txRec
                             ,Cmd.none)
 
-        (ClickedConfirmCreateNewRanking,  AppOps (Fetched sUsers sRankings 
-            (Global (Data.Global.Global esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
+        (ClickedConfirmCreateNewRanking ranking,  AppOps (Fetched sUsers sRankings dKind) 
             (Data.Users.NoCredit userInfo userState) 
                 uiState txRec ) ->
                 let
                     newesRankings = Data.Rankings.addRanking ranking sRankings 
-                    newDataKind = Global (Data.Global.Global EverySet.empty (Data.Global.CreatedNewRanking ranking))
-                    newDataState = Fetched sUsers newesRankings newDataKind
+                    newg = Data.Global.created newesRankings sUsers (Data.Users.NoCredit userInfo userState)
+                    newDataState = Fetched sUsers newesRankings (Global newg)
                 in
                     ( AppOps newDataState (Data.Users.NoCredit userInfo userState)
-                        uiState txRec
+                        (SR.Types.GlobalUI SR.Types.NewLadderConfirmed) txRec
                             ,Cmd.none)
                             
 
-        (ClickedConfirmCreateNewRanking,  AppOps (Fetched sUsers sRankings 
-            (Global (Data.Global.Global esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
+        (ClickedConfirmCreateNewRanking ranking,  AppOps (Fetched sUsers sRankings dKind)
+            --(Global (Data.Global.Global esUserRanking (Data.Global.CreatingNewRanking ranking))))
+
             (Data.Users.Credited userInfo userState) 
-                uiState txRec ) ->
+                (SR.Types.GlobalUI (SR.Types.NewLadderCreate)) txRec ) ->
                 let
                     txParams =
                         { to = txRec.account
@@ -1347,14 +1334,14 @@ update msg model =
                             txParams
                 
                     newesRankings = Data.Rankings.addRanking ranking sRankings 
-                    newDataKind = Global (Data.Global.Global EverySet.empty (Data.Global.CreatedNewRanking ranking))
-                    newDataState = Fetched sUsers newesRankings newDataKind
+                    newg = Data.Global.created newesRankings sUsers (Data.Users.Credited userInfo userState)
+                    newDataState = Fetched sUsers newesRankings (Global newg)
                 in
                     ( AppOps newDataState (Data.Users.Credited userInfo 
                     --Data.Users.WalletWaitingForTransactionReceipt
                     Data.Users.Subscribe
                     ) 
-                        uiState { txRec | txSentry = newSentry }
+                        (SR.Types.GlobalUI SR.Types.NewLadderConfirmed) { txRec | txSentry = newSentry }
                             ,sentryCmd)
 
         
@@ -1621,7 +1608,7 @@ update msg model =
                         (Failure "No credit", Cmd.none)
             
             else
-                ( AppOps dataState user SR.Types.UIEnterResultTxProblem txRec, Cmd.none )
+                ( AppOps dataState user (SR.Types.GlobalUI SR.Types.All) txRec, Cmd.none )
 
 
                 
@@ -1833,7 +1820,7 @@ updateWithReceivedUsers model response =
                         newDataState = Fetched newsUsers sRankings newDataKind
                         
                     in
-                        AppOps newDataState user uiState txRec
+                        AppOps newDataState user (SR.Types.GeneralUI SR.Types.LogIn) txRec
 
 
         (AppOps (Updated sUsers sRankings dKind) user uiState txRec, Ok lusers) ->
@@ -1964,7 +1951,10 @@ updateWithReceivedRankings model response =
                 newDataKind = Global (Data.Global.created newsRankings Data.Users.empty Data.Users.emptyUser)
                 newDataState = Fetched Data.Users.empty newsRankings newDataKind
             in
-                AppOps newDataState Data.Users.emptyUser SR.Types.UISelectedRankingUserIsOwner emptyTxRecord
+                -- AppOps newDataState Data.Users.emptyUser (SR.Types.GeneralUI SR.Types.Loading) emptyTxRecord
+                --(Failure "Unable to obtain Rankings data. Please check your network connection ...")
+            -- todo: fix put back above - just while sorting fauna relations issues
+                AppOps newDataState Data.Users.emptyUser (SR.Types.GeneralUI SR.Types.LogIn) emptyTxRecord
 
         (AppOps (Updated sUsers sRankings dKind) user uiState txRec, Err _ ) ->
             (Failure "updateWithReceivedRankings16")
@@ -1980,7 +1970,7 @@ updateWithReceivedRankings model response =
                 newDataKind = Global (Data.Global.created newsRankings Data.Users.empty Data.Users.emptyUser)
                 newDataState = Fetched Data.Users.empty  newsRankings newDataKind
             in
-                AppOps newDataState Data.Users.emptyUser SR.Types.UISelectedRankingUserIsOwner emptyTxRecord
+                AppOps newDataState Data.Users.emptyUser (SR.Types.SelectedUI SR.Types.SelectedRanking) emptyTxRecord
 
 
 
@@ -2403,199 +2393,264 @@ view : Model -> Html Msg
 view model =
     case model of
         AppOps dataState user uiState txRec ->
-            case (dataState, user) of 
-                (AllEmpty, _) ->
+            -- might find no need to pattern match on user when UI state fixed:
+            case (dataState, user, uiState) of 
+                (AllEmpty, _ , (SR.Types.GeneralUI SR.Types.Loading)) ->
                     Html.text ("Loading ...")
 
                 -- Global -- Spectator
 
-                (Fetched sUsers sRankings 
-                    (Global (Data.Global.Global (esUR) Data.Global.DisplayLoggedIn)), 
-                    Data.Users.Spectator userInfo 
-                        Data.Users.General) ->
+                (Fetched sUsers sRankings (Global g), _ , (SR.Types.GlobalUI SR.Types.All)) ->
                             -- this may be on a 'Cancel'
-                            globalView 
-                                user sUsers (Data.Global.Global (esUR) Data.Global.DisplayLoggedIn)
-                                ""
+                           globalView user sUsers (Global g) ""
 
-                (Fetched sUsers sRankings dKind, 
-                    Data.Users.Spectator userInfo 
-                        Data.Users.Updating) ->
-                            Html.text ("Spectator cannot update!")
+                (Fetched sUsers sRankings (Selected s), _ , (SR.Types.GlobalUI SR.Types.All))
+                    -- Data.Users.Spectator userInfo 
+                    --     Data.Users.General) 
+                        ->
+                            -- this may be on a 'Cancel'
+                            -- globalView 
+                            --     --user sUsers (Data.Global.Global (esUR) Data.Global.DisplayLoggedIn)
+                            --     user sUsers g
+                            --     ""
+                                Html.text ("Selected tbc2")
+                ( Updated _ _ _, _, _ ) ->
+                    Html.text ("Selected tbc")
 
-                (Fetched sUsers sRankings dKind, 
-                    Data.Users.Spectator userInfo 
-                        Data.Users.CreatingNew) ->
-                            inputUserDetailsView (Fetched sUsers sRankings dKind) user
+                ( AllEmpty, _, _) ->
+                    Html.text ("Selected tbc3")
+            
+                ( Fetched sUsers sRankings (Global g), _, SR.Types.GeneralUI SR.Types.LogIn ) ->
+                     globalView user sUsers (Global g) ""
+                ( Fetched _ _ (Global _), _, SR.Types.GeneralUI SR.Types.Loading ) ->
+                    Html.text ("Loading ...")
+                ( Fetched sUsers _ (Global _), _, SR.Types.GeneralUI SR.Types.Register ) ->
+                    registerNewUserView user sUsers
+                    -- todo: fix
+                    -- Framework.responsiveLayout [] <| Element.column Framework.container <|
+                    --     [displayRegisterNewUser user sUsers]
+                ( Fetched _ _ (Global _), _, SR.Types.GeneralUI SR.Types.UserInfo ) ->
+                    Html.text ("tbc")
+                ( Fetched _ _ (Global _), _, SR.Types.GeneralUI SR.Types.UpdateUser ) ->
+                    Html.text ("tbc")
+                ( Fetched _ _ (Global _), _, SR.Types.SelectedUI _ ) ->
+                    Html.text ("Selected tbc")
+                ( Fetched _ _ (Global _), _, SR.Types.UIUpdateExistingUser ) ->
+                    Html.text ("Selected tbc")
+                ( Fetched _ _ (Global _), _, SR.Types.UIEnterResult ) ->
+                    Html.text ("Selected tbc")
+                ( Fetched _ _ (Global _), _, SR.Types.UIWaitingForTxReceipt ) ->
+                    Html.text ("Selected tbc")
+                ( Fetched _ _ (Global _), _, SR.Types.UIDeleteRankingConfirm ) ->
+                    Html.text ("Selected tbc")
+                ( Fetched _ _ (Global _), _, SR.Types.UIOwnerDeletedRanking ) ->
+                    Html.text ("Selected tbc")
+                ( Fetched _ _ (Global _), _, SR.Types.UIUnableToFindGlobalRankings ) ->
+                    Html.text ("Selected tbc")
+                ( Fetched _ _ (Selected _), _, SR.Types.GeneralUI _ ) ->
+                    Html.text ("Selected tbc")
+                ( Fetched _ _ (Selected _), _, SR.Types.SelectedUI _ ) ->
+                    Html.text ("Selected tbc")
+                ( Fetched _ _ (Selected _), _, SR.Types.UIUpdateExistingUser ) ->
+                    Html.text ("Selected tbc")
+                ( Fetched _ _ (Selected _), _, SR.Types.UIEnterResult ) ->
+                    Html.text ("Selected tbc")
+                ( Fetched _ _ (Selected _), _, SR.Types.UIWaitingForTxReceipt ) ->
+                    Html.text ("Selected tbc")
+                ( Fetched _ _ (Selected _), _, SR.Types.UIDeleteRankingConfirm ) ->
+                    Html.text ("Selected tbc")
+                ( Fetched _ _ (Selected _), _, SR.Types.UIOwnerDeletedRanking ) ->
+                    Html.text ("Selected tbc")
+                ( Fetched _ _ (Selected _), _, SR.Types.UIUnableToFindGlobalRankings ) ->
+                    Html.text ("Selected tbc")
 
-                ( Fetched _ _ 
-                    (Global (Data.Global.Global esUR (Data.Global.CreatingNewRanking _ )))
-                    , Data.Users.Spectator _ Data.Users.General ) ->
-                    Html.text ("Not yet implemented")
+                ( Fetched _ _ (Global _), _, SR.Types.GlobalUI SR.Types.NewLadderCreate ) ->
+                    Html.text ("Selected tbc")
+                ( Fetched _ _ (Global _), _, SR.Types.GlobalUI SR.Types.NewLadderConfirmed ) ->
+                    Html.text ("Selected tbc")
+                ( Fetched _ _ (Selected _), _, SR.Types.GlobalUI SR.Types.NewLadderCreate ) ->
+                    Html.text ("Selected tbc")
+                ( Fetched _ _ (Selected _), _, SR.Types.GlobalUI SR.Types.NewLadderConfirmed ) ->
+                    Html.text ("Selected tbc")
+
+                -- (Fetched sUsers sRankings dKind, 
+                --     Data.Users.Spectator userInfo 
+                --         Data.Users.Updating) ->
+                --             Html.text ("Spectator cannot update!")
+
+                -- (Fetched sUsers sRankings dKind, 
+                --     Data.Users.Spectator userInfo 
+                --         Data.Users.CreatingNew) ->
+                --             inputUserDetailsView (Fetched sUsers sRankings dKind) user
+
+                -- ( Fetched _ _ 
+                --     (Global (Data.Global.Global esUR (Data.Global.CreatingNewRanking _ )))
+                --     , Data.Users.Spectator _ Data.Users.General ) ->
+                --     Html.text ("Not yet implemented")
                 
-                ( Fetched _ _ 
-                    (Global (Data.Global.Global (esUR) (Data.Global.CreatedNewRanking ranking)))
-                    , Data.Users.Spectator _ Data.Users.General ) ->
-                    Html.text ("Not yet implemented")
+                -- ( Fetched _ _ 
+                --     (Global (Data.Global.Global (esUR) (Data.Global.CreatedNewRanking ranking)))
+                --     , Data.Users.Spectator _ Data.Users.General ) ->
+                --     Html.text ("Not yet implemented")
                 
-                ( Fetched sUsers _ 
-                    (Global (Data.Global.Global (esUR) Data.Global.DisplayGlobalOnly))
-                    , Data.Users.Spectator _ Data.Users.LoginError ) ->
-                        globalView
-                            user sUsers (Data.Global.Global (esUR) Data.Global.DisplayGlobalLogin) "Not found. Register?:"
+                -- ( Fetched sUsers _ 
+                --     (Global (Data.Global.Global (esUR) Data.Global.DisplayGlobalOnly))
+                --     , Data.Users.Spectator _ Data.Users.LoginError ) ->
+                --         globalView
+                --             user sUsers (Data.Global.Global (esUR) Data.Global.DisplayGlobalLogin) "Not found. Register?:"
                 
-                ( Fetched sUsers _ 
-                    (Global (Data.Global.Global (esUR) 
-                    (Data.Global.CreatingNewRanking _ )))
-                    , Data.Users.Spectator _ Data.Users.LoginError ) ->
-                        globalView
-                            user sUsers (Data.Global.Global (esUR) Data.Global.DisplayGlobalLogin) "Please register \nto create a new ladder:"
+                -- ( Fetched sUsers _ 
+                --     (Global (Data.Global.Global (esUR) 
+                --     (Data.Global.CreatingNewRanking _ )))
+                --     , Data.Users.Spectator _ Data.Users.LoginError ) ->
+                --         globalView
+                --             user sUsers (Data.Global.Global (esUR) Data.Global.DisplayGlobalLogin) "Please register \nto create a new ladder:"
 
-                ( Fetched sUsers sRankings 
-                    (Global (Data.Global.Global (esUR) 
-                    (Data.Global.CreatingNewRanking ranking)))
-                    , (Data.Users.Registered _ _) as userVal ) ->
-                        inputNewLadderview sRankings ranking userVal
+                -- ( Fetched sUsers sRankings 
+                --     (Global (Data.Global.Global (esUR) 
+                --     (Data.Global.CreatingNewRanking ranking)))
+                --     , (Data.Users.Registered _ _) as userVal ) ->
+                --         inputNewLadderview sRankings ranking userVal
                 
-                ( Fetched sUsers _ 
-                    (Global (Data.Global.Global (esUR) (Data.Global.CreatedNewRanking ranking)))
-                    , Data.Users.Spectator _ Data.Users.LoginError ) ->
-                        globalView
-                            user sUsers (Data.Global.Global (esUR) Data.Global.DisplayGlobalLogin) "Please register \nto create a new ladder:"
+                -- ( Fetched sUsers _ 
+                --     (Global (Data.Global.Global (esUR) (Data.Global.CreatedNewRanking ranking)))
+                --     , Data.Users.Spectator _ Data.Users.LoginError ) ->
+                --         globalView
+                --             user sUsers (Data.Global.Global (esUR) Data.Global.DisplayGlobalLogin) "Please register \nto create a new ladder:"
 
-                ( Fetched sUsers _ (
-                        Global (Data.Global.Global (esUR) Data.Global.DisplayGlobalOnly))
-                    , Data.Users.Spectator _ Data.Users.General ) ->
-                    globalView user sUsers (Data.Global.Global(esUR) Data.Global.DisplayGlobalOnly) ""
+                -- ( Fetched sUsers _ (
+                --         Global (Data.Global.Global (esUR) Data.Global.DisplayGlobalOnly))
+                --     , Data.Users.Spectator _ Data.Users.General ) ->
+                --     globalView user sUsers (Data.Global.Global(esUR) Data.Global.DisplayGlobalOnly) ""
 
-                ( Fetched sUsers _ (
-                        Global (Data.Global.Global (esUR) 
-                        Data.Global.DisplayGlobalLogin))
-                    , Data.Users.Spectator _ Data.Users.General ) ->
-                    globalView user sUsers (Data.Global.Global(esUR) Data.Global.DisplayGlobalOnly) ""
+                -- ( Fetched sUsers _ (
+                --         Global (Data.Global.Global (esUR) 
+                --         Data.Global.DisplayGlobalLogin))
+                --     , Data.Users.Spectator _ Data.Users.General ) ->
+                --     globalView user sUsers (Data.Global.Global(esUR) Data.Global.DisplayGlobalOnly) ""
 
-                -- Global -- Registered
+                -- -- Global -- Registered
 
-                ( Fetched sUsers _ 
-                    (Global (Data.Global.Global (esUR) Data.Global.DisplayGlobalLogin))
-                    , Data.Users.Registered userInfo userState ) ->
-                    globalView 
-                        (Data.Users.Registered userInfo userState ) sUsers 
-                        (Data.Global.Global (esUR) Data.Global.DisplayLoggedIn)
-                        ""
+                -- ( Fetched sUsers _ 
+                --     (Global (Data.Global.Global (esUR) Data.Global.DisplayGlobalLogin))
+                --     , Data.Users.Registered userInfo userState ) ->
+                --     globalView 
+                --         (Data.Users.Registered userInfo userState ) sUsers 
+                --         (Data.Global.Global (esUR) Data.Global.DisplayLoggedIn)
+                --         ""
 
-                ( Fetched sUsers sRankings 
-                    (Global (Data.Global.Global (esUR) Data.Global.DisplayGlobalOnly) )
-                    , Data.Users.Registered _ _ ) ->
-                    globalView user sUsers (Data.Global.Global(esUR) Data.Global.DisplayGlobalOnly)
-                    ""
+                -- ( Fetched sUsers sRankings 
+                --     (Global (Data.Global.Global (esUR) Data.Global.DisplayGlobalOnly) )
+                --     , Data.Users.Registered _ _ ) ->
+                --     globalView user sUsers (Data.Global.Global(esUR) Data.Global.DisplayGlobalOnly)
+                --     ""
 
                 
-                ( Fetched sUsers sRankings 
-                    (Global (Data.Global.Global (esUR) (Data.Global.CreatedNewRanking ranking)))
-                    , Data.Users.Registered userInfo userState ) ->
-                    globalView 
-                        (Data.Users.Registered userInfo userState) sUsers 
-                            (Data.Global.Global (esUR) (Data.Global.CreatedNewRanking ranking))
-                            ""
+                -- ( Fetched sUsers sRankings 
+                --     (Global (Data.Global.Global (esUR) (Data.Global.CreatedNewRanking ranking)))
+                --     , Data.Users.Registered userInfo userState ) ->
+                --     globalView 
+                --         (Data.Users.Registered userInfo userState) sUsers 
+                --             (Data.Global.Global (esUR) (Data.Global.CreatedNewRanking ranking))
+                --             ""
 
 
-                ( Fetched sUsers sRankings 
-                    (Global (Data.Global.Global (esUR) Data.Global.DisplayLoggedIn)), userVal) ->
-                    globalView 
-                        userVal sUsers (Data.Global.Global (esUR) (Data.Global.DisplayLoggedIn ))
-                        ""
+                -- ( Fetched sUsers sRankings 
+                --     (Global (Data.Global.Global (esUR) Data.Global.DisplayLoggedIn)), userVal) ->
+                --     globalView 
+                --         userVal sUsers (Data.Global.Global (esUR) (Data.Global.DisplayLoggedIn ))
+                        --""
 
-                ( Fetched _ _ (Global (Data.Global.Global (_) Data.Global.DisplayGlobalLogin)), Data.Users.Spectator _ Data.Users.Updated ) ->
-                    Html.text ("User Updated")
-                ( Fetched _ _ (Global (Data.Global.Global (_) Data.Global.DisplayGlobalOnly)), Data.Users.Spectator _ Data.Users.Updated ) ->
-                    Html.text ("User Updated")
-                ( Fetched _ _ (Global (Data.Global.Global (_) (Data.Global.CreatingNewRanking _ ))), Data.Users.Spectator _ Data.Users.Updated ) ->
-                    Html.text ("User Updated")
-                ( Fetched _ _ (Global (Data.Global.Global (_) (Data.Global.CreatedNewRanking ranking))), Data.Users.Spectator _ Data.Users.Updated ) ->
-                    Html.text ("User Updated")
+                -- ( Fetched _ _ (Global (Data.Global.Global (_) Data.Global.DisplayGlobalLogin)), Data.Users.Spectator _ Data.Users.Updated ) ->
+                --     Html.text ("User Updated")
+                -- ( Fetched _ _ (Global (Data.Global.Global (_) Data.Global.DisplayGlobalOnly)), Data.Users.Spectator _ Data.Users.Updated ) ->
+                --     Html.text ("User Updated")
+                -- ( Fetched _ _ (Global (Data.Global.Global (_) (Data.Global.CreatingNewRanking _ ))), Data.Users.Spectator _ Data.Users.Updated ) ->
+                --     Html.text ("User Updated")
+                -- ( Fetched _ _ (Global (Data.Global.Global (_) (Data.Global.CreatedNewRanking ranking))), Data.Users.Spectator _ Data.Users.Updated ) ->
+                --     Html.text ("User Updated")
 
-                ( Fetched _ _ (Global _), Data.Users.NoWallet _ _ ) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global _), Data.Users.NoCredit _ _ ) ->
-                    Html.text ("Not yet implemented")
-                ( Fetched _ _ (Global _), Data.Users.Credited _ _ ) ->
-                    Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global _), Data.Users.NoWallet _ _ ) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global _), Data.Users.NoCredit _ _ ) ->
+                --     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global _), Data.Users.Credited _ _ ) ->
+                --     Html.text ("Not yet implemented")
 
-                ( Fetched _ _ (Global (Data.Global.Global (_) Data.Global.DisplayGlobalLogin)), Data.Users.Spectator _ _ ) ->
-                    Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.Global (_) Data.Global.DisplayGlobalLogin)), Data.Users.Spectator _ _ ) ->
+                --     Html.text ("Not yet implemented")
                 
-                ( Fetched _ _ (Global (Data.Global.Global (_) Data.Global.DisplayGlobalOnly)), Data.Users.Spectator _ _ ) ->
-                     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.Global (_) Data.Global.DisplayGlobalOnly)), Data.Users.Spectator _ _ ) ->
+                --      Html.text ("Not yet implemented")
                 
-                ( Fetched _ _ (Global (Data.Global.Global (_) (Data.Global.CreatingNewRanking _ ))), Data.Users.Spectator _ _ ) ->
-                    Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.Global (_) (Data.Global.CreatingNewRanking _ ))), Data.Users.Spectator _ _ ) ->
+                --     Html.text ("Not yet implemented")
                 
-                ( Fetched _ _ (Global (Data.Global.Global (_) (Data.Global.CreatedNewRanking ranking))), Data.Users.Spectator _ _ ) ->
-                     Html.text ("Not yet implemented")
+                -- ( Fetched _ _ (Global (Data.Global.Global (_) (Data.Global.CreatedNewRanking ranking))), Data.Users.Spectator _ _ ) ->
+                --      Html.text ("Not yet implemented")
                 
 
                 -- Selected
-                (Fetched sUsers sRankings 
-                    (Selected sSelected), Data.Users.Spectator _ _ ) ->
-                        Framework.responsiveLayout [] <| Element.column Framework.container
-                            [ Element.el Heading.h4 <| Element.text <| "SportRank - Spectator "
-                            , infoBtn "Cancel" Cancel
-                            , Element.text "\n"
-                            , playerbuttons sSelected sUsers user
-                            ]
+                -- (Fetched sUsers sRankings 
+                --     (Selected sSelected), Data.Users.Spectator _ _ ) ->
+                --         Framework.responsiveLayout [] <| Element.column Framework.container
+                --             [ Element.el Heading.h4 <| Element.text <| "SportRank - Spectator "
+                --             , infoBtn "Cancel" Cancel
+                --             , Element.text "\n"
+                --             , playerbuttons sSelected sUsers user
+                --             ]
                 
-                ( Fetched sUsers sRankings 
-                    (Selected (Data.Selected.SelectedRanking esUP rnkId 
-                        Data.Selected.UserIsOwner 
-                        sPlayers selectedState name)  )
-                        , Data.Users.Registered userInfo userState ) ->
-                            Framework.responsiveLayout [] <| Element.column Framework.container
-                            [ Element.el Heading.h4 <| Element.text <| "SportRank - " ++ userInfo.username
-                            , playerbuttons (Data.Selected.SelectedRanking esUP rnkId 
-                                    Data.Selected.UserIsOwner 
-                                    sPlayers selectedState name)        
-                                    sUsers user
-                            , infoBtn "Delete" ClickedDeleteRanking
-                            , Element.text "\n"
-                            , infoBtn "Cancel" Cancel
-                            ]
+                -- ( Fetched sUsers sRankings 
+                --     (Selected (Data.Selected.SelectedRanking esUP rnkId 
+                --         Data.Selected.UserIsOwner 
+                --         sPlayers selectedState name)  )
+                --         , Data.Users.Registered userInfo userState ) ->
+                --             Framework.responsiveLayout [] <| Element.column Framework.container
+                --             [ Element.el Heading.h4 <| Element.text <| "SportRank - " ++ userInfo.username
+                --             , playerbuttons (Data.Selected.SelectedRanking esUP rnkId 
+                --                     Data.Selected.UserIsOwner 
+                --                     sPlayers selectedState name)        
+                --                     sUsers user
+                --             , infoBtn "Delete" ClickedDeleteRanking
+                --             , Element.text "\n"
+                --             , infoBtn "Cancel" Cancel
+                --             ]
 
-                ( Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId Data.Selected.UserIsMember sPlayers selectedState name))
-                    , Data.Users.Registered userInfo userState ) ->
-                            Framework.responsiveLayout [] <| Element.column Framework.container
-                            [ Element.el Heading.h4 <| Element.text <| "SportRank - " ++ userInfo.username
-                            , playerbuttons (Data.Selected.SelectedRanking esUP rnkId 
-                                    Data.Selected.UserIsOwner 
-                                    sPlayers selectedState name)       
-                                    sUsers user
-                            , Element.text "\n"
-                            , infoBtn "Cancel" Cancel
-                            ]
+                -- ( Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId Data.Selected.UserIsMember sPlayers selectedState name))
+                --     , Data.Users.Registered userInfo userState ) ->
+                --             Framework.responsiveLayout [] <| Element.column Framework.container
+                --             [ Element.el Heading.h4 <| Element.text <| "SportRank - " ++ userInfo.username
+                --             , playerbuttons (Data.Selected.SelectedRanking esUP rnkId 
+                --                     Data.Selected.UserIsOwner 
+                --                     sPlayers selectedState name)       
+                --                     sUsers user
+                --             , Element.text "\n"
+                --             , infoBtn "Cancel" Cancel
+                --             ]
                             
-                ( Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId Data.Selected.UserIsNeitherOwnerNorMember sPlayers selectedState name))
-                    , Data.Users.Registered userInfo userState  ) ->
-                    Framework.responsiveLayout [] <| Element.column Framework.container
-                    [ Element.el Heading.h4 <| Element.text <| "SportRank - " ++ userInfo.username
-                    , playerbuttons (Data.Selected.SelectedRanking esUP rnkId 
-                            Data.Selected.UserIsOwner 
-                            sPlayers selectedState name)       
-                            sUsers user
-                    , Element.text "\n"
-                    , infoBtn "Cancel" Cancel
-                    ]
+                -- ( Fetched sUsers sRankings (Selected (Data.Selected.SelectedRanking esUP rnkId Data.Selected.UserIsNeitherOwnerNorMember sPlayers selectedState name))
+                --     , Data.Users.Registered userInfo userState  ) ->
+                --     Framework.responsiveLayout [] <| Element.column Framework.container
+                --     [ Element.el Heading.h4 <| Element.text <| "SportRank - " ++ userInfo.username
+                --     , playerbuttons (Data.Selected.SelectedRanking esUP rnkId 
+                --             Data.Selected.UserIsOwner 
+                --             sPlayers selectedState name)       
+                --             sUsers user
+                --     , Element.text "\n"
+                --     , infoBtn "Cancel" Cancel
+                --     ]
 
-                ( Fetched _ _ (Selected _), Data.Users.NoWallet _ _ ) ->
-                    Html.text "selected user3"
+                -- ( Fetched _ _ (Selected _), Data.Users.NoWallet _ _ ) ->
+                --     Html.text "selected user3"
 
-                ( Fetched _ _ (Selected _), Data.Users.NoCredit _ _ ) ->
-                    Html.text "selected user"
+                -- ( Fetched _ _ (Selected _), Data.Users.NoCredit _ _ ) ->
+                --     Html.text "selected user"
 
-                ( Fetched _ _ (Selected _), Data.Users.Credited _ _ ) ->
-                    Html.text "selected user"
+                -- ( Fetched _ _ (Selected _), Data.Users.Credited _ _ ) ->
+                --     Html.text "selected user"
 
-                (Updated _ _ _, _) ->
-                    Html.text ("No User - No Update")
+                -- (Updated _ _ _, _) ->
+                --     Html.text ("No User - No Update")
 
            
         Failure str ->
@@ -2617,175 +2672,181 @@ view model =
 
 
 
-globalView : Data.Users.User -> Data.Users.Users -> Data.Global.Global -> String -> Html Msg 
-globalView userVal sUsers sGlobal errorMsg =
+globalView : Data.Users.User -> Data.Users.Users -> DataKind -> String -> Html Msg 
+globalView userVal sUsers dKind errorMsg =
+    case dKind of
+        Global g -> 
             Framework.responsiveLayout [] <| Element.column Framework.container <|
                 case userVal of
                     Data.Users.Spectator _ _ ->
                         [Element.el (Heading.h5) <| (Element.text ("SportRank - Welcome Spectator"))
                         , displayEnableEthereumBtn
-                        , displayRankingBtns userVal sGlobal errorMsg]
+                        , displayRankingBtns userVal (Global g) errorMsg]
 
                     Data.Users.Registered userInfo userState ->
                         [Element.el (Heading.h5) <| (Element.text ("SportRank -" ++ userInfo.username) )
                         , displayEnableEthereumBtn
                         , Element.text ("\n")
                         , displayCreateNewRankingBtn
-                        , case sGlobal of 
-                            Data.Global.Global esUR Data.Global.DisplayLoggedIn -> 
-                                displayRankingBtns userVal sGlobal errorMsg
-                            Data.Global.Global esUR Data.Global.DisplayGlobalOnly ->
-                                otherrankingbuttons (EverySet.toList esUR) Data.Global.DisplayGlobalOnly userVal
+                        -- , case g of 
+                        --     Data.Global.Global esUR Data.Global.DisplayLoggedIn -> 
+                               , displayRankingBtns userVal (Global g) errorMsg]
+                            -- Data.Global.Global esUR Data.Global.DisplayGlobalOnly ->
+                            --     otherrankingbuttons (EverySet.toList esUR) Data.Global.DisplayGlobalOnly userVal
                                 
-                            Data.Global.Global esUR _ ->
-                                Element.text ("tbc in globalView")]
+                            -- Data.Global.Global esUR _ ->
+                            --     Element.text ("tbc in globalView")]
 
                     Data.Users.NoWallet userInfo _ ->
                         [Element.el (Heading.h5) <| (Element.text ("SportRank -" ++ userInfo.username) )
                         , displayEnableEthereumBtn
                         , Element.text ("\n")
                         , displayCreateNewRankingBtn
-                        , case sGlobal of 
-                            Data.Global.Global esUR Data.Global.DisplayLoggedIn -> 
-                                displayRankingBtns userVal sGlobal errorMsg
-                            Data.Global.Global esUR Data.Global.DisplayGlobalOnly ->
-                                otherrankingbuttons (EverySet.toList esUR) Data.Global.DisplayGlobalOnly userVal
-                            Data.Global.Global esUR _ ->
-                                Element.text ("tbc in globalView")]
+                        -- , case g of 
+                        --     Data.Global.Global esUR Data.Global.DisplayLoggedIn -> 
+                                , displayRankingBtns userVal (Global g) errorMsg]
+                            -- Data.Global.Global esUR Data.Global.DisplayGlobalOnly ->
+                            --     otherrankingbuttons (EverySet.toList esUR) Data.Global.DisplayGlobalOnly userVal
+                            -- Data.Global.Global esUR _ ->
+                            --     Element.text ("tbc in globalView")]
                             
                     Data.Users.NoCredit userInfo _ ->
                         [Element.el (Heading.h5) <| (Element.text ("SportRank -" ++ userInfo.username) )
                         , displayEnableEthereumBtn
                         , Element.text ("\n")
                         , displayCreateNewRankingBtn
-                        , case sGlobal of 
-                            Data.Global.Global esUR Data.Global.DisplayLoggedIn -> 
-                                displayRankingBtns userVal sGlobal errorMsg
-                            Data.Global.Global esUR Data.Global.DisplayGlobalOnly ->
-                                otherrankingbuttons (EverySet.toList esUR) Data.Global.DisplayGlobalOnly userVal
-                            Data.Global.Global esUR _ ->
-                                Element.text ("tbc in globalView")]
+                        -- , case g of 
+                        --     Data.Global.Global esUR Data.Global.DisplayLoggedIn -> 
+                                , displayRankingBtns userVal (Global g) errorMsg]
+                            -- Data.Global.Global esUR Data.Global.DisplayGlobalOnly ->
+                            --     otherrankingbuttons (EverySet.toList esUR) Data.Global.DisplayGlobalOnly userVal
+                            -- Data.Global.Global esUR _ ->
+                            --     Element.text ("tbc in globalView")]
 
                     Data.Users.Credited userInfo _ ->
                        [Element.el (Heading.h5) <| (Element.text ("SportRank -" ++ userInfo.username) )
                         , Element.text ("\n")
                         , displayCreateNewRankingBtn
-                        , case sGlobal of 
-                            Data.Global.Global esUR Data.Global.DisplayLoggedIn -> 
-                                displayRankingBtns userVal sGlobal errorMsg
-                            Data.Global.Global esUR Data.Global.DisplayGlobalOnly ->
-                                otherrankingbuttons (EverySet.toList esUR) Data.Global.DisplayGlobalOnly userVal
-                            Data.Global.Global esUR _ ->
-                                Element.text ("tbc in globalView")]
+                        -- , case g of 
+                        --     Data.Global.Global esUR Data.Global.DisplayLoggedIn -> 
+                                , displayRankingBtns userVal (Global g) errorMsg]
+                            -- Data.Global.Global esUR Data.Global.DisplayGlobalOnly ->
+                            --     otherrankingbuttons (EverySet.toList esUR) Data.Global.DisplayGlobalOnly userVal
+                            -- Data.Global.Global esUR _ ->
+                            --     Element.text ("tbc in globalView")]
+        
+        Selected _ -> 
+            Framework.responsiveLayout [] <| Element.column Framework.container <|
+                [Element.text ("Should be Global view only here")]
         
 
 
--- registerNewUserView : Data.Users.User -> Data.Users.Users -> Html Msg 
--- registerNewUserView userVal sUsers = 
---     case userVal of
---         Data.Users.Spectator userInfo userState ->
---             Framework.responsiveLayout [] <|
---             Element.column Grid.section <|
---                 [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
---                 , Element.wrappedRow (Card.fill ++ Grid.simple)
---                     [ Element.column
---                         Grid.simple
---                         [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
---                             { onChange = UserNameInputChg
---                             , text = userInfo.username
---                             , placeholder = Nothing
---                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
---                             }
---                         , nameValidView userInfo sUsers
---                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
---                             { onChange = UserPasswordInputChg
---                             , text = userInfo.password
---                             , placeholder = Nothing
---                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password*")
---                             }
---                         , passwordValidView userInfo
---                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
---                             { onChange = UserDescInputChg
---                             , text = userInfo.extrauserinfo.description
---                             , placeholder = Nothing
---                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
---                             }
---                         , userDescValidationErr userInfo.extrauserinfo.description
---                         , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
---                             { onChange = UserEmailInputChg
---                             , text = userInfo.extrauserinfo.email
---                             , placeholder = Nothing
---                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
---                             }
---                         , emailValidationErr userInfo.extrauserinfo.email
---                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
---                             { onChange = UserMobileInputChg
---                             , text = Utils.Validation.Validate.validatedMaxTextLength userInfo.extrauserinfo.mobile 25
---                             , placeholder = Nothing
---                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile \n(inc. Int code\neg.+65)")
---                             }
---                         , mobileValidationErr userInfo.extrauserinfo.mobile
---                         ]
---                     ]
---                 , Element.text "* required"
---                 , SR.Elements.justParasimpleUserInfoText
---                 , userDetailsConfirmPanel userVal sUsers
---                 ]
---         (Data.Users.Registered userInfo userState) ->
---             Framework.responsiveLayout [] <|
---             Element.column Grid.section <|
---                 [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
---                 , Element.wrappedRow (Card.fill ++ Grid.simple)
---                     [ Element.column
---                         Grid.simple
---                         [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
---                             { onChange = UserNameInputChg
---                             , text = userInfo.username
---                             , placeholder = Nothing
---                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
---                             }
---                         , nameValidView userInfo sUsers
---                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
---                             { onChange = UserPasswordInputChg
---                             , text = userInfo.password
---                             , placeholder = Nothing
---                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password*")
---                             }
---                         , passwordValidView userInfo
---                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
---                             { onChange = UserDescInputChg
---                             , text = userInfo.extrauserinfo.description
---                             , placeholder = Nothing
---                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
---                             }
---                         , userDescValidationErr userInfo.extrauserinfo.description
---                         , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
---                             { onChange = UserEmailInputChg
---                             , text = userInfo.extrauserinfo.email
---                             , placeholder = Nothing
---                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
---                             }
---                         , emailValidationErr userInfo.extrauserinfo.email
---                         , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
---                             { onChange = UserMobileInputChg
---                             , text = Utils.Validation.Validate.validatedMaxTextLength userInfo.extrauserinfo.mobile 25
---                             , placeholder = Nothing
---                             , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile \n(inc. Int code\n e.g.+65)")
---                             }
---                         , mobileValidationErr userInfo.extrauserinfo.mobile
---                         ]
---                     ]
---                 , Element.text "* required"
---                 , SR.Elements.justParasimpleUserInfoText
---                 , userDetailsConfirmPanel userVal sUsers
---                 ]
+registerNewUserView : Data.Users.User -> Data.Users.Users -> Html Msg 
+registerNewUserView userVal sUsers = 
+    case userVal of
+        Data.Users.Spectator userInfo userState ->
+            Framework.responsiveLayout [] <|
+            Element.column Grid.section <|
+                [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                    [ Element.column
+                        Grid.simple
+                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                            { onChange = UserNameInputChg
+                            , text = userInfo.username
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+                            }
+                        , nameValidView userInfo sUsers
+                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                            { onChange = UserPasswordInputChg
+                            , text = userInfo.password
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password*")
+                            }
+                        , passwordValidView userInfo
+                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+                            { onChange = UserDescInputChg
+                            , text = userInfo.extrauserinfo.description
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+                            }
+                        , userDescValidationErr userInfo.extrauserinfo.description
+                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+                            { onChange = UserEmailInputChg
+                            , text = userInfo.extrauserinfo.email
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+                            }
+                        , emailValidationErr userInfo.extrauserinfo.email
+                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+                            { onChange = UserMobileInputChg
+                            , text = Utils.Validation.Validate.validatedMaxTextLength userInfo.extrauserinfo.mobile 25
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile \n(inc. Int code\neg.+65)")
+                            }
+                        , mobileValidationErr userInfo.extrauserinfo.mobile
+                        ]
+                    ]
+                , Element.text "* required"
+                , SR.Elements.justParasimpleUserInfoText
+                , userDetailsConfirmPanel userVal sUsers
+                ]
+        (Data.Users.Registered userInfo userState) ->
+            Framework.responsiveLayout [] <|
+            Element.column Grid.section <|
+                [ Element.el Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                , Element.wrappedRow (Card.fill ++ Grid.simple)
+                    [ Element.column
+                        Grid.simple
+                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                            { onChange = UserNameInputChg
+                            , text = userInfo.username
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username*")
+                            }
+                        , nameValidView userInfo sUsers
+                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                            { onChange = UserPasswordInputChg
+                            , text = userInfo.password
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password*")
+                            }
+                        , passwordValidView userInfo
+                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userDescription") ])
+                            { onChange = UserDescInputChg
+                            , text = userInfo.extrauserinfo.description
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Description")
+                            }
+                        , userDescValidationErr userInfo.extrauserinfo.description
+                        , Input.email (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userEmail") ])
+                            { onChange = UserEmailInputChg
+                            , text = userInfo.extrauserinfo.email
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Email")
+                            }
+                        , emailValidationErr userInfo.extrauserinfo.email
+                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userMobile") ])
+                            { onChange = UserMobileInputChg
+                            , text = Utils.Validation.Validate.validatedMaxTextLength userInfo.extrauserinfo.mobile 25
+                            , placeholder = Nothing
+                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Mobile \n(inc. Int code\n e.g.+65)")
+                            }
+                        , mobileValidationErr userInfo.extrauserinfo.mobile
+                        ]
+                    ]
+                , Element.text "* required"
+                , SR.Elements.justParasimpleUserInfoText
+                , userDetailsConfirmPanel userVal sUsers
+                ]
 
---         (Data.Users.NoWallet userInfo userState) ->
---             Html.text "Irrelevant view"
---         (Data.Users.NoCredit userInfo userState) ->
---             Html.text "Irrelevant view"
---         (Data.Users.Credited userInfo userState) ->
---             Html.text "Irrelevant view"
+        (Data.Users.NoWallet userInfo userState) ->
+            Html.text "Irrelevant view"
+        (Data.Users.NoCredit userInfo userState) ->
+            Html.text "Irrelevant view"
+        (Data.Users.Credited userInfo userState) ->
+            Html.text "Irrelevant view"
 
     
 
@@ -2811,76 +2872,49 @@ failureView str =
                 ]
 
 
-displayRankingBtns : Data.Users.User -> Data.Global.Global -> String -> Element Msg 
-displayRankingBtns userVal (Data.Global.Global esUR gState) errorMsg = 
-    case userVal of
-        Data.Users.Spectator userInfo userState ->
-            -- Err
-            Element.column Grid.section <|
-                [ Element.el [] <| Element.text " Please login or view \n lists as spectator (below):"
-                --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
-                , Element.wrappedRow (Card.fill ++ Grid.simple)
-                    [ Element.column
-                        Grid.simple
-                        [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
-                            { onChange = UserNameInputChg
-                            , text = userInfo.username
-                            --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
-                            , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
-                            }
-                        --, nameValidView appInfo sUsers
-                        , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
-                            { onChange = UserPasswordInputChg
-                            , text = userInfo.password
-                            , placeholder = Nothing
-                            , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
-                            }
+displayRankingBtns : Data.Users.User -> DataKind-> String -> Element Msg 
+displayRankingBtns userVal dKind errorMsg = 
+    case dKind of 
+        (Global g) ->
+            case userVal of
+                Data.Users.Spectator userInfo userState ->
+                    -- Err
+                    Element.column Grid.section <|
+                        [ Element.el [] <| Element.text " Please login or view \n lists as spectator (below):"
+                        --Heading.h5 <| Element.text "Please Enter Your User \nDetails And Click 'Register' below:"
+                        , Element.wrappedRow (Card.fill ++ Grid.simple)
+                            [ Element.column
+                                Grid.simple
+                                [ Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "userName") ] ++ [ Input.focusedOnLoad ])
+                                    { onChange = UserNameInputChg
+                                    , text = userInfo.username
+                                    --, placeholder = Input.placeholder <| [Element.Attribute "Username"]
+                                    , placeholder = Nothing
+                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Username")
+                                    }
+                                --, nameValidView appInfo sUsers
+                                , Input.text (Input.simple ++ [ Element.htmlAttribute (Html.Attributes.id "Password") ])
+                                    { onChange = UserPasswordInputChg
+                                    , text = userInfo.password
+                                    , placeholder = Nothing
+                                    , label = Input.labelLeft (Input.label ++ [ Element.moveLeft 11.0 ]) (Element.text "Password")
+                                    }
+                                ]
+                            ]
+                        , infoBtn "Log In" ClickedLogInUser
+                        , SR.Elements.warningText errorMsg
+                        , infoBtn "Register" ClickedRegister
                         ]
-                    ]
-                , infoBtn "Log In" ClickedLogInUser
-                , SR.Elements.warningText errorMsg
-                , infoBtn "Register" ClickedRegister
-                --, otherrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Other ) esUR)) gState userVal
-                , otherrankingbuttons (Data.Global.asList (Data.Global.gotOther (Data.Global.Global esUR gState) userVal)) gState userVal
-                ]
-            
-        (Data.Users.Registered userInfo userState) ->
-            Element.column Grid.section <|
-                [
-                    rankingbtns (Data.Global.Global esUR gState) userVal
-                    -- ownedrankingbuttons (Data.Global.gotOwned (Data.Global.Global esUR gState) userVal) userVal
-                    -- , memberrankingbuttons (Data.Global.gotMember (Data.Global.Global esUR gState)  userVal) userVal
-                    -- , otherrankingbuttons (Data.Global.asList (Data.Global.gotOther (Data.Global.Global esUR gState)  userVal)) gState userVal
-                ]
+                    
+                (Data.Users.Registered userInfo userState) ->
+                    Element.column Grid.section <|
+                        [ rankingbtns (Global g) userVal ]
 
-        _ ->
-            Element.column Grid.section <|
-                []
-                
-
-        -- (Data.Users.NoWallet userInfo userState) ->
-        --     Element.column Grid.section <|
-        --         [   ownedrankingbuttons (Data.Global.gotOwned (Data.Global.Global esUR gState) userVal)  userVal
-        --             , memberrankingbuttons (Data.Global.asList (Data.Global.gotMember (Data.Global.Global esUR gState)  userVal)) gState userVal
-        --             , otherrankingbuttons (Data.Global.asList (Data.Global.gotOther (Data.Global.Global esUR gState)  userVal)) gState userVal
-        --         ]
-        -- (Data.Users.NoCredit userInfo userState) ->
-        --     Element.column Grid.section <|
-        --         [   
-        --             ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned (Data.Global.Global esUR gState)  userVal)) gState userVal
-        --             , memberrankingbuttons (Data.Global.asList (Data.Global.gotMember (Data.Global.Global esUR gState)  userVal)) gState userVal
-        --             , otherrankingbuttons (Data.Global.asList (Data.Global.gotOther (Data.Global.Global esUR gState)  userVal)) gState userVal
-        --         ]
-        -- (Data.Users.Credited userInfo userState) ->
-        --     Element.column Grid.section <|
-        --         [   --ownedrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Owned ) esUR)) userVal
-        --             ownedrankingbuttons (Data.Global.asList (Data.Global.gotOwned (Data.Global.Global esUR gState)  userVal)) gState userVal
-        --             --, memberrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Member ) esUR)) userVal
-        --             , memberrankingbuttons (Data.Global.asList (Data.Global.gotMember (Data.Global.Global esUR gState)  userVal)) gState userVal
-        --             --, otherrankingbuttons (EverySet.toList (EverySet.filter (\x -> x.rankingtype == Data.Global.Other ) esUR)) gState userVal
-        --             , otherrankingbuttons (Data.Global.asList (Data.Global.gotOther (Data.Global.Global esUR gState)  userVal)) gState userVal
-        --         ]
+                _ ->
+                    Element.column Grid.section <|
+                        []
+        (Selected s) ->
+            Element.text " Should be in Global here"
   
 
 greetingHeading : String -> Element Msg
@@ -2894,175 +2928,234 @@ greetingHeading greetingStr =
         ]
 
 
---ownedrankingbuttons : List Data.Global.UserRanking -> Data.Users.User -> Element Msg
--- ownedrankingbuttons : Data.Global.Global -> Data.Users.User -> Element Msg
--- ownedrankingbuttons (Data.Global.Global esUR gstate) user =
-rankingbtns: Data.Global.Global -> Data.Users.User -> Element Msg
-rankingbtns (Data.Global.Global esUR gstate) user =
-    let
-        urankingList = EverySet.toList esUR
-    in
-    case user of 
-        Data.Users.Spectator userInfo userState ->
-            Element.text "If you register you can \ncreate your own rankings"
+rankingbtns: DataKind -> Data.Users.User -> Element Msg
+rankingbtns dKind user =
+    case dKind of 
+        (Global g) ->
+            case user of 
+                Data.Users.Spectator userInfo userState ->
+                    Element.column Grid.section <|
+                            [ Element.el Heading.h5 <|  Element.text "If you register you can \ncreate your own rankings"
+                            , infoBtn "Cancel" Cancel
+                            , Element.text "\n"
+                            , 
+                                Element.column (Card.simple ++ Grid.simple) (List.map otherRankingInfoBtn (List.map (\ur -> ur.rankingInfo) (Data.Global.asList g)))
+                            ]
 
-        (Data.Users.Registered userInfo userState) ->
-            --if List.isEmpty urankingList then
-            if List.isEmpty (Data.Global.asList (Data.Global.fetchedOwned (Data.Global.Global esUR gstate))) then
-                Element.column Grid.section <|
-                    [ Element.el Heading.h5 <| Element.text "Your Created Rankings:"
-                    , Element.column (Card.simple ++ Grid.simple) <| [infoBtn "Create New Ladder" ClickedCreateNewLadder]
-                    ]
-            else
-                Element.column Grid.section <| 
-                    [ 
-                    Element.el Heading.h5 <| Element.text "Your Created Rankings:"
-                    , Element.column (Card.simple ++ Grid.simple) <| List.map ownedRankingInfoBtn (List.map (\ur -> ur.rankingInfo) 
-                        -- point here is that instead of urankingList that is owned. we get owned directly at this point
-                        -- and then don't need separate functions for ownedrankingbuttons etc. Also (Data.Global.Global esUR gstate)
-                        -- could eventually just become g
-                        (Data.Global.asList (Data.Global.fetchedOwned (Data.Global.Global esUR gstate))))
-                    ]
+                (Data.Users.Registered userInfo userState) ->
+                        Element.column Grid.section <|
+                            [ Element.el Heading.h5 <| Element.text "Your Created Rankings:"
+                            , Element.column (Card.simple ++ Grid.simple) <| 
+                                (case Data.Global.isEmpty (Data.Global.fetchedOwned g) of
+                                    True ->
+                                        [infoBtn "Create New Ladder" ClickedCreateNewLadder]
+                                    False ->
+                                        List.map (\ur -> ur.rankingInfo) (Data.Global.asList (Data.Global.fetchedOwned g))
+                                        |> List.map memberRankingInfoBtn 
+                                )
+                            , Element.el Heading.h5 <| Element.text "Your Member Rankings: " 
+                            , Element.column (Card.simple ++ Grid.simple) <| 
+                                (case Data.Global.isEmpty (Data.Global.fetchedOwned g) of
+                                    True ->
+                                        [infoBtn "Join A Ladder?" ClickedDisplayGlobalOnly]
+                                    False ->
+                                        List.map (\ur -> ur.rankingInfo) (Data.Global.asList (Data.Global.fetchedOwned g))
+                                        |> List.map memberRankingInfoBtn 
+                                )
+                            , Element.el Heading.h5 <|  Element.text "All Other Rankings: "
+                            , Element.column (Card.simple ++ Grid.simple) (List.map otherRankingInfoBtn (List.map (\ur -> ur.rankingInfo) (Data.Global.asList g)))
+                            ]
+                (Data.Users.NoWallet _ _) ->
+                    Element.text "tbc later"
+                (Data.Users.NoCredit _ _) ->
+                    Element.text "tbc later"
+                (Data.Users.Credited _ _) ->
+                    Element.text "tbc later"
+
+        (Selected s) ->
+            Element.text " should be global, I think"
                     
-        (Data.Users.NoWallet userInfo userState) ->
-            Element.column Grid.section <|
-            [ if List.isEmpty urankingList then
-                Element.el [] <| 
-                    Input.button
-                        ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
-                            ++ Button.fill
-                            ++ Button.simple
-                            ++ Color.info
-                        )
-                    <|
-                        { onPress = Just <| ClickedCreateNewLadder
-                        , label = Element.text "Create New Ladder"
-                        }
-              else
-
-                Element.el Heading.h5 <| Element.text "Your Created Rankings:"
-                , List.map (\ur -> ur.rankingInfo) urankingList
-                |> List.map ownedRankingInfoBtn
-                |> Element.column (Card.simple ++ Grid.simple)
-            ]
-        (Data.Users.NoCredit userInfo userState) ->
-            Element.column Grid.section <|
-            [ if List.isEmpty urankingList then
-                Element.el [] <| 
-                    Input.button
-                        ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
-                            ++ Button.fill
-                            ++ Button.simple
-                            ++ Color.info
-                        )
-                    <|
-                        { onPress = Just <| ClickedCreateNewLadder
-                        , label = Element.text "Create New Ladder"
-                        }
-              else
-
-                Element.el Heading.h5 <| Element.text "Your Created Rankings:"
-                , List.map (\ur -> ur.rankingInfo) urankingList
-                |> List.map ownedRankingInfoBtn
-                |> Element.column (Card.simple ++ Grid.simple)
-            ]
-        (Data.Users.Credited userInfo userState) ->
-            Element.column Grid.section <|
-            [ if List.isEmpty urankingList then
-                Element.el [] <| 
-                    Input.button
-                        ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
-                            ++ Button.fill
-                            ++ Button.simple
-                            ++ Color.info
-                        )
-                    <|
-                        { onPress = Just <| ClickedCreateNewLadder
-                        , label = Element.text "Create New Ladder"
-                        }
-              else
-
-                Element.el Heading.h5 <| Element.text "Your Created Rankings:"
-                , List.map (\ur -> ur.rankingInfo) urankingList
-                |> List.map ownedRankingInfoBtn
-                |> Element.column (Card.simple ++ Grid.simple)
-            ]
 
 
-memberrankingbuttons : Data.Global.Global -> Data.Users.User -> Element Msg
-memberrankingbuttons (Data.Global.Global esUR gstate) user =
-    let
-        urankingList = EverySet.toList esUR
-    in
-    case user of
-        Data.Users.Spectator userInfo userState ->
-            Element.text ""
-        (Data.Users.Registered userInfo userState) ->
-            if List.isEmpty urankingList then
-                Element.column Grid.section <|
-                    [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
-                    , Element.column (Card.simple ++ Grid.simple) <| [infoBtn "Join A Ladder?" ClickedDisplayGlobalOnly]
-                    ]
-            else 
-                Element.column Grid.section <|
-                    [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
-                    , List.map (\ur -> ur.rankingInfo) urankingList
-                    |> List.map memberRankingInfoBtn 
-                    |> Element.column (Card.simple ++ Grid.simple)
-                    ]
+                -- <|  Element.column Grid.section <|
+                --     [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
+                --     , Element.column (Card.simple ++ Grid.simple) <| [infoBtn "Join A Ladder?" ClickedDisplayGlobalOnly]
+                --     ]
                 
-        (Data.Users.NoWallet userInfo userState) ->
-            Element.column Grid.section <|
-            [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
-            , List.map (\ur -> ur.rankingInfo) urankingList
-                |> List.map memberRankingInfoBtn
-                |> Element.column (Card.simple ++ Grid.simple)
-            ]
-        (Data.Users.NoCredit userInfo userState) ->
-            Element.column Grid.section <|
-            [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
-            , List.map (\ur -> ur.rankingInfo) urankingList
-                |> List.map memberRankingInfoBtn
-                |> Element.column (Card.simple ++ Grid.simple)
-            ]
-        (Data.Users.Credited userInfo userState) ->
-            Element.column Grid.section <|
-            [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
-            , List.map (\ur -> ur.rankingInfo) urankingList
-                |> List.map memberRankingInfoBtn
-                |> Element.column (Card.simple ++ Grid.simple)
-            ]
-
-otherrankingbuttons : List Data.Global.UserRanking -> Data.Global.GlobalState -> Data.Users.User  -> Element Msg
-otherrankingbuttons lUR gState user  =
-    case user of 
-        Data.Users.Spectator _ _ ->
-            Element.column Grid.section <|
-            [ Element.el Heading.h5 <| Element.text "View The Rankings: "
-                , List.map (\ur -> ur.rankingInfo) lUR
-                    |> List.map otherRankingInfoBtn
-                    |> Element.column (Card.simple ++ Grid.simple)
-            ]
-
-        _ ->
-            Element.column Grid.section <|
-            case gState of
-                Data.Global.DisplayGlobalOnly ->
-                    [ Element.el Heading.h5 <|  Element.text "All Other Rankings: "
-                    , infoBtn "Cancel" Cancel
-                    , Element.text "\n"
-                    , 
-                        Element.column (Card.simple ++ Grid.simple) (List.map otherRankingInfoBtn (List.map (\ur -> ur.rankingInfo) lUR))
-                    ]
-
-                Data.Global.DisplayLoggedIn ->
-                    [ Element.el Heading.h5 <|  Element.text "All Other Rankings: "
-                    , 
-                        Element.column (Card.simple ++ Grid.simple) (List.map otherRankingInfoBtn (List.map (\ur -> ur.rankingInfo) lUR))
-                    ]
                 
-                _ ->
-                    [Element.text "tbc : All Other Rankings: "]
+                -- <| Element.column Grid.section <|
+                --     [ Element.el Heading.h5 <|  Element.text "All Other Rankings: "
+                --     , 
+                --         Element.column (Card.simple ++ Grid.simple) (List.map otherRankingInfoBtn (List.map (\ur -> ur.rankingInfo) (Data.Global.asList g)))
+                --     ]
+                    
+                    
+                    
+            -- else
+            --     (Element.column Grid.section <| 
+            --         [ 
+            --         Element.el Heading.h5 <| Element.text "Your Created Rankings:"
+            --         , Element.column (Card.simple ++ Grid.simple) <| List.map ownedRankingInfoBtn (List.map (\ur -> ur.rankingInfo) 
+            --             -- point here is that instead of urankingList that is owned. we get owned directly at this point
+            --             -- and then don't need separate functions for ownedrankingbuttons etc. Also (Data.Global.Global esUR gstate)
+            --             -- could eventually just become g
+            --             (Data.Global.asList (Data.Global.fetchedOwned g)))
+            --         ]
+            --     , Element.column Grid.section <|
+            --         [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
+            --         , List.map (\ur -> ur.rankingInfo) (Data.Global.asList (Data.Global.fetchedOwned g))
+            --         |> List.map memberRankingInfoBtn 
+            --         |> Element.column (Card.simple ++ Grid.simple)
+            --         ]
+                
+            --     , Element.column Grid.section <|
+            --         [ Element.el Heading.h5 <|  Element.text "All Other Rankings: "
+            --         , 
+            --             Element.column (Card.simple ++ Grid.simple) (List.map otherRankingInfoBtn (List.map (\ur -> ur.rankingInfo) (Data.Global.asList g)))
+            --         ]
+            --     )
+        -- _ -> 
+
+        --             Element.text "No wallet etc. not yet done:"
+        -- (Data.Users.NoWallet userInfo userState) ->
+        --     Element.column Grid.section <|
+        --     [ if List.isEmpty urankingList then
+        --         Element.el [] <| 
+        --             Input.button
+        --                 ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
+        --                     ++ Button.fill
+        --                     ++ Button.simple
+        --                     ++ Color.info
+        --                 )
+        --             <|
+        --                 { onPress = Just <| ClickedCreateNewLadder
+        --                 , label = Element.text "Create New Ladder"
+        --                 }
+        --       else
+
+        --         Element.el Heading.h5 <| Element.text "Your Created Rankings:"
+        --         , List.map (\ur -> ur.rankingInfo) urankingList
+        --         |> List.map ownedRankingInfoBtn
+        --         |> Element.column (Card.simple ++ Grid.simple)
+        --     ]
+        -- (Data.Users.NoCredit userInfo userState) ->
+        --     Element.column Grid.section <|
+        --     [ if List.isEmpty urankingList then
+        --         Element.el [] <| 
+        --             Input.button
+        --                 ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
+        --                     ++ Button.fill
+        --                     ++ Button.simple
+        --                     ++ Color.info
+        --                 )
+        --             <|
+        --                 { onPress = Just <| ClickedCreateNewLadder
+        --                 , label = Element.text "Create New Ladder"
+        --                 }
+        --       else
+
+        --         Element.el Heading.h5 <| Element.text "Your Created Rankings:"
+        --         , List.map (\ur -> ur.rankingInfo) urankingList
+        --         |> List.map ownedRankingInfoBtn
+        --         |> Element.column (Card.simple ++ Grid.simple)
+        --     ]
+        -- (Data.Users.Credited userInfo userState) ->
+        --     Element.column Grid.section <|
+        --     [ if List.isEmpty urankingList then
+        --         Element.el [] <| 
+        --             Input.button
+        --                 ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
+        --                     ++ Button.fill
+        --                     ++ Button.simple
+        --                     ++ Color.info
+        --                 )
+        --             <|
+        --                 { onPress = Just <| ClickedCreateNewLadder
+        --                 , label = Element.text "Create New Ladder"
+        --                 }
+        --       else
+
+        --         Element.el Heading.h5 <| Element.text "Your Created Rankings:"
+        --         , List.map (\ur -> ur.rankingInfo) urankingList
+        --         |> List.map ownedRankingInfoBtn
+        --         |> Element.column (Card.simple ++ Grid.simple)
+        --     ]
+
+
+-- memberrankingbuttons : Data.Global.Global -> Data.Users.User -> Element Msg
+-- memberrankingbuttons (Data.Global.Global esUR gstate) user =
+--     let
+--         urankingList = EverySet.toList esUR
+--     in
+--     case user of
+--         Data.Users.Spectator userInfo userState ->
+--             Element.text ""
+--         (Data.Users.Registered userInfo userState) ->
+--             if List.isEmpty urankingList then
+--                 Element.column Grid.section <|
+--                     [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
+--                     , Element.column (Card.simple ++ Grid.simple) <| [infoBtn "Join A Ladder?" ClickedDisplayGlobalOnly]
+--                     ]
+--             else 
+--                 Element.column Grid.section <|
+--                     [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
+--                     , List.map (\ur -> ur.rankingInfo) urankingList
+--                     |> List.map memberRankingInfoBtn 
+--                     |> Element.column (Card.simple ++ Grid.simple)
+--                     ]
+                
+--         (Data.Users.NoWallet userInfo userState) ->
+--             Element.column Grid.section <|
+--             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
+--             , List.map (\ur -> ur.rankingInfo) urankingList
+--                 |> List.map memberRankingInfoBtn
+--                 |> Element.column (Card.simple ++ Grid.simple)
+--             ]
+--         (Data.Users.NoCredit userInfo userState) ->
+--             Element.column Grid.section <|
+--             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
+--             , List.map (\ur -> ur.rankingInfo) urankingList
+--                 |> List.map memberRankingInfoBtn
+--                 |> Element.column (Card.simple ++ Grid.simple)
+--             ]
+--         (Data.Users.Credited userInfo userState) ->
+--             Element.column Grid.section <|
+--             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
+--             , List.map (\ur -> ur.rankingInfo) urankingList
+--                 |> List.map memberRankingInfoBtn
+--                 |> Element.column (Card.simple ++ Grid.simple)
+--             ]
+
+-- otherrankingbuttons : List Data.Global.UserRanking -> Data.Global.GlobalState -> Data.Users.User  -> Element Msg
+-- otherrankingbuttons lUR gState user  =
+--     case user of 
+--         Data.Users.Spectator _ _ ->
+--             Element.column Grid.section <|
+--             [ Element.el Heading.h5 <| Element.text "View The Rankings: "
+--                 , List.map (\ur -> ur.rankingInfo) lUR
+--                     |> List.map otherRankingInfoBtn
+--                     |> Element.column (Card.simple ++ Grid.simple)
+--             ]
+
+--         _ ->
+--             Element.column Grid.section <|
+--             case gState of
+--                 Data.Global.DisplayGlobalOnly ->
+--                     [ Element.el Heading.h5 <|  Element.text "All Other Rankings: "
+--                     , infoBtn "Cancel" Cancel
+--                     , Element.text "\n"
+--                     , 
+--                         Element.column (Card.simple ++ Grid.simple) (List.map otherRankingInfoBtn (List.map (\ur -> ur.rankingInfo) lUR))
+--                     ]
+
+--                 Data.Global.DisplayLoggedIn ->
+--                     [ Element.el Heading.h5 <|  Element.text "All Other Rankings: "
+--                     , 
+--                         Element.column (Card.simple ++ Grid.simple) (List.map otherRankingInfoBtn (List.map (\ur -> ur.rankingInfo) lUR))
+--                     ]
+                
+--                 _ ->
+--                     [Element.text "tbc : All Other Rankings: "]
 
 
 ownedRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
@@ -4223,7 +4316,7 @@ inputNewLadderview sRankings ranking user =
                         [ Element.wrappedRow Grid.simple <|
                             [infoBtn "Cancel" Cancel
                             , Input.button (Button.simple ++ enableButton (isValidatedForAllLadderDetailsInput ranking sRankings)) <|
-                                { onPress = Just <| ClickedConfirmCreateNewRanking
+                                { onPress = Just <| ClickedConfirmCreateNewRanking ranking
                                 , label = Element.text "Confirm"
                                 }
                             ]
@@ -4458,8 +4551,8 @@ continueWithRemoveDeletedRankingView continueStr =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
-        AppOps (Fetched sUsers sRankings 
-            (Global (Data.Global.Global esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
+        AppOps (Fetched sUsers sRankings dKind)
+            --(Global (Data.Global.Global esUserRanking (Data.Global.CreatingNewRanking ranking))))
             (Data.Users.Credited userInfo userState) 
                 uiState txRec ->
                     Sub.batch
