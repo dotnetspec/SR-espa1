@@ -222,15 +222,17 @@ update msg model =
                 Rinkeby ->
                     case walletSentry_.account of
                         Nothing ->
-                            --walletState is wrong here:
-                            ( AppOps dataState (Data.Users.NoWallet userInfo userState) uiState emptyTxRecord
+                        
+                            ( --AppOps dataState (Data.Users.Registered userInfo userState) uiState emptyTxRecord
+                            model
                             , Cmd.none
                             )
 
                         Just uaddr ->
                         -- and here:
                             (AppOps dataState 
-                                (gotWalletAddrApplyToUser (Data.Users.Registered userInfo userState) uaddr) 
+                                --(gotWalletAddrApplyToUser (Data.Users.Registered userInfo userState) uaddr)
+                                (Data.Users.Registered {userInfo | walletState = Data.Users.NoCredit uaddr} userState)
                                     uiState emptyTxRecord, Cmd.none)
                 _ ->
                     (model, Cmd.none)
@@ -267,12 +269,6 @@ update msg model =
                     (AppOps dataState user uiState txRec, Cmd.none)
                 Data.Users.Registered _ _->
                     (AppOps dataState user uiState txRec, Ports.log "eth_requestAccounts")
-                Data.Users.NoWallet userInfo userState ->
-                    (AppOps dataState user uiState txRec, Ports.log "eth_requestAccounts")
-                Data.Users.NoCredit userInfo userState ->
-                    (AppOps dataState user uiState txRec, Ports.log "eth_requestAccounts")
-                Data.Users.Credited userInfo userState ->
-                    (AppOps dataState user uiState txRec, Ports.log "eth_requestAccounts")
             
 
         (ClickedRemoveFromUserMemberRankings, AppOps dataState user uiState txRec ) ->
@@ -292,15 +288,7 @@ update msg model =
                                         _ = Debug.log "newUser: " newUser
                                         updatedsUsers = Data.Users.updatedUserInSet sUsers newUser
                                     in
-                                     (AppOps dataState user uiState txRec, httpUpdateUsers updatedsUsers)
-
-                                (Data.Users.NoWallet userInfo userState) ->
-                                    (Failure "Err", Cmd.none)
-                                (Data.Users.NoCredit userInfo userState) ->
-                                    (Failure "Err", Cmd.none)
-                                (Data.Users.Credited userInfo userState) ->
-                                    (Failure "Err", Cmd.none)
-                               
+                                     (AppOps dataState user uiState txRec, httpUpdateUsers updatedsUsers)  
                         _ ->
                             (model, Cmd.none)
 
@@ -914,34 +902,10 @@ update msg model =
                                 newDataKind = Selected (Data.Selected.assignedChallengerUIDForBOTHPlayers sSelected uAsUP opponentAsUserPlayer)
                                 newDataState = Fetched sUsers sRankings newDataKind
                             in
-                                (AppOps newDataState (Data.Users.Registered userInfo userState) uiState txRec, Cmd.none)
-
-        (ClickedChallengeOpponent opponentAsUserPlayer userAsUserPlayer, 
-            AppOps (Fetched sUsers sRankings (Selected sSelected))
-                (Data.Users.NoWallet userInfo userState) uiState txRec ) ->
-                case userAsUserPlayer of
-                    Nothing ->
-                        (Failure "Not yet implemented", Cmd.none)
-                    Just uAsUP -> 
-                        (Failure "Not yet implemented", Cmd.none)
-
-        (ClickedChallengeOpponent opponentAsUserPlayer userAsUserPlayer, 
-            AppOps (Fetched sUsers sRankings (Selected sSelected))
-                (Data.Users.NoCredit userInfo userState) uiState txRec ) ->
-                case userAsUserPlayer of
-                    Nothing ->
-                        (Failure "Not yet implemented", Cmd.none)
-                    Just uAsUP -> 
-                        (Failure "Not yet implemented", Cmd.none)
-
-        (ClickedChallengeOpponent opponentAsUserPlayer userAsUserPlayer,
-            AppOps (Fetched sUsers sRankings (Selected sSelected))
-                (Data.Users.Credited userInfo userState) uiState txRec) ->
-                case userAsUserPlayer of
-                    Nothing -> 
-                        (Failure "Not yet implemented", Cmd.none)
-                    Just uAsUP -> 
-                        (Failure "Not yet implemented", Cmd.none)
+                                case userInfo.walletState of 
+                                    --not yet implemented:
+                                    _ -> 
+                                        (AppOps newDataState (Data.Users.Registered userInfo userState) uiState txRec, Cmd.none)
 
 
         (ClickedDeleteRanking, AppOps dataState user uiState txRec )  ->
@@ -974,13 +938,6 @@ update msg model =
                                             txRec
                                         , Cmd.none
                                         )
-
-                                (Data.Users.NoWallet userInfo userState) ->
-                                    (Failure "Err", Cmd.none)
-                                (Data.Users.NoCredit userInfo userState) ->
-                                    (Failure "Err", Cmd.none)
-                                (Data.Users.Credited userInfo userState) ->
-                                    (Failure "Err", Cmd.none)
                           
                         _ -> 
                             let 
@@ -1269,80 +1226,54 @@ update msg model =
                 _ _ ) ->
                 (Failure "Cannot create a ladder as a spectator", Cmd.none)
 
-        (ClickedConfirmCreateNewRanking ranking,  AppOps (Fetched sUsers sRankings dKind)
-            -- (Global (Data.Global.Global esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
-            (Data.Users.Registered userInfo userState) 
-                uiState txRec ) ->
-                let
-                    newesRankings = Data.Rankings.addRanking ranking sRankings 
-                    newg = Data.Global.created newesRankings sUsers (Data.Users.Registered userInfo userState)
-                    newDataState = Fetched sUsers newesRankings (Global newg)
-                in
-                    ( AppOps newDataState (Data.Users.Registered userInfo userState)
-                        (SR.Types.GlobalUI SR.Types.NewLadderConfirmed) txRec
-                            , createNewRanking ranking)
-
-        (ClickedConfirmCreateNewRanking ranking,  AppOps (Fetched sUsers sRankings dKind)
-            --(Global (Data.Global.Global esUserRanking (Data.Global.CreatingNewRanking ranking)))) 
-            (Data.Users.NoWallet userInfo userState) 
-                uiState txRec ) ->
-                let
-                    newesRankings = Data.Rankings.addRanking ranking sRankings 
-                    newg = Data.Global.created newesRankings sUsers (Data.Users.NoWallet userInfo userState)
-                    newDataState = Fetched sUsers newesRankings (Global newg)
-                in
-                    ( AppOps newDataState (Data.Users.NoWallet userInfo userState)
-                        (SR.Types.GlobalUI SR.Types.NewLadderConfirmed) txRec
-                            ,Cmd.none)
-
-        (ClickedConfirmCreateNewRanking ranking,  AppOps (Fetched sUsers sRankings dKind) 
-            (Data.Users.NoCredit userInfo userState) 
-                uiState txRec ) ->
-                let
-                    newesRankings = Data.Rankings.addRanking ranking sRankings 
-                    newg = Data.Global.created newesRankings sUsers (Data.Users.NoCredit userInfo userState)
-                    newDataState = Fetched sUsers newesRankings (Global newg)
-                in
-                    ( AppOps newDataState (Data.Users.NoCredit userInfo userState)
-                        (SR.Types.GlobalUI SR.Types.NewLadderConfirmed) txRec
-                            ,Cmd.none)
-                            
 
         (ClickedConfirmCreateNewRanking ranking,  AppOps (Fetched sUsers sRankings dKind)
             --(Global (Data.Global.Global esUserRanking (Data.Global.CreatingNewRanking ranking))))
-
-            (Data.Users.Credited userInfo userState) 
+            (Data.Users.Registered userInfo userState) 
                 (SR.Types.GlobalUI (SR.Types.NewLadderCreate)) txRec ) ->
-                let
-                    txParams =
-                        { to = txRec.account
-                        , from = txRec.account
-                        , gas = Nothing
-                        , gasPrice = Just <| Eth.Units.gwei 4
-                        , value = Just <| Eth.Units.gwei 1
-                        , data = Nothing
-                        , nonce = Nothing
-                        }
+                case userInfo.walletState of 
+                    Data.Users.Credited _ ->
+                        let
+                            txParams =
+                                { to = txRec.account
+                                , from = txRec.account
+                                , gas = Nothing
+                                , gasPrice = Just <| Eth.Units.gwei 4
+                                , value = Just <| Eth.Units.gwei 1
+                                , data = Nothing
+                                , nonce = Nothing
+                                }
 
-                    ( newSentry, sentryCmd ) =
-                        Eth.Sentry.Tx.customSend
-                            txRec.txSentry
-                            { onSign = Just WatchTxHash
-                            , onBroadcast = Just WatchTx
-                            , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
-                            }
-                            txParams
+                            ( newSentry, sentryCmd ) =
+                                Eth.Sentry.Tx.customSend
+                                    txRec.txSentry
+                                    { onSign = Just WatchTxHash
+                                    , onBroadcast = Just WatchTx
+                                    , onMined = Just ( WatchTxReceipt, Just { confirmations = 3, toMsg = TrackTx } )
+                                    }
+                                    txParams
+                        
+                            newesRankings = Data.Rankings.addRanking ranking sRankings 
+                            newg = Data.Global.created newesRankings sUsers (Data.Users.Registered userInfo userState)
+                            newDataState = Fetched sUsers newesRankings (Global newg)
+                        in
+                            ( AppOps newDataState (Data.Users.Registered userInfo 
+                            --Data.Users.WalletWaitingForTransactionReceipt
+                            Data.Users.Subscribe
+                            ) 
+                                (SR.Types.GlobalUI SR.Types.NewLadderConfirmed) { txRec | txSentry = newSentry }
+                                    ,sentryCmd)
                 
-                    newesRankings = Data.Rankings.addRanking ranking sRankings 
-                    newg = Data.Global.created newesRankings sUsers (Data.Users.Credited userInfo userState)
-                    newDataState = Fetched sUsers newesRankings (Global newg)
-                in
-                    ( AppOps newDataState (Data.Users.Credited userInfo 
-                    --Data.Users.WalletWaitingForTransactionReceipt
-                    Data.Users.Subscribe
-                    ) 
-                        (SR.Types.GlobalUI SR.Types.NewLadderConfirmed) { txRec | txSentry = newSentry }
-                            ,sentryCmd)
+                -- this may change according to the business logic
+                    _ ->
+                        let
+                            newesRankings = Data.Rankings.addRanking ranking sRankings 
+                            newg = Data.Global.created newesRankings sUsers (Data.Users.Registered userInfo userState)
+                            newDataState = Fetched sUsers newesRankings (Global newg)
+                        in
+                            ( AppOps newDataState (Data.Users.Registered userInfo userState)
+                                (SR.Types.GlobalUI SR.Types.NewLadderConfirmed) txRec
+                                    , createNewRanking ranking)
 
         
 
@@ -1569,43 +1500,44 @@ update msg model =
                     Eth.Sentry.Tx.update subMsg txRec.txSentry
             in
             if handleTxSubMsg subMsg then
-                case (user, dataState) of 
-                    (Data.Users.Credited userInfo userState
-                        , Fetched sUsers sRankings
-                        --nb. 'Selected' is a variant defined in Main (just a box or label), it is NOT a Set
-                        -- you're only specifying it to distinguish from Global as a dKind
-                        -- sSelected is the variable you're pattern matching on here
-                            (Selected  (Data.Selected.SelectedRanking sSelected rnkId ownerStatus sPlayers (Data.Selected.EnteredResult resultEntered) name ))) ->
-                            case resultEntered of 
-                                Data.Selected.Won _ _ ->
-                                    (AppOps dataState user SR.Types.UIWaitingForTxReceipt 
-                                     { txRec | txSentry = subModel } |> update (ProcessResult resultEntered) )
+                    (Failure "uncomment below to fix (user walletStatus filed change)", Cmd.none)
+                -- case (user, dataState) of 
+                --     (Data.Users.Credited userInfo userState
+                --         , Fetched sUsers sRankings
+                --         --nb. 'Selected' is a variant defined in Main (just a box or label), it is NOT a Set
+                --         -- you're only specifying it to distinguish from Global as a dKind
+                --         -- sSelected is the variable you're pattern matching on here
+                --             (Selected  (Data.Selected.SelectedRanking sSelected rnkId ownerStatus sPlayers (Data.Selected.EnteredResult resultEntered) name ))) ->
+                --             case resultEntered of 
+                --                 Data.Selected.Won _ _ ->
+                --                     (AppOps dataState user SR.Types.UIWaitingForTxReceipt 
+                --                      { txRec | txSentry = subModel } |> update (ProcessResult resultEntered) )
 
-                                Data.Selected.Lost _ _ ->
-                                    -- wallet was operational here
-                                    (AppOps dataState user SR.Types.UIWaitingForTxReceipt 
-                                     { txRec | txSentry = subModel } |> update (ProcessResult resultEntered))
+                --                 Data.Selected.Lost _ _ ->
+                --                     -- wallet was operational here
+                --                     (AppOps dataState user SR.Types.UIWaitingForTxReceipt 
+                --                      { txRec | txSentry = subModel } |> update (ProcessResult resultEntered))
                                     
-                                Data.Selected.Undecided _ _ ->
-                                    -- wallet was operational here
-                                    ( AppOps dataState user 
-                                    SR.Types.UIWaitingForTxReceipt 
-                                     { txRec | txSentry = subModel } |> update (ProcessResult resultEntered))
+                --                 Data.Selected.Undecided _ _ ->
+                --                     -- wallet was operational here
+                --                     ( AppOps dataState user 
+                --                     SR.Types.UIWaitingForTxReceipt 
+                --                      { txRec | txSentry = subModel } |> update (ProcessResult resultEntered))
                                 
-                                Data.Selected.NoResult ->
-                                    (Failure "Tx problem Should have been a result", Cmd.none)
+                --                 Data.Selected.NoResult ->
+                --                     (Failure "Tx problem Should have been a result", Cmd.none)
                         
-                    (Data.Users.Credited userInfo Data.Users.Updating, Fetched sUsers sRankings dKind ) ->
-                        ( AppOps dataState (Data.Users.Credited userInfo Data.Users.WalletOperational) 
-                        SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }
-                        , Cmd.batch [subCmd,  createNewUser sUsers (Data.Users.Credited userInfo Data.Users.WalletOperational)])
+                --     (Data.Users.Credited userInfo Data.Users.Updating, Fetched sUsers sRankings dKind ) ->
+                --         ( AppOps dataState (Data.Users.Credited userInfo Data.Users.WalletOperational) 
+                --         SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }
+                --         , Cmd.batch [subCmd,  createNewUser sUsers (Data.Users.Credited userInfo Data.Users.WalletOperational)])
                     
-                    -- (Data.Users.Credited userInfo Data.Users.Updating, Fetched sUsers sRankings dKind ) ->
-                    --     ( AppOps SR.Types.WalletOperational dataState user SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }
-                    --     , Cmd.batch [subCmd, addedUserAsFirstPlayerInNewList user] )
+                --     -- (Data.Users.Credited userInfo Data.Users.Updating, Fetched sUsers sRankings dKind ) ->
+                --     --     ( AppOps SR.Types.WalletOperational dataState user SR.Types.UIWaitingForTxReceipt { txRec | txSentry = subModel }
+                --     --     , Cmd.batch [subCmd, addedUserAsFirstPlayerInNewList user] )
             
-                    (_, _) ->
-                        (Failure "No credit", Cmd.none)
+                --     (_, _) ->
+                --         (Failure "No credit", Cmd.none)
             
             else
                 ( AppOps dataState user (SR.Types.GlobalUI SR.Types.All) txRec, Cmd.none )
@@ -2135,66 +2067,17 @@ createNewRankingResponse model response =
                         <| (Data.Selected.SelectedRanking firstUserPlayer (Internal.Types.RankingId newRanking.id_) Data.Selected.UserIsOwner Data.Players.empty Data.Selected.DisplayRanking newRanking.rankingname )
                     newDataState = Fetched sUsers sRankings newDataKind
                 in 
-                    AppOps newDataState  (Data.Users.Registered userInfo userState) uiState txRec
+                    case userInfo.walletState of
+                        -- todo: complete for walletStates:
+                        _ ->
+                            AppOps newDataState  (Data.Users.Registered userInfo userState) uiState txRec
 
-        ( AppOps (Fetched sUsers sRankings dKind) (Data.Users.NoWallet userInfo userState) uiState txRec 
-            , Ok createNewRankingResult) ->
-                let 
-                    newRanking = Data.Rankings.convertFRankingToRanking createNewRankingResult
-                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.IndividualPlayer (Data.Players.PlayerInfo newRanking.id_  userInfo.id 1)
-                                Data.Players.Available,
-                            user = Data.Users.Registered userInfo userState})
-
-                    newDataKind = Selected 
-                        <| (Data.Selected.SelectedRanking firstUserPlayer (Internal.Types.RankingId newRanking.id_) Data.Selected.UserIsOwner Data.Players.empty Data.Selected.DisplayRanking newRanking.rankingname )
-                    newDataState = Fetched sUsers sRankings newDataKind
-                in 
-                    AppOps newDataState  (Data.Users.Registered userInfo userState) uiState txRec
-
-        ( AppOps (Fetched sUsers sRankings dKind) (Data.Users.NoCredit userInfo userState) uiState txRec 
-            , Ok createNewRankingResult) ->
-                let 
-                    newRanking = Data.Rankings.convertFRankingToRanking createNewRankingResult
-                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.IndividualPlayer (Data.Players.PlayerInfo newRanking.id_  userInfo.id 1)
-                                Data.Players.Available,
-                            user = Data.Users.Registered userInfo userState})
-
-                    newDataKind = Selected 
-                        <| (Data.Selected.SelectedRanking firstUserPlayer (Internal.Types.RankingId newRanking.id_) Data.Selected.UserIsOwner Data.Players.empty Data.Selected.DisplayRanking newRanking.rankingname )
-                    newDataState = Fetched sUsers sRankings newDataKind
-                in 
-                    AppOps newDataState  (Data.Users.Registered userInfo userState) uiState txRec
-
-        ( AppOps (Fetched sUsers sRankings dKind) (Data.Users.Credited userInfo userState) uiState txRec 
-            , Ok createNewRankingResult) ->
-                let 
-                    newRanking = Data.Rankings.convertFRankingToRanking createNewRankingResult
-                    firstUserPlayer = EverySet.singleton ({  player = Data.Players.IndividualPlayer (Data.Players.PlayerInfo newRanking.id_  userInfo.id 1)
-                                Data.Players.Available,
-                            user = Data.Users.Registered userInfo userState})
-
-                    newDataKind = Selected 
-                        <| (Data.Selected.SelectedRanking firstUserPlayer (Internal.Types.RankingId newRanking.id_) Data.Selected.UserIsOwner Data.Players.empty Data.Selected.DisplayRanking newRanking.rankingname )
-                    newDataState = Fetched sUsers sRankings newDataKind
-                in 
-                    AppOps newDataState  (Data.Users.Registered userInfo userState) uiState txRec
         
         ( AppOps AllEmpty (Data.Users.Registered _ _) _ _, Ok _ ) ->
             Failure "All empty"
         ( AppOps (Updated _ _ _) (Data.Users.Registered _ _) _ _, Ok _ )->
             Failure "Maybe use updated?"
-        ( AppOps AllEmpty (Data.Users.NoWallet _ _) _ _, Ok _ )->
-            Failure "All empty"
-        ( AppOps AllEmpty (Data.Users.NoCredit _ _) _ _, Ok _ )->
-            Failure "All empty"
-        ( AppOps AllEmpty (Data.Users.Credited _ _) _ _, Ok _ )->
-            Failure "All empty"
-        ( AppOps (Updated _ _ _) (Data.Users.NoWallet _ _) _ _, Ok _ )->
-            Failure "Maybe use updated?"
-        ( AppOps (Updated _ _ _) (Data.Users.NoCredit _ _) _ _, Ok _ )->
-            Failure "Maybe use updated?"
-        ( AppOps (Updated _ _ _) (Data.Users.Credited _ _) _ _, Ok _ )->
-            Failure "Maybe use updated?"
+ 
 
         (AppOps dataState (Data.Users.Spectator userInfo _) uiState txRec
             , Err _) ->
@@ -2222,12 +2105,6 @@ registeredResponse model response =
                         AppOps dataState updated_user uiState txRec
                 (Data.Users.Registered userInfo userState) ->
                     model
-                (Data.Users.NoWallet userInfo userState) ->
-                    model
-                (Data.Users.NoCredit userInfo userState) ->
-                    model
-                (Data.Users.Credited userInfo userState) ->
-                    model
 
         (AppOps dataState user uiState txRec, Err _) ->
                 AppOps dataState user uiState txRec
@@ -2246,15 +2123,8 @@ updateFromRegisteredNewUser model response =
                 (Data.Users.Registered userInfo userState) ->
                     let
                         updated_user = Data.Users.Registered userInfo userState
-                        --newAppInfo = { appInfo | user = updated_user }
                     in
                         AppOps dataState updated_user uiState txRec
-                (Data.Users.NoWallet userInfo userState) ->
-                    model
-                (Data.Users.NoCredit userInfo userState) ->
-                    model
-                (Data.Users.Credited userInfo userState) ->
-                    model
 
         ( Ok _, Failure _ ) ->
             (Failure "New user registered, model failure")
@@ -2310,16 +2180,6 @@ handleTxSubMsg subMsg =
 
         Eth.Sentry.Tx.ErrorDecoding str ->
             False
-
-
-gotWalletAddrApplyToUser : Data.Users.User -> Eth.Types.Address -> Data.Users.User
-gotWalletAddrApplyToUser user uaddr =
-    case user of
-            (Data.Users.Registered userInfo userState) ->
-                Data.Users.NoCredit {userInfo | address = Just uaddr} userState
-
-            _ ->
-                user
 
 
 updateUserName : String -> Data.Users.UserInfo -> Data.Users.UserInfo
@@ -2695,45 +2555,7 @@ globalView userVal sUsers dKind errorMsg =
                             --     otherrankingbuttons (EverySet.toList esUR) Data.Global.DisplayGlobalOnly userVal
                                 
                             -- Data.Global.Global esUR _ ->
-                            --     Element.text ("tbc in globalView")]
-
-                    Data.Users.NoWallet userInfo _ ->
-                        [Element.el (Heading.h5) <| (Element.text ("SportRank -" ++ userInfo.username) )
-                        , displayEnableEthereumBtn
-                        , Element.text ("\n")
-                        , displayCreateNewRankingBtn
-                        -- , case g of 
-                        --     Data.Global.Global esUR Data.Global.DisplayLoggedIn -> 
-                                , displayRankingBtns userVal (Global g) errorMsg]
-                            -- Data.Global.Global esUR Data.Global.DisplayGlobalOnly ->
-                            --     otherrankingbuttons (EverySet.toList esUR) Data.Global.DisplayGlobalOnly userVal
-                            -- Data.Global.Global esUR _ ->
-                            --     Element.text ("tbc in globalView")]
-                            
-                    Data.Users.NoCredit userInfo _ ->
-                        [Element.el (Heading.h5) <| (Element.text ("SportRank -" ++ userInfo.username) )
-                        , displayEnableEthereumBtn
-                        , Element.text ("\n")
-                        , displayCreateNewRankingBtn
-                        -- , case g of 
-                        --     Data.Global.Global esUR Data.Global.DisplayLoggedIn -> 
-                                , displayRankingBtns userVal (Global g) errorMsg]
-                            -- Data.Global.Global esUR Data.Global.DisplayGlobalOnly ->
-                            --     otherrankingbuttons (EverySet.toList esUR) Data.Global.DisplayGlobalOnly userVal
-                            -- Data.Global.Global esUR _ ->
-                            --     Element.text ("tbc in globalView")]
-
-                    Data.Users.Credited userInfo _ ->
-                       [Element.el (Heading.h5) <| (Element.text ("SportRank -" ++ userInfo.username) )
-                        , Element.text ("\n")
-                        , displayCreateNewRankingBtn
-                        -- , case g of 
-                        --     Data.Global.Global esUR Data.Global.DisplayLoggedIn -> 
-                                , displayRankingBtns userVal (Global g) errorMsg]
-                            -- Data.Global.Global esUR Data.Global.DisplayGlobalOnly ->
-                            --     otherrankingbuttons (EverySet.toList esUR) Data.Global.DisplayGlobalOnly userVal
-                            -- Data.Global.Global esUR _ ->
-                            --     Element.text ("tbc in globalView")]
+                            --     Element.text ("tbc in globalView")
         
         Selected _ -> 
             Framework.responsiveLayout [] <| Element.column Framework.container <|
@@ -2841,13 +2663,6 @@ registerNewUserView userVal sUsers =
                 , userDetailsConfirmPanel userVal sUsers
                 ]
 
-        (Data.Users.NoWallet userInfo userState) ->
-            Html.text "Irrelevant view"
-        (Data.Users.NoCredit userInfo userState) ->
-            Html.text "Irrelevant view"
-        (Data.Users.Credited userInfo userState) ->
-            Html.text "Irrelevant view"
-
     
 
     
@@ -2910,9 +2725,6 @@ displayRankingBtns userVal dKind errorMsg =
                     Element.column Grid.section <|
                         [ rankingbtns (Global g) userVal ]
 
-                _ ->
-                    Element.column Grid.section <|
-                        []
         (Selected s) ->
             Element.text " Should be in Global here"
   
@@ -2965,12 +2777,6 @@ rankingbtns dKind user =
                             , Element.el Heading.h5 <|  Element.text "All Other Rankings: "
                             , Element.column (Card.simple ++ Grid.simple) (List.map otherRankingInfoBtn (List.map (\ur -> ur.rankingInfo) (Data.Global.asList g)))
                             ]
-                (Data.Users.NoWallet _ _) ->
-                    Element.text "tbc later"
-                (Data.Users.NoCredit _ _) ->
-                    Element.text "tbc later"
-                (Data.Users.Credited _ _) ->
-                    Element.text "tbc later"
 
         (Selected s) ->
             Element.text " should be global, I think"
@@ -3288,21 +3094,6 @@ joinBtn user  =
             { onPress = Nothing
             , label = Element.text "Join"
             }
-        (Data.Users.NoWallet userInfo userState) ->
-            Input.button ([ Element.htmlAttribute (Html.Attributes.id "newUserJoinbtn") ] ++ Button.simple ++ Color.disabled) <|
-            { onPress = Just ClickedRegister
-            , label = Element.text "Join"
-            }
-        (Data.Users.NoCredit userInfo userState) ->
-            Input.button ([ Element.htmlAttribute (Html.Attributes.id "newUserJoinbtn") ] ++ Button.simple ++ Color.disabled) <|
-            { onPress = Just ClickedRegister
-            , label = Element.text "Join"
-            }
-        (Data.Users.Credited userInfo userState) ->
-            Input.button ([ Element.htmlAttribute (Html.Attributes.id "newUserJoinbtn") ] ++ Button.simple ++ Color.info) <|
-            { onPress = Just ClickedJoinSelected
-            , label = Element.text "Join"
-            }
 
 
 -- confirmDelRankingBtn : SR.Types.AppInfo -> DataState -> Element Msg
@@ -3425,22 +3216,9 @@ confirmChallengebutton model =
                     --     ]
                 (Data.Users.Registered userInfo userState, Fetched sUsers sRankings (Global sGlobal)) ->
                     Element.text <| " Not in Selected"
-                   
-
-                (Data.Users.NoWallet userInfo userState, _) ->
-                    Element.text <| " No User3"
-                (Data.Users.NoCredit userInfo userState, _) ->
-                    Element.text <| " No User3"
-                (Data.Users.Credited userInfo userState, _) ->
-                    Element.text <| " No User3"
+                
                 ( Data.Users.Registered _ _, _) ->
                     Element.text "No challenger"
-                -- ( Data.Users.Registered _ _, Data.Users.NoWallet _ _ )->
-                --     Element.text "No challenger"
-                -- ( Data.Users.Registered _ _, Data.Users.NoCredit _ _ )->
-                --     Element.text "No challenger"
-                -- ( Data.Users.Registered _ _, Data.Users.Credited _ _ )->
-                    --Element.text "No challenger"
                     
         _ ->
             Element.text "Fail confirmChallengebutton"
@@ -3714,13 +3492,6 @@ userDetailsConfirmPanel  user sUsers =
                             ]
                         ]
                     ]
-        
-        (Data.Users.NoWallet userInfo userState) ->
-            Element.text "userDetailsConfirmPanel Err"
-        (Data.Users.NoCredit userInfo userState) ->
-            Element.text "userDetailsConfirmPanel Err"
-        (Data.Users.Credited userInfo userState) ->
-            Element.text "userDetailsConfirmPanel Err"
 
 
 isValidatedForAllUserDetailsInput : Data.Users.User -> Data.Users.UserInfo -> Data.Users.Users -> Bool
@@ -4051,19 +3822,6 @@ displayEnableEthereumBtn =
 --             Html.text "Error4"
 
 
-newOrExistingUserNameDisplay : Data.Users.User ->  Element msg
-newOrExistingUserNameDisplay user =
-    case user of 
-        Data.Users.Spectator userInfo userState ->
-            Element.el Heading.h4 <| Element.text <| "New User - Please Register and Enable Ethereum to join"
-        (Data.Users.Registered userInfo userState) ->
-            Element.el Heading.h4 <| Element.text <| "Please Register and Enable Ethereum to join"
-        (Data.Users.NoWallet userInfo userState) ->
-            Element.el Heading.h4 <| Element.text <| "Please Register and Enable Ethereum to join"
-        (Data.Users.NoCredit userInfo userState) ->
-            Element.el Heading.h4 <| Element.text <| "Please Register and Enable Ethereum to join"
-        (Data.Users.Credited userInfo userState) ->
-            Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Join?"
 
 
 -- updateExistingUserView : Model -> Html Msg
@@ -4128,19 +3886,21 @@ inputNewLadderview sRankings ranking user =
                             ]
                         ]
                     ]
-                    , case user of 
-                        (Data.Users.Spectator _ _) ->
-                            Element.text ""
-                        (Data.Users.Registered _ _) ->
-                            Element.text ""
-                        (Data.Users.NoWallet _ _) ->
-                            Element.text ""
-                        (Data.Users.NoCredit _ _) ->
-                            Element.text ""
-                        (Data.Users.Credited _ _) ->
-                            SR.Elements.warningParagraph
-                        , 
-                            SR.Elements.footer
+                ,
+                case user of 
+                    (Data.Users.Spectator _ _) ->
+                        Element.text "" 
+                
+                    (Data.Users.Registered userInfo _) ->
+                        case userInfo.walletState of 
+                            Data.Users.Credited _ ->
+                                SR.Elements.warningParagraph
+                            _ ->
+                                 Element.text "" 
+                
+                -- nb. the footer couldn't be added to the e.g. warningParagraph
+                -- each matched pattern needs it's own comma (,)
+                 , SR.Elements.footer 
                 ]
 
 -- deleteRankingview : Model -> Html Msg
@@ -4170,21 +3930,6 @@ displayChallengeBeforeConfirmView model =
                 Data.Users.Spectator userInfo userState ->
                     Html.text "No User19"
                 (Data.Users.Registered userInfo userState) ->
-                    Framework.responsiveLayout [] <| Element.column Framework.container
-                    [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Confirm Challenge"
-                    , confirmChallengebutton model
-                    ]
-                (Data.Users.NoWallet userInfo userState) ->
-                    Framework.responsiveLayout [] <| Element.column Framework.container
-                    [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Confirm Challenge"
-                    , confirmChallengebutton model
-                    ]
-                (Data.Users.NoCredit userInfo userState) ->
-                    Framework.responsiveLayout [] <| Element.column Framework.container
-                    [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Confirm Challenge"
-                    , confirmChallengebutton model
-                    ]
-                (Data.Users.Credited userInfo userState) ->
                     Framework.responsiveLayout [] <| Element.column Framework.container
                     [ Element.el Heading.h4 <| Element.text <| userInfo.username ++ " - Confirm Challenge"
                     , confirmChallengebutton model
@@ -4358,13 +4103,16 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
         AppOps (Fetched sUsers sRankings dKind)
-            --(Global (Data.Global.Global esUserRanking (Data.Global.CreatingNewRanking ranking))))
-            (Data.Users.Credited userInfo userState) 
+            (Data.Users.Registered userInfo userState) 
                 uiState txRec ->
-                    Sub.batch
-                        [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
-                        , Eth.Sentry.Tx.listen txRec.txSentry
-                        ]
+                    case userInfo.walletState of
+                        Data.Users.Credited _ -> 
+                            Sub.batch
+                                [ Ports.walletSentry (Eth.Sentry.Wallet.decodeToMsg Fail WalletStatus)
+                                , Eth.Sentry.Tx.listen txRec.txSentry
+                                ]
+                        _ ->
+                            Sub.none
         _ ->
             Sub.none
 

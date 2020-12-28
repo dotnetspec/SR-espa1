@@ -187,26 +187,6 @@ isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
                     else
                         False
 
-                (Data.Users.NoWallet userInfo userState) ->
-                    if a.rankingInfo.rankingownerid == userInfo.id then
-                        True
-
-                    else
-                        False
-
-                (Data.Users.NoCredit userInfo userState) ->
-                    if a.rankingInfo.rankingownerid == userInfo.id then
-                        True
-
-                    else
-                        False
-
-                (Data.Users.Credited userInfo userState) ->
-                    if a.rankingInfo.rankingownerid == userInfo.id then
-                        True
-
-                    else
-                        False
 
 extractSelectedUserRankingFromGlobalList : List UserRanking -> String -> Maybe UserRanking
 extractSelectedUserRankingFromGlobalList luranking rnkId =
@@ -277,27 +257,6 @@ createdUserRanking sUser user ranking =
                             , rankingtype = Other
                             }
 
-        (Data.Users.NoWallet userInfo _) ->
-            Just
-                    { rankingInfo = ranking
-                    , userInfo = user
-                    , rankingtype = Other
-                    }
-
-        (Data.Users.NoCredit userInfo _) ->
-            Just
-                    { rankingInfo = ranking
-                    , userInfo = user
-                    , rankingtype = Other
-                    }
-
-        (Data.Users.Credited userInfo _) ->
-           Just
-                    { rankingInfo = ranking
-                    , userInfo = user
-                    , rankingtype = Other
-                    }
-
 filteredSelected : String -> List Data.Rankings.Ranking -> List Data.Rankings.Ranking
 filteredSelected rankingid lrankinginfo =
     List.filterMap
@@ -349,40 +308,7 @@ isOwned user ownedrnk =
                         False
 
                 _ ->
-                    False 
-
-        (Data.Users.NoWallet userInfo _) ->
-            case ownedrnk.userInfo of 
-                Data.Users.Registered owneruserInfo _ ->
-                    if owneruserInfo.id == userInfo.id then
-                        True
-                    else
-                        False
-
-                _ ->
-                    False 
-
-        (Data.Users.NoCredit userInfo _) ->
-            case ownedrnk.userInfo of 
-                Data.Users.Registered owneruserInfo _ ->
-                    if owneruserInfo.id == userInfo.id then
-                        True
-                    else
-                        False
-
-                _ ->
                     False
-
-        (Data.Users.Credited userInfo _) ->
-            case ownedrnk.userInfo of 
-                Data.Users.Registered owneruserInfo _ ->
-                    if owneruserInfo.id == userInfo.id then
-                        True
-                    else
-                        False
-
-                _ ->
-                    False 
 
 
 gotMember : Global -> Data.Users.User -> List UserRanking
@@ -391,12 +317,6 @@ gotMember sGlobal user =
         Data.Users.Spectator _ _ ->
             []
         (Data.Users.Registered userInfo _) ->
-            List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
-        (Data.Users.NoWallet userInfo userState) ->
-            List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
-        (Data.Users.NoCredit userInfo userState) ->
-            List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
-        (Data.Users.Credited userInfo userState) ->
             List.filterMap (gotUserRankingByRankingId sGlobal) userInfo.userjoinedrankings
 
 --Global RankingType GlobalState
@@ -475,17 +395,6 @@ removedDeletedRankingsFromUserJoined user sGlobal =
                     newUserInfo = {userInfo | userjoinedrankings = Data.Rankings.rankingIdListToStringList lwithDeletedRankingIdsRemoved}
                 in
                     Data.Users.Registered newUserInfo Data.Users.General
-
-            --todo: as above for the others or refactor
-            (Data.Users.NoWallet userInfo userState) ->
-                Data.Users.NoWallet userInfo userState
-            (Data.Users.NoCredit userInfo userState) ->
-                Data.Users.NoCredit userInfo userState
-            (Data.Users.Credited userInfo userState) ->
-                Data.Users.Credited userInfo userState
-        --newUser
-    
-
 
 
 gotAllRankindIds : UserRanking -> String

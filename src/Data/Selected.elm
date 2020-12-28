@@ -226,34 +226,6 @@ addNewUserPlayerJoinRanking uplayer (Internal.Types.RankingId rnkId) =
                     
                 in
                     newUserPlayer
-            
-            (Data.Users.NoWallet userInfo sStatus) ->
-                let 
-                    updatedUserJoinRankings = {userInfo | userjoinedrankings = rnkId :: userInfo.userjoinedrankings}
-                    newUser = Data.Users.NoWallet updatedUserJoinRankings
-                    newUserPlayer =  { uplayer | player = uplayer.player, user = newUser Data.Users.General}
-                    
-                in
-                    newUserPlayer
-            
-            (Data.Users.NoCredit userInfo sStatus) ->
-                let 
-                    updatedUserJoinRankings = {userInfo | userjoinedrankings = rnkId :: userInfo.userjoinedrankings}
-                    newUser = Data.Users.NoCredit updatedUserJoinRankings
-                    newUserPlayer =  { uplayer | player = uplayer.player, user = newUser Data.Users.General}
-                    
-                in
-                    newUserPlayer
-
-
-            (Data.Users.Credited userInfo sStatus) ->
-                let 
-                    updatedUserJoinRankings = {userInfo | userjoinedrankings = rnkId :: userInfo.userjoinedrankings}
-                    newUser = Data.Users.Credited updatedUserJoinRankings
-                    newUserPlayer =  { uplayer | player = uplayer.player, user = newUser Data.Users.General}
-                    
-                in
-                    newUserPlayer
 
 
 removeUserPlayer : UserPlayer -> Selected -> Selected
@@ -307,14 +279,7 @@ gotPlayer user (SelectedRanking sSelected rnkId ownerStatus players sState name)
                     --         rnkId sStatus players
 
                      
-                (Data.Users.NoWallet userInfo sStatus) ->
-                    empty
-
-                (Data.Users.NoCredit userInfo sStatus) ->
-                    empty
-
-                (Data.Users.Credited userInfo sStatus) ->
-                    empty
+               
 
 
     -- case user.m_ethaddress of 

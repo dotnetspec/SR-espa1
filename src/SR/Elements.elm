@@ -100,32 +100,6 @@ globalHeading user =
                     ]
                 ]
 
-        (Data.Users.NoWallet userInfo _) -> 
-            Element.column Grid.section <|
-                [ Element.el Heading.h5 <| Element.text "Global Rankings"
-                , Element.column Card.fill
-                    [ Element.el Heading.h4 <| Element.text userInfo.username
-                    ]
-                ]
-
-        (Data.Users.NoCredit userInfo _) -> 
-            Element.column Grid.section <|
-                [ Element.el Heading.h5 <| Element.text "Global Rankings"
-                , Element.column Card.fill
-                    [ Element.el Heading.h4 <| Element.text userInfo.username
-                    ]
-                ]
-
-        (Data.Users.Credited userInfo _) -> 
-            Element.column Grid.section <|
-                [ Element.el Heading.h5 <| Element.text "Global Rankings"
-                , Element.column Card.fill
-                    [ Element.el Heading.h4 <| Element.text userInfo.username
-                    ]
-                ]
-
-
-
 
 selectedRankingHeaderEl : Data.Selected.Selected -> Element msg
 selectedRankingHeaderEl (Data.Selected.SelectedRanking esUP rnkId selectedOwnerStatus sPlayers selectedState name) =

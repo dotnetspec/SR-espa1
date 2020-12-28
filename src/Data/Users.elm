@@ -3,6 +3,7 @@ module Data.Users exposing
     (Users
     , User(..)
     , UserState(..)
+    , WalletState(..)
     , FUser
     , UserInfo
     , Token
@@ -74,16 +75,13 @@ type UserNames = UserNames (EverySet String)
 type User =
     Spectator UserInfo UserState
     | Registered UserInfo UserState
-    | NoWallet UserInfo UserState
-    | NoCredit UserInfo UserState
-    | Credited UserInfo UserState
 
 
 type alias UserInfo =
     { --datestamp to become creditsremaining - check member_since works as expected
      id : String
     , token : Maybe String
-    , address : Maybe Eth.Types.Address
+    , walletState : WalletState
     , datestamp : Int
     , active : Bool
     , username : String
@@ -92,6 +90,11 @@ type alias UserInfo =
     , userjoinedrankings : List String
     , member_since : String
     }
+
+type WalletState = 
+    NoWallet
+    | NoCredit Eth.Types.Address
+    | Credited Eth.Types.Address
 
 type UserState = 
     General
@@ -144,11 +147,11 @@ type UserState =
 
 emptyUserInfo : UserInfo
 emptyUserInfo =
-    UserInfo "" Nothing Nothing 0 True "" "" (ExtraUserInfo "" "" "") [] ""
+    UserInfo "" Nothing NoWallet 0 True "" "" (ExtraUserInfo "" "" "") [] ""
 
 dummyUserWithUserJoinedRankings : User
 dummyUserWithUserJoinedRankings = 
-    Registered (UserInfo "" Nothing Nothing 0 True "" "" 
+    Registered (UserInfo "" Nothing NoWallet 0 True "" "" 
         (ExtraUserInfo "" "" "") ["282953512300577285", "283673261521240581"] "") General
 
 
@@ -219,7 +222,7 @@ convertFUserToUser fuser =
         email = Maybe.withDefault "" fuser.email
         mobile = Maybe.withDefault "" fuser.mobile
     in
-    Registered (UserInfo (fromScalarCodecId fuser.id_) Nothing Nothing 1 True fuser.username "" (ExtraUserInfo desc email mobile) [""] (fromScalarCodecLong fuser.ts_)) General
+    Registered (UserInfo (fromScalarCodecId fuser.id_) Nothing NoWallet 1 True fuser.username "" (ExtraUserInfo desc email mobile) [""] (fromScalarCodecLong fuser.ts_)) General
 
 type alias FUser = {
     id_ :  SRdb.ScalarCodecs.Id
@@ -254,7 +257,7 @@ fromScalarCodecLong (Long ts) =
 
 newUser : String -> String -> String -> String -> String -> User
 newUser username password desc email mobile =
-    Registered (UserInfo "" Nothing Nothing 10 True username password (ExtraUserInfo desc email mobile) [""] "") General
+    Registered (UserInfo "" Nothing NoWallet 10 True username password (ExtraUserInfo desc email mobile) [""] "") General
 
 --nb. this is not an EverySet, it's a Users type.
 empty : Users
@@ -263,7 +266,7 @@ empty =
 
 emptyUser : User
 emptyUser =
-    Registered (UserInfo "" Nothing Nothing 10 True "" "" (ExtraUserInfo "" "" "") [""] "") General
+    Registered (UserInfo "" Nothing NoWallet 10 True "" "" (ExtraUserInfo "" "" "") [""] "") General
 
 isEmpty : Users -> Bool
 -- 'Users' is a tag containing a box (of EverySet)
@@ -282,12 +285,6 @@ gotUserName user =
             "Spectator"
         (Registered userInfo userState) ->
             userInfo.username
-        (NoWallet userInfo userState) ->
-            userInfo.username
-        (NoCredit userInfo userState) ->
-            userInfo.username
-        (Credited userInfo userState) ->
-            userInfo.username
 
 removedDeletedRankingsFromUserJoined : User -> Data.Rankings.Rankings -> User 
 removedDeletedRankingsFromUserJoined user sRankings = 
@@ -296,12 +293,6 @@ removedDeletedRankingsFromUserJoined user sRankings =
             Spectator userInfo General
         (Registered userInfo userState) ->
             Registered (handleDeletionFromUserJoined userInfo sRankings) userState
-        (NoWallet userInfo userState) ->
-            NoWallet (handleDeletionFromUserJoined userInfo sRankings) userState
-        (NoCredit userInfo userState) ->
-            NoCredit (handleDeletionFromUserJoined userInfo sRankings) userState
-        (Credited userInfo userState) ->
-            Credited (handleDeletionFromUserJoined userInfo sRankings) userState
 
 -- isUserNameValidated : String -> List User -> Bool
 -- isUserNameValidated username luser =
@@ -341,12 +332,6 @@ gotName user =
             userInfo.username
         Registered userInfo _ ->
             userInfo.username
-        NoWallet userInfo _ ->
-            userInfo.username
-        NoCredit userInfo _ ->
-            userInfo.username
-        Credited userInfo _ ->
-            userInfo.username
 
 gotId : User -> String
 gotId user = 
@@ -354,12 +339,6 @@ gotId user =
         Spectator _ _ ->
             ""
         Registered userInfo _ ->
-            userInfo.id
-        NoWallet userInfo _ ->
-            userInfo.id
-        NoCredit userInfo _ ->
-            userInfo.id
-        Credited userInfo _ ->
             userInfo.id
 
     
@@ -498,12 +477,6 @@ updatedUserInSet susers updatedUser =
             susers
         (Registered userInfo userState) ->
             -- remove the original user, then add the new one
-            addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
-        (NoWallet userInfo userState) ->
-            addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
-        (NoCredit userInfo userState) ->
-            addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
-        (Credited userInfo userState) ->
             addUser updatedUser <| removeUser (gotUser susers userInfo.id) susers
 
 
