@@ -130,10 +130,19 @@ type Global =
   | NewLadderConfirmed
   
 type Selected = 
-    SelectedRanking
-  | Challenge
-  | Result
-  | ConfirmResult
+    Selected
+  | CreatingChallenge
+  | ConfirmedChallenge
+  | EnteringResult
+  -- should ResultOfMatch be in a view type?
+  | ConfirmedResult ResultOfMatch
+
+--   type SelectedState = 
+--     DisplayRanking
+--     | CreatingChallenge
+    
+--     | EnteringResult
+--     | EnteredResult ResultOfMatch
 
 -- type SubState 
 --     = Subscribe 

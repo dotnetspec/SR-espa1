@@ -1,5 +1,5 @@
 -- Selected will be mainly used to handle internal data of the selected ranking listing as it relates to the current user
-module Data.Selected exposing (Selected(..)
+module Data.Selected exposing (Selected
     , UserPlayer
     , ResultOfMatch(..)
     , SelectedOwnerStatus(..)
@@ -53,6 +53,7 @@ import Json.Encode
 import EverySet
 import Eth.Utils
 import Eth.Types
+import Data.Rankings
 --import Data.Global
 --import SRdb.Object.User exposing (ethaddress)
 --import Data.AppState
@@ -62,14 +63,17 @@ import Eth.Types
 -- the relevant Users are picked out with the Create function and for the UserPlayer EverySet (no need for Users assoc data)
 -- nb. in main.elm 'Selected' is a DataKind
 type Selected = 
-    SelectedRanking (EverySet UserPlayer) Internal.Types.RankingId SelectedOwnerStatus Data.Players.Players SelectedState String
+    -- todo: we may be able to extract the rankingname (String) differently,
+    -- but for now:
+    Selected (EverySet UserPlayer) UserPlayer Data.Rankings.Ranking
+    --Internal.Types.RankingId  Data.Players.Players SelectedState String
 
-type SelectedState = 
-    DisplayRanking
-    | CreatingChallenge
-    | DisplayChallenge
-    | EnteringResult
-    | EnteredResult ResultOfMatch
+-- type SelectedState = 
+--     DisplayRanking
+--     | CreatingChallenge
+--     | DisplayChallenge
+--     | EnteringResult
+--     | EnteredResult ResultOfMatch
 
 type alias UserPlayer =
     { player : Data.Players.Player
@@ -78,9 +82,9 @@ type alias UserPlayer =
 
 type ResultOfMatch =
     NoResult
-    | Won UserPlayer UserPlayer
-    | Lost UserPlayer UserPlayer
-    | Undecided UserPlayer UserPlayer
+    | Won UserPlayer Opponent
+    | Lost UserPlayer Opponent
+    | Undecided UserPlayer Opponent
 
 type alias Opponent =
     UserPlayer
@@ -100,55 +104,44 @@ type OpponentRelativeRank
     | OpponentRankLower
 
 
-asSelected : EverySet UserPlayer -> Internal.Types.RankingId -> SelectedOwnerStatus -> Data.Players.Players -> SelectedState -> String -> Selected 
-asSelected esUserPlayer rnkId status sPlayers sState name = 
-    SelectedRanking esUserPlayer rnkId status sPlayers sState name
+-- asSelected : EverySet UserPlayer -> Internal.Types.RankingId -> SelectedOwnerStatus -> Data.Players.Players -> SelectedState -> String -> Selected 
+-- asSelected esUserPlayer uP ranking = 
+--     Selected esUserPlayer uP ranking
 
 asEverySet : Selected -> EverySet UserPlayer
-asEverySet (SelectedRanking esSelected rnkId status sPlayers sState name)  = 
+asEverySet (Selected esSelected uP ranking)  = 
      esSelected
 
-created : List Data.Players.Player -> Data.Users.Users -> Internal.Types.RankingId -> String -> SelectedOwnerStatus -> Selected
-created lplayer sUser rnkId name selectedOwnerStatus =
+
+created : List Data.Players.Player -> Data.Users.Users -> UserPlayer -> Data.Rankings.Ranking -> Selected
+created lplayer sUser uP ranking =
     let
-        --lplayer = Data.Players.extractPlayersFromWebData lplayer
         luser = Data.Users.asList sUser
         esUserPlayers = 
             List.map (createdUserPlayer luser) lplayer
             |> EverySet.fromList
     in
-        asSelected esUserPlayers rnkId selectedOwnerStatus (Data.Players.asPlayers (EverySet.fromList lplayer)) DisplayRanking name
+        Selected esUserPlayers uP ranking
            
         
 
 updatedUPInSet : Selected -> UserPlayer -> Selected
 updatedUPInSet sSelected updatedUP =
---the user is 'Registered' for the purposes of updating the Set
-    --case updatedUP of
-        -- Spectator userInfo user ->
-        --     sSelected
-        --(Registered userInfo userState) ->
-            -- remove the original user, then add the new one
-            addUserPlayer updatedUP <| removeUserPlayer updatedUP sSelected
-        -- (NoWallet userInfo userState) ->
-        --     addUser updatedUser <| removeUser (gotUser sSelected userInfo.id) sSelected
-        -- (NoCredit addr  userInfo userState) ->
-        --     addUser updatedUser <| removeUser (gotUser sSelected userInfo.id) sSelected
-        -- (Credited userInfo userState) ->
-        --     addUser updatedUser <| removeUser (gotUser sSelected userInfo.id) sSelected
+    addUserPlayer updatedUP <| removeUserPlayer updatedUP sSelected
+        
 
 gotPlayers : Selected -> Data.Players.Players 
-gotPlayers  (SelectedRanking sSelected _ _ sPlayers sState name) = 
-    sPlayers
+gotPlayers  (Selected esUP uP ranking) = 
+    Data.Players.Players (EverySet.map (\x -> x.player) esUp)
 
 gotStatus : Selected -> SelectedOwnerStatus
 gotStatus selected = 
     case selected of 
-        SelectedRanking sSelected _ status _ _ _ ->
+        Selected sSelected _ status _ _ _ ->
             status
 
 gotUserPlayerByuserId : Selected -> String -> Maybe UserPlayer
-gotUserPlayerByuserId (SelectedRanking esSelected rnkId status sPlayers sState name) uid =
+gotUserPlayerByuserId (Selected esSelected uP ranking) uid =
     List.head <|
         List.filter (\r -> (gotPlayerUID r) == (String.toLower <| uid))
             <| EverySet.toList esSelected
@@ -158,7 +151,7 @@ gotUserPlayerByuserId (SelectedRanking esSelected rnkId status sPlayers sState n
 -- it's just matching a players.uid against all the users
 -- maybe a gotOwner function instead of got Id?
 gotOwnerAsUP : Selected -> Maybe UserPlayer
-gotOwnerAsUP (SelectedRanking esSelected rnkId status sPlayers sState name) =
+gotOwnerAsUP (Selected esSelected uP ranking) =
     List.head <|
     List.filter (\r -> (gotPlayerUID r) == Data.Users.gotId r.user)
     <| EverySet.toList esSelected
@@ -172,12 +165,12 @@ gotPlayerUID uplayer =
 gotRankingId : Selected -> Internal.Types.RankingId 
 gotRankingId selected = 
     case selected of 
-        SelectedRanking sSelected rnkId status sPlayers sState name ->
+        Selected sSelected uP ranking ->
             rnkId
 
 
 empty : Selected
-empty = SelectedRanking (EverySet.empty) (Internal.Types.RankingId "") UserIsNeitherOwnerNorMember Data.Players.empty DisplayRanking ""
+empty = Selected (EverySet.empty) (Internal.Types.RankingId "") UserIsNeitherOwnerNorMember Data.Players.empty DisplayRanking ""
 
 emptyUserPlayer : UserPlayer 
 emptyUserPlayer =
@@ -207,8 +200,9 @@ createdUserPlayer luser player =
 addUserPlayer : UserPlayer -> Selected -> Selected
 addUserPlayer uplayer sSelected = 
     case sSelected of 
-        SelectedRanking rankedUserPlayers rnkId status sPlayers sState name ->
-                asSelected (EverySet.insert (addNewUserPlayerJoinRanking uplayer rnkId)  rankedUserPlayers) rnkId status sPlayers sState name
+        Selected rankedUserPlayers uP ranking ->
+            Selected (EverySet.insert (addNewUserPlayerJoinRanking uplayer ranking.id_)  rankedUserPlayers) uP ranking
+
 
 
 addNewUserPlayerJoinRanking : UserPlayer -> Internal.Types.RankingId -> UserPlayer
@@ -260,7 +254,7 @@ isCurrentUserPlayerLowerRanked uplayer challenger =
                     else False       
 
 gotPlayer : Data.Users.User -> Selected -> Selected
-gotPlayer user (SelectedRanking sSelected rnkId ownerStatus players sState name) =
+gotPlayer user (Selected sSelected rnkId ownerStatus players sState name) =
     -- todo: fix
     --[emptyUserPlayer]
     case user of
@@ -305,7 +299,7 @@ isThisPlayerId playerId uplayer =
 asList : Selected -> List UserPlayer 
 asList srank = 
     case srank of 
-        SelectedRanking rankedUserPlayers rnkId status sPlayers sState name ->
+        Selected rankedUserPlayers uP ranking ->
             rankedUserPlayers
            |> EverySet.toList
            |> List.sortBy extractRank
@@ -317,7 +311,7 @@ extractRank uplayer =
             playerInfo.rank
 
 isChallenged : Selected -> Data.Users.Users -> UserPlayer -> Bool
-isChallenged (SelectedRanking sSelected rnkId status sPlayers sStat name) sUsers uplayer = 
+isChallenged (Selected sSelected rnkId status sPlayers sStat name) sUsers uplayer = 
     case uplayer.player of 
         Data.Players.IndividualPlayer playerInfo playerStatus  ->
             case playerStatus of 
@@ -601,7 +595,7 @@ convertEachPlayerToUserPlayer luser player =
 
 
 handleWon : Selected -> UserPlayer -> UserPlayer -> Data.Users.Users -> Selected
-handleWon (SelectedRanking esUPlayer rnkId status sPlayers sState name)  uplayer upChallenger sUsers =
+handleWon (Selected esUPlayer uP ranking)  uplayer upChallenger sUsers =
     -- todo: fix
     empty
             -- let
@@ -614,7 +608,7 @@ handleWon (SelectedRanking esUPlayer rnkId status sPlayers sState name)  uplayer
             --         let
                         
             --             supdatedPlayer =  
-            --                 changedRank appInfo.player appInfo.challenger.player.rank (asSelected esUPlayer rnkId status sPlayers sState name)
+            --                 changedRank appInfo.player appInfo.challenger.player.rank (asSelected esUPlayer uP ranking)
                            
 
             --             supdatedPlayerAndChallenger =
@@ -643,7 +637,7 @@ handleWon (SelectedRanking esUPlayer rnkId status sPlayers sState name)  uplayer
             --         let
             --             --no ranking change - just update the player list for both players challenger to emptyPlayer, no rank change
             --             supdatedPlayer =
-            --                 changedRank appInfo.player appInfo.player.player.rank (asSelected esUPlayer rnkId status sPlayers sState name)
+            --                 changedRank appInfo.player appInfo.player.player.rank (asSelected esUPlayer uP ranking)
 
             --             supdatedPlayerAndChallenger =
             --                 changedRank  appInfo.challenger appInfo.challenger.player.rank  supdatedPlayer
@@ -670,9 +664,9 @@ handleWon (SelectedRanking esUPlayer rnkId status sPlayers sState name)  uplayer
 
 
 --handleLost : Selected -> SR.Types.AppInfo -> (Selected, SR.Types.AppInfo)
---handleLost (SelectedRanking esUPlayer rnkId status sPlayers sState name) appInfo =
+--handleLost (Selected esUPlayer uP ranking) appInfo =
 handleLost : Selected -> UserPlayer -> UserPlayer -> Data.Users.Users -> Selected
-handleLost (SelectedRanking esUPlayer rnkId status sPlayers sState name)  uplayer upChallenger sUsers =
+handleLost (Selected esUPlayer uP ranking)  uplayer upChallenger sUsers =
 --todo: fix
     empty
     -- let
@@ -683,7 +677,7 @@ handleLost (SelectedRanking esUPlayer rnkId status sPlayers sState name)  uplaye
     --     OpponentRankHigher ->
     --         let
     --             supdatedPlayer =
-    --                 changedRank appInfo.player appInfo.player.player.rank (asSelected esUPlayer rnkId status sPlayers sState name)
+    --                 changedRank appInfo.player appInfo.player.player.rank (asSelected esUPlayer uP ranking)
 
     --             supdatedPlayerAndChallenger =
     --                 changedRank  appInfo.challenger appInfo.challenger.player.rank  supdatedPlayer
@@ -713,7 +707,7 @@ handleLost (SelectedRanking esUPlayer rnkId status sPlayers sState name)  uplaye
     --         --nb. higher rank is a lower number and vice versa!
     --         let
     --             supdatedPlayer =  
-    --                 changedRank appInfo.player appInfo.challenger.player.rank (asSelected esUPlayer rnkId status sPlayers sState name)
+    --                 changedRank appInfo.player appInfo.challenger.player.rank (asSelected esUPlayer uP ranking)
                     
 
     --             supdatedPlayerAndChallenger =
@@ -741,14 +735,14 @@ handleLost (SelectedRanking esUPlayer rnkId status sPlayers sState name)  uplaye
 
 
 handleUndecided : Selected -> UserPlayer -> UserPlayer -> Selected
-handleUndecided (SelectedRanking esUPlayer rnkId ownerStatus sPlayers sState name) playerUP challengerUP =
+handleUndecided (Selected esUPlayer uP ranking) playerUP challengerUP =
     case playerUP.player of
         Data.Players.IndividualPlayer playerInfo playerStatus ->
             let
-                originalSelectedSet = (SelectedRanking esUPlayer rnkId ownerStatus sPlayers sState name)    
+                originalSelectedSet = (Selected esUPlayer uP ranking)    
 
                 supdatedPlayer = 
-                    changedRank playerUP playerInfo.rank (asSelected esUPlayer rnkId ownerStatus sPlayers sState name)
+                    changedRank playerUP playerInfo.rank (Selected esUPlayer uP ranking)
                         
                 newPlayerPlayerUpdated = (Data.Players.IndividualPlayer 
                     (Data.Players.PlayerInfo playerInfo.rankingid playerInfo.uid playerInfo.rank) Data.Players.Available)
@@ -761,7 +755,7 @@ handleUndecided (SelectedRanking esUPlayer rnkId ownerStatus sPlayers sState nam
                     |> asEverySet
                     
             in
-                SelectedRanking updatedSet rnkId ownerStatus sPlayers sState name
+                Selected updatedSet uP ranking
 
 
 --isOpponentHigherRank : UserPlayer -> SR.Types.Opponent -> SR.Types.OpponentRelativeRank
@@ -801,7 +795,7 @@ isOpponentHigherRank uplayer opponent =
 assignedChallengerUIDForBOTHPlayers : Selected -> UserPlayer -> UserPlayer -> Selected
 assignedChallengerUIDForBOTHPlayers sSelected user challenger =
     case sSelected of 
-        (SelectedRanking sselected rnkId status sPlayers sState name) -> 
+        (Selected esUP uP ranking) -> 
             case (user.player, challenger.player) of 
                 (Data.Players.IndividualPlayer playerInfo playerStatus, Data.Players.IndividualPlayer challengerInfo challengerStatus) ->
                     case (user.user, challenger.user) of 
@@ -811,8 +805,8 @@ assignedChallengerUIDForBOTHPlayers sSelected user challenger =
                                 updatedChallengerAsPlayer = Data.Players.assignChallengerUID challenger.player userInfo.id
 
                                 newSelectedWithUser = updatedUPInSet sSelected {player = updatedUserAsPlayer, user = user.user} 
-                                newSelectedWithChallenger = updatedUPInSet newSelectedWithUser {player = updatedChallengerAsPlayer, user = challenger.user}  
-                                newSelected = SelectedRanking (asEverySet newSelectedWithChallenger) rnkId status sPlayers DisplayChallenge name
+                                newSelectedWithChallenger = updatedUPInSet newSelectedWithUser {player = updatedChallengerAsPlayer, user = challenger.user}
+                                newSelected = Selected (asEverySet newSelectedWithChallenger) uP ranking
                             in 
                                 newSelected
 
