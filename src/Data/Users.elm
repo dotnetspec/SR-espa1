@@ -146,9 +146,22 @@ emptyUserInfo : UserInfo
 emptyUserInfo =
     UserInfo "" Nothing NoWallet 0 True "" "" (ExtraUserInfo "" "" "") [] ""
 
+--   { --datestamp to become creditsremaining - check member_since works as expected
+--      id : String
+--     , token : Maybe String
+--     , walletState : WalletState
+--     , datestamp : Int
+--     , active : Bool
+--     , username : String
+--     , password : String
+--     , extrauserinfo : ExtraUserInfo
+--     , userjoinedrankings : List String
+--     , member_since : String
+--     }
+
 dummyUserWithUserJoinedRankings : User
 dummyUserWithUserJoinedRankings = 
-    Registered (UserInfo "" Nothing NoWallet 0 True "" "" 
+    Registered (UserInfo "" Nothing NoWallet 0 True "Test1" "" 
         (ExtraUserInfo "" "" "") ["282953512300577285", "283673261521240581"] "") General
 
 

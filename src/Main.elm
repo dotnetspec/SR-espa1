@@ -1824,17 +1824,19 @@ updateWithReceivedRankings : Model -> Result (GQLHttp.Error (Maybe (List (Maybe 
 updateWithReceivedRankings model response =
      case (model, response) of -- AllEmpty, so fill the Ranking set
         (AppOps AllEmpty user uiState txRec, Ok lrankings)  ->
-                    let
-                        filteredFRankingList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lrankings)
-                        -- need to convert from FRanking to Ranking (id_ needs to be a String)
-                        --lFromFToRanking = List.map Data.Rankings.convertFRankingToRanking filteredFRankingList
-                        lFromFToRanking = List.map Data.Rankings.convertFRankingToRanking filteredFRankingList
-                        --_ = Debug.log "lFromFToRanking : " lFromFToRanking
-                        sRankings = Data.Rankings.asRankings (EverySet.fromList lFromFToRanking)
-                        newDataState = Fetched Data.Users.empty sRankings (Global Data.Global.empty)
-                        
-                    in
-                        AppOps newDataState user uiState txRec
+            let
+                filteredFRankingList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lrankings)
+                -- need to convert from FRanking to Ranking (id_ needs to be a String)
+                --lFromFToRanking = List.map Data.Rankings.convertFRankingToRanking filteredFRankingList
+                lFromFToRanking = List.map Data.Rankings.convertFRankingToRanking filteredFRankingList
+                --_ = Debug.log "lFromFToRanking : " lFromFToRanking
+                --newsRankings = Data.Rankings.asRankings (EverySet.fromList lFromFToRanking)
+                -- nodb:
+                newsRankings = Data.Rankings.asRankings (EverySet.fromList Data.Rankings.testRankings)
+                newDataState = Fetched Data.Users.empty newsRankings (Global Data.Global.empty)
+                
+            in
+                AppOps newDataState user uiState txRec
 
         (AppOps (Fetched sUsers sRankings  (Global _)) user uiState txRec, Ok lrankings) ->
                 if Data.Users.isEmpty sUsers then -- just fill the Ranking set
@@ -1842,7 +1844,7 @@ updateWithReceivedRankings model response =
                         filteredFRankingList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lrankings)
                         lFromFToRanking = List.map Data.Rankings.convertFRankingToRanking filteredFRankingList
                         --newsRankings = Data.Rankings.asRankings (EverySet.fromList lFromFToRanking)
-                        newsRankings = Data.Rankings.asRankings (EverySet.fromList [Data.Rankings.testRanking])
+                        newsRankings = Data.Rankings.asRankings (EverySet.fromList Data.Rankings.testRankings)
                         newDataState = Fetched sUsers  sRankings (Global Data.Global.empty)
                     in
                         AppOps newDataState user uiState txRec
@@ -1852,7 +1854,7 @@ updateWithReceivedRankings model response =
                         filteredFRankingList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lrankings)
                         lFromFToRanking = List.map Data.Rankings.convertFRankingToRanking filteredFRankingList
                         --newsRankings = Data.Rankings.asRankings (EverySet.fromList lFromFToRanking)
-                        newsRankings = Data.Rankings.asRankings (EverySet.fromList [Data.Rankings.testRanking])
+                        newsRankings = Data.Rankings.asRankings (EverySet.fromList Data.Rankings.testRankings)
                         newDataKind = Global (Data.Global.created newsRankings sUsers user)
                         newDataState = Fetched sUsers newsRankings newDataKind
                     in
@@ -1868,7 +1870,7 @@ updateWithReceivedRankings model response =
             --(Failure "Unable to obtain Rankings data. Please check your network connection ...")
             -- todo: fix put back above - just while sorting fauna relations issues
             let
-                newsRankings = Data.Rankings.asRankings (EverySet.fromList [Data.Rankings.testRanking])
+                newsRankings = Data.Rankings.asRankings (EverySet.fromList Data.Rankings.testRankings)
                 newDataKind = Global (Data.Global.created newsRankings Data.Users.empty user)
                 newDataState = Fetched Data.Users.empty  newsRankings newDataKind
             in
@@ -1877,7 +1879,7 @@ updateWithReceivedRankings model response =
         (AppOps (Fetched sUsers sRankings dKind) user uiState txRec, Err _)  ->
             --(Failure "Essential data missing. Please check network and re-try")
             let
-                newsRankings = Data.Rankings.asRankings (EverySet.fromList [Data.Rankings.testRanking])
+                newsRankings = Data.Rankings.asRankings (EverySet.fromList Data.Rankings.testRankings)
                 newDataKind = Global (Data.Global.created newsRankings Data.Users.empty Data.Users.emptyUser)
                 newDataState = Fetched Data.Users.empty newsRankings newDataKind
             in
@@ -1896,7 +1898,7 @@ updateWithReceivedRankings model response =
             --(Failure "updateWithReceivedRankings18")
             -- todo: fix put back above - just while sorting fauna relations issues
             let
-                newsRankings = Data.Rankings.asRankings (EverySet.fromList [Data.Rankings.testRanking])
+                newsRankings = Data.Rankings.asRankings (EverySet.fromList Data.Rankings.testRankings)
                 newDataKind = Global (Data.Global.created newsRankings Data.Users.empty Data.Users.emptyUser)
                 newDataState = Fetched Data.Users.empty  newsRankings newDataKind
             in
@@ -2007,7 +2009,8 @@ loginResponse model response =
         (AppOps dataState (Data.Users.Spectator userInfo userState) uiState txRec
             , Ok loginResult) ->
                 let 
-                    convertedUser = (Data.Users.convertFUserToUser (Maybe.withDefault (Data.Users.emptyFUser) loginResult.user))
+                    --convertedUser = (Data.Users.convertFUserToUser (Maybe.withDefault (Data.Users.emptyFUser) loginResult.user))
+                    convertedUser = Data.Users.dummyUserWithUserJoinedRankings
                 in
                 AppOps (createGlobal dataState convertedUser) convertedUser uiState txRec
         
@@ -2017,7 +2020,12 @@ loginResponse model response =
 
         (AppOps dataState (Data.Users.Spectator userInfo _) uiState txRec
             , Err _) ->
-                AppOps dataState (Data.Users.Spectator userInfo (Data.Users.LoginError)) uiState txRec
+                let 
+                    --convertedUser = (Data.Users.convertFUserToUser (Maybe.withDefault (Data.Users.emptyFUser) loginResult.user))
+                    convertedUser = Data.Users.dummyUserWithUserJoinedRankings
+                in
+                AppOps (createGlobal dataState convertedUser) convertedUser uiState txRec
+                --AppOps dataState (Data.Users.Spectator userInfo (Data.Users.LoginError)) uiState txRec
         
         ( AppOps _ (_) _ _ , Err _ ) ->
             Failure "Only a Spectator should be able \nlogin or register."

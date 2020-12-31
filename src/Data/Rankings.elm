@@ -22,7 +22,7 @@ module Data.Rankings exposing (Rankings
     , asList, asRankings, getRanking, gotRanking, rankingsetLength
     , emptyFRanking
     , isRankingNameValid
-    , testRanking
+    , testRankings
     )
 
 
@@ -55,9 +55,11 @@ emptyRanking : Ranking
 emptyRanking =
     Ranking "" False "" Nothing ""
 
-testRanking : Ranking
-testRanking =
-    Ranking "282953512300577285" False "Test1Rnk" Nothing "283120055707763201"
+testRankings : List Ranking
+testRankings =
+    [Ranking "282953512300577285" False "Test1Rnk" Nothing "283120055707763201"
+    , Ranking "283673261521240581" False "Test4Rnk" Nothing "283075902275846657"
+    ]
 
 convertFRankingToRanking : FRanking -> Ranking 
 convertFRankingToRanking franking = 
