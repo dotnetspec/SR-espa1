@@ -135,7 +135,7 @@ type Selected =
   | ConfirmedChallenge
   | EnteringResult
   -- should ResultOfMatch be in a view type?
-  | ConfirmedResult ResultOfMatch
+  | ConfirmedResult
 
 --   type SelectedState = 
 --     DisplayRanking

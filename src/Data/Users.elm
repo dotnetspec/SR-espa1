@@ -69,9 +69,6 @@ import Regex
 -- Type 'Users' is a type with a variant 'Users' and assoc. data (EverySet User)
 type Users = Users (EverySet User)
 type UserNames = UserNames (EverySet String)
-
-
-
 type User =
     Spectator UserInfo UserState
     | Registered UserInfo UserState
