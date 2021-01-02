@@ -2323,8 +2323,8 @@ view model =
                     Html.text ("Selected tbc")
 
                 ( Fetched sUser sRankings (Global g), _, SR.Types.GlobalUI SR.Types.NewLadderCreate ) ->
-                    inputNewLadderview sRankings Data.Rankings.emptyRanking user
-                    
+                    inputNewLadderview sRankings (Data.Global.gotRanking g) user
+
                 ( Fetched _ _ (Global _), _, SR.Types.GlobalUI SR.Types.NewLadderConfirmed ) ->
                     Html.text ("Selected tbc")
                 ( Fetched _ _ (Selected _), _, SR.Types.GlobalUI SR.Types.NewLadderCreate ) ->

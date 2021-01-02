@@ -33,6 +33,7 @@ module Data.Global exposing
     , removedDeletedRankingsFromUserJoined
     , gotNewRankingIdFromWebData
     , isEmpty
+    , gotRanking
     )
 
 
@@ -77,6 +78,10 @@ setToOwnedUR (Global esUR gstate) =
 createdNewUR : Global -> Data.Users.User -> Global
 createdNewUR (Global esUR _ ) user = 
     Global esUR <| emptyUserRanking user
+
+gotRanking : Global -> Data.Rankings.Ranking 
+gotRanking (Global esUR uR) = 
+    uR.rankingInfo
 
 
 updateRankingName : Global -> String -> Global 
@@ -194,9 +199,9 @@ extractSelectedUserRankingFromGlobalList luranking rnkId =
     List.head (EverySet.toList (EverySet.filter (isUserRankingIdInList rnkId) (EverySet.fromList luranking)))
 
 
-gotRanking : UserRanking -> Data.Rankings.Ranking
-gotRanking uranking =
-    uranking.rankingInfo
+-- gotRanking : UserRanking -> Data.Rankings.Ranking
+-- gotRanking uranking =
+--     uranking.rankingInfo
 
 
 created : Data.Rankings.Rankings -> Data.Users.Users -> Data.Users.User -> Global
