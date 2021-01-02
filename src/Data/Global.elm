@@ -4,7 +4,7 @@ module Data.Global exposing
     (Global
     , UserRanking
     --, GlobalState(..)
-    --, RankingType(..)
+    , RankingType(..)
     , setToOwnedUR
     -- , memberUR
     -- , otherUR

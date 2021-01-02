@@ -439,9 +439,19 @@ update msg model =
                         newDataKind = Selected <| Data.Selected.created [] sUsers user uR.rankingInfo
                         newDataState = Fetched sUsers sRankings newDataKind
                     in
-                        (AppOps newDataState
-                            user (SR.Types.SelectedUI SR.Types.Selected) txRec,
-                        fetchedSingleRanking (Internal.Types.RankingId uR.rankingInfo.id_ ))
+                        case uR.rankingtype of 
+                            Data.Global.Owned ->
+                                (AppOps newDataState
+                                    user (SR.Types.SelectedUI SR.Types.Owned) txRec,
+                                        fetchedSingleRanking (Internal.Types.RankingId uR.rankingInfo.id_ ))
+                            Data.Global.Member ->
+                                (AppOps newDataState
+                                    user (SR.Types.SelectedUI SR.Types.Member) txRec,
+                                        fetchedSingleRanking (Internal.Types.RankingId uR.rankingInfo.id_ ))
+                            Data.Global.Other ->
+                                (AppOps newDataState
+                                    user (SR.Types.SelectedUI SR.Types.Other) txRec,
+                                        fetchedSingleRanking (Internal.Types.RankingId uR.rankingInfo.id_ ))
 
 
         (ClickedChangedUIStateToEnterResult player, AppOps dataState user uiState txRec)  ->
@@ -756,7 +766,9 @@ update msg model =
                 Fetched sUsers sRankings dKind ->
                     case dKind of
                         Selected sSelected ->
-                            (AppOps dataState user (SR.Types.SelectedUI SR.Types.Selected) emptyTxRecord, Cmd.none )
+                            (model, Cmd.none)
+                            --(AppOps dataState user (SR.Types.SelectedUI SR.Types.Selected) emptyTxRecord, Cmd.none )
+                            
                             -- case (Data.Selected.gotStatus sSelected) of 
                             --     Data.Selected.UserIsOwner ->
                             --         (AppOps dataState user SR.Types.UISelectedRankingUserIsOwner emptyTxRecord, Cmd.none )
@@ -1798,8 +1810,24 @@ updateWithReceivedPlayersByRankingId model response =
         (AppOps AllEmpty user uiState txRec, Err _ )  ->
             (Failure "Unable to obtain Rankings data. Please check your network connection ...")
 
-        (AppOps (Fetched sUsers sRankings dKind) user uiState txRec, Err _)  ->
-            (Failure "updateWithReceivedPlayersByRankingId15")
+        (AppOps (Fetched sUsers sRankings (Selected s)) user uiState txRec, Err _)  ->
+            --(Failure "updateWithReceivedPlayersByRankingId15")
+            -- nodb:
+            let
+                        -- filteredFPlayerList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lplayers)
+                        -- lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer filteredFPlayerList
+                        -- todo: change createdSelected to accept a Set instead of a list
+
+                        --newsSelected = Data.Selected.created lFromFToPlayer sUsers user (Data.Selected.gotRanking s)
+                        --nodb (replacing line above):
+                        newsSelected = Data.Selected.created Data.Players.dummyPlayers sUsers user (Data.Selected.gotRanking s)
+                        newDataKind = Selected newsSelected
+                        newDataState = Fetched sUsers sRankings newDataKind
+                    in
+                        AppOps newDataState user uiState txRec
+
+        ( AppOps (Fetched _ _ (Global _)) _ _ _, Err _ ) ->
+            (Failure "should be selected here")
 
         (AppOps (Updated sUsers sRankings dKind) user uiState txRec, Err _ ) ->
             (Failure "updateWithReceivedPlayersByRankingId16")
@@ -1892,7 +1920,7 @@ updateWithReceivedRankings model response =
                 newDataKind = Global (Data.Global.created newsRankings Data.Users.empty Data.Users.emptyUser)
                 newDataState = Fetched Data.Users.empty  newsRankings newDataKind
             in
-                AppOps newDataState Data.Users.emptyUser (SR.Types.SelectedUI SR.Types.Selected) emptyTxRecord
+                AppOps newDataState Data.Users.emptyUser (SR.Types.SelectedUI SR.Types.Other) emptyTxRecord
 
 
 
@@ -2307,8 +2335,10 @@ view model =
                     Html.text ("Selected tbc")
                 ( Fetched _ _ (Selected _), _, SR.Types.GeneralUI _ ) ->
                     Html.text ("Selected tbc11")
-                ( Fetched _ _ (Selected _), _, SR.Types.SelectedUI _ ) ->
-                    Html.text ("Selected tbc")
+
+                ( Fetched _ _ (Selected s), _, SR.Types.SelectedUI _ ) ->
+                    selectedView s (Data.Selected.gotStatus s)
+
                 ( Fetched _ _ (Selected _), _, SR.Types.UIUpdateExistingUser ) ->
                     Html.text ("Selected tbc")
                 ( Fetched _ _ (Selected _), _, SR.Types.UIEnterResult ) ->
@@ -2786,29 +2816,29 @@ rankingBtn uR =
         ]
 
 
-playerbuttons : Data.Selected.Selected -> Data.Users.Users -> Data.Users.User -> Element Msg
-playerbuttons selectedRanking sUsers user =
+playerbuttons : Data.Selected.Selected -> Element Msg
+playerbuttons selectedRanking =
     --case selectedRanking (Selected (EverySet UserPlayer) Internal.Types.RankingId SelectedOwnerStatus Data.Players.Players SelectedState)
     Element.column Grid.section <|
         [ 
             -- SR.Elements.selectedRankingHeaderEl <| Data.Rankings.Ranking "" False selectedRanking.ranking.rankingname Nothing ""
         SR.Elements.selectedRankingHeaderEl <| selectedRanking
         , Element.column (Card.simple ++ Grid.simple) <|
-            List.map (configureThenAddPlayerRankingBtns selectedRanking sUsers user)
+            List.map (configureThenAddPlayerRankingBtns selectedRanking )
                 (Data.Selected.asList selectedRanking)
         ]
 
-configureThenAddPlayerRankingBtns : Data.Selected.Selected -> Data.Users.Users -> Data.Users.User-> Data.Selected.UserPlayer -> Element Msg
-configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
+configureThenAddPlayerRankingBtns : Data.Selected.Selected -> Data.Selected.UserPlayer -> Element Msg
+configureThenAddPlayerRankingBtns s uplayer =
    -- nb. 'uplayer' is the player that's being mapped cf. user which is current user (single instance)
     let
-        challorAvail = Data.Selected.challorAvail sSelected sUsers uplayer
+        challorAvail = Data.Selected.challorAvail s uplayer
     in
         -- all players are considered Registered (only)
         case (uplayer.user, uplayer.player) of
             (Data.Users.Registered userInfo userState, Data.Players.IndividualPlayer playerInfo playerStatus) ->
-                if not (Data.Selected.isChallenged sSelected sUsers uplayer) then
-                    if Data.Selected.isRegisteredPlayerCurrentUser user uplayer then
+                if not (Data.Selected.isChallenged uplayer) then
+                    if Data.Selected.isRegisteredPlayerCurrentUser (Data.Selected.gotUP s).user uplayer then
                         --not challenged, is current user:
                         Element.column Grid.simple <|
                         [ Input.button (Button.fill ++ Color.disabled) <|
@@ -2822,12 +2852,12 @@ configureThenAddPlayerRankingBtns sSelected sUsers user uplayer =
                         -- uplayer for ClickedChallengeOpponent here is the opponent:
                         Element.column Grid.simple <|
                         [ Input.button (Button.fill ++ Color.info) <|
-                            { onPress = Just <| ClickedChallengeOpponent uplayer (Data.Selected.gotUserPlayerByUserId sSelected userInfo.id)
+                            { onPress = Just <| ClickedChallengeOpponent uplayer (Data.Selected.gotUserPlayerByUserId s userInfo.id)
                             , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ challorAvail
                             }
                         ]
                 else
-                    if Data.Selected.isRegisteredPlayerCurrentUser user uplayer then
+                    if Data.Selected.isRegisteredPlayerCurrentUser (Data.Selected.gotUP s).user uplayer then
                         -- already in a challenge, is current user and therefore ready to enter a result
                         Element.column Grid.simple <|
                         [ Input.button (Button.fill ++ Color.success) <|
@@ -3425,33 +3455,35 @@ displayEnableEthereumBtn =
             , label = Element.text "Enable Ethereum"
             }
 
--- selectedView : Data.Selected.Selected -> Data.Users.User -> Html Msg
--- selectedView sSelected user =
---     case sSelected of 
---         (Data.Selected.Selected esUP rnkId ownerStatus sPlayers selectedState) ->
---             case ownerStatus of 
---                 Data.Selected.UserIsOwner ->
---                     Framework.responsiveLayout [] <| Element.column
---                         Framework.container
---                         [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner " --++ userInfo.username
---                         --, selecteduserIsOwnerhomebutton Data.Users.Spectator
---                         --, playerbuttons dataState sSelected
---                         , infoBtn "Cancel" Cancel
---                         ]
+selectedView : Data.Selected.Selected -> Data.Selected.OwnerStatus -> Html Msg
+selectedView s ownerStatus =
+    -- case sSelected of 
+    --     (Data.Selected.Selected esUP uP ranking) ->
+            case ownerStatus of 
+                Data.Selected.UserIsOwner ->
+                    Framework.responsiveLayout [] <| Element.column
+                        Framework.container
+                        [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner " --++ userInfo.username
+                        --, selecteduserIsOwnerhomebutton Data.Users.Spectator
+                        --, playerbuttons dataState sSelected
+                        , infoBtn "Cancel" Cancel
+                        ]
 
---                 Data.Selected.UserIsMember ->
---                     Framework.responsiveLayout [] <| Element.column Framework.container
---                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " --++ userInfo.username
---                     --, selecteduserIsPlayerHomebutton appInfo.user
---                     --, playerbuttons dataState appInfo
---                     ]
+                Data.Selected.UserIsMember ->
+                    Framework.responsiveLayout [] <| Element.column Framework.container
+                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ (Data.Selected.gotUserName s)
+                    --, selecteduserIsPlayerHomebutton user
+                    , playerbuttons s
+                    ]
 
---                 Data.Selected.UserIsNeitherOwnerNorMember ->
---                     Framework.responsiveLayout [] <| Element.column Framework.container
-                        --[ newOrExistingUserNameDisplay userVal accountState
+                Data.Selected.UserIsNeitherOwnerNorMember ->
+                    Framework.responsiveLayout [] <| Element.column Framework.container
+                        [ --newOrExistingUserNameDisplay userVal accountState
                         --, selecteduserIsNeitherPlayerNorOwnerHomebutton userVal accountState
-                        --, playerbuttons  dataState appInfo
-                        --]
+                        playerbuttons s
+                        , infoBtn "Cancel" Cancel
+                        --Element.text <| "SportRank - Play"
+                        ]
                             -- (Data.Users.Registered userInfo userState) ->
                             --     Framework.responsiveLayout [] <| Element.column Framework.container
                             --         [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userInfo.username

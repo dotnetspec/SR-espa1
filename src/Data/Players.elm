@@ -16,7 +16,9 @@ module Data.Players exposing (Players
     , asList
     , asPlayers
     , playersetLength
-    , convertPlayerFromFPlayer)
+    , convertPlayerFromFPlayer
+    , dummyPlayers
+    )
 
 
 
@@ -91,6 +93,17 @@ emptyIndividualPlayer =
     IndividualPlayer { rankingid = "" , uid = "", rank = 1
     } 
     Available
+
+dummyPlayers : List Player
+dummyPlayers =
+-- for Test1Rnk
+    [IndividualPlayer { rankingid = "282953512300577285" , uid = "283120055707763201", rank = 1
+    } 
+    Available
+    ,
+    IndividualPlayer { rankingid = "282953512300577285" , uid = "283137833080717831", rank = 2
+    } 
+    Available]
 
 asPlayers : EverySet Player -> Players 
 asPlayers esPlayer  = 

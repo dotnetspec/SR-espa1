@@ -130,7 +130,9 @@ type Global =
   | NewLadderConfirmed
   
 type Selected = 
-    Selected
+    Owned
+    | Member
+    | Other
   | CreatingChallenge
   | ConfirmedChallenge
   | EnteringResult

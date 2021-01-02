@@ -2,7 +2,7 @@
 module Data.Selected exposing (Selected
     , UserPlayer
     , ResultOfMatch(..)
-    , SelectedOwnerStatus(..)
+    , OwnerStatus(..)
     --, SelectedState(..)
     , releasePlayerForUI
     , releaseChallengerForUI
@@ -40,6 +40,7 @@ module Data.Selected exposing (Selected
     --, updatedUPinSet
     , isMember
     , gotRanking
+    , gotUserName
     )
 
 import EverySet exposing (EverySet)
@@ -77,7 +78,7 @@ type ResultOfMatch =
 type alias Opponent =
     UserPlayer
 
-type SelectedOwnerStatus
+type OwnerStatus
  = UserIsOwner
  | UserIsMember
  | UserIsNeitherOwnerNorMember
@@ -92,7 +93,7 @@ type OpponentRelativeRank
     | OpponentRankLower
 
 
--- asSelected : EverySet UserPlayer -> Internal.Types.RankingId -> SelectedOwnerStatus -> Data.Players.Players -> SelectedState -> String -> Selected 
+-- asSelected : EverySet UserPlayer -> Internal.Types.RankingId -> OwnerStatus -> Data.Players.Players -> SelectedState -> String -> Selected 
 -- asSelected esUserPlayer uP ranking = 
 --     Selected esUserPlayer uP ranking
 
@@ -110,6 +111,16 @@ created lplayer sUser user ranking =
             |> EverySet.fromList
     in
         Selected esUserPlayers {player = Data.Players.emptyIndividualPlayer, user = user} ranking
+
+gotUserName : Selected -> String 
+gotUserName (Selected _ uP _) = 
+    case uP.user of 
+        Data.Users.Spectator userInfo _ ->
+            userInfo.username
+        Data.Users.Registered userInfo _ ->
+            userInfo.username
+
+
 
 gotRanking : Selected -> Data.Rankings.Ranking 
 gotRanking s = 
@@ -135,7 +146,7 @@ gotPlayers : Selected -> Data.Players.Players
 gotPlayers  (Selected esUP uP ranking) = 
     Data.Players.asPlayers (EverySet.map (\x -> x.player) esUP)
 
-gotStatus : Selected -> SelectedOwnerStatus
+gotStatus : Selected -> OwnerStatus
 gotStatus selected = 
     case selected of 
         Selected esSelected uP ranking->
@@ -325,8 +336,8 @@ extractRank uplayer =
         Data.Players.IndividualPlayer playerInfo playerStatus ->
             playerInfo.rank
 
-isChallenged : Selected -> Data.Users.Users -> UserPlayer -> Bool
-isChallenged (Selected esUP uP ranking) sUsers uplayer = 
+isChallenged : UserPlayer -> Bool
+isChallenged uplayer = 
     case uplayer.player of 
         Data.Players.IndividualPlayer playerInfo playerStatus  ->
             case playerStatus of 
@@ -374,23 +385,27 @@ isRegisteredPlayerCurrentUser user uplayer =
             False
        
 
-challorAvail : Selected -> Data.Users.Users -> UserPlayer -> String 
-challorAvail sSelected sUsers uplayer = 
+challorAvail : Selected -> UserPlayer -> String 
+challorAvail s uplayer = 
     case uplayer.player of 
         Data.Players.IndividualPlayer playerInfo playerStatus ->
             case playerStatus of 
                 Data.Players.Available ->
                     "Available"
                 Data.Players.Challenged challengerid -> 
-                    case (Data.Users.gotUser sUsers challengerid) of 
+                    --case (Data.Users.gotUser sUsers challengerid) of 
+                    case gotUserPlayerByUserId s challengerid of
+                    --case 
                         Nothing ->
                             "Available"
-                        Just user ->
-                            case user of 
-                                (Data.Users.Registered userInfo userState) ->
+                        Just uP ->
+                        -- can't use gotUserName here cos it's the challenger 
+                        -- we're referring to
+                            case uP.user of 
+                                Data.Users.Spectator userInfo _ ->
                                     userInfo.username
-                                _ ->
-                                    "Available"
+                                Data.Users.Registered userInfo _ ->
+                                    userInfo.username 
 
 
 updatePlayerRankWithWonResult : List UserPlayer -> UserPlayer -> List UserPlayer
