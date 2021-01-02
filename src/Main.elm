@@ -1818,7 +1818,6 @@ updateWithReceivedRankings model response =
             let
                 filteredFRankingList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lrankings)
                 -- need to convert from FRanking to Ranking (id_ needs to be a String)
-                --lFromFToRanking = List.map Data.Rankings.convertFRankingToRanking filteredFRankingList
                 lFromFToRanking = List.map Data.Rankings.convertFRankingToRanking filteredFRankingList
                 --_ = Debug.log "lFromFToRanking : " lFromFToRanking
                 --newsRankings = Data.Rankings.asRankings (EverySet.fromList lFromFToRanking)
@@ -2293,7 +2292,7 @@ view model =
                 ( Fetched _ _ (Global _), _, SR.Types.GeneralUI SR.Types.UpdateUser ) ->
                     Html.text ("tbc")
                 ( Fetched _ _ (Global _), _, SR.Types.SelectedUI _ ) ->
-                    Html.text ("Selected tbc")
+                    Html.text ("Selected tbc10")
                 ( Fetched _ _ (Global _), _, SR.Types.UIUpdateExistingUser ) ->
                     Html.text ("Selected tbc")
                 ( Fetched _ _ (Global _), _, SR.Types.UIEnterResult ) ->
@@ -2307,7 +2306,7 @@ view model =
                 ( Fetched _ _ (Global _), _, SR.Types.UIUnableToFindGlobalRankings ) ->
                     Html.text ("Selected tbc")
                 ( Fetched _ _ (Selected _), _, SR.Types.GeneralUI _ ) ->
-                    Html.text ("Selected tbc")
+                    Html.text ("Selected tbc11")
                 ( Fetched _ _ (Selected _), _, SR.Types.SelectedUI _ ) ->
                     Html.text ("Selected tbc")
                 ( Fetched _ _ (Selected _), _, SR.Types.UIUpdateExistingUser ) ->
@@ -2323,14 +2322,15 @@ view model =
                 ( Fetched _ _ (Selected _), _, SR.Types.UIUnableToFindGlobalRankings ) ->
                     Html.text ("Selected tbc")
 
-                ( Fetched _ _ (Global _), _, SR.Types.GlobalUI SR.Types.NewLadderCreate ) ->
-                    Html.text ("Selected tbc")
+                ( Fetched sUser sRankings (Global g), _, SR.Types.GlobalUI SR.Types.NewLadderCreate ) ->
+                    inputNewLadderview sRankings Data.Rankings.emptyRanking user
+                    
                 ( Fetched _ _ (Global _), _, SR.Types.GlobalUI SR.Types.NewLadderConfirmed ) ->
                     Html.text ("Selected tbc")
                 ( Fetched _ _ (Selected _), _, SR.Types.GlobalUI SR.Types.NewLadderCreate ) ->
-                    Html.text ("Selected tbc")
+                    Html.text ("Selected tbc12")
                 ( Fetched _ _ (Selected _), _, SR.Types.GlobalUI SR.Types.NewLadderConfirmed ) ->
-                    Html.text ("Selected tbc")
+                    Html.text ("Should be global before createnew")
 
                 -- (Fetched sUsers sRankings dKind, 
                 --     Data.Users.Spectator userInfo 

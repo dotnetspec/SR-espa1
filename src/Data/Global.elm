@@ -215,11 +215,6 @@ created sRankings sUser user =
 
 createdUserRanking : Data.Users.Users -> Data.Users.User -> Data.Rankings.Ranking -> Maybe UserRanking
 createdUserRanking sUser user ranking =
-    --let
-        --dummy userjoined rankings array string:
-        --userjoinedrankings = ["282953512300577285", "283673261521240581"]
-        --userjoinedrankings = []
-    --in
     case user of
         Data.Users.Spectator _ _ ->
             case Data.Users.gotUser sUser ranking.rankingownerid of 
@@ -232,17 +227,13 @@ createdUserRanking sUser user ranking =
                     }
 
         Data.Users.Registered userInfo _->
-            let 
-                _ = Debug.log "rankingownerid" ranking.rankingownerid
-                _ = Debug.log "userInfo.id " userInfo.id
-            in
             if (ranking.rankingownerid) == userInfo.id then
                 Just
                     { rankingInfo = ranking
                     , user = user
                     , rankingtype = Owned
                     } 
-            -- this will need to be user.userjoinedrankings eventually
+            
             else if (List.member ranking.id_ userInfo.userjoinedrankings) then
                 Just
                     { rankingInfo = ranking
