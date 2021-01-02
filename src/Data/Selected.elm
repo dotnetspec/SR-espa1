@@ -101,15 +101,15 @@ asEverySet (Selected esSelected uP ranking)  =
      esSelected
 
 
-created : List Data.Players.Player -> Data.Users.Users -> UserPlayer -> Data.Rankings.Ranking -> Selected
-created lplayer sUser uP ranking =
+created : List Data.Players.Player -> Data.Users.Users -> Data.Users.User -> Data.Rankings.Ranking -> Selected
+created lplayer sUser user ranking =
     let
         luser = Data.Users.asList sUser
         esUserPlayers = 
             List.map (createdUserPlayer luser) lplayer
             |> EverySet.fromList
     in
-        Selected esUserPlayers uP ranking
+        Selected esUserPlayers {player = Data.Players.emptyIndividualPlayer, user = user} ranking
 
 gotRanking : Selected -> Data.Rankings.Ranking 
 gotRanking s = 

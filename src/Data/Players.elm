@@ -10,6 +10,7 @@ module Data.Players exposing (Players
     , handleFetchedPlayers
     , extractPlayersFromWebData
     , empty
+    , emptyIndividualPlayer
     , addPlayer
     , removePlayer
     , asList
@@ -84,6 +85,12 @@ rankFromMaybeRank int =
 empty : Players 
 empty = 
     Players (EverySet.empty)
+
+emptyIndividualPlayer : Player
+emptyIndividualPlayer = 
+    IndividualPlayer { rankingid = "" , uid = "", rank = 1
+    } 
+    Available
 
 asPlayers : EverySet Player -> Players 
 asPlayers esPlayer  = 

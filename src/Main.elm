@@ -146,7 +146,7 @@ getTime =
 
 type Msg
     = -- User Ops
-    ClickedSelectedRanking Internal.Types.RankingId String String Data.Selected.SelectedOwnerStatus
+    ClickedSelectedRanking Data.Global.UserRanking
     | ClickedRegister
     | ClickedConfirmedRegisterNewUser
     | ClickedUpdateExistingUser
@@ -431,27 +431,17 @@ update msg model =
         (ClickedDisplayGlobalOnly, AppOps dataState user uiState txRec ) ->
                     ( AppOps dataState user (SR.Types.GlobalUI SR.Types.All) emptyTxRecord, Cmd.none )
 
-        (ClickedSelectedRanking rnkidstr rnkownerstr rnknamestr selectedOwnerStatus, AppOps 
-            (Fetched sUsers sRankings _) 
-                (Data.Users.Spectator userInfo Data.Users.General) uiState txRec ) ->
-                    let                                                     
-                        newDataKind = Selected Data.Selected.empty
-                        newDataState = Fetched sUsers sRankings newDataKind
-                    in
-                        ( AppOps newDataState (Data.Users.Spectator userInfo Data.Users.General) (SR.Types.SelectedUI SR.Types.Selected) emptyTxRecord, 
-                        fetchedSingleRanking rnkidstr )
 
-        (ClickedSelectedRanking rnkidstr rnkownerstr rnknamestr selectedOwnerStatus, AppOps 
+        (ClickedSelectedRanking uR, AppOps 
             (Fetched sUsers sRankings _)
-                (Data.Users.Registered userInfo Data.Users.General) uiState txRec ) ->
+                user uiState txRec ) ->
                     let
-                        -- todo: add the data
-                        newDataKind = Selected Data.Selected.empty
+                        newDataKind = Selected <| Data.Selected.created [] sUsers user uR.rankingInfo
                         newDataState = Fetched sUsers sRankings newDataKind
                     in
                         (AppOps newDataState
-                            (Data.Users.Registered userInfo Data.Users.General) (SR.Types.SelectedUI SR.Types.Selected) txRec,
-                        fetchedSingleRanking rnkidstr )
+                            user (SR.Types.SelectedUI SR.Types.Selected) txRec,
+                        fetchedSingleRanking (Internal.Types.RankingId uR.rankingInfo.id_ ))
 
 
         (ClickedChangedUIStateToEnterResult player, AppOps dataState user uiState txRec)  ->
@@ -1788,7 +1778,8 @@ updateWithReceivedPlayersByRankingId model response =
                         filteredFPlayerList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lplayers)
                         lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer filteredFPlayerList
                         -- todo: change createdSelected to accept a Set instead of a list
-                        newsSelected = Data.Selected.created lFromFToPlayer sUsers  (Data.Selected.gotUP s) (Data.Selected.gotRanking s)
+                        --newsSelected = Data.Selected.created lFromFToPlayer sUsers  (Data.Selected.gotUP s) (Data.Selected.gotRanking s)
+                        newsSelected = Data.Selected.created lFromFToPlayer sUsers user (Data.Selected.gotRanking s)
                         newDataKind = Selected newsSelected
                         newDataState = Fetched sUsers sRankings newDataKind
                     in
@@ -1928,7 +1919,7 @@ updateWithReceivedPlayers model response =
                         filteredFPlayerList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lplayers)
                         lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer filteredFPlayerList
                         _ = Debug.log "players" lFromFToPlayer
-                        newDataKind = Selected <| Data.Selected.created lFromFToPlayer sUsers (Data.Selected.gotUP s) (Data.Selected.gotRanking s)
+                        newDataKind = Selected <| Data.Selected.created lFromFToPlayer sUsers user (Data.Selected.gotRanking s)
                         newDataState = Fetched sUsers sRankings newDataKind
                     in
                         AppOps newDataState user uiState txRec
@@ -2070,7 +2061,7 @@ createNewRankingResponse model response =
                     firstUserPlayer = {  player = firstPlayer, user = Data.Users.Registered userInfo userState}
 
                     newDataKind = Selected <| Data.Selected.created [firstPlayer]
-                                 sUsers firstUserPlayer newRanking
+                                 sUsers (Data.Users.Registered userInfo userState) newRanking
                     newDataState = Fetched sUsers sRankings newDataKind
                 in 
                     case userInfo.walletState of
@@ -2236,7 +2227,7 @@ updateSelectedRankingPlayerList model luplayers =
                                 -- newDataKind = Selected ((Data.Selected.created (Data.Selected.convertUserPlayersToPlayers luplayers) sUsers
                                 --     (rnkId) "") selectedOwnerStatus)
                                 newDataKind = Selected <| Data.Selected.created (Data.Selected.convertUserPlayersToPlayers luplayers) 
-                                    sUsers (Data.Selected.gotUP s) (Data.Selected.gotRanking s)
+                                    sUsers user (Data.Selected.gotRanking s)
                                 newDataState = Updated sUsers sRankings newDataKind 
                             in
                                 AppOps newDataState user uiState txRec
@@ -2758,8 +2749,10 @@ rankingbtns dKind user =
                             [ Element.el Heading.h5 <|  Element.text "If you register you can \ncreate your own rankings"
                             , infoBtn "Cancel" Cancel
                             , Element.text "\n"
-                            , 
-                                Element.column (Card.simple ++ Grid.simple) (List.map otherRankingInfoBtn (List.map (\ur -> ur.rankingInfo) (Data.Global.asList g)))
+                            , Element.column (Card.simple ++ Grid.simple)
+                                -- (List.map (\ur -> ur.rankingInfo) (Data.Global.asList (Data.Global.fetchedOther g))
+                                --     |> List.map otherRankingInfoBtn)
+                                (List.map rankingBtn (Data.Global.asList (Data.Global.fetchedOther g)))
                             ]
 
                 (Data.Users.Registered userInfo userState) ->
@@ -2770,20 +2763,19 @@ rankingbtns dKind user =
                                     True ->
                                         [infoBtn "Create New Ladder" ClickedCreateNewLadder]
                                     False ->
-                                        List.map (\ur -> ur.rankingInfo) (Data.Global.asList (Data.Global.fetchedOwned g))
-                                        |> List.map memberRankingInfoBtn 
+                                        List.map rankingBtn (Data.Global.asList (Data.Global.fetchedOwned g))
                                 )
                             , Element.el Heading.h5 <| Element.text "Your Member Rankings: " 
                             , Element.column (Card.simple ++ Grid.simple) <| 
-                                (case Data.Global.isEmpty (Data.Global.fetchedOwned g) of
+                                (case Data.Global.isEmpty (Data.Global.fetchedMember g) of
                                     True ->
                                         [infoBtn "Join A Ladder?" ClickedDisplayGlobalOnly]
                                     False ->
-                                        List.map (\ur -> ur.rankingInfo) (Data.Global.asList (Data.Global.fetchedOwned g))
-                                        |> List.map memberRankingInfoBtn 
+                                        List.map rankingBtn (Data.Global.asList (Data.Global.fetchedMember g))
                                 )
                             , Element.el Heading.h5 <|  Element.text "All Other Rankings: "
-                            , Element.column (Card.simple ++ Grid.simple) (List.map otherRankingInfoBtn (List.map (\ur -> ur.rankingInfo) (Data.Global.asList g)))
+                            , Element.column (Card.simple ++ Grid.simple)
+                                (List.map rankingBtn (Data.Global.asList (Data.Global.fetchedOther g)))
                             ]
 
         (Selected s) ->
@@ -2972,56 +2964,67 @@ rankingbtns dKind user =
 --                     [Element.text "tbc : All Other Rankings: "]
 
 
-ownedRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
-ownedRankingInfoBtn rankingobj =
+-- rankingBtn : Data.Rankings.Ranking -> Element Msg
+-- rankingBtn rankingobj =
+rankingBtn : Data.Global.UserRanking -> Element Msg
+rankingBtn uR =
     Element.column Grid.simple <|
         [ Input.button (Button.fill ++ Color.primary) <|
-            { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId rankingobj.id_) 
-                rankingobj.rankingownerid rankingobj.rankingname Data.Selected.UserIsOwner)
-            , label = Element.text rankingobj.rankingname
+            { onPress = Just <| ClickedSelectedRanking uR
+            , label = Element.text uR.rankingInfo.rankingname
             }
         ]
 
+-- ownedRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
+-- ownedRankingInfoBtn rankingobj =
+--     Element.column Grid.simple <|
+--         [ Input.button (Button.fill ++ Color.primary) <|
+--             { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId rankingobj.id_) 
+--                 rankingobj.rankingownerid rankingobj.rankingname Data.Selected.UserIsOwner)
+--             , label = Element.text rankingobj.rankingname
+--             }
+--         ]
 
-memberRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
-memberRankingInfoBtn ranking =
-    if ranking.rankingname /= "" then
-        Element.column Grid.simple <|
-            [ Input.button (Button.fill ++ Color.primary) <|
-                { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId ranking.id_) 
-                    ranking.rankingownerid ranking.rankingname Data.Selected.UserIsMember)
-                , label = Element.text ranking.rankingname
-                }
-            ]
-    else 
-        Element.column Grid.simple <|
-            [ Input.button (Button.fill ++ Color.primary) <|
-                { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId ranking.id_) 
-                ranking.rankingownerid ranking.rankingname Data.Selected.UserIsMember)
-                , label = Element.el
-                            [ Font.color (Element.rgb 1 0 0)
-                            , Font.size 18
-                            , Font.family
-                                [ Font.typeface "Open Sans"
-                                , Font.sansSerif
-                                ]
-                            , Font.center
-                            ]
-                            (Element.text  "              Deleted")
-                }
-            ]
 
-otherRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
-otherRankingInfoBtn rankingobj =
-    Element.column Grid.simple <|
-        [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "otherrankingbtn") ] ++ Button.fill ++ Color.primary) <|
-            { 
-                onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId rankingobj.id_) 
-                rankingobj.rankingownerid rankingobj.rankingname Data.Selected.UserIsNeitherOwnerNorMember)
+-- memberRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
+-- memberRankingInfoBtn ranking =
+--     if ranking.rankingname /= "" then
+--         Element.column Grid.simple <|
+--             [ Input.button (Button.fill ++ Color.primary) <|
+--                 { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId ranking.id_) 
+--                     ranking.rankingownerid ranking.rankingname Data.Selected.UserIsMember)
+--                 , label = Element.text ranking.rankingname
+--                 }
+--             ]
+--     else 
+--         Element.column Grid.simple <|
+--             [ Input.button (Button.fill ++ Color.primary) <|
+--                 { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId ranking.id_) 
+--                 ranking.rankingownerid ranking.rankingname Data.Selected.UserIsMember)
+--                 , label = Element.el
+--                             [ Font.color (Element.rgb 1 0 0)
+--                             , Font.size 18
+--                             , Font.family
+--                                 [ Font.typeface "Open Sans"
+--                                 , Font.sansSerif
+--                                 ]
+--                             , Font.center
+--                             ]
+--                             (Element.text  "              Deleted")
+--                 }
+--             ]
+
+-- otherRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
+-- otherRankingInfoBtn rankingobj =
+--     Element.column Grid.simple <|
+--         [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "otherrankingbtn") ] ++ Button.fill ++ Color.primary) <|
+--             { 
+--                 onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId rankingobj.id_) 
+--                 rankingobj.rankingownerid rankingobj.rankingname Data.Selected.UserIsNeitherOwnerNorMember)
             
-            , label = Element.text rankingobj.rankingname
-            }
-        ]
+--             , label = Element.text rankingobj.rankingname
+--             }
+--         ]
 
 
 
