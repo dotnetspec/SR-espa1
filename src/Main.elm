@@ -2546,16 +2546,16 @@ globalView userVal sUsers dKind errorMsg =
                         [Element.el (Heading.h5) <| (Element.text ("SportRank -" ++ userInfo.username) )
                         , displayEnableEthereumBtn
                         , Element.text ("\n")
-                        , displayCreateNewRankingBtn
-                        -- , case g of 
-                        --     Data.Global.Global esUR Data.Global.DisplayLoggedIn -> 
-                               , displayRankingBtns userVal (Global g) errorMsg]
-                            -- Data.Global.Global esUR Data.Global.DisplayGlobalOnly ->
-                            --     otherrankingbuttons (EverySet.toList esUR) Data.Global.DisplayGlobalOnly userVal
-                                
-                            -- Data.Global.Global esUR _ ->
-                            --     Element.text ("tbc in globalView")
-        
+                        , 
+                            case (Data.Global.isEmpty <| Data.Global.fetchedOwned g) of 
+                                True ->
+                                    Element.text ("")
+                                False ->
+                                    displayCreateNewRankingBtn
+
+                        , displayRankingBtns userVal (Global g) errorMsg
+                        ]
+                            
         Selected _ -> 
             Framework.responsiveLayout [] <| Element.column Framework.container <|
                 [Element.text ("Should be Global view only here")]
@@ -2662,10 +2662,6 @@ registerNewUserView userVal sUsers =
                 , userDetailsConfirmPanel userVal sUsers
                 ]
 
-    
-
-    
-
 failureView : String -> Html Msg 
 failureView str = 
      Framework.responsiveLayout [] <|
@@ -2750,8 +2746,6 @@ rankingbtns dKind user =
                             , infoBtn "Cancel" Cancel
                             , Element.text "\n"
                             , Element.column (Card.simple ++ Grid.simple)
-                                -- (List.map (\ur -> ur.rankingInfo) (Data.Global.asList (Data.Global.fetchedOther g))
-                                --     |> List.map otherRankingInfoBtn)
                                 (List.map rankingBtn (Data.Global.asList (Data.Global.fetchedOther g)))
                             ]
 
@@ -2782,190 +2776,6 @@ rankingbtns dKind user =
             Element.text " should be global, I think"
                     
 
-
-                -- <|  Element.column Grid.section <|
-                --     [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
-                --     , Element.column (Card.simple ++ Grid.simple) <| [infoBtn "Join A Ladder?" ClickedDisplayGlobalOnly]
-                --     ]
-                
-                
-                -- <| Element.column Grid.section <|
-                --     [ Element.el Heading.h5 <|  Element.text "All Other Rankings: "
-                --     , 
-                --         Element.column (Card.simple ++ Grid.simple) (List.map otherRankingInfoBtn (List.map (\ur -> ur.rankingInfo) (Data.Global.asList g)))
-                --     ]
-                    
-                    
-                    
-            -- else
-            --     (Element.column Grid.section <| 
-            --         [ 
-            --         Element.el Heading.h5 <| Element.text "Your Created Rankings:"
-            --         , Element.column (Card.simple ++ Grid.simple) <| List.map ownedRankingInfoBtn (List.map (\ur -> ur.rankingInfo) 
-            --             -- point here is that instead of urankingList that is owned. we get owned directly at this point
-            --             -- and then don't need separate functions for ownedrankingbuttons etc. Also (Data.Global.Global esUR gstate)
-            --             -- could eventually just become g
-            --             (Data.Global.asList (Data.Global.fetchedOwned g)))
-            --         ]
-            --     , Element.column Grid.section <|
-            --         [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
-            --         , List.map (\ur -> ur.rankingInfo) (Data.Global.asList (Data.Global.fetchedOwned g))
-            --         |> List.map memberRankingInfoBtn 
-            --         |> Element.column (Card.simple ++ Grid.simple)
-            --         ]
-                
-            --     , Element.column Grid.section <|
-            --         [ Element.el Heading.h5 <|  Element.text "All Other Rankings: "
-            --         , 
-            --             Element.column (Card.simple ++ Grid.simple) (List.map otherRankingInfoBtn (List.map (\ur -> ur.rankingInfo) (Data.Global.asList g)))
-            --         ]
-            --     )
-        -- _ -> 
-
-        --             Element.text "No wallet etc. not yet done:"
-        -- (Data.Users.NoWallet userInfo userState) ->
-        --     Element.column Grid.section <|
-        --     [ if List.isEmpty urankingList then
-        --         Element.el [] <| 
-        --             Input.button
-        --                 ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
-        --                     ++ Button.fill
-        --                     ++ Button.simple
-        --                     ++ Color.info
-        --                 )
-        --             <|
-        --                 { onPress = Just <| ClickedCreateNewLadder
-        --                 , label = Element.text "Create New Ladder"
-        --                 }
-        --       else
-
-        --         Element.el Heading.h5 <| Element.text "Your Created Rankings:"
-        --         , List.map (\ur -> ur.rankingInfo) urankingList
-        --         |> List.map ownedRankingInfoBtn
-        --         |> Element.column (Card.simple ++ Grid.simple)
-        --     ]
-        -- (Data.Users.NoCredit userInfo userState) ->
-        --     Element.column Grid.section <|
-        --     [ if List.isEmpty urankingList then
-        --         Element.el [] <| 
-        --             Input.button
-        --                 ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
-        --                     ++ Button.fill
-        --                     ++ Button.simple
-        --                     ++ Color.info
-        --                 )
-        --             <|
-        --                 { onPress = Just <| ClickedCreateNewLadder
-        --                 , label = Element.text "Create New Ladder"
-        --                 }
-        --       else
-
-        --         Element.el Heading.h5 <| Element.text "Your Created Rankings:"
-        --         , List.map (\ur -> ur.rankingInfo) urankingList
-        --         |> List.map ownedRankingInfoBtn
-        --         |> Element.column (Card.simple ++ Grid.simple)
-        --     ]
-        -- (Data.Users.Credited userInfo userState) ->
-        --     Element.column Grid.section <|
-        --     [ if List.isEmpty urankingList then
-        --         Element.el [] <| 
-        --             Input.button
-        --                 ([ Element.htmlAttribute (Html.Attributes.id "createnewrankingbtn") ]
-        --                     ++ Button.fill
-        --                     ++ Button.simple
-        --                     ++ Color.info
-        --                 )
-        --             <|
-        --                 { onPress = Just <| ClickedCreateNewLadder
-        --                 , label = Element.text "Create New Ladder"
-        --                 }
-        --       else
-
-        --         Element.el Heading.h5 <| Element.text "Your Created Rankings:"
-        --         , List.map (\ur -> ur.rankingInfo) urankingList
-        --         |> List.map ownedRankingInfoBtn
-        --         |> Element.column (Card.simple ++ Grid.simple)
-        --     ]
-
-
--- memberrankingbuttons : Data.Global.Global -> Data.Users.User -> Element Msg
--- memberrankingbuttons (Data.Global.Global esUR gstate) user =
---     let
---         urankingList = EverySet.toList esUR
---     in
---     case user of
---         Data.Users.Spectator userInfo userState ->
---             Element.text ""
---         (Data.Users.Registered userInfo userState) ->
---             if List.isEmpty urankingList then
---                 Element.column Grid.section <|
---                     [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
---                     , Element.column (Card.simple ++ Grid.simple) <| [infoBtn "Join A Ladder?" ClickedDisplayGlobalOnly]
---                     ]
---             else 
---                 Element.column Grid.section <|
---                     [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
---                     , List.map (\ur -> ur.rankingInfo) urankingList
---                     |> List.map memberRankingInfoBtn 
---                     |> Element.column (Card.simple ++ Grid.simple)
---                     ]
-                
---         (Data.Users.NoWallet userInfo userState) ->
---             Element.column Grid.section <|
---             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
---             , List.map (\ur -> ur.rankingInfo) urankingList
---                 |> List.map memberRankingInfoBtn
---                 |> Element.column (Card.simple ++ Grid.simple)
---             ]
---         (Data.Users.NoCredit userInfo userState) ->
---             Element.column Grid.section <|
---             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
---             , List.map (\ur -> ur.rankingInfo) urankingList
---                 |> List.map memberRankingInfoBtn
---                 |> Element.column (Card.simple ++ Grid.simple)
---             ]
---         (Data.Users.Credited userInfo userState) ->
---             Element.column Grid.section <|
---             [ Element.el Heading.h5 <| Element.text "Your Member Rankings: "
---             , List.map (\ur -> ur.rankingInfo) urankingList
---                 |> List.map memberRankingInfoBtn
---                 |> Element.column (Card.simple ++ Grid.simple)
---             ]
-
--- otherrankingbuttons : List Data.Global.UserRanking -> Data.Global.GlobalState -> Data.Users.User  -> Element Msg
--- otherrankingbuttons lUR gState user  =
---     case user of 
---         Data.Users.Spectator _ _ ->
---             Element.column Grid.section <|
---             [ Element.el Heading.h5 <| Element.text "View The Rankings: "
---                 , List.map (\ur -> ur.rankingInfo) lUR
---                     |> List.map otherRankingInfoBtn
---                     |> Element.column (Card.simple ++ Grid.simple)
---             ]
-
---         _ ->
---             Element.column Grid.section <|
---             case gState of
---                 Data.Global.DisplayGlobalOnly ->
---                     [ Element.el Heading.h5 <|  Element.text "All Other Rankings: "
---                     , infoBtn "Cancel" Cancel
---                     , Element.text "\n"
---                     , 
---                         Element.column (Card.simple ++ Grid.simple) (List.map otherRankingInfoBtn (List.map (\ur -> ur.rankingInfo) lUR))
---                     ]
-
---                 Data.Global.DisplayLoggedIn ->
---                     [ Element.el Heading.h5 <|  Element.text "All Other Rankings: "
---                     , 
---                         Element.column (Card.simple ++ Grid.simple) (List.map otherRankingInfoBtn (List.map (\ur -> ur.rankingInfo) lUR))
---                     ]
-                
---                 _ ->
---                     [Element.text "tbc : All Other Rankings: "]
-
-
--- rankingBtn : Data.Rankings.Ranking -> Element Msg
--- rankingBtn rankingobj =
 rankingBtn : Data.Global.UserRanking -> Element Msg
 rankingBtn uR =
     Element.column Grid.simple <|
@@ -2974,58 +2784,6 @@ rankingBtn uR =
             , label = Element.text uR.rankingInfo.rankingname
             }
         ]
-
--- ownedRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
--- ownedRankingInfoBtn rankingobj =
---     Element.column Grid.simple <|
---         [ Input.button (Button.fill ++ Color.primary) <|
---             { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId rankingobj.id_) 
---                 rankingobj.rankingownerid rankingobj.rankingname Data.Selected.UserIsOwner)
---             , label = Element.text rankingobj.rankingname
---             }
---         ]
-
-
--- memberRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
--- memberRankingInfoBtn ranking =
---     if ranking.rankingname /= "" then
---         Element.column Grid.simple <|
---             [ Input.button (Button.fill ++ Color.primary) <|
---                 { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId ranking.id_) 
---                     ranking.rankingownerid ranking.rankingname Data.Selected.UserIsMember)
---                 , label = Element.text ranking.rankingname
---                 }
---             ]
---     else 
---         Element.column Grid.simple <|
---             [ Input.button (Button.fill ++ Color.primary) <|
---                 { onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId ranking.id_) 
---                 ranking.rankingownerid ranking.rankingname Data.Selected.UserIsMember)
---                 , label = Element.el
---                             [ Font.color (Element.rgb 1 0 0)
---                             , Font.size 18
---                             , Font.family
---                                 [ Font.typeface "Open Sans"
---                                 , Font.sansSerif
---                                 ]
---                             , Font.center
---                             ]
---                             (Element.text  "              Deleted")
---                 }
---             ]
-
--- otherRankingInfoBtn : Data.Rankings.Ranking -> Element Msg
--- otherRankingInfoBtn rankingobj =
---     Element.column Grid.simple <|
---         [ Input.button ([ Element.htmlAttribute (Html.Attributes.id "otherrankingbtn") ] ++ Button.fill ++ Color.primary) <|
---             { 
---                 onPress = Just (ClickedSelectedRanking (Internal.Types.RankingId rankingobj.id_) 
---                 rankingobj.rankingownerid rankingobj.rankingname Data.Selected.UserIsNeitherOwnerNorMember)
-            
---             , label = Element.text rankingobj.rankingname
---             }
---         ]
-
 
 
 playerbuttons : Data.Selected.Selected -> Data.Users.Users -> Data.Users.User -> Element Msg

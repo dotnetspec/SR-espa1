@@ -161,7 +161,7 @@ emptyUserInfo =
 
 dummyUserWithUserJoinedRankings : User
 dummyUserWithUserJoinedRankings = 
-    Registered (UserInfo "" Nothing NoWallet 0 True "Test1" "" 
+    Registered (UserInfo "283120055707763201" Nothing NoWallet 0 True "Test1" "" 
         (ExtraUserInfo "" "" "") ["282953512300577285", "283673261521240581"] "") General
 
 

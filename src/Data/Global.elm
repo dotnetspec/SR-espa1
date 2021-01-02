@@ -232,6 +232,10 @@ createdUserRanking sUser user ranking =
                     }
 
         Data.Users.Registered userInfo _->
+            let 
+                _ = Debug.log "rankingownerid" ranking.rankingownerid
+                _ = Debug.log "userInfo.id " userInfo.id
+            in
             if (ranking.rankingownerid) == userInfo.id then
                 Just
                     { rankingInfo = ranking
