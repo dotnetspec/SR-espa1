@@ -160,14 +160,8 @@ gotStatus : Selected -> PlayerStatus
 gotStatus selected = 
     case selected of 
         Selected esSelected uP ranking->
-            case uP.player of 
-                Data.Players.IndividualPlayer playerInfo playerStatus -> 
-                    if playerInfo.rankingid == ranking.id_ then
-                        Owner
-                    else if isMember uP ranking then
-                        Member
-                    else 
-                        Other
+            uP.status
+                
 
 gotUP : Selected -> UserPlayer
 gotUP s = 

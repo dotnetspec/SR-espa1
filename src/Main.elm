@@ -1813,9 +1813,9 @@ updateWithReceivedPlayersByRankingId model response =
         (AppOps AllEmpty user uiState txRec, Err _ )  ->
             (Failure "Unable to obtain Rankings data. Please check your network connection ...")
 
+        -- nodb:
         (AppOps (Fetched sUsers sRankings (Selected s)) user uiState txRec, Err _)  ->
             --(Failure "updateWithReceivedPlayersByRankingId15")
-            -- nodb:
             let
                         -- filteredFPlayerList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lplayers)
                         -- lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer filteredFPlayerList
@@ -1823,7 +1823,7 @@ updateWithReceivedPlayersByRankingId model response =
 
                         --newsSelected = Data.Selected.created lFromFToPlayer sUsers user (Data.Selected.gotRanking s) playerStatus
                         --nodb (replacing line above):
-                        newsSelected = Data.Selected.created Data.Players.dummyPlayers sUsers user (Data.Selected.gotRanking s) Data.Selected.Other
+                        newsSelected = Data.Selected.created Data.Players.dummyPlayers sUsers user (Data.Selected.gotRanking s) (Data.Selected.gotStatus s)
                         newDataKind = Selected newsSelected
                         newDataState = Fetched sUsers sRankings newDataKind
                     in
@@ -3467,9 +3467,9 @@ selectedView s playerStatus =
                 Data.Selected.Owner ->
                     Framework.responsiveLayout [] <| Element.column
                         Framework.container
-                        [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner " --++ userInfo.username
+                        [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner " ++ (Data.Selected.gotUserName s)
                         --, selecteduserIsOwnerhomebutton Data.Users.Spectator
-                        --, playerbuttons dataState sSelected
+                        , playerbuttons s
                         , infoBtn "Cancel" Cancel
                         ]
 
