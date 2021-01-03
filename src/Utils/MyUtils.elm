@@ -5,6 +5,7 @@ module Utils.MyUtils exposing
     , gotHttpErr
     , stringFromBool
     , stringFromMaybeString
+    --filterMap?:
     , removeNothingFromList
     )
 

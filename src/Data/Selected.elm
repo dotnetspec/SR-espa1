@@ -2,7 +2,7 @@
 module Data.Selected exposing (Selected
     , UserPlayer
     , ResultOfMatch(..)
-    , OwnerStatus(..)
+    , PlayerStatus(..)
     --, SelectedState(..)
     , releasePlayerForUI
     , releaseChallengerForUI
@@ -19,8 +19,8 @@ module Data.Selected exposing (Selected
     , handleWon
     , handleLost
     , handleUndecided
-    , convertPlayersToUserPlayers
-    , extractAndSortPlayerList
+    --, convertPlayersToUserPlayers
+    --, extractAndSortPlayerList
     , convertUserPlayersToPlayers
     , isRegisteredPlayerCurrentUser
     , challorAvail
@@ -67,6 +67,7 @@ type Selected =
 type alias UserPlayer =
     { player : Data.Players.Player
     , user : Data.Users.User
+    , status : PlayerStatus
     }
 
 type ResultOfMatch =
@@ -78,10 +79,11 @@ type ResultOfMatch =
 type alias Opponent =
     UserPlayer
 
-type OwnerStatus
- = UserIsOwner
- | UserIsMember
- | UserIsNeitherOwnerNorMember
+
+type PlayerStatus
+ = Owner
+ | Member
+ | Other
 
 type Options
     = MatchChallenge
@@ -93,7 +95,7 @@ type OpponentRelativeRank
     | OpponentRankLower
 
 
--- asSelected : EverySet UserPlayer -> Internal.Types.RankingId -> OwnerStatus -> Data.Players.Players -> SelectedState -> String -> Selected 
+-- asSelected : EverySet UserPlayer -> Internal.Types.RankingId -> PlayerStatus -> Data.Players.Players -> SelectedState -> String -> Selected 
 -- asSelected esUserPlayer uP ranking = 
 --     Selected esUserPlayer uP ranking
 
@@ -102,15 +104,15 @@ asEverySet (Selected esSelected uP ranking)  =
      esSelected
 
 
-created : List Data.Players.Player -> Data.Users.Users -> Data.Users.User -> Data.Rankings.Ranking -> Selected
-created lplayer sUser user ranking =
+created : List Data.Players.Player -> Data.Users.Users -> Data.Users.User -> Data.Rankings.Ranking -> PlayerStatus -> Selected
+created lplayer sUser user ranking playerStatus =
     let
         luser = Data.Users.asList sUser
         esUserPlayers = 
             List.map (createdUserPlayer luser) lplayer
             |> EverySet.fromList
     in
-        Selected esUserPlayers {player = Data.Players.emptyIndividualPlayer, user = user} ranking
+        Selected esUserPlayers {player = Data.Players.emptyIndividualPlayer, user = user, status = playerStatus } ranking
 
 gotUserName : Selected -> String 
 gotUserName (Selected _ uP _) = 
@@ -128,6 +130,14 @@ gotRanking s =
         Selected esUp uP ranking ->
             ranking
            
+isOwner : Selected -> Bool 
+isOwner s = 
+    case s of 
+        Selected esUP uP ranking ->
+            if Data.Rankings.isOwner (Data.Users.gotId uP.user) ranking then
+                True 
+            else 
+                False
         
 isMember : UserPlayer -> Data.Rankings.Ranking -> Bool 
 isMember uP ranking = 
@@ -146,18 +156,18 @@ gotPlayers : Selected -> Data.Players.Players
 gotPlayers  (Selected esUP uP ranking) = 
     Data.Players.asPlayers (EverySet.map (\x -> x.player) esUP)
 
-gotStatus : Selected -> OwnerStatus
+gotStatus : Selected -> PlayerStatus
 gotStatus selected = 
     case selected of 
         Selected esSelected uP ranking->
             case uP.player of 
                 Data.Players.IndividualPlayer playerInfo playerStatus -> 
                     if playerInfo.rankingid == ranking.id_ then
-                        UserIsOwner
+                        Owner
                     else if isMember uP ranking then
-                        UserIsMember
+                        Member
                     else 
-                        UserIsNeitherOwnerNorMember
+                        Other
 
 gotUP : Selected -> UserPlayer
 gotUP s = 
@@ -201,7 +211,8 @@ empty =
 emptyUserPlayer : UserPlayer 
 emptyUserPlayer =
     {player = Data.Players.IndividualPlayer (Data.Players.PlayerInfo "" "" 0 ) Data.Players.Available
-    , user = Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General}
+    , user = Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General
+    , status = Other}
 
 createdUserPlayer : List Data.Users.User -> Data.Players.Player -> UserPlayer
 createdUserPlayer luser player =
@@ -219,6 +230,8 @@ createdUserPlayer luser player =
                         newUserPlayer =
                             { player = player
                             , user = user
+                            --ok to just assign as 'Other'?
+                            , status = Other
                             }
                     in
                         newUserPlayer
@@ -603,23 +616,23 @@ refEachPlayer : UserPlayer -> Data.Players.Player
 refEachPlayer uplayer =
     uplayer.player
 
-convertPlayersToUserPlayers : List Data.Players.Player -> List Data.Users.User -> List UserPlayer
-convertPlayersToUserPlayers lplayer luser =
-    List.map (convertEachPlayerToUserPlayer luser) lplayer
+-- convertPlayersToUserPlayers : List Data.Players.Player -> List Data.Users.User -> List UserPlayer
+-- convertPlayersToUserPlayers lplayer luser =
+--     List.map (convertEachPlayerToUserPlayer luser) lplayer
 
 
-convertEachPlayerToUserPlayer : List Data.Users.User -> Data.Players.Player -> UserPlayer
-convertEachPlayerToUserPlayer luser player =
-    case player of 
-        Data.Players.IndividualPlayer playerInfo playerStatus ->
-            let
-                user = Data.Users.gotUser (Data.Users.asUsers (EverySet.fromList luser)) playerInfo.uid
-            in
-                case user of 
-                    Nothing ->
-                        { player = player, user = (Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General) }
-                    Just userVal ->
-                        { player = player, user = userVal }
+-- convertEachPlayerToUserPlayer : List Data.Users.User -> Data.Players.Player -> UserPlayer
+-- convertEachPlayerToUserPlayer luser player =
+--     case player of 
+--         Data.Players.IndividualPlayer playerInfo playerStatus ->
+--             let
+--                 user = Data.Users.gotUser (Data.Users.asUsers (EverySet.fromList luser)) playerInfo.uid
+--             in
+--                 case user of 
+--                     Nothing ->
+--                         { player = player, user = (Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General), status = Other }
+--                     Just userVal ->
+--                         { player = player, user = userVal , status = gotStatus s}
                 
     --{ player = player, user = Data.Users.gotUser (Data.Users.asUsers (EverySet.fromList luser)) player.uid }
 
@@ -834,8 +847,8 @@ assignedChallengerUIDForBOTHPlayers sSelected user challenger =
                                 updatedUserAsPlayer = Data.Players.assignChallengerUID user.player cuserInfo.id
                                 updatedChallengerAsPlayer = Data.Players.assignChallengerUID challenger.player userInfo.id
 
-                                newSelectedWithUser = updatedUPInSet sSelected {player = updatedUserAsPlayer, user = user.user} 
-                                newSelectedWithChallenger = updatedUPInSet newSelectedWithUser {player = updatedChallengerAsPlayer, user = challenger.user}
+                                newSelectedWithUser = updatedUPInSet sSelected {player = updatedUserAsPlayer, user = user.user, status = user.status} 
+                                newSelectedWithChallenger = updatedUPInSet newSelectedWithUser {player = updatedChallengerAsPlayer, user = challenger.user, status = challenger.status}
                                 newSelected = Selected (asEverySet newSelectedWithChallenger) uP ranking
                             in 
                                 newSelected
@@ -844,20 +857,20 @@ assignedChallengerUIDForBOTHPlayers sSelected user challenger =
                             sSelected
 
 
-extractAndSortPlayerList : RemoteData.WebData (List Data.Players.Player) -> List Data.Users.User -> List UserPlayer
-extractAndSortPlayerList rdlPlayer luser =
-    let
-        _ = Debug.log "luser in extractAndSortPlayerList" luser
+-- extractAndSortPlayerList : RemoteData.WebData (List Data.Players.Player) -> List Data.Users.User -> List UserPlayer
+-- extractAndSortPlayerList rdlPlayer luser =
+--     let
+--         _ = Debug.log "luser in extractAndSortPlayerList" luser
 
-        lplayer =
-            Data.Players.extractPlayersFromWebData rdlPlayer
+--         lplayer =
+--             Data.Players.extractPlayersFromWebData rdlPlayer
 
-        convertedPlayerListToUserPlayerList =
-            convertPlayersToUserPlayers
-                lplayer
-                luser
-    in
-    sortedRank <| convertedPlayerListToUserPlayerList
+--         convertedPlayerListToUserPlayerList =
+--             convertPlayersToUserPlayers
+--                 lplayer
+--                 luser
+--     in
+--     sortedRank <| convertedPlayerListToUserPlayerList
 
 
 --useful?:
@@ -898,9 +911,11 @@ extractAndSortPlayerList rdlPlayer luser =
 releasePlayerForUI : UserPlayer
 releasePlayerForUI  =
     {player = Data.Players.IndividualPlayer (Data.Players.PlayerInfo "" "" 0 ) Data.Players.Available
-    , user = Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General}
+    , user = Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General
+    , status = Other}
 
 releaseChallengerForUI : UserPlayer
 releaseChallengerForUI =
     {player = Data.Players.IndividualPlayer (Data.Players.PlayerInfo "" "" 0 ) Data.Players.Available
-    , user = Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General}
+    , user = Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General
+    , status = Other}

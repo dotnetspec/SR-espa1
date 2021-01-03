@@ -23,6 +23,8 @@ module Data.Rankings exposing (Rankings
     , emptyFRanking
     , isRankingNameValid
     , testRankings
+    , isOwner
+    , gotRankingId
     )
 
 
@@ -107,6 +109,10 @@ addRanking ranking sRankings =
         Rankings setOfRankings  ->
                 asRankings (EverySet.insert ranking setOfRankings)
 
+gotRankingId : Ranking -> String 
+gotRankingId ranking = 
+    ranking.id_
+
 -- isRankingNameValidated : Ranking -> Rankings -> Bool
 -- isRankingNameValidated rankingInfo sRanking =
 --     -- let 
@@ -121,6 +127,13 @@ addRanking ranking sRankings =
 --         True
 --     else
 --         False
+
+isOwner : String -> Ranking -> Bool 
+isOwner uid ranking = 
+    if uid  == ranking.rankingownerid then
+        True 
+    else
+        False
 
 
 isEmpty : Rankings -> Bool

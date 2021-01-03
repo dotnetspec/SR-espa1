@@ -31,9 +31,10 @@ module Data.Global exposing
     , addUserRanking, removeUserRanking, asList
     , removedUserRankingByRankingId
     , removedDeletedRankingsFromUserJoined
-    , gotNewRankingIdFromWebData
+    --, gotNewRankingIdFromWebData
     , isEmpty
     , gotRanking
+    , gotRankingId
     )
 
 
@@ -102,6 +103,9 @@ updateRankingDesc (Global esUR uR) desc =
     in
         Global esUR { rankingInfo = newRankingInfo, user = newUser, rankingtype = Owned } 
 
+gotRankingId : UserRanking -> String
+gotRankingId uR = 
+    Data.Rankings.gotRankingId uR.rankingInfo
 
 
 -- memberUR : Global -> Global
