@@ -41,6 +41,7 @@ module Data.Selected exposing (Selected
     , isMember
     , gotRanking
     , gotUserName
+    , playerStatusAsStr
     )
 
 import EverySet exposing (EverySet)
@@ -122,7 +123,15 @@ gotUserName (Selected _ uP _) =
         Data.Users.Registered userInfo _ ->
             userInfo.username
 
-
+playerStatusAsStr : Selected -> String
+playerStatusAsStr s =
+    case gotStatus s of 
+        Owner ->
+            "Owner"
+        Member ->
+            "Member"
+        Other ->
+            "Spectator"
 
 gotRanking : Selected -> Data.Rankings.Ranking 
 gotRanking s = 

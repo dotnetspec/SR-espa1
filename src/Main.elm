@@ -2341,7 +2341,7 @@ view model =
                     Html.text ("Selected tbc11")
 
                 ( Fetched _ _ (Selected s), _, SR.Types.SelectedUI _ ) ->
-                    selectedView s (Data.Selected.gotStatus s)
+                    selectedView s
 
                 ( Fetched _ _ (Selected _), _, SR.Types.UIUpdateExistingUser ) ->
                     Html.text ("Selected tbc")
@@ -2821,15 +2821,12 @@ rankingBtn uR =
 
 
 playerbuttons : Data.Selected.Selected -> Element Msg
-playerbuttons selectedRanking =
-    --case selectedRanking (Selected (EverySet UserPlayer) Internal.Types.RankingId SelectedOwnerStatus Data.Players.Players SelectedState)
+playerbuttons s =
     Element.column Grid.section <|
         [ 
-            -- SR.Elements.selectedRankingHeaderEl <| Data.Rankings.Ranking "" False selectedRanking.ranking.rankingname Nothing ""
-        SR.Elements.selectedRankingHeaderEl <| selectedRanking
-        , Element.column (Card.simple ++ Grid.simple) <|
-            List.map (configureThenAddPlayerRankingBtns selectedRanking )
-                (Data.Selected.asList selectedRanking)
+            Element.column (Card.simple ++ Grid.simple) <|
+            List.map (configureThenAddPlayerRankingBtns s )
+                (Data.Selected.asList s)
         ]
 
 configureThenAddPlayerRankingBtns : Data.Selected.Selected -> Data.Selected.UserPlayer -> Element Msg
@@ -3459,103 +3456,16 @@ displayEnableEthereumBtn =
             , label = Element.text "Enable Ethereum"
             }
 
-selectedView : Data.Selected.Selected -> Data.Selected.PlayerStatus -> Html Msg
-selectedView s playerStatus =
-    -- case sSelected of 
-    --     (Data.Selected.Selected esUP uP ranking) ->
-            case playerStatus of 
-                Data.Selected.Owner ->
-                    Framework.responsiveLayout [] <| Element.column
-                        Framework.container
-                        [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner " ++ (Data.Selected.gotUserName s)
-                        --, selecteduserIsOwnerhomebutton Data.Users.Spectator
-                        , playerbuttons s
-                        , infoBtn "Cancel" Cancel
-                        ]
-
-                Data.Selected.Member ->
-                    Framework.responsiveLayout [] <| Element.column Framework.container
-                    [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ (Data.Selected.gotUserName s)
-                    --, selecteduserIsPlayerHomebutton user
-                    , playerbuttons s
-                    ]
-
-                Data.Selected.Other ->
-                    Framework.responsiveLayout [] <| Element.column Framework.container
-                        [ --newOrExistingUserNameDisplay userVal accountState
-                        --, selecteduserIsNeitherPlayerNorOwnerHomebutton userVal accountState
-                        playerbuttons s
-                        , infoBtn "Cancel" Cancel
-                        --Element.text <| "SportRank - Play"
-                        ]
-                            -- (Data.Users.Registered userInfo userState) ->
-                            --     Framework.responsiveLayout [] <| Element.column Framework.container
-                            --         [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userInfo.username
-                            --         , selecteduserIsOwnerhomebutton sSelected..user
-                            --         , playerbuttons dataState sSelected.
-                            --         ]
-                            -- (Data.Users.NoWallet userInfo userState) ->
-                            --     Framework.responsiveLayout [] <| Element.column Framework.container
-                            --         [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userInfo.username
-                            --         , selecteduserIsOwnerhomebutton sSelected..user
-                            --         , playerbuttons dataState sSelected.
-                            --         ]
-                            -- (Data.Users.NoCredit userInfo userState) ->
-                            --     Framework.responsiveLayout [] <| Element.column Framework.container
-                            --         [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userInfo.username
-                            --         , selecteduserIsOwnerhomebutton sSelected..user
-                            --         , playerbuttons dataState sSelected.
-                            --         ]
-                            -- (Data.Users.Credited userInfo userState) ->
-                            --     Framework.responsiveLayout [] <| Element.column Framework.container
-                            --         [ Element.el Heading.h4 <| Element.text <| "SportRank - Owner  - " ++ userInfo.username
-                            --         , selecteduserIsOwnerhomebutton sSelected..user
-                            --         , playerbuttons dataState sSelected.
-                            --         ]
-
-                -- _ ->
-                --     Html.text "Fail selectedView"
-        -- _ ->
-        --     Html.text "Fail selectedView"
-
--- selectedUserIsPlayerView : DataState -> SR.Types.AppInfo -> Html Msg
--- selectedUserIsPlayerView dataState appInfo =
---     case dataState of
---         Fetched sUsers sRankings dKind -> 
---             case dKind of 
---                 Selected sSelected ->
---                     case user of
---                             Data.Users.Spectator userInfo userState ->
---                                 Framework.responsiveLayout [] <| Element.column Framework.container
---                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Spectator"
---                                     ]
---                             (Data.Users.Registered userInfo userState) ->
---                                 Framework.responsiveLayout [] <| Element.column Framework.container
---                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
---                                     , selecteduserIsPlayerHomebutton appInfo.user
---                                     , playerbuttons dataState appInfo
---                                     ]
---                             (Data.Users.NoWallet userInfo userState) ->
---                                 Framework.responsiveLayout [] <| Element.column Framework.container
---                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
---                                     , selecteduserIsPlayerHomebutton appInfo.user
---                                     , playerbuttons dataState appInfo
---                                     ]
---                             (Data.Users.NoCredit userInfo userState) ->
---                                 Framework.responsiveLayout [] <| Element.column Framework.container
---                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
---                                     , selecteduserIsPlayerHomebutton appInfo.user
---                                     , playerbuttons dataState appInfo
---                                     ]
---                             (Data.Users.Credited userInfo userState) ->
---                                 Framework.responsiveLayout [] <| Element.column Framework.container
---                                     [ Element.el Heading.h4 <| Element.text <| "SportRank - Player - " ++ userInfo.username
---                                     , selecteduserIsPlayerHomebutton appInfo.user
---                                     , playerbuttons dataState appInfo
---                                     ]
-
---                 _ ->
---                     Html.text "Error3"
+selectedView : Data.Selected.Selected -> Html Msg
+selectedView s =
+    Framework.responsiveLayout [] <| Element.column
+        Framework.container
+        [ 
+            SR.Elements.selectedRankingHeaderEl s
+            --, selecteduserIsOwnerhomebutton Data.Users.Spectator
+            , playerbuttons s
+            , infoBtn "Cancel" Cancel
+        ]
 
 --         Updated sUsers sRankings dKind -> 
 --             case dKind of 
@@ -3600,31 +3510,6 @@ selectedView s playerStatus =
 
 --         AllEmpty ->
 --                     Html.text "Please refresh your browser"
-
-
--- selectedUserIsNeitherOwnerNorPlayerView : DataState -> SR.Types.AppInfo ->  Html Msg
--- selectedUserIsNeitherOwnerNorPlayerView  dataState appInfo accountState =
---     case dataState of
---         Fetched sUsers sRankings (Selected sSelected) ->
---             case user of
---                 Nothing ->
---                     Framework.responsiveLayout [] <|
---                         Element.column
---                             Framework.container
---                             [ newOrExistingUserNameDisplay Data.Users.Spectator accountState
---                             , selecteduserIsNeitherPlayerNorOwnerHomebutton Data.Users.Spectator accountState
---                             , playerbuttons  dataState appInfo
---                             ]
---                 Just userVal ->
---                     Framework.responsiveLayout [] <|
---                         Element.column
---                             Framework.container
---                             [ newOrExistingUserNameDisplay userVal accountState
---                             , selecteduserIsNeitherPlayerNorOwnerHomebutton userVal accountState
---                             , playerbuttons  dataState appInfo
---                             ]
---         _ ->
---             Html.text "Error4"
 
 
 
