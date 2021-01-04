@@ -3478,26 +3478,26 @@ selectedView s viewType =
         Framework.container
         [ 
             Element.wrappedRow [] <| [SR.Elements.selectedRankingHeaderEl s]
-            , Element.text "\n"
-            , infoBtn "Cancel" Cancel
-            , Element.text "\n"
-            , case viewType of 
-                SR.Types.Owned ->
-                    Element.column [Element.width Element.fill] 
-                    [infoBtn "Delete" ClickedDeleteRanking, playerbuttons s]
-                SR.Types.Member ->
-                    infoBtn "Leave" Cancel
-                SR.Types.Other ->
-                    Element.text "Other"
-                SR.Types.CreatingChallenge ->
-                    Element.text "CreatingChallenge"
-                SR.Types.ConfirmedChallenge ->
-                    Element.text "ConfirmedChallenge"
-                SR.Types.EnteringResult ->
-                    Element.text "EnteringResult"
-  -- should ResultOfMatch be in a view type?
-                SR.Types.ConfirmedResult ->
-                    Element.text "ConfirmedResult"
+            ,
+                case viewType of 
+                    SR.Types.Owned ->
+                        Element.column ([Element.width Element.fill] ++ Card.simple ++ Grid.simple)
+                        [infoBtn "Delete" ClickedDeleteRanking, infoBtn "Cancel" Cancel, playerbuttons s]
+                    SR.Types.Member ->
+                        Element.column ([Element.width Element.fill] ++ Card.simple ++ Grid.simple)
+                        [infoBtn "Leave" ClickedRemoveFromUserMemberRankings, infoBtn "Cancel" Cancel, playerbuttons s]
+                    SR.Types.Other ->
+                        Element.column ([Element.width Element.fill] ++ Card.simple ++ Grid.simple)
+                        [infoBtn "Join" ClickedJoinSelected, infoBtn "Cancel" Cancel, playerbuttons s]
+                    SR.Types.CreatingChallenge ->
+                        Element.text "CreatingChallenge"
+                    SR.Types.ConfirmedChallenge ->
+                        Element.text "ConfirmedChallenge"
+                    SR.Types.EnteringResult ->
+                        Element.text "EnteringResult"
+    -- should ResultOfMatch be in a view type?
+                    SR.Types.ConfirmedResult ->
+                        Element.text "ConfirmedResult"
 
         ]
 
