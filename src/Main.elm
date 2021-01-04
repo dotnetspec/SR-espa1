@@ -750,27 +750,14 @@ update msg model =
         --                 in
         --                     ( AppOps newDataState user (SR.Types.SelectedUI SR.Types.Selected) emptyTxRecord, Cmd.none )
         
-        (Cancel, AppOps dataState user 
-            -- (Fetched sUsers sRankings 
-            --     (Global (Data.Global.Global (esUR) 
-            --         (Data.Global.CreatingNewRanking _))))
-            --             (Data.Users.Registered userInfo userState)
-                            uiState txRec ) ->
-            -- let
-            --     newDataKind = Global (Data.Global.Global (esUR) 
-            --         (Data.Global.DisplayLoggedIn))               
-            --     newDataState = Fetched sUsers sRankings newDataKind
-            -- in
-            -- UIEnterResultTxProblem is deliberately wrong - remove eventually
-            ( AppOps dataState 
-                user
-                    (SR.Types.GlobalUI SR.Types.All) emptyTxRecord, Cmd.none )            
-
-        -- (Cancel, AppOps (Updated sUsers sRankings dKind) user uiState txRec ) ->
-        --                 -- UIEnterResultTxProblem is deliberately wrong - remove eventually
-        --     ( AppOps 
-        --         (Fetched sUsers sRankings dKind) 
-        --             user SR.Types.GeneralUI emptyTxRecord, Cmd.none )
+        (Cancel, AppOps (Fetched sUsers sRankings dKind) user uiState txRec ) ->
+            let
+                newDataKind = Global (Data.Global.created sRankings sUsers user)               
+                newDataState = Fetched sUsers sRankings newDataKind
+            in
+            ( AppOps newDataState user
+                (SR.Types.GlobalUI SR.Types.All) 
+                    emptyTxRecord, Cmd.none )
 
         (ResetToShowSelected, AppOps dataState user uiState txRec ) ->
             case dataState of 
