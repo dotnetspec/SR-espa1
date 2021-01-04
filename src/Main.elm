@@ -2581,7 +2581,36 @@ globalView userVal sUsers dKind errorMsg =
             Framework.responsiveLayout [] <| Element.column Framework.container <|
                 [Element.text ("Should be Global view only here")]
         
+-- emptyView as placeholder whilst views are developed
+emptyView : Data.Users.User -> Data.Users.Users -> DataKind -> String -> Html Msg 
+emptyView userVal sUsers dKind errorMsg =
+    case dKind of
+        Global g -> 
+            Framework.responsiveLayout [] <| Element.column Framework.container <|
+                case userVal of
+                    Data.Users.Spectator _ _ ->
+                        [Element.el (Heading.h5) <| (Element.text ("SportRank - Welcome Spectator"))
+                        , displayEnableEthereumBtn
+                        , Element.text errorMsg
+                        ]
 
+                    Data.Users.Registered userInfo userState ->
+                        [Element.el (Heading.h5) <| (Element.text ("SportRank -" ++ userInfo.username) )
+                        , displayEnableEthereumBtn
+                        , Element.text ("\n")
+                        -- , 
+                        --     case (Data.Global.isEmpty <| Data.Global.fetchedOwned g) of 
+                        --         True ->
+                        --             Element.text ("")
+                        --         False ->
+                        --             displayCreateNewRankingBtn
+
+                        , Element.text  errorMsg
+                        ]
+                            
+        Selected _ -> 
+            Framework.responsiveLayout [] <| Element.column Framework.container <|
+                [Element.text ("Should be Global view only here")]
 
 registerNewUserView : Data.Users.User -> Data.Users.Users -> Html Msg 
 registerNewUserView userVal sUsers = 
@@ -3448,13 +3477,14 @@ selectedView s viewType =
     Framework.responsiveLayout [] <| Element.column
         Framework.container
         [ 
-            SR.Elements.selectedRankingHeaderEl s
+            Element.wrappedRow [] <| [SR.Elements.selectedRankingHeaderEl s]
             , Element.text "\n"
             , infoBtn "Cancel" Cancel
             , Element.text "\n"
             , case viewType of 
                 SR.Types.Owned ->
-                    infoBtn "Delete" ClickedDeleteRanking
+                    Element.column [Element.width Element.fill] 
+                    [infoBtn "Delete" ClickedDeleteRanking, playerbuttons s]
                 SR.Types.Member ->
                     infoBtn "Leave" Cancel
                 SR.Types.Other ->
@@ -3468,23 +3498,7 @@ selectedView s viewType =
   -- should ResultOfMatch be in a view type?
                 SR.Types.ConfirmedResult ->
                     Element.text "ConfirmedResult"
-                    -- don't currently know how to use one viewType:
-             , case viewType of 
-                SR.Types.Owned ->
-                    playerbuttons s
-                SR.Types.Member ->
-                    playerbuttons s
-                SR.Types.Other ->
-                    playerbuttons s
-                SR.Types.CreatingChallenge ->
-                    Element.text "CreatingChallenge"
-                SR.Types.ConfirmedChallenge ->
-                    Element.text "ConfirmedChallenge"
-                SR.Types.EnteringResult ->
-                    Element.text "EnteringResult"
-  -- should ResultOfMatch be in a view type?
-                SR.Types.ConfirmedResult ->
-                    Element.text "ConfirmedResult"
+
         ]
 
 --         Updated sUsers sRankings dKind -> 
