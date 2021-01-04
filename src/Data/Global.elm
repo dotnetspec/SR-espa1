@@ -64,6 +64,14 @@ type RankingType =
     | Member
     | Other
 
+
+--UserRanking.userInfo will always be Registered only
+type alias UserRanking =
+    { rankingInfo : Data.Rankings.Ranking
+    , user : Data.Users.User
+    , rankingtype : RankingType
+    }
+
 isEmpty : Global -> Bool 
 isEmpty (Global esUR uR) = 
     EverySet.isEmpty esUR
@@ -129,12 +137,6 @@ setRankingType ur rt =
     , rankingtype = rt
     }
 
---UserRanking.userInfo will always be Registered only
-type alias UserRanking =
-    { rankingInfo : Data.Rankings.Ranking
-    , user : Data.Users.User
-    , rankingtype : RankingType
-    }
 
 -- displayGlobalLogin : Global -> Global
 -- displayGlobalLogin (Global esUR gstate) =
@@ -201,11 +203,6 @@ isUserOwnerOfSelectedUserRanking rnkInfo lurnkInfo user =
 extractSelectedUserRankingFromGlobalList : List UserRanking -> String -> Maybe UserRanking
 extractSelectedUserRankingFromGlobalList luranking rnkId =
     List.head (EverySet.toList (EverySet.filter (isUserRankingIdInList rnkId) (EverySet.fromList luranking)))
-
-
--- gotRanking : UserRanking -> Data.Rankings.Ranking
--- gotRanking uranking =
---     uranking.rankingInfo
 
 
 created : Data.Rankings.Rankings -> Data.Users.Users -> Data.Users.User -> Global

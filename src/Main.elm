@@ -2292,7 +2292,7 @@ view model =
                             --     ""
                                 Html.text ("Selected tbc2")
                 ( Updated _ _ _, _, _ ) ->
-                    Html.text ("Selected tbc")
+                    Html.text ("deleted updataed?")
 
                 ( AllEmpty, _, _) ->
                     Html.text ("Selected tbc3")
@@ -2327,8 +2327,8 @@ view model =
                 ( Fetched _ _ (Selected _), _, SR.Types.GeneralUI _ ) ->
                     Html.text ("Selected tbc11")
 
-                ( Fetched _ _ (Selected s), _, SR.Types.SelectedUI _ ) ->
-                    selectedView s
+                ( Fetched _ _ (Selected s), _, SR.Types.SelectedUI viewType ) ->
+                    selectedView s viewType
 
                 ( Fetched _ _ (Selected _), _, SR.Types.UIUpdateExistingUser ) ->
                     Html.text ("Selected tbc")
@@ -3443,15 +3443,48 @@ displayEnableEthereumBtn =
             , label = Element.text "Enable Ethereum"
             }
 
-selectedView : Data.Selected.Selected -> Html Msg
-selectedView s =
+selectedView : Data.Selected.Selected -> SR.Types.Selected -> Html Msg
+selectedView s viewType =
     Framework.responsiveLayout [] <| Element.column
         Framework.container
         [ 
             SR.Elements.selectedRankingHeaderEl s
-            --, selecteduserIsOwnerhomebutton Data.Users.Spectator
-            , playerbuttons s
+            , Element.text "\n"
             , infoBtn "Cancel" Cancel
+            , Element.text "\n"
+            , case viewType of 
+                SR.Types.Owned ->
+                    infoBtn "Delete" ClickedDeleteRanking
+                SR.Types.Member ->
+                    infoBtn "Leave" Cancel
+                SR.Types.Other ->
+                    Element.text "Other"
+                SR.Types.CreatingChallenge ->
+                    Element.text "CreatingChallenge"
+                SR.Types.ConfirmedChallenge ->
+                    Element.text "ConfirmedChallenge"
+                SR.Types.EnteringResult ->
+                    Element.text "EnteringResult"
+  -- should ResultOfMatch be in a view type?
+                SR.Types.ConfirmedResult ->
+                    Element.text "ConfirmedResult"
+                    -- don't currently know how to use one viewType:
+             , case viewType of 
+                SR.Types.Owned ->
+                    playerbuttons s
+                SR.Types.Member ->
+                    playerbuttons s
+                SR.Types.Other ->
+                    playerbuttons s
+                SR.Types.CreatingChallenge ->
+                    Element.text "CreatingChallenge"
+                SR.Types.ConfirmedChallenge ->
+                    Element.text "ConfirmedChallenge"
+                SR.Types.EnteringResult ->
+                    Element.text "EnteringResult"
+  -- should ResultOfMatch be in a view type?
+                SR.Types.ConfirmedResult ->
+                    Element.text "ConfirmedResult"
         ]
 
 --         Updated sUsers sRankings dKind -> 
