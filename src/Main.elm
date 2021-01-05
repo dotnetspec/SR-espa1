@@ -3851,31 +3851,6 @@ addedUserAsFirstPlayerInNewList : Data.Users.User -> Cmd Msg
 addedUserAsFirstPlayerInNewList user =
     -- todo: fix
     Cmd.none
-    -- let
-    --     playerEncoder : Json.Encode.Value
-    --     playerEncoder =
-    --         Json.Encode.list
-    --             Json.Encode.object
-    --             [ [ ( "address", Json.Encode.string (String.toLower user.m_ethaddress) )
-    --               , ( "rank", Json.Encode.int 1 )
-    --               , ( "challengerid", Json.Encode.string "" )
-    --               ]
-    --             ]
-    -- in
-    -- --SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId is the Msg handled by update whenever a request is made
-    -- -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
-    -- -- decoder relates to what comes back from server. Nothing to do with above.
-    -- Http.request
-    --     { body =
-    --         Http.jsonBody <| playerEncoder
-    --     , expect = Http.expectJson (RemoteData.fromResult >> SentCurrentPlayerInfoAndDecodedResponseToJustNewRankingId) SR.Decode.newRankingIdDecoder
-    --     , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
-    --     , method = "POST"
-    --     , timeout = Nothing
-    --     , tracker = Nothing
-    --     , url = SR.Constants.jsonbinUrlForCreateNewBinAndRespond
-    --     }
-
 
 createNewUser : Data.Users.Users -> Data.Users.User -> Cmd Msg
 createNewUser sUsers newuserinfo =
@@ -3895,37 +3870,6 @@ createNewUser sUsers newuserinfo =
     --             Data.Users.addUser newUserToAdd sUsers
     --             |> Data.Users.asList
             
-    -- in
-    -- --SentUserInfoAndDecodedResponseToNewUser is the Msg handled by update whenever a request is made by buttuser clicked
-    -- --RemoteData is used throughout the module, including update
-    -- -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
-    -- -- decoder relates to what comes back from server. Nothing to do with above.
-    -- -- we mustn't submit a new user if the original list is empty for some reason ...
-    -- if Data.Users.isEmpty sUsers then
-    --     Http.request
-    --         { body =
-    --             Http.jsonBody <| jsonEncodeNewUsersList listForHttpRequest
-    --         , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
-    --         , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
-    --         , method = "PUT"
-    --         , timeout = Nothing
-    --         , tracker = Nothing
-
-    --         -- this will fail the create new user:
-    --         , url = ""
-    --         }
-
-    -- else
-    --     Http.request
-    --         { body =
-    --             Http.jsonBody <| jsonEncodeNewUsersList listForHttpRequest
-    --         , expect = Http.expectJson (RemoteData.fromResult >> SentUserInfoAndDecodedResponseToNewUser) SR.Decode.decodeNewUserListServerResponse
-    --         , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
-    --         , method = "PUT"
-    --         , timeout = Nothing
-    --         , tracker = Nothing
-    --         , url = SR.Constants.jsonbinUrlUpdateUserListAndRespond
-    --         }
 
 updateExistingUser : Data.Users.Users -> Cmd Msg
 updateExistingUser  updatedUserInfo =
@@ -3938,128 +3882,28 @@ httpUpdateUsers  updatedUsers =
 
 httpPutRequestForAddGlobal : Json.Encode.Value -> List Data.Rankings.Ranking -> Cmd Msg
 httpPutRequestForAddGlobal newJsonEncodedList globalListWithJsonObjAdded =
-    --AddedNewRankingToGlobalList is the Msg handled by update whenever a request is made
-    --RemoteData is used throughout the module, including update
-    -- using Http.jsonBody means json header automatically applied. Adding twice will break functionality
-    -- the Decoder decodes what comes back in the response
-    -- Http.request
-    --     { body =
-    --         Http.jsonBody <| Data.Global.newJsonEncodedList globalListWithJsonObjAdded
-    --     , expect = Http.expectJson (RemoteData.fromResult >> AddedNewRankingToGlobalList) SR.Decode.decodeNewRankingListServerResponse
-    --     , headers = [ SR.Defaults.secretKey, SR.Defaults.globalBinName, SR.Defaults.globalContainerId ]
-    --     , method = "PUT"
-    --     , timeout = Nothing
-    --     , tracker = Nothing
-    --     , url = SR.Constants.globalJsonbinRankingUpdateLink
-    --     }
     Cmd.none
 
 httpDeleteSelectedRankingFromGlobalList : Data.Global.Global -> Cmd Msg
 httpDeleteSelectedRankingFromGlobalList sGlobalWithRankingDeleted =
     Cmd.none
-    -- Http.request
-    --         { body =
-    --             Http.jsonBody <| Data.Global.newJsonEncodedList (Data.Global.rankingsAsList sGlobalWithRankingDeleted)
-    --         , expect = Http.expectJson (RemoteData.fromResult >> ReturnedFromDeletedRankingFromGlobalList) SR.Decode.decodeUpdateGlobalBinResponse
-    --         , headers = [ SR.Defaults.secretKey, SR.Defaults.globalBinName, SR.Defaults.globalContainerId ]
-    --         , method = "PUT"
-    --         , timeout = Nothing
-    --         , tracker = Nothing
-    --         -- nb. updating the 'global' list on the server actually means updating the Rankings set
-    --         -- the collection is called 'Global' on the server, but it isn't 'Global' in the app
-    --         -- until it's been turned into (EverySet UserRankings)
-    --         , url = SR.Constants.globalJsonbinRankingUpdateLink
-    --         }
 
 
 httpDeleteSelectedRankingFromJsonBin : String -> Cmd Msg
 httpDeleteSelectedRankingFromJsonBin rankingId =
     Cmd.none
-    -- the Decoder decodes what comes back in the response
-    -- let 
-    --     _ = Debug.log "bin id" rankingId
-    -- in
-    -- Http.request
-    --     { body =
-    --         Http.emptyBody
-    --     , expect = Http.expectJson (RemoteData.fromResult >> ReturnedFromDeletedSelectedRankingFromJsonBin) SR.Decode.decodeDeleteBinResponse
-    --     , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
-    --     , method = "DELETE"
-    --     , timeout = Nothing
-    --     , tracker = Nothing
-    --     , url = "https://api.jsonbin.io/b/" ++ rankingId
-        
-    --     }
 
 
 postResultToJsonbin : Internal.Types.RankingId -> Cmd Msg
 postResultToJsonbin (Internal.Types.RankingId rankingId) =
-    let
-        _ =
-            Debug.log "rankingid in postResultToJsonbin" rankingId
-
-        headerKey =
-            Http.header
-                "secret-key"
-                "$2a$10$HIPT9LxAWxYFTW.aaMUoEeIo2N903ebCEbVqB3/HEOwiBsxY3fk2i"
-    in
-    Http.request
-        { body = Http.emptyBody
-        , expect = Http.expectWhatever SentResultToJsonbin
-        , headers = [ headerKey ]
-        , method = "PUT"
-        , timeout = Nothing
-        , tracker = Nothing
-        , url = "https://api.jsonbin.io/b/" ++ rankingId
-        }
+ Cmd.none
 
 
 httpPlayerList : DataState -> Cmd Msg
 httpPlayerList dataState =
     Cmd.none
---   case dataState of
---     Updated sUsers sRankings dKind -> 
---         case dKind of 
---                 Selected sSelected ->
---                     Http.request
---                         { body =
---                         Http.jsonBody <| Data.Selected.jsonEncodeNewSelectedRankingPlayerList (Data.Selected.asList sSelected)
---                         , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromPlayerListUpdate) SR.Decode.decodeNewPlayerListServerResponse
---                         , headers = [ SR.Defaults.secretKey, SR.Defaults.selectedBinName, SR.Defaults.selectedContainerId ]
---                         , method = "PUT"
---                         , timeout = Nothing
---                         , tracker = Nothing
---                         , url = SR.Constants.jsonbinUrlStubForUpdateExistingBinAndRespond ++ (Data.Rankings.stringFromRankingId rnkId)
---                         }
---                 _ -> 
---                     let 
---                         _ = Debug.log "dataState - httpPlayerList" dataState
---                     in
---                         Cmd.none
---     _ -> 
---         let 
---             _ = Debug.log "dataState - httpPlayerList" dataState
---         in
---             Cmd.none
     
-
-
 httpUpdateUsersJoinRankings : String -> Data.Users.User -> List Data.Users.User -> Cmd Msg
 httpUpdateUsersJoinRankings rankingId user lUser =
     Cmd.none
-    -- let 
-    --     newUserList =  Data.Users.addedNewJoinedRankingId rankingId user lUser
-    --     _ = Debug.log "newuserlist " newUserList
-    -- in
-    -- Http.request
-    --     { body =
-    --         Http.jsonBody <| SR.Encode.encodeUserList <| Data.Users.addedNewJoinedRankingId rankingId user lUser
-    --     , expect = Http.expectJson (RemoteData.fromResult >> ReturnFromUserListUpdate) SR.Decode.decodeNewUserListServerResponse
-    --     , headers = [ SR.Defaults.secretKey, SR.Defaults.userBinName, SR.Defaults.userContainerId ]
-    --     , method = "PUT"
-    --     , timeout = Nothing
-    --     , tracker = Nothing
-    --     --, url = SR.Constants.jsonbinUrlUpdateUserListAndRespond
-    --     , url = ""
-    --     }
 
