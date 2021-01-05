@@ -7,7 +7,7 @@ module Data.Selected exposing (Selected
     , releasePlayerForUI
     , releaseChallengerForUI
     , asEverySet
-    , gotCurrentUserAsPlayerFromPlayerList
+    --, gotCurrentUserAsPlayerFromPlayerList
     , gotUP
     , gotUserPlayerByUserId
     , empty
@@ -37,6 +37,7 @@ module Data.Selected exposing (Selected
     , gotPlayers
     , gotPlayer
     , gotOwnerAsUP
+    , gotOpponentAsUP
     --, updatedUPinSet
     , isMember
     , gotRanking
@@ -55,6 +56,7 @@ import EverySet
 import Eth.Utils
 import Eth.Types
 import Data.Rankings
+import EverySet
 
 
 
@@ -105,15 +107,18 @@ asEverySet (Selected esSelected uP ranking)  =
      esSelected
 
 
-created : List Data.Players.Player -> Data.Users.Users -> Data.Users.User -> Data.Rankings.Ranking -> PlayerStatus -> Selected
-created lplayer sUser user ranking playerStatus =
+--created : List Data.Players.Player -> Data.Users.Users -> Data.Users.User -> Data.Rankings.Ranking -> PlayerStatus -> Selected
+created : EverySet Data.Players.Player -> Data.Users.Users -> Data.Users.User -> Data.Rankings.Ranking -> PlayerStatus -> Selected
+created esPlayer sUser user ranking playerStatus =
     let
-        luser = Data.Users.asList sUser
-        esUserPlayers = 
-            List.map (createdUserPlayer luser) lplayer
-            |> EverySet.fromList
+        newSelected = Selected (createdUPs esPlayer sUser) emptyUserPlayer ranking
+        newUserAsPlayer = Data.Players.gotPlayer (gotPlayers newSelected) (Data.Users.gotId user)
     in
-        Selected esUserPlayers {player = Data.Players.emptyIndividualPlayer, user = user, status = playerStatus } ranking
+        Selected (createdUPs esPlayer sUser) {player = newUserAsPlayer, user = user, status = playerStatus } ranking
+
+createdUPs : EverySet Data.Players.Player -> Data.Users.Users -> EverySet UserPlayer
+createdUPs  esPlayer sUser =
+            EverySet.map (createdUserPlayer sUser) esPlayer
 
 gotUserName : Selected -> String 
 gotUserName (Selected _ uP _) = 
@@ -200,6 +205,18 @@ gotPlayerUID uplayer =
         Data.Players.IndividualPlayer playerInfo playerStatus ->
             playerInfo.uid
 
+gotOpponentAsUP : Selected -> Maybe UserPlayer
+gotOpponentAsUP (Selected esSelected uP ranking) =
+    case uP.player of 
+        Data.Players.IndividualPlayer pInfo pStatus ->
+            case pStatus of 
+                Data.Players.Available ->
+                    Nothing 
+                Data.Players.Challenged oppId ->
+                    List.head <|
+                    List.filter (\r -> (gotPlayerUID r) == oppId)
+                    <| EverySet.toList esSelected
+
 gotRankingId : Selected -> Internal.Types.RankingId 
 gotRankingId selected = 
     case selected of 
@@ -217,12 +234,12 @@ emptyUserPlayer =
     , user = Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General
     , status = Other}
 
-createdUserPlayer : List Data.Users.User -> Data.Players.Player -> UserPlayer
-createdUserPlayer luser player =
+createdUserPlayer : Data.Users.Users -> Data.Players.Player -> UserPlayer
+createdUserPlayer users player =
     case player of 
         Data.Players.IndividualPlayer playerInfo playerStatus ->
             let
-                m_user = Data.Users.gotUser (Data.Users.asUsers (EverySet.fromList luser)) playerInfo.uid
+                m_user = Data.Users.gotUser users playerInfo.uid
             in
             case m_user of
                 Nothing ->
@@ -847,6 +864,8 @@ assignedChallengerUIDForBOTHPlayers sSelected user challenger =
                     case (user.user, challenger.user) of 
                         (Data.Users.Registered userInfo userStatus, Data.Users.Registered cuserInfo cuserStatus) ->
                             let
+                                _ = Debug.log "user" user.player
+                                _ = Debug.log "challenger" challenger.player
                                 updatedUserAsPlayer = Data.Players.assignChallengerUID user.player cuserInfo.id
                                 updatedChallengerAsPlayer = Data.Players.assignChallengerUID challenger.player userInfo.id
 

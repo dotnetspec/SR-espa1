@@ -45,6 +45,7 @@ import Widget exposing (..)
 import SR.Types
 import Bridge
 import Graphql.Http as GQLHttp
+import Set
 
 
 main =
@@ -438,7 +439,7 @@ update msg model =
                         case uR.rankingtype of 
                             Data.Global.Owned ->
                                 let
-                                    newDataKind = Selected <| Data.Selected.created [] sUsers user uR.rankingInfo Data.Selected.Owner
+                                    newDataKind = Selected <| Data.Selected.created EverySet.empty sUsers user uR.rankingInfo Data.Selected.Owner
                                     newDataState = Fetched sUsers sRankings newDataKind
                                 in
                                 (AppOps newDataState
@@ -447,7 +448,7 @@ update msg model =
                             
                             Data.Global.Member ->
                                 let
-                                    newDataKind = Selected <| Data.Selected.created [] sUsers user uR.rankingInfo Data.Selected.Member
+                                    newDataKind = Selected <| Data.Selected.created EverySet.empty sUsers user uR.rankingInfo Data.Selected.Member
                                     newDataState = Fetched sUsers sRankings newDataKind
                                 in
                                 (AppOps newDataState
@@ -456,7 +457,7 @@ update msg model =
                             
                             Data.Global.Other ->
                                 let
-                                    newDataKind = Selected <| Data.Selected.created [] sUsers user uR.rankingInfo Data.Selected.Other
+                                    newDataKind = Selected <| Data.Selected.created EverySet.empty sUsers user uR.rankingInfo Data.Selected.Other
                                     newDataState = Fetched sUsers sRankings newDataKind
                                 in
                                 (AppOps newDataState
@@ -883,21 +884,24 @@ update msg model =
             (model, Cmd.none)
 
 
-        (ClickedChallengeOpponent opponentAsUserPlayer userAsUserPlayer,
+        (ClickedChallengeOpponent userAsUserPlayer opponentAsUserPlayer,
             AppOps (Fetched sUsers sRankings (Selected sSelected))
                 (Data.Users.Spectator userInfo userState) uiState txRec ) ->
                 (Failure "Spectator should'nt be able to challenge", Cmd.none)
         
-        (ClickedChallengeOpponent opponentAsUserPlayer userAsUserPlayer,
+        (ClickedChallengeOpponent userAsUserPlayer opponentAsUserPlayer,
             AppOps (Fetched sUsers sRankings (Selected sSelected))
                 (Data.Users.Registered userInfo userState) uiState txRec ) ->
-                    case userAsUserPlayer of 
+                    case opponentAsUserPlayer of 
                         Nothing ->
-                            (Failure "User couldn't be found as UP!", Cmd.none)
+                            (Failure "Opponent couldn't be found as UP! Member of this ranking?", Cmd.none)
                         
-                        Just uAsUP ->
+                        Just oppAsUp ->
                             let
-                                newDataKind = Selected (Data.Selected.assignedChallengerUIDForBOTHPlayers sSelected uAsUP opponentAsUserPlayer)
+                             
+                                
+                        
+                                newDataKind = Selected (Data.Selected.assignedChallengerUIDForBOTHPlayers sSelected userAsUserPlayer oppAsUp)
                                 newDataState = Fetched sUsers sRankings newDataKind
                             in
                                 case userInfo.walletState of 
@@ -1780,7 +1784,7 @@ updateWithReceivedPlayersByRankingId model response =
                         lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer filteredFPlayerList
                         -- todo: change createdSelected to accept a Set instead of a list
                         --newsSelected = Data.Selected.created lFromFToPlayer sUsers  (Data.Selected.gotUP s) (Data.Selected.gotRanking s)
-                        newsSelected = Data.Selected.created lFromFToPlayer sUsers user (Data.Selected.gotRanking s) (Data.Selected.gotStatus s)
+                        newsSelected = Data.Selected.created (EverySet.fromList lFromFToPlayer) sUsers user (Data.Selected.gotRanking s) (Data.Selected.gotStatus s)
                         newDataKind = Selected newsSelected
                         newDataState = Fetched sUsers sRankings newDataKind
                     in
@@ -1809,7 +1813,7 @@ updateWithReceivedPlayersByRankingId model response =
 
                         --newsSelected = Data.Selected.created lFromFToPlayer sUsers user (Data.Selected.gotRanking s) playerStatus
                         --nodb (replacing line above):
-                        newsSelected = Data.Selected.created Data.Players.dummyPlayers sUsers user (Data.Selected.gotRanking s) (Data.Selected.gotStatus s)
+                        newsSelected = Data.Selected.created (EverySet.fromList Data.Players.dummyPlayers) sUsers user (Data.Selected.gotRanking s) (Data.Selected.gotStatus s)
                         newDataKind = Selected newsSelected
                         newDataState = Fetched sUsers sRankings newDataKind
                     in
@@ -1936,7 +1940,7 @@ updateWithReceivedPlayers model response playerStatus =
                         filteredFPlayerList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lplayers)
                         lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer filteredFPlayerList
                         _ = Debug.log "players" lFromFToPlayer
-                        newDataKind = Selected <| Data.Selected.created lFromFToPlayer sUsers user (Data.Selected.gotRanking s) playerStatus
+                        newDataKind = Selected <| Data.Selected.created (EverySet.fromList lFromFToPlayer) sUsers user (Data.Selected.gotRanking s) playerStatus
                         newDataState = Fetched sUsers sRankings newDataKind
                     in
                         AppOps newDataState user uiState txRec
@@ -2077,7 +2081,7 @@ createNewRankingResponse model response =
                                 Data.Players.Available
                     firstUserPlayer = {  player = firstPlayer, user = Data.Users.Registered userInfo userState}
 
-                    newDataKind = Selected <| Data.Selected.created [firstPlayer]
+                    newDataKind = Selected <| Data.Selected.created (EverySet.fromList [firstPlayer])
                                  sUsers (Data.Users.Registered userInfo userState) newRanking Data.Selected.Owner
                     newDataState = Fetched sUsers sRankings newDataKind
                 in 
@@ -2243,7 +2247,10 @@ updateSelectedRankingPlayerList model luplayers =
                             --todo: I think this means we lose the update - need to do differently ...
                                 -- newDataKind = Selected ((Data.Selected.created (Data.Selected.convertUserPlayersToPlayers luplayers) sUsers
                                 --     (rnkId) "") selectedOwnerStatus)
-                                newDataKind = Selected <| Data.Selected.created (Data.Selected.convertUserPlayersToPlayers luplayers) 
+                                -- todo: fix - this will probably be changed to work with the Selected s instead of convertUserPlayersToPlayers
+                                -- temp solution to use an empty EverySet:
+                                --newDataKind = Selected <| Data.Selected.created (Data.Selected.convertUserPlayersToPlayers luplayers) 
+                                newDataKind = Selected <| Data.Selected.created EverySet.empty
                                     sUsers user (Data.Selected.gotRanking s) (Data.Selected.gotStatus s)
                                 newDataState = Fetched sUsers sRankings newDataKind 
                             in
@@ -2868,9 +2875,15 @@ configureThenAddPlayerRankingBtns s uplayer =
                     else
                         --available to challenge, not current user.
                         -- uplayer for ClickedChallengeOpponent here is the opponent:
+                        let
+                            _ = Debug.log "got userUP " (Data.Selected.gotUP s)
+                            _ = Debug.log "got oppUP " (Data.Selected.gotOpponentAsUP s)
+                        in
+                        
                         Element.column Grid.simple <|
                         [ Input.button (Button.fill ++ Color.info) <|
-                            { onPress = Just <| ClickedChallengeOpponent uplayer (Data.Selected.gotUserPlayerByUserId s userInfo.id)
+                            { --onPress = Just <| ClickedChallengeOpponent uplayer (Data.Selected.gotUserPlayerByUserId s userInfo.id)
+                            onPress = Just <| ClickedChallengeOpponent (Data.Selected.gotUP s) (Data.Selected.gotOpponentAsUP s)
                             , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ challorAvail
                             }
                         ]

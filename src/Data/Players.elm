@@ -5,6 +5,7 @@ module Data.Players exposing (Players
     , PlayerInfo
     , PlayerStatus(..)
     , gotUid
+    , gotPlayer
     , assignChallengerUID
     --, validatedPlayerList
     , handleFetchedPlayers
@@ -33,7 +34,9 @@ import List.Unique
 import SRdb.Scalar exposing (Id(..))
 import SRdb.ScalarCodecs
 import Data.Users
+--import Data.Selected exposing (gotUserName)
 
+-- mayb this EverySet will become just Set?:
 type Players = Players (EverySet Player)
 type PlayerNames = PlayerNames (EverySet String)
 
@@ -135,21 +138,21 @@ playersetLength (Players sPlayers) =
     EverySet.size sPlayers
 
 
--- gotPlayer : Players  -> String -> Player
--- gotPlayer (Players sPlayers) uaddr =
---     let
---         existingPlayer =
---             List.head <|
---                  EverySet.toList (EverySet.filter (\r -> (String.toLower <| r.address) == (String.toLower <| uaddr))
---                     sPlayers)
---     in
+gotPlayer : Players  -> String -> Player
+gotPlayer (Players esPlayers) uid =
+    let
+        existingPlayer =
+            List.head <|
+                 EverySet.toList (EverySet.filter (\r -> (String.toLower <| gotUid r) == (String.toLower <| uid))
+                    esPlayers)
+    in
     
---     case existingPlayer of
---         Nothing ->
---             Player "" "" 0 ""
+    case existingPlayer of
+        Nothing ->
+            emptyIndividualPlayer
 
---         Just a ->
---             a
+        Just a ->
+            a
 
 
 
