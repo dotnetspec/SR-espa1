@@ -51,25 +51,26 @@ type alias Ranking =
     , rankingname : String
     , rankingdesc : Maybe String
     , rankingownerid : String
+    , updatetext : String
     }
 
 emptyRanking : Ranking 
 emptyRanking =
-    Ranking "" False "" Nothing ""
+    Ranking "" False "" Nothing "" ""
 
 --nb. currently if the rankingownerid isn't found among the users
 -- a ranking won't appear, even if in this list:
 testRankings : List Ranking
 testRankings =
-    [Ranking "282953512300577285" False "Test1Rnk" Nothing "283120055707763201"
-    , Ranking "283673261521240581" False "Test4Rnk" Nothing "283075902275846657"
-    , Ranking "283311136082756097" False "Test3Rnk" Nothing "283075902275846657"
-    , Ranking "283315189344895493" False "Test2Rnk" Nothing "283120055707763201"
+    [Ranking "282953512300577285" False "Test1Rnk" Nothing "283120055707763201" ""
+    , Ranking "283673261521240581" False "Test4Rnk" Nothing "283075902275846657" ""
+    , Ranking "283311136082756097" False "Test3Rnk" Nothing "283075902275846657" ""
+    , Ranking "283315189344895493" False "Test2Rnk" Nothing "283120055707763201" ""
     ]
 
 convertFRankingToRanking : FRanking -> Ranking 
 convertFRankingToRanking franking = 
-    Ranking (fromScalarCodecId franking.id_) True franking.rankingname franking.rankingdesc franking.player
+    Ranking (fromScalarCodecId franking.id_) True franking.rankingname franking.rankingdesc franking.player ""
 
 type alias FRanking =
 

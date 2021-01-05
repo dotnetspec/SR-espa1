@@ -73,7 +73,6 @@ type Model
 type DataState
   = AllEmpty
   | Fetched Data.Users.Users Data.Rankings.Rankings DataKind
-  | Updated Data.Users.Users Data.Rankings.Rankings DataKind
 
 type DataKind
   =
@@ -356,7 +355,7 @@ update msg model =
             --                             _ ->
             --                                 (model, Cmd.none)
 
-                            -- Updated sUsers sRankings dKind -> 
+                            -- Fetched sUsers sRankings dKind -> 
                             --     case dKind of 
                             --             Selected sSelected ->
                             --                 case user.m_ethaddress of 
@@ -497,7 +496,7 @@ update msg model =
 
                 -- todo: we may need to make a change here:
                 -- newDataKind = Selected (EverySet UserPlayer) Internal.Types.RankingId SelectedOwnerStatus Data.Players.Players SelectedState
-                --         newDataState = Updated sUsers sRankings newDataKind
+                --         newDataState = Fetched sUsers sRankings newDataKind
             in
             case (result) of
                 (Data.Selected.Won playerUP challengerUP) ->
@@ -532,12 +531,12 @@ update msg model =
             case result of
                 (Data.Selected.Won playerUP challengerUP) ->
                     case dataState of
-                        Updated sUsers sRankings dKind -> 
+                        Fetched sUsers sRankings dKind -> 
                             case dKind of 
                                 Selected sSelected ->
                                     let 
                                         newDataKind = Selected (Data.Selected.handleWon sSelected playerUP challengerUP sUsers)
-                                        newDataState = Updated sUsers sRankings newDataKind
+                                        newDataState = Fetched sUsers sRankings newDataKind
                                         newModel = 
                                                 AppOps newDataState user
                                                 --(Data.Selected.resultView (Data.Selected.gotStatus sSelected)) 
@@ -560,12 +559,12 @@ update msg model =
 
                 (Data.Selected.Lost playerUP challengerUP) ->
                     case dataState of
-                        Updated sUsers sRankings dKind -> 
+                        Fetched sUsers sRankings dKind -> 
                             case dKind of 
                                 Selected sSelected ->
                                     let 
                                         newDataKind = Selected (Data.Selected.handleLost sSelected playerUP challengerUP sUsers)
-                                        newDataState = Updated sUsers sRankings newDataKind
+                                        newDataState = Fetched sUsers sRankings newDataKind
                                         newModel = 
                                                 AppOps newDataState  
                                                 user 
@@ -587,12 +586,12 @@ update msg model =
 
                 (Data.Selected.Undecided playerUP challengerUP) ->
                     case dataState of
-                        Updated sUsers sRankings dKind -> 
+                        Fetched sUsers sRankings dKind -> 
                             case dKind of 
                                 Selected sSelected ->
                                     let
                                         newDataKind = Selected (Data.Selected.handleUndecided sSelected playerUP challengerUP)
-                                        newDataState = Updated sUsers sRankings newDataKind
+                                        newDataState = Fetched sUsers sRankings newDataKind
                                         newModel = 
                                                 AppOps newDataState user
                                                 uiState
@@ -791,7 +790,7 @@ update msg model =
             -- in
             -- -- if user already did an update, need to ensure we start with Fetched again
             -- case dataState of
-            --     Updated sUsers sRankings dKind ->
+            --     Fetched sUsers sRankings dKind ->
             --         let 
             --             newDataState = Fetched sUsers sRankings user
             --         in
@@ -859,7 +858,7 @@ update msg model =
             --     Fetched sUsers sRankings user ->
             --         let 
             --                     _ = Debug.log "14.1" dataState
-            --                     newDataState = Updated sUsers sRankings user
+            --                     newDataState = Fetched sUsers sRankings user
             --         in
             --         case user of
             --             Nothing ->
@@ -926,7 +925,7 @@ update msg model =
                                         removedRanking = Data.Rankings.removedById (Data.Selected.gotRankingId sSelected) Data.Rankings.empty
                                         newDataKind = Global (Data.Global.created removedRanking sUsers user)
                                         
-                                        newDataState = Updated newsUsers sRankings newDataKind
+                                        newDataState = Fetched newsUsers sRankings newDataKind
                                         _ = Debug.log "ranking should have been removed from rankings" removedRanking
                                     in
                                         ( AppOps
@@ -940,7 +939,7 @@ update msg model =
                           
                         _ -> 
                             let 
-                                _ = Debug.log "8 - dataState should be updated" dataState
+                                _ = Debug.log "8 - dataState should be Fetched" dataState
                             in
                                 (model, Cmd.none)
                 _ -> 
@@ -951,7 +950,7 @@ update msg model =
         
         (ClickedDeleteRankingConfirmed, AppOps dataState user uiState txRec )  ->
             case dataState of 
-                Updated sUsers sRankings dKind ->
+                Fetched sUsers sRankings dKind ->
                     case dKind of 
                         Selected sSelected ->
                              ( AppOps
@@ -979,14 +978,14 @@ update msg model =
             in
         
             case dataState of
-                Updated sUsers sRankings dKind ->
+                Fetched sUsers sRankings dKind ->
                     case dKind of 
                         Global sGlobal  ->
                             let
                                 -- disabled due to refacroring
                                 --newGlobal = Data.Global.removedUserRankingByRankingId sGlobal rnkId
                                 newDataKind = Global Data.Global.empty
-                                newDataState = Updated sUsers sRankings newDataKind           
+                                newDataState = Fetched sUsers sRankings newDataKind           
                             in 
                                 ( AppOps
                                     newDataState
@@ -1012,14 +1011,14 @@ update msg model =
             -- case (Data.Rankings.handleServerDeletedRanking response) of
             --     (sRanking, "Success") ->
             --         case dataState of 
-            --             Updated sUsers sRankings dKind ->
+            --             Fetched sUsers sRankings dKind ->
             --                 case dKind of
             --                     Global sGlobal  ->
             --                                 let
             --                                     newDataKind = Global sGlobal 
             --                                     newDataState = Fetched sUsers sRankings newDataKind
                                                 
-            --                                     _ = Debug.log "Ranking removed on return from list updated? " Data.Global.asList sGlobal
+            --                                     _ = Debug.log "Ranking removed on return from list Fetched? " Data.Global.asList sGlobal
                                                 
             --                                 in
             --                                     ( AppOps walletState newDataState user SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
@@ -1034,7 +1033,7 @@ update msg model =
 
             --     (sRanking, "404") ->
             --             case dataState of
-            --                 Updated sUsers sRankings dKind -> 
+            --                 Fetched sUsers sRankings dKind -> 
             --                     case dKind of 
             --                             Global sGlobal  ->
             --                                 (AppOps dataState user SR.Types.UIUnableToFindGlobalRankings emptyTxRecord, Cmd.none)
@@ -1111,7 +1110,7 @@ update msg model =
             --         Debug.log "handleWalletStateOpenedAndOperational Receipt" txReceipt
             -- in
             -- case (walletState, dataState) of 
-            --     -- n.b. you might need dataState to be updated here:
+            --     -- n.b. you might need dataState to be Fetched here:
             --     (SR.Types.WalletOperational, 
             --         Fetched  sUsers sRankings 
             --             (Selected (Data.Selected.Selected esUP rnkId PlayerStatus sPlayers (Data.Selected.EnteredResult resultOfMatch)))) ->
@@ -1174,7 +1173,7 @@ update msg model =
             --                                             newSGlobal = Data.Global.addUserRanking sGlobal extractedRankingId appInfo.selectedRanking userVal
             --                                             newGlobalAsList = Data.Global.rankingsAsList newSGlobal
             --                                             newGlobalUpdated = Global newSGlobal
-            --                                             newDataState = Updated sUsers sRankings newGlobalUpdated
+            --                                             newDataState = Fetched sUsers sRankings newGlobalUpdated
             --                                         in
             --                                             ( AppOps SR.Types.WalletOperational newDataState appInfo SR.Types.UICreateNewLadder  emptyTxRecord
             --                                             ,
@@ -1193,7 +1192,7 @@ update msg model =
             --                             in
             --                                 (model, Cmd.none)
 
-            --                 Updated sUsers sRankings dKind ->
+            --                 Fetched sUsers sRankings dKind ->
             --                     case dKind of 
             --                         Global sGlobal  -> 
             --                             let 
@@ -1277,7 +1276,7 @@ update msg model =
         
 
         (AddedNewRankingToGlobalList updatedListAfterNewEntryAddedToGlobalList,  AppOps dataState user uiState txRec ) ->
-            -- I think the global set has already been updated
+            -- I think the global set has already been Fetched
             -- case walletState of 
             --     SR.Types.WalletOperational ->
             --         ( AppOps SR.Types.WalletOperational dataState user SR.Types.UIRenderAllRankings emptyTxRecord, Cmd.none )
@@ -1297,7 +1296,7 @@ update msg model =
             --                     Selected sSelected ->
             --                         let
             --                             newDataKind = Selected (Data.Selected.assignedChallengerUIDForBOTHPlayers sSelected user challengerUID)
-            --                             newDataState = Updated sUsers sRankings newDataKind
+            --                             newDataState = Fetched sUsers sRankings newDataKind
             --                             updatedModel = AppOps walletState newDataState user SR.Types.UIRenderAllRankings txRec
             --                         in 
             --                             ( updatedModel, httpPlayerList (newDataState))
@@ -1346,7 +1345,7 @@ update msg model =
             --                                             newSelected = Data.Selected.asSelected (EverySet.fromList newLUPlayer)
                                                         
             --                                             newDataKind = Selected newSelected rnkId user Data.Selected.Member Data.Players.empty
-            --                                             newDataState = Updated sUsers sRankings newDataKind
+            --                                             newDataState = Fetched sUsers sRankings newDataKind
             --                                             updatedModel = AppOps walletState newDataState user SR.Types.UIRenderAllRankings txRec
             --                                         in
             --                                             ( updatedModel, httpPlayerList (newDataState))
@@ -1386,7 +1385,7 @@ update msg model =
             -- case walletState of 
             --     SR.Types.WalletOpened ->
             --         case dataState of 
-            --             Updated sUsers sRankings dKind ->
+            --             Fetched sUsers sRankings dKind ->
             --                 case dKind of 
             --                     Selected sSelected ->  
             --                         let
@@ -1462,14 +1461,14 @@ update msg model =
             --                     _ -> 
             --                         (model, Cmd.none)
                         
-            --             Updated sUsers sRankings dKind ->
+            --             Fetched sUsers sRankings dKind ->
             --                 case dKind of 
             --                         Global sGlobal  ->
             --                             let 
             --                                 lusers = Data.Users.extractUsersFromWebData response
             --                                 newGlobal = Data.Global.created (Data.Global.asRankings sGlobal) (Data.Users.asUsers (EverySet.fromList lusers))
             --                                 newDataKind = Global newGlobal
-            --                                 newDataState = Updated (Data.Users.asUsers (EverySet.fromList lusers)) sRankings newDataKind
+            --                                 newDataState = Fetched (Data.Users.asUsers (EverySet.fromList lusers)) sRankings newDataKind
             --                             in
             --                             (AppOps walletState newDataState user SR.Types.UIRenderAllRankings txRec, Cmd.none)
             --                         _ -> 
@@ -1680,15 +1679,15 @@ updateGlobal model =
                             let
                              
                                 newDataKind = Global (Data.Global.created sRankings sUsers user)
-                                newDataState = Updated sUsers sRankings newDataKind
+                                newDataState = Fetched sUsers sRankings newDataKind
                             in
                                 AppOps newDataState user uiState txRec
 
                         Selected _ ->
                             Failure "updateGlobal"
 
-                Updated _ _ _ ->
-                    model
+                -- Fetched _ _ _ ->
+                --     model
 
         Failure str ->
             Failure "updateGlobal"
@@ -1745,11 +1744,11 @@ updateWithReceivedUsers model response =
                         AppOps newDataState user (SR.Types.GeneralUI SR.Types.LogIn) txRec
 
 
-        (AppOps (Updated sUsers sRankings dKind) user uiState txRec, Ok lusers) ->
+        (AppOps (Fetched sUsers sRankings dKind) user uiState txRec, Ok lusers) ->
             model
 
-        ( AppOps (Fetched _ _ (Selected _)) _ _ _ , Ok _ ) ->
-            (Failure "updateWithReceivedUsers8")
+        -- ( AppOps (Fetched _ _ (Selected _)) _ _ _ , Ok _ ) ->
+        --     (Failure "updateWithReceivedUsers8")
 
         (AppOps AllEmpty user uiState txRec, Err _ )  ->
             (Failure "Unable to obtain User data. \nPlease check your network connection ...")
@@ -1757,8 +1756,8 @@ updateWithReceivedUsers model response =
         (AppOps (Fetched sUsers sRankings dKind) user uiState txRec, Err _)  ->
             (Failure "Network problem ... please re-load or change your location2")
 
-        (AppOps (Updated sUsers sRankings dKind) user uiState txRec, Err _ ) ->
-            (Failure "updateWithReceivedUsers11")
+        -- (AppOps (Fetched sUsers sRankings dKind) user uiState txRec, Err _ ) ->
+        --     (Failure "updateWithReceivedUsers11")
 
         (Failure _, Ok lusers) ->
             (Failure "Network problem ... please re-load or change your location3")
@@ -1794,8 +1793,8 @@ updateWithReceivedPlayersByRankingId model response =
             -- this only happens when the data comes in after a cancel, just return the model
             model
 
-        (AppOps (Updated sUsers sRankings dKind) user uiState txRec, Ok lplayers) ->
-            (Failure "updateWithReceivedPlayersByRankingId13")
+        -- (AppOps (Fetched sUsers sRankings dKind) user uiState txRec, Ok lplayers) ->
+        --     (Failure "updateWithReceivedPlayersByRankingId13")
 
         (AppOps AllEmpty user uiState txRec, Err _ )  ->
             (Failure "Unable to obtain Rankings data. Please check your network connection ...")
@@ -1819,8 +1818,8 @@ updateWithReceivedPlayersByRankingId model response =
         ( AppOps (Fetched _ _ (Global _)) _ _ _, Err _ ) ->
             (Failure "should be selected here")
 
-        (AppOps (Updated sUsers sRankings dKind) user uiState txRec, Err _ ) ->
-            (Failure "updateWithReceivedPlayersByRankingId16")
+        -- (AppOps (Fetched sUsers sRankings dKind) user uiState txRec, Err _ ) ->
+        --     (Failure "updateWithReceivedPlayersByRankingId16")
 
         (Failure _, Ok lusers) ->
             (Failure "updateWithReceivedPlayersByRankingId17")
@@ -1868,11 +1867,11 @@ updateWithReceivedRankings model response =
                     in
                         AppOps newDataState user uiState txRec
 
-        (AppOps (Updated sUsers sRankings dKind) user uiState txRec, Ok lrankings) ->
+        (AppOps (Fetched sUsers sRankings dKind) user uiState txRec, Ok lrankings) ->
             model
 
-        ( AppOps (Fetched _ _ (Selected _)) _ _ _ , Ok _ ) ->
-            (Failure "updateWithReceivedRankings13")
+        -- ( AppOps (Fetched _ _ (Selected _)) _ _ _ , Ok _ ) ->
+        --     (Failure "updateWithReceivedRankings13")
 
         (AppOps AllEmpty user uiState txRec, Err _ )  ->
             --(Failure "Unable to obtain Rankings data. Please check your network connection ...")
@@ -1896,8 +1895,8 @@ updateWithReceivedRankings model response =
             -- todo: fix put back above - just while sorting fauna relations issues
                 AppOps newDataState Data.Users.emptyUser (SR.Types.GeneralUI SR.Types.LogIn) emptyTxRecord
 
-        (AppOps (Updated sUsers sRankings dKind) user uiState txRec, Err _ ) ->
-            (Failure "updateWithReceivedRankings16")
+        -- (AppOps (Fetched sUsers sRankings dKind) user uiState txRec, Err _ ) ->
+        --     (Failure "updateWithReceivedRankings16")
 
         (Failure _, Ok lusers) ->
             (Failure "updateWithReceivedRankings17.1")
@@ -1924,8 +1923,8 @@ updateWithReceivedPlayers model response playerStatus =
         (AppOps (Fetched sUsers sRankings  (Global _)) user uiState txRec, Ok lplayers) ->
              (Failure "updateWithReceivedPlayers1")
                 
-        (AppOps (Updated sUsers sRankings dKind) user uiState txRec, Ok lplayers) ->
-            (Failure "updateWithReceivedPlayers2")
+        -- (AppOps (Fetched sUsers sRankings dKind) user uiState txRec, Ok lplayers) ->
+        --     (Failure "updateWithReceivedPlayers2")
 
         ( AppOps (Fetched sUsers sRankings 
             --(Selected (Data.Selected.Selected esUP rnkId selectedOwnerStatus sPlayers selectedState "")))
@@ -1951,8 +1950,8 @@ updateWithReceivedPlayers model response playerStatus =
         (AppOps (Fetched sUsers sRankings dKind) user uiState txRec, Err _)  ->
             (Failure "updateWithReceivedRankings15")
 
-        (AppOps (Updated sUsers sRankings dKind) user uiState txRec, Err _ ) ->
-            (Failure "updateWithReceivedRankings16")
+        -- (AppOps (Fetched sUsers sRankings dKind) user uiState txRec, Err _ ) ->
+        --     (Failure "updateWithReceivedRankings16")
 
         (Failure _, Ok lusers) ->
             (Failure "updateWithReceivedRankings17")
@@ -1968,8 +1967,8 @@ updateWithReceivedRankingById model response =
         (AppOps AllEmpty user uiState txRec, Ok _)  ->
             Failure "Err"
 
-        (AppOps (Updated sUsers sRankings dKind) user uiState txRec, Ok lrankings) ->
-            model
+        -- (AppOps (Fetched sUsers sRankings dKind) user uiState txRec, Ok lrankings) ->
+        --     model
 
         (AppOps (Fetched sUsers sRankings (Global sGlobal)) user uiState txRec, Ok franking) ->
             let
@@ -2000,8 +1999,8 @@ updateWithReceivedRankingById model response =
         (AppOps (Fetched sUsers sRankings dKind) user uiState txRec, Err _)  ->
             (Failure "updateWithReceivedUsers3")
 
-        (AppOps (Updated sUsers sRankings dKind) user uiState txRec, Err _ ) ->
-            (Failure "updateWithReceivedUsers4")
+        -- (AppOps (Fetched sUsers sRankings dKind) user uiState txRec, Err _ ) ->
+        --     (Failure "updateWithReceivedUsers4")
 
         (Failure _, Ok lusers) ->
             (Failure "updateWithReceivedUsers5")
@@ -2090,8 +2089,8 @@ createNewRankingResponse model response =
         
         ( AppOps AllEmpty (Data.Users.Registered _ _) _ _, Ok _ ) ->
             Failure "All empty"
-        ( AppOps (Updated _ _ _) (Data.Users.Registered _ _) _ _, Ok _ )->
-            Failure "Maybe use updated?"
+        -- ( AppOps (Fetched _ _ _) (Data.Users.Registered _ _) _ _, Ok _ )->
+        --     Failure "Maybe use Fetched?"
  
 
         (AppOps dataState (Data.Users.Spectator userInfo _) uiState txRec
@@ -2237,7 +2236,7 @@ updateSelectedRankingPlayerList model luplayers =
     case model of
         AppOps dataState user uiState txRec ->
             case dataState of
-                Updated sUsers sRankings dKind -> 
+                Fetched sUsers sRankings dKind -> 
                     case dKind of 
                         Selected s ->
                             let 
@@ -2246,13 +2245,13 @@ updateSelectedRankingPlayerList model luplayers =
                                 --     (rnkId) "") selectedOwnerStatus)
                                 newDataKind = Selected <| Data.Selected.created (Data.Selected.convertUserPlayersToPlayers luplayers) 
                                     sUsers user (Data.Selected.gotRanking s) (Data.Selected.gotStatus s)
-                                newDataState = Updated sUsers sRankings newDataKind 
+                                newDataState = Fetched sUsers sRankings newDataKind 
                             in
                                 AppOps newDataState user uiState txRec
 
                         _ -> 
                             let
-                                _ = Debug.log "updateSelectedRankingPlayerList - dataState should be Selected (updated)" dataState
+                                _ = Debug.log "updateSelectedRankingPlayerList - dataState should be Selected (Fetched)" dataState
                             in
                                 model
                 _ -> 
@@ -2275,6 +2274,9 @@ view model =
                 (AllEmpty, _ , (SR.Types.GeneralUI SR.Types.Loading)) ->
                     Html.text ("Loading ...")
 
+                ( AllEmpty, _, _) ->
+                    Html.text ("Network error, please re-load or re-locate ...")
+
                 -- Global -- Spectator
 
                 (Fetched sUsers sRankings (Global g), _ , (SR.Types.GlobalUI SR.Types.All)) ->
@@ -2291,11 +2293,7 @@ view model =
                             --     user sUsers g
                             --     ""
                                 Html.text ("Selected tbc2")
-                ( Updated _ _ _, _, _ ) ->
-                    Html.text ("deleted updataed?")
-
-                ( AllEmpty, _, _) ->
-                    Html.text ("Selected tbc3")
+                
             
                 ( Fetched sUsers sRankings (Global g), _, SR.Types.GeneralUI SR.Types.LogIn ) ->
                      globalView user sUsers (Global g) ""
@@ -2306,52 +2304,52 @@ view model =
                     -- todo: fix
                     -- Framework.responsiveLayout [] <| Element.column Framework.container <|
                     --     [displayRegisterNewUser user sUsers]
-                ( Fetched _ _ (Global _), _, SR.Types.GeneralUI SR.Types.UserInfo ) ->
-                    Html.text ("tbc")
-                ( Fetched _ _ (Global _), _, SR.Types.GeneralUI SR.Types.UpdateUser ) ->
-                    Html.text ("tbc")
-                ( Fetched _ _ (Global _), _, SR.Types.SelectedUI _ ) ->
-                    Html.text ("Selected tbc10")
-                ( Fetched _ _ (Global _), _, SR.Types.UIUpdateExistingUser ) ->
-                    Html.text ("Selected tbc")
-                ( Fetched _ _ (Global _), _, SR.Types.UIEnterResult ) ->
-                    Html.text ("Selected tbc")
-                ( Fetched _ _ (Global _), _, SR.Types.UIWaitingForTxReceipt ) ->
-                    Html.text ("Selected tbc")
-                ( Fetched _ _ (Global _), _, SR.Types.UIDeleteRankingConfirm ) ->
-                    Html.text ("Selected tbc")
-                ( Fetched _ _ (Global _), _, SR.Types.UIOwnerDeletedRanking ) ->
-                    Html.text ("Selected tbc")
-                ( Fetched _ _ (Global _), _, SR.Types.UIUnableToFindGlobalRankings ) ->
-                    Html.text ("Selected tbc")
-                ( Fetched _ _ (Selected _), _, SR.Types.GeneralUI _ ) ->
-                    Html.text ("Selected tbc11")
+                -- ( Fetched _ _ (Global _), _, SR.Types.GeneralUI SR.Types.UserInfo ) ->
+                -- --     Html.text ("tbc")
+                -- ( Fetched _ _ (Global _), _, SR.Types.GeneralUI SR.Types.UpdateUser ) ->
+                --     Html.text ("tbc")
+                -- ( Fetched _ _ (Global _), _, SR.Types.SelectedUI _ ) ->
+                --     Html.text ("Selected tbc10")
+                -- ( Fetched _ _ (Global _), _, SR.Types.UIUpdateExistingUser ) ->
+                --     Html.text ("Selected tbc")
+                -- ( Fetched _ _ (Global _), _, SR.Types.UIEnterResult ) ->
+                --     Html.text ("Selected tbc")
+                -- ( Fetched _ _ (Global _), _, SR.Types.UIWaitingForTxReceipt ) ->
+                --     Html.text ("Selected tbc")
+                ( Fetched sUsers _ (Global g), _, SR.Types.UIDeleteRankingConfirm ) ->
+                    emptyView user sUsers (Global g) "Delete Confirm"
+                -- ( Fetched _ _ (Global _), _, SR.Types.UIOwnerDeletedRanking ) ->
+                --     Html.text ("Selected tbc")
+                -- ( Fetched _ _ (Global _), _, SR.Types.UIUnableToFindGlobalRankings ) ->
+                --     Html.text ("Selected tbc")
+                -- ( Fetched _ _ (Selected _), _, SR.Types.GeneralUI _ ) ->
+                --     Html.text ("Selected tbc11")
 
                 ( Fetched _ _ (Selected s), _, SR.Types.SelectedUI viewType ) ->
                     selectedView s viewType
 
-                ( Fetched _ _ (Selected _), _, SR.Types.UIUpdateExistingUser ) ->
-                    Html.text ("Selected tbc")
-                ( Fetched _ _ (Selected _), _, SR.Types.UIEnterResult ) ->
-                    Html.text ("Selected tbc")
-                ( Fetched _ _ (Selected _), _, SR.Types.UIWaitingForTxReceipt ) ->
-                    Html.text ("Selected tbc")
-                ( Fetched _ _ (Selected _), _, SR.Types.UIDeleteRankingConfirm ) ->
-                    Html.text ("Selected tbc")
-                ( Fetched _ _ (Selected _), _, SR.Types.UIOwnerDeletedRanking ) ->
-                    Html.text ("Selected tbc")
-                ( Fetched _ _ (Selected _), _, SR.Types.UIUnableToFindGlobalRankings ) ->
-                    Html.text ("Selected tbc")
+                -- ( Fetched _ _ (Selected _), _, SR.Types.UIUpdateExistingUser ) ->
+                --     Html.text ("Selected tbc")
+                -- ( Fetched _ _ (Selected _), _, SR.Types.UIEnterResult ) ->
+                --     Html.text ("Selected tbc")
+                -- ( Fetched _ _ (Selected _), _, SR.Types.UIWaitingForTxReceipt ) ->
+                --     Html.text ("Selected tbc")
+                -- ( Fetched _ _ (Selected _), _, SR.Types.UIDeleteRankingConfirm ) ->
+                --     Html.text ("Selected tbc")
+                -- ( Fetched _ _ (Selected _), _, SR.Types.UIOwnerDeletedRanking ) ->
+                --     Html.text ("Selected tbc")
+                -- ( Fetched _ _ (Selected _), _, SR.Types.UIUnableToFindGlobalRankings ) ->
+                --     Html.text ("Selected tbc")
 
                 ( Fetched sUser sRankings (Global g), _, SR.Types.GlobalUI SR.Types.NewLadderCreate ) ->
                     inputNewLadderview sRankings (Data.Global.gotRanking g) user
 
-                ( Fetched _ _ (Global _), _, SR.Types.GlobalUI SR.Types.NewLadderConfirmed ) ->
-                    Html.text ("Selected tbc")
-                ( Fetched _ _ (Selected _), _, SR.Types.GlobalUI SR.Types.NewLadderCreate ) ->
-                    Html.text ("Selected tbc12")
-                ( Fetched _ _ (Selected _), _, SR.Types.GlobalUI SR.Types.NewLadderConfirmed ) ->
-                    Html.text ("Should be global before createnew")
+                -- ( Fetched _ _ (Global _), _, SR.Types.GlobalUI SR.Types.NewLadderConfirmed ) ->
+                --     Html.text ("Selected tbc")
+                -- ( Fetched _ _ (Selected _), _, SR.Types.GlobalUI SR.Types.NewLadderCreate ) ->
+                --     Html.text ("Selected tbc12")
+                -- ( Fetched _ _ (Selected _), _, SR.Types.GlobalUI SR.Types.NewLadderConfirmed ) ->
+                --     Html.text ("Should be global before createnew")
 
                 -- (Fetched sUsers sRankings dKind, 
                 --     Data.Users.Spectator userInfo 
@@ -2441,14 +2439,14 @@ view model =
                 --         userVal sUsers (Data.Global.Global (esUR) (Data.Global.DisplayLoggedIn ))
                         --""
 
-                -- ( Fetched _ _ (Global (Data.Global.Global (_) Data.Global.DisplayGlobalLogin)), Data.Users.Spectator _ Data.Users.Updated ) ->
-                --     Html.text ("User Updated")
-                -- ( Fetched _ _ (Global (Data.Global.Global (_) Data.Global.DisplayGlobalOnly)), Data.Users.Spectator _ Data.Users.Updated ) ->
-                --     Html.text ("User Updated")
-                -- ( Fetched _ _ (Global (Data.Global.Global (_) (Data.Global.CreatingNewRanking _ ))), Data.Users.Spectator _ Data.Users.Updated ) ->
-                --     Html.text ("User Updated")
-                -- ( Fetched _ _ (Global (Data.Global.Global (_) (Data.Global.CreatedNewRanking ranking))), Data.Users.Spectator _ Data.Users.Updated ) ->
-                --     Html.text ("User Updated")
+                -- ( Fetched _ _ (Global (Data.Global.Global (_) Data.Global.DisplayGlobalLogin)), Data.Users.Spectator _ Data.Users.Fetched ) ->
+                --     Html.text ("User Fetched")
+                -- ( Fetched _ _ (Global (Data.Global.Global (_) Data.Global.DisplayGlobalOnly)), Data.Users.Spectator _ Data.Users.Fetched ) ->
+                --     Html.text ("User Fetched")
+                -- ( Fetched _ _ (Global (Data.Global.Global (_) (Data.Global.CreatingNewRanking _ ))), Data.Users.Spectator _ Data.Users.Fetched ) ->
+                --     Html.text ("User Fetched")
+                -- ( Fetched _ _ (Global (Data.Global.Global (_) (Data.Global.CreatedNewRanking ranking))), Data.Users.Spectator _ Data.Users.Fetched ) ->
+                --     Html.text ("User Fetched")
 
                 -- ( Fetched _ _ (Global _), Data.Users.NoWallet _ _ ) ->
                 --     Html.text ("Not yet implemented")
@@ -2529,8 +2527,10 @@ view model =
                 -- ( Fetched _ _ (Selected _), Data.Users.Credited _ _ ) ->
                 --     Html.text "selected user"
 
-                -- (Updated _ _ _, _) ->
+                -- (Fetched _ _ _, _) ->
                 --     Html.text ("No User - No Update")
+                ( Fetched _ _ _, _, _ ) ->
+                    Html.text ("deleted updataed?")
 
            
         Failure str ->
@@ -2606,6 +2606,7 @@ emptyView userVal sUsers dKind errorMsg =
                         --             displayCreateNewRankingBtn
 
                         , Element.text  errorMsg
+                        , infoBtn "Cancel" Cancel
                         ]
                             
         Selected _ -> 
@@ -2916,7 +2917,7 @@ joinBtn user  =
 -- confirmDelRankingBtn appInfo dataState =
     
 --     case dataState of 
---             Updated sUsers sRankings dKind ->
+--             Fetched sUsers sRankings dKind ->
 --                  case dKind of 
 --                     Global sGlobal  ->
 --                         let 
@@ -2959,7 +2960,7 @@ joinBtn user  =
 -- continueAfterDelRankingBtn : SR.Types.AppInfo -> DataState -> Element Msg
 -- continueAfterDelRankingBtn appInfo dataState =
 --     case dataState of 
---             Updated sUsers sRankings dKind ->
+--             Fetched sUsers sRankings dKind ->
 --                  case dKind of 
 --                     Global sGlobal  ->
 --                         Element.column Grid.section <|
@@ -3033,8 +3034,8 @@ confirmChallengebutton model =
                 (Data.Users.Registered userInfo userState, Fetched sUsers sRankings (Global sGlobal)) ->
                     Element.text <| " Not in Selected"
                 
-                ( Data.Users.Registered _ _, _) ->
-                    Element.text "No challenger"
+                -- ( Data.Users.Registered _ _, _) ->
+                --     Element.text "No challenger"
                     
         _ ->
             Element.text "Fail confirmChallengebutton"
@@ -3501,7 +3502,7 @@ selectedView s viewType =
 
         ]
 
---         Updated sUsers sRankings dKind -> 
+--         Fetched sUsers sRankings dKind -> 
 --             case dKind of 
 --                 Selected sSelected ->
 --                     case user of
