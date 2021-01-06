@@ -154,7 +154,7 @@ type Msg
     | ClickedCreateNewLadder
     | ClickedConfirmCreateNewRanking Data.Rankings.Ranking
     | ClickedNewChallengeConfirm String
-    | ClickedChallengeOpponent Data.Selected.UserPlayer (Maybe Data.Selected.UserPlayer)
+    | ClickedChallengeOpponent Data.Selected.UserPlayer Data.Selected.UserPlayer
     | ClickedJoinSelected
     | ClickedChangedUIStateToEnterResult Data.Selected.UserPlayer
     | ClickedDeleteRanking
@@ -892,16 +892,8 @@ update msg model =
         (ClickedChallengeOpponent userAsUserPlayer opponentAsUserPlayer,
             AppOps (Fetched sUsers sRankings (Selected sSelected))
                 (Data.Users.Registered userInfo userState) uiState txRec ) ->
-                    case opponentAsUserPlayer of 
-                        Nothing ->
-                            (Failure "Opponent couldn't be found as UP! Member of this ranking?", Cmd.none)
-                        
-                        Just oppAsUp ->
                             let
-                             
-                                
-                        
-                                newDataKind = Selected (Data.Selected.assignedChallengerUIDForBOTHPlayers sSelected userAsUserPlayer oppAsUp)
+                                newDataKind = Selected (Data.Selected.assignedChallengerUIDForBOTHPlayers sSelected userAsUserPlayer opponentAsUserPlayer)
                                 newDataState = Fetched sUsers sRankings newDataKind
                             in
                                 case userInfo.walletState of 
@@ -1918,8 +1910,8 @@ updateWithReceivedRankings model response =
 
 
 updateWithReceivedPlayers : Model -> Result (GQLHttp.Error (Maybe (List (Maybe Data.Players.FPlayer)))) (Maybe (List (Maybe Data.Players.FPlayer))) 
-    -> Data.Selected.PlayerStatus -> Model
-updateWithReceivedPlayers model response playerStatus =
+    -> Data.Selected.MemberStatus -> Model
+updateWithReceivedPlayers model response userOwnerStatus =
      case (model, response) of
         (AppOps AllEmpty user uiState txRec, Ok lplayers)  ->
             (Failure "No network connection ...")
@@ -1940,7 +1932,7 @@ updateWithReceivedPlayers model response playerStatus =
                         filteredFPlayerList = Utils.MyUtils.removeNothingFromList (Maybe.withDefault [] lplayers)
                         lFromFToPlayer = List.map Data.Players.convertPlayerFromFPlayer filteredFPlayerList
                         _ = Debug.log "players" lFromFToPlayer
-                        newDataKind = Selected <| Data.Selected.created (EverySet.fromList lFromFToPlayer) sUsers user (Data.Selected.gotRanking s) playerStatus
+                        newDataKind = Selected <| Data.Selected.created (EverySet.fromList lFromFToPlayer) sUsers user (Data.Selected.gotRanking s) userOwnerStatus
                         newDataState = Fetched sUsers sRankings newDataKind
                     in
                         AppOps newDataState user uiState txRec
@@ -2883,7 +2875,7 @@ configureThenAddPlayerRankingBtns s uplayer =
                         Element.column Grid.simple <|
                         [ Input.button (Button.fill ++ Color.info) <|
                             { --onPress = Just <| ClickedChallengeOpponent uplayer (Data.Selected.gotUserPlayerByUserId s userInfo.id)
-                            onPress = Just <| ClickedChallengeOpponent (Data.Selected.gotUP s) (Data.Selected.gotOpponentAsUP s)
+                            onPress = Just <| ClickedChallengeOpponent (Data.Selected.gotUP s) uplayer
                             , label = Element.text <| String.fromInt playerInfo.rank ++ ". " ++ userInfo.username ++ " vs " ++ challorAvail
                             }
                         ]

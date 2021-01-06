@@ -104,7 +104,7 @@ globalHeading user =
 selectedRankingHeaderEl : Data.Selected.Selected -> Element msg
 selectedRankingHeaderEl s =
     Element.el Heading.h5 <| Element.text <| "SportRank" ++ " - " ++ (Data.Selected.gotRanking s).rankingname
-    ++  " - " ++ Data.Selected.playerStatusAsStr s
+    ++  " - " ++ Data.Selected.userOwnerStatusAsStr s
 
 
 simpleUserInfoText : Element msg

@@ -2,7 +2,7 @@
 module Data.Selected exposing (Selected
     , UserPlayer
     , ResultOfMatch(..)
-    , PlayerStatus(..)
+    , MemberStatus(..)
     --, SelectedState(..)
     , releasePlayerForUI
     , releaseChallengerForUI
@@ -42,7 +42,7 @@ module Data.Selected exposing (Selected
     , isMember
     , gotRanking
     , gotUserName
-    , playerStatusAsStr
+    , userOwnerStatusAsStr
     )
 
 import EverySet exposing (EverySet)
@@ -70,7 +70,7 @@ type Selected =
 type alias UserPlayer =
     { player : Data.Players.Player
     , user : Data.Users.User
-    , status : PlayerStatus
+    , status : MemberStatus
     }
 
 type ResultOfMatch =
@@ -83,7 +83,7 @@ type alias Opponent =
     UserPlayer
 
 
-type PlayerStatus
+type MemberStatus
  = Owner
  | Member
  | Other
@@ -98,7 +98,7 @@ type OpponentRelativeRank
     | OpponentRankLower
 
 
--- asSelected : EverySet UserPlayer -> Internal.Types.RankingId -> PlayerStatus -> Data.Players.Players -> SelectedState -> String -> Selected 
+-- asSelected : EverySet UserPlayer -> Internal.Types.RankingId -> MemberStatus -> Data.Players.Players -> SelectedState -> String -> Selected 
 -- asSelected esUserPlayer uP ranking = 
 --     Selected esUserPlayer uP ranking
 
@@ -106,19 +106,38 @@ asEverySet : Selected -> EverySet UserPlayer
 asEverySet (Selected esSelected uP ranking)  = 
      esSelected
 
-
---created : List Data.Players.Player -> Data.Users.Users -> Data.Users.User -> Data.Rankings.Ranking -> PlayerStatus -> Selected
-created : EverySet Data.Players.Player -> Data.Users.Users -> Data.Users.User -> Data.Rankings.Ranking -> PlayerStatus -> Selected
-created esPlayer sUser user ranking playerStatus =
+created : EverySet Data.Players.Player -> Data.Users.Users -> Data.Users.User -> Data.Rankings.Ranking -> MemberStatus -> Selected
+created esPlayer sUser user ranking userOwnerStatus =
     let
-        newSelected = Selected (createdUPs esPlayer sUser) emptyUserPlayer ranking
+        newSelected = Selected (EverySet.map (createdUserPlayer sUser user userOwnerStatus) esPlayer) emptyUserPlayer ranking
         newUserAsPlayer = Data.Players.gotPlayer (gotPlayers newSelected) (Data.Users.gotId user)
     in
-        Selected (createdUPs esPlayer sUser) {player = newUserAsPlayer, user = user, status = playerStatus } ranking
+        Selected (asEverySet newSelected) {player = newUserAsPlayer, user = user, status = userOwnerStatus } ranking
 
-createdUPs : EverySet Data.Players.Player -> Data.Users.Users -> EverySet UserPlayer
-createdUPs  esPlayer sUser =
-            EverySet.map (createdUserPlayer sUser) esPlayer
+
+createdUserPlayer : Data.Users.Users -> Data.Users.User -> MemberStatus -> Data.Players.Player -> UserPlayer
+createdUserPlayer users user memberStatus player =
+    case player of 
+        Data.Players.IndividualPlayer playerInfo playerStatus ->
+            let
+                m_user = Data.Users.gotUser users playerInfo.uid
+            in
+            case m_user of
+                Nothing ->
+                    emptyUserPlayer
+                    
+                Just userVal ->
+                        if playerInfo.uid == Data.Users.gotId user then
+                            { player = player
+                            , user = userVal
+                            , status = memberStatus
+                            }
+                        else
+                            { player = player
+                            , user = userVal
+                            , status = Member
+                            }
+
 
 gotUserName : Selected -> String 
 gotUserName (Selected _ uP _) = 
@@ -128,8 +147,8 @@ gotUserName (Selected _ uP _) =
         Data.Users.Registered userInfo _ ->
             userInfo.username
 
-playerStatusAsStr : Selected -> String
-playerStatusAsStr s =
+userOwnerStatusAsStr : Selected -> String
+userOwnerStatusAsStr s =
     case gotStatus s of 
         Owner ->
             "Owner"
@@ -170,7 +189,7 @@ gotPlayers : Selected -> Data.Players.Players
 gotPlayers  (Selected esUP uP ranking) = 
     Data.Players.asPlayers (EverySet.map (\x -> x.player) esUP)
 
-gotStatus : Selected -> PlayerStatus
+gotStatus : Selected -> MemberStatus
 gotStatus selected = 
     case selected of 
         Selected esSelected uP ranking->
@@ -234,27 +253,6 @@ emptyUserPlayer =
     , user = Data.Users.Spectator Data.Users.emptyUserInfo Data.Users.General
     , status = Other}
 
-createdUserPlayer : Data.Users.Users -> Data.Players.Player -> UserPlayer
-createdUserPlayer users player =
-    case player of 
-        Data.Players.IndividualPlayer playerInfo playerStatus ->
-            let
-                m_user = Data.Users.gotUser users playerInfo.uid
-            in
-            case m_user of
-                Nothing ->
-                    emptyUserPlayer
-                    
-                Just user ->
-                    let
-                        newUserPlayer =
-                            { player = player
-                            , user = user
-                            --ok to just assign as 'Other'?
-                            , status = Other
-                            }
-                    in
-                        newUserPlayer
 
 addUserPlayer : UserPlayer -> Selected -> Selected
 addUserPlayer uplayer sSelected = 
@@ -864,17 +862,25 @@ assignedChallengerUIDForBOTHPlayers sSelected user challenger =
                     case (user.user, challenger.user) of 
                         (Data.Users.Registered userInfo userStatus, Data.Users.Registered cuserInfo cuserStatus) ->
                             let
-                                _ = Debug.log "user" user.player
+                                
                                 _ = Debug.log "challenger" challenger.player
+                                -- remove the existing 'Available' entries in the Set:
+                                
+                                s1 = removeUserPlayer user sSelected
+                                _ = Debug.log "s1" s1
+                                s2 = removeUserPlayer challenger s1
+                                _ = Debug.log "s2" s2
                                 updatedUserAsPlayer = Data.Players.assignChallengerUID user.player cuserInfo.id
                                 updatedChallengerAsPlayer = Data.Players.assignChallengerUID challenger.player userInfo.id
 
-                                newSelectedWithUser = updatedUPInSet sSelected {player = updatedUserAsPlayer, user = user.user, status = user.status} 
-                                newSelectedWithChallenger = updatedUPInSet newSelectedWithUser {player = updatedChallengerAsPlayer, user = challenger.user, status = challenger.status}
+                                newSelectedWithUser = updatedUPInSet s2 {player = updatedUserAsPlayer, user = user.user, status = user.status}
+                                s3 = removeUserPlayer user newSelectedWithUser
+                                newSelectedWithChallenger = updatedUPInSet s3 {player = updatedChallengerAsPlayer, user = challenger.user, status = challenger.status}
                                 newSelected = Selected (asEverySet newSelectedWithChallenger) uP ranking
+                                
                             in 
                                 newSelected
-
+                                
                         (_) ->
                             sSelected
 
