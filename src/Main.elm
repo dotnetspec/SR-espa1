@@ -1956,6 +1956,7 @@ updateWithReceivedPlayers model response userOwnerStatus =
             (Failure "updateWithReceivedRankings18")
 
 
+
  
 updateWithReceivedRankingById : Model -> Result (GQLHttp.Error (Maybe Data.Rankings.FRanking)) (Maybe Data.Rankings.FRanking) -> Model
 updateWithReceivedRankingById model response =
