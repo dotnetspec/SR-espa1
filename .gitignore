@@ -5,3 +5,4 @@ public/dist
 ad-hoc
 cypress/screenshots
 cypress/videos
+.faunarc
