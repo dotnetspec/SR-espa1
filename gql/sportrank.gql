@@ -1,23 +1,27 @@
 type User {
-active: Boolean!
-username: String!
-description: String
-email: String
-mobile: String
-playedAs: [Player!]! @relation
+  active: Boolean!
+  username: String!
+  description: String
+  email: String
+  mobile: String
+  ownerOf: [Ranking!]! @relation(name:"ownerranking")
+  memberOf: [Player!]! @relation(name: "playerinranking")
 }
 
 type Player {
-rank: Int!
-ranking: Ranking! @relation
-challenger: User @relation
+  active: Boolean!
+  rank: Int!
+  ladder: Ranking!  @relation # add the relation Directive
+  playerInfo: User! @relation(name: "playerinranking")
+  challenger: Player @relation (name: "playerchallenger")
 }
 
 type Ranking {
-active: Boolean!
-rankingname: String!
-rankingdesc: String
-player: Player
+  active: Boolean!
+  rankingname: String!
+  rankingdesc: String
+  player: [Player] @relation # add the relation
+  owner: User! @relation(name:"ownerranking")
 }
 
 type Mutation {
