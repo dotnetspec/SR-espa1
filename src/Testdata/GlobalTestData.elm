@@ -1,4 +1,5 @@
 module Testdata.GlobalTestData exposing (..)
+module Data.Rankings exposing (..)
 
 import RemoteData
 import SR.Types
