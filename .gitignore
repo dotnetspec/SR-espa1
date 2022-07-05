@@ -6,3 +6,4 @@ ad-hoc
 cypress/screenshots
 cypress/videos
 .faunarc
+index.html
